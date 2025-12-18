@@ -18,7 +18,7 @@ createServer(
                     import.meta.glob<DefineComponent>('./pages/**/*.vue'),
                 ),
             setup: ({ App, props, plugin }) =>
-                createSSRApp({ render: () => h(App, props) }).use(plugin),
+                createSSRApp({ render: () => h(App, props) }).use(plugin).use(ZiggyVue),
         }),
     { cluster: true },
 );

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import { home } from '@/routes';
+// import { home } from '@/routes';
 import { Link } from '@inertiajs/vue3';
 
 defineProps<{
@@ -16,8 +16,8 @@ defineProps<{
         <div class="w-full max-w-sm">
             <div class="flex flex-col gap-8">
                 <div class="flex flex-col items-center gap-4">
+                    <!-- :href="home()" -->
                     <Link
-                        :href="home()"
                         class="flex flex-col items-center gap-2 font-medium"
                     >
                         <div

@@ -7,16 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { register } from '@/routes';
-import { store } from '@/routes/login';
-import { request } from '@/routes/password';
-import { Form, Head } from '@inertiajs/vue3';
 
-defineProps<{
-    status?: string;
-    canResetPassword: boolean;
-    canRegister: boolean;
-}>();
+// import { register } from '@/routes';
+// import { store } from '@/routes/login';
+// import { request } from '@/routes/password';
+
+import { Form } from '@inertiajs/vue3';
+
+
+
+
 </script>
 
 <template>
@@ -27,45 +27,48 @@ defineProps<{
         <Head title="Log in" />
 
         <div
-            v-if="status"
+           
             class="mb-4 text-center text-sm font-medium text-green-600"
         >
-            {{ status }}
+            
         </div>
-
+        
+        <!-- v-bind="store.form()" -->
+        <!-- v-bind:action="" -->
         <Form
-            v-bind="store.form()"
-            :reset-on-success="['password']"
-            v-slot="{ errors, processing }"
-            class="flex flex-col gap-6"
+        :action="'/login'"
+        :reset-on-success="['password']"
+        method="post"
+        class="flex flex-col gap-6"
+        v-slot="{ errors, processing }"
         >
             <div class="grid gap-6">
                 <div class="grid gap-2">
                     <Label for="email">Email address</Label>
                     <Input
                         id="email"
-                        type="email"
-                        name="email"
+                        type="text"
+                        name="username"
                         required
                         autofocus
                         :tabindex="1"
-                        autocomplete="email"
-                        placeholder="email@example.com"
+                        autocomplete="username"
+                        placeholder="Email, DNI or Username"
                     />
-                    <InputError :message="errors.email" />
+                    <InputError :message="errors.username" />
                 </div>
 
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between">
                         <Label for="password">Password</Label>
-                        <TextLink
+                        <!-- <TextLink
                             v-if="canResetPassword"
                             :href="request()"
                             class="text-sm"
                             :tabindex="5"
                         >
                             Forgot password?
-                        </TextLink>
+                        </TextLink> -->
                     </div>
                     <Input
                         id="password"
@@ -76,7 +79,7 @@ defineProps<{
                         autocomplete="current-password"
                         placeholder="Password"
                     />
-                    <InputError :message="errors.password" />
+                    <!-- <InputError :message="errors.password" /> -->
                 </div>
 
                 <div class="flex items-center justify-between">
@@ -86,11 +89,11 @@ defineProps<{
                     </Label>
                 </div>
 
+                <!-- :disabled="processing" -->
                 <Button
                     type="submit"
                     class="mt-4 w-full"
                     :tabindex="4"
-                    :disabled="processing"
                     data-test="login-button"
                 >
                     <Spinner v-if="processing" />
@@ -98,12 +101,12 @@ defineProps<{
                 </Button>
             </div>
 
+            <!-- v-if="canRegister" -->
             <div
                 class="text-center text-sm text-muted-foreground"
-                v-if="canRegister"
             >
                 Don't have an account?
-                <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
+                <!-- <TextLink  :tabindex="5">Sign up</TextLink> -->
             </div>
         </Form>
     </AuthBase>

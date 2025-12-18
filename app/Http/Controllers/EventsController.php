@@ -10,5 +10,7 @@ class EventsController extends Controller
         return Inertia::render('Events', [
             'name' => 'name from controller',
         ]);
+
+        
     }
 }

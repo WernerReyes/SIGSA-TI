@@ -1,23 +1,27 @@
 <?php
 
-use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
 
-Route::get('/', function () {
-     Log::info('dashboard accessed');
-    return Inertia::render('Welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
+
+Route::get('/login', function () {
+    return Inertia::render('auth/Login');
+})->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', function () {
+    Auth::logout();
+    return redirect('/login');
+})->name('logout');
+
+Route::get('/dashboard', function () {
+    $user = Auth::user();
+    return Inertia::render('Dashboard', [
+        'user' => $user,
     ]);
-})->name('home');
-
-Route::get('dashboard', function () {
-    ds('dashboard');
-    Log::info('dashboard accessed');
-    return Inertia::render('Dashboard');
-});
+})->middleware(['auth'])->name('dashboard');
 
 Route::get('events', [App\Http\Controllers\EventsController::class, 'show'])->name('events.show');
 
-require __DIR__.'/settings.php';
+// require __DIR__.'/settings.php';

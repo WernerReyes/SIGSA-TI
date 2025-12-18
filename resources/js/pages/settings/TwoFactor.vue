@@ -4,7 +4,7 @@ import TwoFactorRecoveryCodes from '@/components/TwoFactorRecoveryCodes.vue';
 import TwoFactorSetupModal from '@/components/TwoFactorSetupModal.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
+// import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 // import { disable, enable, show } from '@/routes/two-factor';
@@ -30,11 +30,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
+// const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
 const showSetupModal = ref<boolean>(false);
 
 onUnmounted(() => {
-    clearTwoFactorAuthData();
+    // clearTwoFactorAuthData();
 });
 </script>
 
@@ -62,14 +62,14 @@ onUnmounted(() => {
                     </p>
 
                     <div>
+                        <!-- v-if="hasSetupData" -->
                         <Button
-                            v-if="hasSetupData"
                             @click="showSetupModal = true"
                         >
                             <ShieldCheck />Continue Setup
                         </Button>
                         <!-- v-bind="enable.form()" -->
-                        <Form
+                        <!-- <Form
                             v-else
                             @success="showSetupModal = true"
                             #default="{ processing }"
@@ -77,7 +77,7 @@ onUnmounted(() => {
                             <Button type="submit" :disabled="processing">
                                 <ShieldCheck />Enable 2FA</Button
                             ></Form
-                        >
+                        > -->
                     </div>
                 </div>
 

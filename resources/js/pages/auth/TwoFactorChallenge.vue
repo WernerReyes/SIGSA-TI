@@ -8,7 +8,7 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { store } from '@/routes/two-factor/login';
+// import { store } from '@/routes/two-factor/login';
 import { Form, Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -56,8 +56,8 @@ const code = ref<string>('');
 
         <div class="space-y-6">
             <template v-if="!showRecoveryInput">
+                <!-- v-bind="store.form()" -->
                 <Form
-                    v-bind="store.form()"
                     class="space-y-4"
                     reset-on-error
                     @error="code = ''"
@@ -102,9 +102,9 @@ const code = ref<string>('');
                 </Form>
             </template>
 
+            <!-- v-bind="store.form()" -->
             <template v-else>
                 <Form
-                    v-bind="store.form()"
                     class="space-y-4"
                     reset-on-error
                     #default="{ errors, processing, clearErrors }"
