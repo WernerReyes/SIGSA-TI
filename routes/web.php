@@ -10,17 +10,18 @@ Route::get('/login', function () {
     return Inertia::render('auth/Login');
 })->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', function () {
-    Auth::logout();
-    return redirect('/login');
-})->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+
+
 
 Route::get('/dashboard', function () {
-    $user = Auth::user();
-    return Inertia::render('Dashboard', [
-        'user' => $user,
-    ]);
+    return Inertia::render('Dashboard');
 })->middleware(['auth'])->name('dashboard');
+
+Route::get('/tickets', function () {
+    return Inertia::render('Tickets');
+})->middleware(['auth'])->name('tickets');
 
 Route::get('events', [App\Http\Controllers\EventsController::class, 'show'])->name('events.show');
 

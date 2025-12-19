@@ -1,4 +1,4 @@
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 type Appearance = 'light' | 'dark' | 'system';
 
@@ -69,6 +69,12 @@ export function initializeTheme() {
 
 const appearance = ref<Appearance>('system');
 
+const isDarkMode = computed(
+    () =>
+        appearance.value === 'dark' ||
+        (appearance.value === 'system' && mediaQuery()?.matches),
+);
+
 export function useAppearance() {
     onMounted(() => {
         const savedAppearance = localStorage.getItem(
@@ -94,6 +100,7 @@ export function useAppearance() {
 
     return {
         appearance,
+        isDarkMode,
         updateAppearance,
     };
 }

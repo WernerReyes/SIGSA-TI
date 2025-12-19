@@ -14,15 +14,21 @@ import {
 // import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Tag } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: "#",
+        href: "dashboard",
         icon: LayoutGrid,
     },
+    {
+        title: 'Tickets',
+        href: "tickets",
+        icon: Tag,
+
+    }
 ];
 
 const footerNavItems: NavItem[] = [
@@ -44,10 +50,11 @@ const footerNavItems: NavItem[] = [
         <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
-                        <Link href="#">
-                            <AppLogo />
-                        </Link>
+                    <SidebarMenuButton class="h-16 md:h-full" as-child>
+
+                        <AppLogo />
+
+
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>

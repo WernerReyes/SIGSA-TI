@@ -1,11 +1,11 @@
 <?php
 namespace App\DTOs\Auth;
-
 class LoginDto
 {
+
     private function __construct(
         public readonly string $username,
-        public readonly string $password
+        public readonly string $password,
     ) {
     }
 
@@ -13,7 +13,7 @@ class LoginDto
     {
         return new self(
             $data['username'],
-            $data['password']
+            $data['password'],
         );
     }
 }
