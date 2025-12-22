@@ -9,23 +9,26 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 // import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { Contrast } from 'lucide-vue-next';
 
 const sidebarNavItems: NavItem[] = [
+    // {
+    //     title: 'Profile',
+    //     href: "#",
+    // },
+    // {
+    //     title: 'Password',
+    //     href: "#",
+    // },
+    // {
+    //     title: 'Two-Factor Auth',
+    //     href: "#",
+    // },
     {
-        title: 'Profile',
-        href: "#",
-    },
-    {
-        title: 'Password',
-        href: "#",
-    },
-    {
-        title: 'Two-Factor Auth',
-        href: "#",
-    },
-    {
-        title: 'Appearance',
-        href: "#",
+        title: 'Apariencia',
+        icon: Contrast,
+        isActive: true,
+        href: "/settings/appearance",
     },
 ];
 
@@ -35,8 +38,8 @@ const currentPath = typeof window !== undefined ? window.location.pathname : '';
 <template>
     <div class="px-4 py-6">
         <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+            title="Configuración"
+            description="Administra tu perfil y la configuración de tu cuenta"
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">

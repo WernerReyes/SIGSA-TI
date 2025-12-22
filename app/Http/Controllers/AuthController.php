@@ -7,13 +7,18 @@ use App\Http\Requests\Auth\LoginRequest;
 
 use App\Services\AuthService;
 use Auth;
+use Inertia\Inertia;
 
 
 class AuthController extends Controller
 {
+    
+    function renderLoginView()
+    {
+        return Inertia::render('auth/Login');
+    }
     function login(LoginRequest $request, AuthService $authService)
     {
-
         $credentials = $request->validated();
         $dto = LoginDto::fromArray($credentials);
 

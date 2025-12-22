@@ -34,6 +34,12 @@ import {
 import { TabsList, Tabs, TabsTrigger } from '@/components/ui/tabs'
 import { Tag } from 'lucide-vue-next'
 import { TicketType, ticketTypeOptions } from '@/interfaces/ticket.interface'
+import { User } from '@/interfaces/user.interface'
+
+
+defineProps<{
+    technicians: Array<User>
+}>();
 
 
 const formSchema = toTypedSchema(z.object({
@@ -52,7 +58,11 @@ const formSchema = toTypedSchema(z.object({
     // priority: z.enum(['baja', 'media', 'alta', 'critica'], {
     //     errorMap: () => ({ message: 'Selecciona una prioridad válida' }),
     // }),
-    requester: z.string().min(3, 'El nombre del solicitante es obligatorio'),
+    
+    technician_id: z.number({
+        invalid_type_error: 'Selecciona un técnico válido',
+        required_error: 'El técnico es obligatorio',
+    }),
     asset_id: z.string().optional(),
 }))
 
@@ -74,7 +84,7 @@ function onSubmit(values: any) {
                     Nuevo Ticket
                 </Button>
             </DialogTrigger>
-            <DialogContent class="sm:max-w-[425px] max-h-screen overflow-y-auto">
+            <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Nuevo Ticket</DialogTitle>
                 </DialogHeader>
@@ -180,15 +190,25 @@ function onSubmit(values: any) {
                     </div>
 
                     <!-- SOLICITANTE -->
-                    <!-- <FieldGroup>
-                        <VeeField name="requester" v-slot="{ componentField, errors }">
+                    <FieldGroup>
+                        <VeeField name="reques_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Solicitante</FieldLabel>
-                                <Input placeholder="Nombre del solicitante" v-bind="componentField" />
+                                <Select v-bind="componentField">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar solicitante" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="tech in technicians" :key="tech.staff_id"
+                                            :value="tech.staff_id">
+                                            {{ tech.firstname }} {{ tech.lastname }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
-                    </FieldGroup> -->
+                    </FieldGroup>
 
                     <!-- ACTIVO -->
                     <FieldGroup>

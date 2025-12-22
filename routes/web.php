@@ -1,28 +1,28 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 
-Route::get('/login', function () {
-    return Inertia::render('auth/Login');
-})->name('login');
+Route::get('/login', [AuthController::class, 'renderLoginView'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-
 
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth'])->name('dashboard');
 
-Route::get('/tickets', function () {
-    return Inertia::render('Tickets');
-})->middleware(['auth'])->name('tickets');
 
-Route::get('events', [App\Http\Controllers\EventsController::class, 'show'])->name('events.show');
+Route::get('/tickets', [TicketController::class, 'renderView'])->middleware(['auth'])->name('tickets');
 
-// require __DIR__.'/settings.php';
+
+require __DIR__ . '/settings.php';
+
+//* Fallback Route
+Route::fallback(function () {
+    return redirect()->route('dashboard');
+});
+

@@ -27,8 +27,18 @@ class User extends Authenticatable
         'lastname',
         'email',
         'password',
-        'dni'
+        'dni',
+        'dept_id',
     ];
+
+
+    public function getFullNameAttribute() {
+        return "{$this->firstname} {$this->lastname}";
+    }
+
+    public function department() {
+        return $this->belongsTo(Department::class, 'dept_id', 'dept_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

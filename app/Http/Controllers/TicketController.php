@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UserService;
 use Illuminate\Http\Request;
-use UserService;
+use Inertia\Inertia;
 
 class TicketController extends Controller
 {
@@ -11,7 +12,7 @@ class TicketController extends Controller
     function renderView(UserService $userService)
     {
         $technicians = $userService->getTechnicians();
-        return inertia()::render('Tickets', [
+        return Inertia::render('Tickets', [
             'technicians' => $technicians,
         ]);
     }

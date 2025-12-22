@@ -22,6 +22,7 @@ VALUES (1, 'OPERACIONES'),
     (10, 'OPERACIONES-YDZ'),
     (11, 'RR.HH.'),
     (12, 'SS.GG.');
+
 CREATE TABLE `cargo` (
     `id_cargo` int(11) unsigned NOT NULL AUTO_INCREMENT,
     `id_area` int(11) unsigned NOT NULL,
@@ -30,6 +31,9 @@ CREATE TABLE `cargo` (
     PRIMARY KEY (`id_cargo`),
     KEY `id_area` (`id_area`)
 ) ENGINE = InnoDB AUTO_INCREMENT = 43 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+
+
 INSERT INTO `cargo`
 VALUES (
         6,
@@ -218,6 +222,8 @@ VALUES (
         'Gerente Administrativa',
         '2025-11-07 14:39:17'
     );
+
+    
 CREATE TABLE `ost_staff` (
     `staff_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
     `dept_id` int(10) unsigned NOT NULL DEFAULT 0,

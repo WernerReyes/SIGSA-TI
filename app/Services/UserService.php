@@ -1,8 +1,11 @@
 <?php
+namespace App\Services;
 
 use App\Models\User;
+
+
 class UserService {
     function getTechnicians() {
-        return User::whereIn('cargo_id', [21,31,32])->get();
+        return User::whereIn('dept_id', [9,10])->get();
     }
 }
