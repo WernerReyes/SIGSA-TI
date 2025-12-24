@@ -2,38 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\Ticket\TicketPriority;
+use App\Enums\Ticket\TicketRequestType;
+use App\Enums\Ticket\TicketStatus;
+use App\Enums\Ticket\TicketType;
 use Illuminate\Database\Eloquent\Model;
 
-enum TicketStatus: string
-{
-    case OPEN = 'OPEN';
-    case IN_PROGRESS = 'IN_PROGRESS';
-    case RESOLVED = 'RESOLVED';
-    case CLOSED = 'CLOSED';
-}
-
-
-enum TicketPriority: string
-{
-    case LOW = 'LOW';
-    case MEDIUM = 'MEDIUM';
-    case HIGH = 'HIGH';
-    case URGENT = 'URGENT';
-}
-
-enum TicketType: string
-{
-    case INDIDENT = 'INCIDENT';
-    case SERVICE_REQUEST = 'SERVICE_REQUEST';
-}
-
-enum TicketRequestType: string
-{
-    case HARDWARE = 'HARDWARE';
-    case SOFTWARE = 'SOFTWARE';
-    case NETWORK = 'NETWORK';
-    case OTHER = 'OTHER';
-}
 
 class Ticket extends Model
 {
@@ -64,6 +38,29 @@ class Ticket extends Model
         'type' => TicketType::class,
         'request_type' => TicketRequestType::class,
     ];
+
+    public function requester()
+    {
+        return $this->belongsTo(User::class, 'requester_id');
+    }
+
+    public function technician()
+    {
+        return $this->belongsTo(User::class, 'technician_id');
+    }
+
+    public function scopeOrderedByPriority($query)
+    {
+        return $query->orderByRaw("
+        CASE priority 
+            WHEN '" . TicketPriority::URGENT->value . "' THEN 0 
+            WHEN '" . TicketPriority::HIGH->value . "' THEN 1 
+            WHEN '" . TicketPriority::MEDIUM->value . "' THEN 2 
+            WHEN '" . TicketPriority::LOW->value . "' THEN 3 
+            ELSE 4 
+        END
+    ");
+    }
 
 
 }

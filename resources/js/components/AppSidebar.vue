@@ -20,12 +20,12 @@ import AppLogo from './AppLogo.vue';
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: "dashboard",
+        href: "/dashboard",
         icon: LayoutGrid,
     },
     {
         title: 'Tickets',
-        href: "tickets",
+        href: "/tickets",
         icon: Tag,
 
     }

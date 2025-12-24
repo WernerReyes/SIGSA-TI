@@ -17,7 +17,7 @@ Route::get('/dashboard', function () {
 
 
 Route::get('/tickets', [TicketController::class, 'renderView'])->middleware(['auth'])->name('tickets');
-
+Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth'])->name('tickets.store');
 
 require __DIR__ . '/settings.php';
 

@@ -1,5 +1,6 @@
 export interface User {
     staff_id: number;
+    full_name: string;
     dept_id: number;
     role_id: number;
     username: string;

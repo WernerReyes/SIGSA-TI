@@ -2,6 +2,37 @@ import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { initializeTheme } from './composables/useAppearance'
 
+
+import { router } from '@inertiajs/vue3'
+import { toast } from 'vue-sonner'
+
+router.on('error', (event) => {
+    const errors = event.detail?.errors
+    if (!errors) return
+
+    const message = Object.values(errors)[0]
+    if (message) {
+        toast.error(message as string)
+    }
+})
+
+router.on('success', (event) => {
+    const flash = event.detail?.page.props.flash as {
+        success?: string
+        error?: string
+    } | undefined
+    if (!flash) return
+
+    if (flash.success) {
+        toast.success(flash.success)
+    }
+
+    // if (flash.error) {
+    //     toast.error(flash.error)
+    // }
+})
+
+
 createInertiaApp({
     resolve: (name: string) => {
         const pages = import.meta.glob('./pages/**/*.vue', { eager: true })

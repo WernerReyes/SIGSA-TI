@@ -31,26 +31,40 @@ class User extends Authenticatable
         'dept_id',
     ];
 
+    public function scopeActive($query)
+    {
+        return $query->where('activo', 1);
+    }
 
-    public function getFullNameAttribute() {
+
+    public function getFullNameAttribute()
+    {
         return "{$this->firstname} {$this->lastname}";
     }
 
-    public function department() {
+    public function department()
+    {
         return $this->belongsTo(Department::class, 'dept_id', 'dept_id');
     }
+
+    // protected $hidden = [
+    //     'password',
+    // ];
+
+    protected $appends = ['full_name'];
+
 
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
      */
-    // protected $hidden = [
-    //     'password',
-    //     'two_factor_secret',
-    //     'two_factor_recovery_codes',
-    //     'remember_token',
-    // ];
+    protected $hidden = [
+        'password',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'remember_token',
+    ];
 
     /**
      * Get the attributes that should be cast.

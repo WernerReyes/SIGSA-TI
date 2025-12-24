@@ -2,19 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\UserService;
-use Illuminate\Http\Request;
+
+use App\DTOs\Ticket\StoreTicketDto;
+use App\Http\Requests\Ticket\StoreTicketRequest;
+use App\Services\DepartmentService;
+use App\Services\TicketService;
 use Inertia\Inertia;
+
 
 class TicketController extends Controller
 {
     //
-    function renderView(UserService $userService)
+    function renderView(DepartmentService $departmentService, TicketService $ticketService)
     {
-        $technicians = $userService->getTechnicians();
+        $departmentsWithUsers = $departmentService->getTechDepartmentUsers();
+        $ticketsOrderedByPriority = $ticketService->getAllOrderedByPriority();
         return Inertia::render('Tickets', [
-            'technicians' => $technicians,
+            'departments' => $departmentsWithUsers,
+            'tickets' => $ticketsOrderedByPriority,
         ]);
+    }
+
+
+    function store(StoreTicketRequest $request, TicketService $ticketService)
+    {
+
+
+        $validated = $request->validated();
+
+        $dto = StoreTicketDto::fromArray($validated);
+
+
+        try {
+            $ticketService->storeTicket($dto);
+            return redirect()->route('tickets')->with('success', 'El ticket ha sido creado exitosamente.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Ocurrió un error al crear el ticket. Por favor, inténtelo de nuevo.']);
+        }
+
     }
 
 }

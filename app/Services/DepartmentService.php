@@ -8,10 +8,16 @@ class DepartmentService
 {
     function getTechDepartmentUsers()
     {
-        $techDept = Department::whereIn('dept_id', [9, 10])->first();
-        if (!$techDept) {
+        $techDept = Department::select(
+            'id',
+            'name'
+        )->whereIn('id', [9, 10])->get();
+        if ($techDept->isEmpty()) {
             return collect();
         }
-        return $techDept->users;
+
+        
+        $deptWithUsers = $techDept->load('users:staff_id,firstname,lastname,dept_id');
+        return $deptWithUsers;
     }
 }

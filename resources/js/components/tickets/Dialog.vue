@@ -1,83 +1,121 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod'
 import { Form, Field as VeeField } from 'vee-validate'
-import { h } from 'vue'
+import { computed, h, ref, watch } from 'vue'
 
-import { toast } from 'vue-sonner'
-import * as z from 'zod'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
+    DialogTrigger
 } from '@/components/ui/dialog'
 import {
     Field,
-    FieldDescription,
     FieldError,
     FieldGroup,
-    FieldLabel,
+    FieldLabel
 } from '@/components/ui/field'
-import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
-    SelectValue,
+    SelectValue
 } from '@/components/ui/select'
-import { TabsList, Tabs, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { type Department } from '@/interfaces/department.interace'
+import { ticketPriorityOptions, TicketType, TicketPriority, ticketTypeOptions, TicketRequestType, ticketRequestTypeOptions } from '@/interfaces/ticket.interface'
 import { Tag } from 'lucide-vue-next'
-import { TicketType, ticketTypeOptions } from '@/interfaces/ticket.interface'
-import { User } from '@/interfaces/user.interface'
+import { Spinner } from '@/components/ui/spinner'
+import { toast } from 'vue-sonner'
+import { router, useForm, usePage } from '@inertiajs/vue3'
+import * as z from 'zod'
+import createServer from '@inertiajs/vue3/server';
+
 
 
 defineProps<{
-    technicians: Array<User>
+    departments: Array<Department>,
+
 }>();
+
+
+const open = ref(false);
+const isSubmitting = ref(false);
+
+
+// watch(
+//     () => success,
+//     (success) => {
+//         if (success) {
+//             resetForm();
+//         }
+//     }
+// );
 
 
 const formSchema = toTypedSchema(z.object({
     title: z.string({
         message: 'El título es obligatorio',
-    }).min(3, 'El título es obligatorio'),
+    }).min(5, 'Minimo 5 caracteres').max(255, 'Máximo 255 caracteres'),
     description: z.string({
         message: 'La descripción es obligatoria',
-    }).min(10, 'La descripción es obligatoria'),
-    type: z.enum(['account', 'password'], {
+    }).min(10, 'Minimo 10 caracteres').max(1000, 'Máximo 1000 caracteres'),
+    type: z.nativeEnum(TicketType, {
         errorMap: () => ({ message: 'Selecciona un tipo válido' }),
-    }),
-    // category: z.enum(['hardware', 'software', 'red'], {
-    //     errorMap: () => ({ message: 'Selecciona una categoría válida' }),
-    // }),
-    // priority: z.enum(['baja', 'media', 'alta', 'critica'], {
-    //     errorMap: () => ({ message: 'Selecciona una prioridad válida' }),
-    // }),
-    
-    technician_id: z.number({
-        invalid_type_error: 'Selecciona un técnico válido',
-        required_error: 'El técnico es obligatorio',
-    }),
-    asset_id: z.string().optional(),
-}))
+        message: 'El tipo es obligatorio',
+    }).default(TicketType.SERVICE_REQUEST),
 
-function onSubmit(values: any) {
-    toast('You submitted the following values:', {
-        description: h('pre', { class: 'mt-2 w-[320px] rounded-md bg-neutral-950 p-4' }, h('code', { class: 'text-white' }, JSON.stringify(values, null, 2))),
+
+    priority: z.nativeEnum(TicketPriority, {
+        errorMap: () => ({ message: 'Selecciona una prioridad válida' }),
+        message: 'La prioridad es obligatoria',
+    }),
+
+    request_type: z.nativeEnum(TicketRequestType, {
+        errorMap: () => ({ message: 'Selecciona un tipo de solicitud válido' }),
+        message: 'El tipo de solicitud es obligatorio',
+    }).optional(),
+
+    // technician_id: z.number({
+    //     message: 'Selecciona un técnico válido',
+    // }).optional(),
+
+}));
+
+function onSubmit(values: any, { resetForm }: { resetForm: () => void }) {
+    isSubmitting.value = true;
+    router.post('/tickets', values, {
+        onSuccess: () => {
+            open.value = false;
+            resetForm();
+        },
+        onFinish: () => {
+            isSubmitting.value = false;
+        }
+
+
     })
 }
+
+
 </script>
 
 <template>
 
-    <Form v-slot="{ handleSubmit, getValues }" as="" keep-values :validation-schema="formSchema">
+    <Form :initial-values="{
+        type: TicketType.SERVICE_REQUEST
+    }" v-slot="{ getValues, handleSubmit, errors }" as="" keep-values :validation-schema="formSchema">
 
-        <Dialog>
+        <Dialog v-model:open="open">
             <DialogTrigger as-child>
                 <Button class="w-fit ml-auto">
                     <Tag />
@@ -89,8 +127,10 @@ function onSubmit(values: any) {
                     <DialogTitle>Nuevo Ticket</DialogTitle>
                 </DialogHeader>
 
-
-                <form id="dialogForm" @submit="handleSubmit($event, onSubmit)" class="space-y-3">
+                <form id="dialogForm" @submit.prevent=" 
+                    //   router.post('/tickets', getValues())
+                    handleSubmit(onSubmit)
+                    " class="space-y-3">
                     <!-- TÍTULO -->
                     <FieldGroup>
                         <VeeField name="title" v-slot="{ componentField, errors }">
@@ -149,7 +189,7 @@ function onSubmit(values: any) {
                         :class="getValues().type === TicketType.SERVICE_REQUEST ? 'md:grid-cols-2' : 'md:grid-cols-1'">
                         <!-- CATEGORÍA -->
                         <FieldGroup v-if="getValues().type === TicketType.SERVICE_REQUEST">
-                            <VeeField name="category" v-slot="{ componentField, errors }">
+                            <VeeField name="request_type" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel>Categoría</FieldLabel>
                                     <Select v-bind="componentField">
@@ -157,9 +197,11 @@ function onSubmit(values: any) {
                                             <SelectValue placeholder="Seleccionar" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="hardware">Hardware</SelectItem>
-                                            <SelectItem value="software">Software</SelectItem>
-                                            <SelectItem value="red">Red</SelectItem>
+
+                                            <SelectItem v-for="requestType in Object.values(ticketRequestTypeOptions)"
+                                                :key="requestType.value" :value="requestType.value">
+                                                {{ requestType.label }}
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FieldError v-if="errors.length" :errors="errors" />
@@ -176,11 +218,15 @@ function onSubmit(values: any) {
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar" />
                                         </SelectTrigger>
+
                                         <SelectContent>
-                                            <SelectItem value="baja">Baja</SelectItem>
-                                            <SelectItem value="media">Media</SelectItem>
-                                            <SelectItem value="alta">Alta</SelectItem>
-                                            <SelectItem value="critica">Crítica</SelectItem>
+                                            <SelectItem v-for="priority in Object.values(ticketPriorityOptions)"
+                                                :key="priority.value" :value="priority.value">
+
+                                                <Badge :class="priority.bg">
+                                                    {{ priority.label }}
+                                                </Badge>
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FieldError v-if="errors.length" :errors="errors" />
@@ -190,28 +236,34 @@ function onSubmit(values: any) {
                     </div>
 
                     <!-- SOLICITANTE -->
-                    <FieldGroup>
-                        <VeeField name="reques_id" v-slot="{ componentField, errors }">
+
+                    <!-- <FieldGroup>
+                        <VeeField name="technician_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel>Solicitante</FieldLabel>
+                                <FieldLabel>Técnico</FieldLabel>
                                 <Select v-bind="componentField">
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar solicitante" />
+                                        <SelectValue placeholder="Seleccionar técnico" />
                                     </SelectTrigger>
+
                                     <SelectContent>
-                                        <SelectItem v-for="tech in technicians" :key="tech.staff_id"
-                                            :value="tech.staff_id">
-                                            {{ tech.firstname }} {{ tech.lastname }}
-                                        </SelectItem>
+                                        <SelectGroup v-for="department in departments" :key="department.id">
+                                            <SelectLabel>{{ department.name }}</SelectLabel>
+                                            <SelectItem v-for="tech in department.users" :key="tech.staff_id"
+                                                :value="tech.staff_id">
+                                                {{ tech.firstname }} {{ tech.lastname }}
+                                            </SelectItem>
+                                        </SelectGroup>
+
                                     </SelectContent>
                                 </Select>
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
-                    </FieldGroup>
+                    </FieldGroup> -->
 
                     <!-- ACTIVO -->
-                    <FieldGroup>
+                    <!-- <FieldGroup>
                         <VeeField name="asset_id" v-slot="{ componentField, errors }">
                             <Field>
                                 <FieldLabel>Activo Relacionado (opcional)</FieldLabel>
@@ -226,12 +278,15 @@ function onSubmit(values: any) {
                                 </Select>
                             </Field>
                         </VeeField>
-                    </FieldGroup>
+                    </FieldGroup> -->
                 </form>
 
                 <DialogFooter>
-                    <Button type="submit" form="dialogForm">
-                        Save changes
+                    <Button :disabled="isSubmitting
+                        || Object.keys(errors).length > 0
+                        " type="submit" form="dialogForm">
+                        <Spinner v-if="isSubmitting" />
+                        Crear Ticket
                     </Button>
                 </DialogFooter>
             </DialogContent>

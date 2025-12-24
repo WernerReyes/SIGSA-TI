@@ -9,15 +9,21 @@ class AuthService
 {
     function login(LoginDto $dto)
     {
-        $user = User::where('email', $dto->username)
-            ->orWhere('username', $dto->username)->
-            orWhere('dni', $dto->username)
+        $user = User::active()
+            ->where(function ($query) use ($dto) {
+                $query->where('email', $dto->username)
+                    ->orWhere('username', $dto->username)
+                    ->orWhere('dni', $dto->username);
+            })
             ->first();
+        ;
         if (!$user || !password_verify($dto->password, $user->password)) {
             return back()->withErrors([
                 'username' => 'Las credenciales proporcionadas no son correctas.',
             ]);
         }
+
+        ds($user->getAttributes());
 
         Auth::login($user);
 

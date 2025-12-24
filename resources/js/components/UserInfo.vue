@@ -22,7 +22,7 @@ const { getInitials } = useInitials();
     <Avatar class="h-8 w-8 overflow-hidden rounded-lg">
 
         <AvatarFallback class="rounded-lg text-black dark:text-white">
-            {{ getInitials(`${user.firstname} ${user.lastname}`) }}
+            {{ getInitials(user.full_name) }}
         </AvatarFallback>
     </Avatar>
     <div class="grid flex-1 text-left text-sm leading-tight">

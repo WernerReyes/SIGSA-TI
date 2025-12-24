@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Http\Requests\Ticket;
+
+
+use App\Enums\Ticket\TicketPriority;
+use App\Enums\Ticket\TicketRequestType;
+use App\Enums\Ticket\TicketType;
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreTicketRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        $inTicketType = "in:" . implode(",", TicketType::values());
+        $inTicketPriority = "in:" . implode(",", TicketPriority::values());
+        $inTicketRequestType = "in:" . implode(",", TicketRequestType::values());
+
+        return [
+            'title' => ['required', 'string', 'min:5', 'max:255'],
+            'description' => ['required', 'string', 'min:10', 'max:1000'],
+            'type' => ['required', $inTicketType],
+            // 'technician_id' => [
+                
+            //     // 'required_if:type,SERVICE_REQUEST',
+            //     "required_if:type," . TicketType::SERVICE_REQUEST->value,
+            //     'exists:ost_staff,staff_id',
+            // ],
+            'priority' => ['required', $inTicketPriority],
+            'request_type' => [
+                'required_if:type,' . TicketType::SERVICE_REQUEST->value,
+                $inTicketRequestType
+            ]
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'El título es obligatorio.',
+            'title.string' => 'El título debe ser una cadena de texto.',
+            'title.min' => 'El título debe tener al menos :min caracteres.',
+            'title.max' => 'El título no debe exceder de :max caracteres.',
+
+            'description.required' => 'La descripción es obligatoria.',
+            'description.string' => 'La descripción debe ser una cadena de texto.',
+            'description.min' => 'La descripción debe tener al menos :min caracteres.',
+            'description.max' => 'La descripción no debe exceder de :max caracteres.',
+
+            // 'technician_id.required_if' => 'El técnico es obligatorio para este tipo de ticket.',
+            // 'technician_id.exists' => 'El técnico seleccionado no es válido.',
+
+            'type.required' => 'El tipo de ticket es obligatorio.',
+            'type.in' => 'El tipo de ticket seleccionado no es válido.',
+
+            'priority.required' => 'La prioridad del ticket es obligatoria.',
+            'priority.in' => 'La prioridad del ticket seleccionada no es válida.',
+
+            ' request_type.required_if' => 'El tipo de solicitud es obligatorio para este tipo de ticket.',
+            ' request_type.in' => 'El tipo de solicitud seleccionado no es válido.',
+        ];
+    }
+}

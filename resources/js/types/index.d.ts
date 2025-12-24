@@ -39,6 +39,7 @@ export type AppPageProps<
 export type BreadcrumbItemType = BreadcrumbItem;
 export interface User {
     staff_id: number;
+    full_name: string;
     dept_id: number;
     role_id: number;
     username: string;
@@ -85,3 +86,5 @@ export interface User {
     id_area: number | null;
     activo: boolean;
 }
+
+export type Variant = 'neutral' | 'Stone' | 'Slate'  | 'Gray' | 'Red' | 'Orange' | 'Amber' | 'Yellow' | 'Lime' | 'Green' | 'Emerald' | 'Teal' | 'Cyan' | 'Sky' | 'Blue' | 'Indigo' | 'Violet' | 'Purple' | 'Fuchsia' | 'Pink' | 'Rose';
