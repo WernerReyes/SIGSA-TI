@@ -7,89 +7,45 @@
         <Dialog v-model:open="open">
             <DialogTrigger as-child>
                 <Button class="w-fit ml-auto">
-                    <Tag />
-                    Nuevo Ticket
+                    <Laptop />
+                    Nuevo Activo
                 </Button>
             </DialogTrigger>
             <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Nuevo Ticket</DialogTitle>
+                    <DialogTitle>Nuevo Activo</DialogTitle>
                 </DialogHeader>
 
                 <form id="dialogForm" @submit.prevent=" 
-                    //   router.post('/tickets', getValues())
                     handleSubmit(onSubmit)
                     " class="space-y-3">
-                    <!-- TÍTULO -->
+                    <!-- NOMBRE -->
                     <FieldGroup>
-                        <VeeField name="title" v-slot="{ componentField, errors }">
+                        <VeeField name="name" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="title">Título</FieldLabel>
-                                <Input id="title" placeholder="Describe brevemente el problema"
-                                    v-bind="componentField" />
+                                <FieldLabel for="name">Nombre</FieldLabel>
+                                <Input id="name" placeholder="EJ: Laptop de Desarrollo" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
                     </FieldGroup>
 
-                    <!-- DESCRIPCIÓN -->
-                    <FieldGroup>
-                        <VeeField name="description" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="description">Descripción</FieldLabel>
-                                <Textarea id="description" rows="4"
-                                    placeholder="Proporciona detalles adicionales del problema..."
-                                    v-bind="componentField" />
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
-
-                    <FieldGroup>
-                        <VeeField name="type" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <!-- <Input id="eventId" type="number" placeholder="12345"
-                                    v-bind="componentField" />
-                                <FieldError v-if="errors.length" :errors="errors" /> -->
-
-                                <Tabs v-bind="componentField" :default-value="TicketType.SERVICE_REQUEST" class="mt-4">
-
-                                    <TabsList>
-                                        <!-- <TabsTrigger value="account">
-                                            Account
-                                        </TabsTrigger> -->
-                                        <!-- <TabsTrigger value="password">
-                                            Password
-                                        </TabsTrigger> -->
-                                        <TabsTrigger v-for="type in Object.values(ticketTypeOptions)" :key="type.value"
-                                            :value="type.value">
-                                            {{ type.label }}
-                                        </TabsTrigger>
-
-
-                                    </TabsList>
-                                </Tabs>
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
-
-
-                    <div class="grid gap-4"
-                        :class="getValues().type === TicketType.SERVICE_REQUEST ? 'md:grid-cols-2' : 'md:grid-cols-1'">
-                        <!-- CATEGORÍA -->
-                        <FieldGroup v-if="getValues().type === TicketType.SERVICE_REQUEST">
-                            <VeeField name="request_type" v-slot="{ componentField, errors }">
+                    <div class="grid gap-4 items-center md:grid-cols-2">
+                        <FieldGroup>
+                            <VeeField name="type" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
-                                    <FieldLabel>Categoría</FieldLabel>
+                                    <FieldLabel>Tipo</FieldLabel>
                                     <Select v-bind="componentField">
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar" />
                                         </SelectTrigger>
                                         <SelectContent>
 
-                                            <SelectItem v-for="requestType in Object.values(ticketRequestTypeOptions)"
-                                                :key="requestType.value" :value="requestType.value">
-                                                {{ requestType.label }}
+                                            <SelectItem v-for="assetType in Object.values(assetTypeOptions)"
+                                                :key="assetType.value" :value="assetType.value">
+                                                <component :is="assetType.icon" class="inline-block size-4" />
+                                                {{ assetType.label }}
+
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -98,23 +54,19 @@
                             </VeeField>
                         </FieldGroup>
 
-                        <!-- PRIORIDAD -->
                         <FieldGroup>
-                            <VeeField name="priority" v-slot="{ componentField, errors }">
+                            <VeeField name="status" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
-                                    <FieldLabel>Prioridad</FieldLabel>
+                                    <FieldLabel>Estado</FieldLabel>
                                     <Select v-bind="componentField">
                                         <SelectTrigger>
                                             <SelectValue placeholder="Seleccionar" />
                                         </SelectTrigger>
-
                                         <SelectContent>
-                                            <SelectItem v-for="priority in Object.values(ticketPriorityOptions)"
-                                                :key="priority.value" :value="priority.value">
 
-                                                <Badge :class="priority.bg">
-                                                    {{ priority.label }}
-                                                </Badge>
+                                            <SelectItem v-for="status in Object.values(assetStatusOptions)"
+                                                :key="status.value" :value="status.value">
+                                                <Badge :class="status.bg">{{ status.label }}</Badge>
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -123,6 +75,91 @@
                             </VeeField>
                         </FieldGroup>
                     </div>
+
+                    <div class="grid gap-4 items-center md:grid-cols-2">
+                        <FieldGroup>
+                            <VeeField name="brand" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="brand">Marca</FieldLabel>
+                                    <Input id="brand" placeholder="EJ: Dell, HP, Lenovo" v-bind="componentField" />
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+
+                        <FieldGroup>
+                            <VeeField name="model" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="model">Modelo</FieldLabel>
+                                    <Input id="model" placeholder="EJ: Inspiron 15 3000" v-bind="componentField" />
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+                    </div>
+
+                    <FieldGroup>
+                        <VeeField name="serial_number" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="serial_number">Número de Serie</FieldLabel>
+                                <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+
+
+                    <div class="grid gap-4 items-center md:grid-cols-2">
+
+                        <FieldGroup>
+                            <VeeField name="purchase_date" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="purchase_date">Fecha de Compra</FieldLabel>
+                                    <!-- <Input type="date" id="purchase_date" v-bind="componentField" /> -->
+                                     <Popover v-slot="{ close }">
+      <PopoverTrigger as-child>
+        <Button
+          id="date"
+          variant="outline"
+          class="w-48 justify-between font-normal"
+        >
+          <!-- {{ date ? date.toDate(getLocalTimeZone()).toLocaleDateString() : "Select date" }} -->
+          <ChevronDownIcon />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+          <!-- :model-value="date" -->
+        <Calendar
+          layout="month-and-year"
+          @update:model-value="(value) => {
+            if (value) {
+            //   date = value
+            //   close()
+            }
+          }"
+        />
+      </PopoverContent>
+    </Popover>
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+
+
+                        <FieldGroup>
+                            <VeeField name="warranty_expiration" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="warranty_expiration">Vencimiento de Garantía</FieldLabel>
+                                    <Input type="date" id="warranty_expiration" v-bind="componentField" />
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+
+
+                    </div>
+
+
 
                     <!-- SOLICITANTE -->
 
@@ -218,12 +255,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { type Department } from '@/interfaces/department.interace'
 import { TicketPriority, ticketPriorityOptions, TicketRequestType, ticketRequestTypeOptions, TicketType, ticketTypeOptions } from '@/interfaces/ticket.interface'
 import { router } from '@inertiajs/vue3'
-import { Tag } from 'lucide-vue-next'
+import { Laptop, Monitor, Tag } from 'lucide-vue-next'
 import * as z from 'zod'
-
+import { assetStatusOptions, assetTypeOptions } from '@/interfaces/asset.interface'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 
 defineProps<{
-    departments: Array<Department>,
+    // departments: Array<Department>,
 
 }>();
 

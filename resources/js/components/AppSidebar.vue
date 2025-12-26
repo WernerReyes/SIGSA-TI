@@ -14,7 +14,7 @@ import {
 // import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Tag } from 'lucide-vue-next';
+import { BookOpen, Computer, Folder, Laptop, LayoutGrid, Tag } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -27,22 +27,25 @@ const mainNavItems: NavItem[] = [
         title: 'Tickets',
         href: "/tickets",
         icon: Tag,
-
+    }, {
+        title: 'Activos TI',
+        href: "/assets",
+        icon: Laptop,
     }
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Github Repo',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+// const footerNavItems: NavItem[] = [
+//     {
+//         title: 'Github Repo',
+//         href: 'https://github.com/laravel/vue-starter-kit',
+//         icon: Folder,
+//     },
+//     {
+//         title: 'Documentation',
+//         href: 'https://laravel.com/docs/starter-kits#vue',
+//         icon: BookOpen,
+//     },
+// ];
 </script>
 
 <template>
@@ -65,7 +68,7 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
+            <!-- <NavFooter :items="footerNavItems" /> -->
             <NavUser />
         </SidebarFooter>
     </Sidebar>

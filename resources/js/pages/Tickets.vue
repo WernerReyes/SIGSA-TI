@@ -3,18 +3,17 @@ import AppLayout from '@/layouts/AppLayout.vue';
 // import { dashboard } from '@/routes';
 import Dialog from '@/components/tickets/Dialog.vue';
 import Table from '@/components/tickets/Table.vue';
+import { Department } from '@/interfaces/department.interace';
+import { Ticket } from '@/interfaces/ticket.interface';
 import { type User } from '@/interfaces/user.interface';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import PlaceholderPattern from '../components/PlaceholderPattern.vue';
-import { Department } from '@/interfaces/department.interace';
-import { Ticket } from '@/interfaces/ticket.interface';
-import Table2 from '@/components/tickets/Table2.vue';
 
 defineProps<{
     departments: Department[];
     tickets: Ticket[];
+    TIUsers: User[];
 
 }>();
 
@@ -25,6 +24,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         title: 'Tickets',
         href: "#"
     },
+
 ];
 </script>
 

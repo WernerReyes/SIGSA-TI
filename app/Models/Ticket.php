@@ -14,7 +14,8 @@ class Ticket extends Model
     //
     protected $table = 'tickets_sistema';
 
-    protected $primaryKey = 'id_tickets';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'type',
@@ -27,7 +28,7 @@ class Ticket extends Model
         'request_type',
         'requester_id',
         'technician_id',
-        'updated_at',
+        // 'updated_at',
     ];
 
     protected $casts = [
@@ -47,6 +48,11 @@ class Ticket extends Model
     public function technician()
     {
         return $this->belongsTo(User::class, 'technician_id');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(TicketHistory::class, 'ticket_id', 'id');
     }
 
     public function scopeOrderedByPriority($query)

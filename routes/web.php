@@ -18,6 +18,13 @@ Route::get('/dashboard', function () {
 
 Route::get('/tickets', [TicketController::class, 'renderView'])->middleware(['auth'])->name('tickets');
 Route::post('/tickets', [TicketController::class, 'store'])->middleware(['auth'])->name('tickets.store');
+Route::post('/tickets/{ticketId}/reassign', [TicketController::class, 'reassign'])->middleware(['auth'])->name('tickets.reassign');
+Route::post('/tickets/{ticketId}/change-status', [TicketController::class, 'changeStatus'])->middleware(['auth'])->name('tickets.changeStatus');
+
+
+Route::get('/assets', function () {
+    return Inertia::render('Assets');
+})->middleware(['auth'])->name('assets');
 
 require __DIR__ . '/settings.php';
 

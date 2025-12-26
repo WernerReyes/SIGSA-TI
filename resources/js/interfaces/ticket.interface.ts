@@ -1,3 +1,4 @@
+import type { TicketHistory } from './ticketHistory.interface';
 import type { User } from './user.interface';
 
 export enum TicketStatus {
@@ -20,10 +21,9 @@ export enum TicketType {
 }
 
 export enum TicketRequestType {
-    HARDWARE = 'HARDWARE',
     SOFTWARE = 'SOFTWARE',
-    NETWORK = 'NETWORK',
-    OTHER = 'OTHER',
+    ACCESS = 'ACCESS',
+    EQUIPMENT = 'EQUIPMENT',
 }
 
 export interface Ticket {
@@ -36,9 +36,10 @@ export interface Ticket {
     requester: User;
     technician?: User;
     request_type: TicketRequestType;
-    created_at: Date;
-    updated_at: Date;
+    // created_at: Date;
+    // updated_at: Date;
     opened_at?: Date;
+    histories?: TicketHistory[];
     closed_at?: Date;
     requester_id: number;
     technician_id?: number;
@@ -48,16 +49,36 @@ type TicketStatusOption = {
     label: string;
     value: TicketStatus;
     bg: string;
-
-}
+};
 export const ticketStatusOptions: Record<TicketStatus, TicketStatusOption> = {
-    [TicketStatus.OPEN]: { label: 'Abierto', value: TicketStatus.OPEN, bg: 'bg-blue-500' },
-    [TicketStatus.IN_PROGRESS]: { label: 'En Progreso', value: TicketStatus.IN_PROGRESS, bg: 'bg-yellow-500' },
-    [TicketStatus.RESOLVED]: { label: 'Resuelto', value: TicketStatus.RESOLVED, bg: 'bg-green-500' },
-    [TicketStatus.CLOSED]: { label: 'Cerrado', value: TicketStatus.CLOSED, bg: 'bg-gray-500' },
+    [TicketStatus.OPEN]: {
+        label: 'Abierto',
+        value: TicketStatus.OPEN,
+        bg: 'bg-blue-500',
+    },
+    [TicketStatus.IN_PROGRESS]: {
+        label: 'En Progreso',
+        value: TicketStatus.IN_PROGRESS,
+        bg: 'bg-yellow-500',
+    },
+    [TicketStatus.RESOLVED]: {
+        label: 'Resuelto',
+        value: TicketStatus.RESOLVED,
+        bg: 'bg-green-500',
+    },
+    [TicketStatus.CLOSED]: {
+        label: 'Cerrado',
+        value: TicketStatus.CLOSED,
+        bg: 'bg-gray-500',
+    },
 };
 
-
+export const statusOp = (
+    status?: TicketStatus,
+): TicketStatusOption | undefined => {
+    if (!status) return undefined;
+    return ticketStatusOptions[status];
+};
 
 type TicketTypeOption = {
     label: string;
@@ -66,27 +87,65 @@ type TicketTypeOption = {
 };
 
 export const ticketTypeOptions: Record<TicketType, TicketTypeOption> = {
-    [TicketType.INCIDENT]: { label: 'Incidente', value: TicketType.INCIDENT, bg: 'bg-blue-500' },
+    [TicketType.INCIDENT]: {
+        label: 'Incidente',
+        value: TicketType.INCIDENT,
+        bg: 'bg-blue-500',
+    },
     [TicketType.SERVICE_REQUEST]: {
         label: 'Solicitud de Servicio',
         value: TicketType.SERVICE_REQUEST,
-        bg: 'bg-green-500'
+        bg: 'bg-green-500',
     },
 };
 
+export const typeOp = (type?: TicketType): TicketTypeOption | undefined => {
+    if (!type) return undefined;
+    return ticketTypeOptions[type];
+};
 
 type TicketPriorityOption = {
     label: string;
     value: TicketPriority;
     bg: string;
-    search: string ;
+    search: string;
 };
 
-export const ticketPriorityOptions: Record<TicketPriority, TicketPriorityOption> = {
-    [TicketPriority.LOW]: { label: 'Baja', value: TicketPriority.LOW, bg: 'bg-green-500', search: 'baja' },
-    [TicketPriority.MEDIUM]: { label: 'Media', value: TicketPriority.MEDIUM, bg : 'bg-yellow-500', search: 'media' },
-    [TicketPriority.HIGH]: { label: 'Alta', value: TicketPriority.HIGH, bg: 'bg-orange-500', search: 'alta' },
-    [TicketPriority.URGENT]: { label: 'Crítica', value: TicketPriority.URGENT, bg: 'bg-red-500', search: 'critica' },
+export const ticketPriorityOptions: Record<
+    TicketPriority,
+    TicketPriorityOption
+> = {
+    [TicketPriority.LOW]: {
+        label: 'Baja',
+        value: TicketPriority.LOW,
+        bg: 'bg-green-500',
+        search: 'baja',
+    },
+    [TicketPriority.MEDIUM]: {
+        label: 'Media',
+        value: TicketPriority.MEDIUM,
+        bg: 'bg-yellow-500',
+        search: 'media',
+    },
+    [TicketPriority.HIGH]: {
+        label: 'Alta',
+        value: TicketPriority.HIGH,
+        bg: 'bg-orange-500',
+        search: 'alta',
+    },
+    [TicketPriority.URGENT]: {
+        label: 'Crítica',
+        value: TicketPriority.URGENT,
+        bg: 'bg-red-500',
+        search: 'critica',
+    },
+};
+
+export const priorityOp = (
+    priority?: TicketPriority,
+): TicketPriorityOption | undefined => {
+    if (!priority) return undefined;
+    return ticketPriorityOptions[priority];
 };
 
 type TicketRequestTypeOption = {
@@ -95,9 +154,30 @@ type TicketRequestTypeOption = {
     bg: string;
 };
 
-export const ticketRequestTypeOptions: Record<TicketRequestType, TicketRequestTypeOption> = {
-    [TicketRequestType.HARDWARE]: { label: 'Hardware', value: TicketRequestType.HARDWARE, bg: 'bg-blue-500' },
-    [TicketRequestType.SOFTWARE]: { label: 'Software', value: TicketRequestType.SOFTWARE, bg: 'bg-green-500' },
-    [TicketRequestType.NETWORK]: { label: 'Red', value: TicketRequestType.NETWORK, bg: 'bg-yellow-500' },
-    [TicketRequestType.OTHER]: { label: 'Otro', value: TicketRequestType.OTHER, bg: 'bg-gray-500' },
+export const ticketRequestTypeOptions: Record<
+    TicketRequestType,
+    TicketRequestTypeOption
+> = {
+    [TicketRequestType.EQUIPMENT]: {
+        label: 'Equipo',
+        value: TicketRequestType.EQUIPMENT,
+        bg: 'bg-blue-500',
+    },
+    [TicketRequestType.SOFTWARE]: {
+        label: 'Software',
+        value: TicketRequestType.SOFTWARE,
+        bg: 'bg-green-500',
+    },
+    [TicketRequestType.ACCESS]: {
+        label: 'Acceso',
+        value: TicketRequestType.ACCESS,
+        bg: 'bg-yellow-500',
+    },
+};
+
+export const requestTypeOp = (
+    requestType?: TicketRequestType,
+): TicketRequestTypeOption | undefined => {
+    if (!requestType) return undefined;
+    return ticketRequestTypeOptions[requestType];
 };

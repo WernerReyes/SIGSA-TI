@@ -2,10 +2,9 @@
 namespace App\Enums\Ticket;
 enum TicketRequestType: string
 {
-    case HARDWARE = 'HARDWARE';
+    case ACCESS = 'ACCESS';
     case SOFTWARE = 'SOFTWARE';
-    case NETWORK = 'NETWORK';
-    case OTHER = 'OTHER';
+    case EQUIPMENT = 'EQUIPMENT';
 
     public static function values(): array
     {

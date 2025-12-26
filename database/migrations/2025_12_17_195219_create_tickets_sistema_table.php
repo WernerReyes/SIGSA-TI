@@ -19,14 +19,13 @@ return new class extends Migration {
             $table->timestamp('closed_at')->nullable();
             $table->enum('status', ['OPEN', 'IN_PROGRESS', 'RESOLVED','CLOSED'])->default('OPEN');
             $table->enum('priority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT'])->default('MEDIUM');
-            $table->enum('request_type', ['HARDWARE', 'SOFTWARE', 'NETWORK', 'OTHER'])->nullable()->default(null);
+            $table->enum('request_type', ['ACCESS', 'SOFTWARE', 'EQUIPMENT'])->nullable()->default(null);
             //* Foreign key to users table
             $table->unsignedInteger('requester_id');
             $table->foreign('requester_id')->references('staff_id')->on('ost_staff');
             
             $table->unsignedInteger('technician_id')->nullable();
             $table->foreign('technician_id')->references('staff_id')->on('ost_staff');
-            $table->timestamps();
         });
     }
 
