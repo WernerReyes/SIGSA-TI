@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import Dialog from '@/components/assets/Dialog.vue';
+import { type AssetType } from '@/interfaces/asset.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
+
+
+defineProps<{ types: AssetType[] }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -20,8 +24,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
 
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-
-            <Dialog />
+        
+            <Dialog :assetTypes="types" />
 
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -30,6 +30,18 @@ class TicketController extends Controller
         ]);
     }
 
+    function storeAPI(StoreTicketRequest $request, TicketService $ticketService)
+    {
+        $validated = $request->validated();
+        $dto = StoreTicketDto::fromArray($validated);
+        try {
+            $ticketService->storeTicket($dto);
+            return response()->json(['message' => 'El ticket ha sido creado exitosamente.'], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Ocurrió un error al crear el ticket. Por favor, inténtelo de nuevo.'], 500);
+        }
+    }
+
 
     function store(StoreTicketRequest $request, TicketService $ticketService)
     {

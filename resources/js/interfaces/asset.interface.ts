@@ -1,9 +1,15 @@
-import { Laptop, Monitor, Smartphone } from 'lucide-vue-next';
-import { FunctionalComponent } from 'vue';
+
+
+export interface AssetType {
+    id: number;
+    name: string;
+    created_at: Date;
+    updated_at: Date;
+}
 
 export interface Asset {
     id_assets: number;
-    // assets_type_id: number;
+    type_id: number;
     model: string;
     serial_number: number;
     purchase_date: Date;
@@ -14,7 +20,7 @@ export interface Asset {
     updated_at: Date;
     name: string;
     description: string;
-    type: AssetType;
+    type?: AssetType;
 }
 
 export enum AssetStatus {
@@ -51,30 +57,3 @@ export const assetStatusOptions: Record<AssetStatus, AssetStatusOption> = {
     },
 };
 
-export enum AssetType {
-    LAPTOP = 'LAPTOP',
-    PC = 'PC',
-    PHONE = 'PHONE',
-}
-export type AssetTypeOption = {
-    label: string;
-    value: AssetType;
-    icon: FunctionalComponent;
-};
-export const assetTypeOptions: Record<AssetType, AssetTypeOption> = {
-    [AssetType.LAPTOP]: {
-        label: 'Laptop',
-        value: AssetType.LAPTOP,
-        icon: Laptop,
-    },
-    [AssetType.PC]: {
-        label: 'PC',
-        value: AssetType.PC,
-        icon: Monitor,
-    },
-    [AssetType.PHONE]: {
-        label: 'Celular',
-        value: AssetType.PHONE,
-        icon: Smartphone,
-    },
-};

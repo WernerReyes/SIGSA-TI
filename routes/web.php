@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
@@ -22,9 +23,8 @@ Route::post('/tickets/{ticketId}/reassign', [TicketController::class, 'reassign'
 Route::post('/tickets/{ticketId}/change-status', [TicketController::class, 'changeStatus'])->middleware(['auth'])->name('tickets.changeStatus');
 
 
-Route::get('/assets', function () {
-    return Inertia::render('Assets');
-})->middleware(['auth'])->name('assets');
+Route::get('/assets', [AssetController::class, 'renderView'])->middleware(['auth'])->name('assets');
+Route::post('/assets/types', [AssetController::class, 'registerType'])->middleware(['auth'])->name('assets.types.register');
 
 require __DIR__ . '/settings.php';
 
