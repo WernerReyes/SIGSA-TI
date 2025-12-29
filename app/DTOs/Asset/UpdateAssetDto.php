@@ -2,12 +2,13 @@
 namespace App\DTOs\Asset;
 
 use App\Enums\Asset\AssetStatus;
-class StoreAssetDto
+class UpdateAssetDto
 {
     private function __construct(
-        public string $name,
-        public int $type_id,
-        public string $status,
+        public int $id,
+        public ?string $name,
+        public ?int $type_id,
+        public ?string $status,
         public ?string $brand,
         public ?string $model,
         public ?string $serial_number,
@@ -21,9 +22,10 @@ class StoreAssetDto
     public static function fromArray(array $data): self
     {
         return new self(
-            name: $data['name'],
-            type_id: $data['type_id'],
-            status: $data['status'],
+            id: $data['id'],
+            name: $data['name'] ?? null,
+            type_id: $data['type_id'] ?? null,
+            status: $data['status'] ?? null,
             brand: $data['brand'] ?? null,
             model: $data['model'] ?? null,
             serial_number: $data['serial_number'] ?? null,

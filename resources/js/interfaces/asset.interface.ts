@@ -1,3 +1,4 @@
+import { User } from "./user.interface";
 
 
 export interface AssetType {
@@ -8,12 +9,12 @@ export interface AssetType {
 }
 
 export interface Asset {
-    id_assets: number;
+    id: number;
     type_id: number;
     model: string;
-    serial_number: number;
-    purchase_date: Date;
-    warranty_end: Date;
+    serial_number: string;
+    purchase_date: string;
+    warranty_expiration: string;
     status: AssetStatus;
     brand: string;
     created_at: Date;
@@ -21,6 +22,8 @@ export interface Asset {
     name: string;
     description: string;
     type?: AssetType;
+    assigned_to_id?: number | null;
+    assigned_to?: User | null;
 }
 
 export enum AssetStatus {
@@ -57,3 +60,6 @@ export const assetStatusOptions: Record<AssetStatus, AssetStatusOption> = {
     },
 };
 
+export const statusOp = (status: AssetStatus): AssetStatusOption => {
+    return assetStatusOptions[status];
+}

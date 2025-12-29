@@ -1,11 +1,10 @@
 <?php
 
 namespace App\Http\Requests\Asset;
-
 use App\Enums\Asset\AssetStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreAssetRequest extends FormRequest
+class UpdateAssetRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,29 +22,17 @@ class StoreAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'type_id' => ['exists:assets_type,id'],
-            'status' => ['required', 'in:' . implode(',', AssetStatus::values())],
+            'id' => ['required', 'integer'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'type_id' => ['nullable', 'exists:assets_type,id'],
+            'status' => ['nullable', 'in:' . implode(',', AssetStatus::values())],
             'brand' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'serial_number' => ['nullable', 'string', 'max:255'],
             'purchase_date' => ['nullable', 'date'],
             'warranty_expiration' => ['nullable', 'date'],
             'assigned_to' => ['required_if:status,' . AssetStatus::ASSIGNED->value, 'exists:ost_staff,staff_id'],
-            // 'assigned_to' => ['nullable', 'exists:ost_staff,staff_id'],
             //
-        ];
-    }
-
-
-    public function messages(): array
-    {
-        return [
-            'type_id.exists' => 'El tipo de activo seleccionado no es válido.',
-            'status.in' => 'El estado del activo seleccionado no es válido.',
-            'assigned_to.required_if' => 'Debe asignar el activo a un usuario cuando el estado es "Asignado".',
-            'assigned_to.exists' => 'El usuario asignado no es válido.',
-            // Otros mensajes personalizados...
         ];
     }
 }

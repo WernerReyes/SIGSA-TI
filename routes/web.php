@@ -24,7 +24,10 @@ Route::post('/tickets/{ticketId}/change-status', [TicketController::class, 'chan
 
 
 Route::get('/assets', [AssetController::class, 'renderView'])->middleware(['auth'])->name('assets');
+Route::post('/assets', [AssetController::class, 'storeAsset'])->middleware(['auth'])->name('assets.store');
+Route::put('/assets', [AssetController::class, 'updateAsset'])->middleware(['auth'])->name('assets.update');
 Route::post('/assets/types', [AssetController::class, 'registerType'])->middleware(['auth'])->name('assets.types.register');
+Route::delete('/assets/types', [AssetController::class, 'deleteType'])->middleware(['auth'])->name('assets.types.delete');
 
 require __DIR__ . '/settings.php';
 

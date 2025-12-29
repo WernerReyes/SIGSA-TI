@@ -25,8 +25,8 @@ return new class extends Migration
             $table->unsignedBigInteger('type_id')->nullable();
             $table->foreign('type_id')->references('id')->on('assets_type');
 
-            $table->unsignedInteger('assigned_to')->nullable();
-            $table->foreign('assigned_to')->references('staff_id')->on('ost_staff');
+            $table->unsignedInteger('assigned_to_id')->nullable();
+            $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');
 
             $table->timestamps();
         });
