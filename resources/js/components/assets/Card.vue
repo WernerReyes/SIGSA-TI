@@ -48,6 +48,11 @@
                         <Pencil class="size-4" />
                         Editar
                     </DropdownMenuItem>
+                    <DropdownMenuItem class="flex gap-2 items-center cursor-pointer" @select="emit('assign:asset', asset)">
+                        <!-- <Info class="size-4" /> -->
+                         <UserPlus class="size-4" />
+                        Asignar
+                    </DropdownMenuItem>
                     <DropdownMenuGroup>
                         <!-- <DropdownMenuItem>
                             Profile
@@ -109,7 +114,7 @@
 <script setup lang="ts">
 import { type Asset } from '@/interfaces/asset.interface';
 import { format, isAfter, parseISO } from 'date-fns';
-import { EllipsisIcon, Info, InfoIcon, Laptop, Pencil } from 'lucide-vue-next';
+import { EllipsisIcon, Info, InfoIcon, Laptop, Pencil, UserPlus } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import {
     DropdownMenu,
@@ -133,6 +138,7 @@ const { asset } = defineProps<{
 const emit = defineEmits<{
     (e: 'detail:asset', asset: Asset): void;
     (e: 'update:asset', asset: Asset): void;
+    (e: 'assign:asset', asset: Asset): void;
 }>();
 
 const isWarrantyValid = (): boolean => {

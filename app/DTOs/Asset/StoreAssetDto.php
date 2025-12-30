@@ -1,7 +1,7 @@
 <?php
 namespace App\DTOs\Asset;
 
-use App\Enums\Asset\AssetStatus;
+
 class StoreAssetDto
 {
     private function __construct(
@@ -13,7 +13,7 @@ class StoreAssetDto
         public ?string $serial_number,
         public ?string $purchase_date,
         public ?string $warranty_expiration,
-        public ?int $assigned_to = null,
+        public ?bool $is_new,
     ) {
     }
 
@@ -29,7 +29,7 @@ class StoreAssetDto
             serial_number: $data['serial_number'] ?? null,
             purchase_date: $data['purchase_date'] ?? null,
             warranty_expiration: $data['warranty_expiration'] ?? null,
-            assigned_to: $data['status'] === AssetStatus::ASSIGNED->value ? ($data['assigned_to'] ?? null) : null,
+            is_new: $data['is_new'] ?? null,
         );
     }
 }

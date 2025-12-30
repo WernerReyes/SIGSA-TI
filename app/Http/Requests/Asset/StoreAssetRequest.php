@@ -25,13 +25,14 @@ class StoreAssetRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'type_id' => ['exists:assets_type,id'],
-            'status' => ['required', 'in:' . implode(',', AssetStatus::values())],
+            'status' => ['required', 'in:' . implode(',', AssetStatus::values([AssetStatus::ASSIGNED->value]))],
             'brand' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'serial_number' => ['nullable', 'string', 'max:255'],
             'purchase_date' => ['nullable', 'date'],
             'warranty_expiration' => ['nullable', 'date'],
-            'assigned_to' => ['required_if:status,' . AssetStatus::ASSIGNED->value, 'exists:ost_staff,staff_id'],
+            'is_new' => ['boolean'],
+            
             // 'assigned_to' => ['nullable', 'exists:ost_staff,staff_id'],
             //
         ];
@@ -43,8 +44,7 @@ class StoreAssetRequest extends FormRequest
         return [
             'type_id.exists' => 'El tipo de activo seleccionado no es válido.',
             'status.in' => 'El estado del activo seleccionado no es válido.',
-            'assigned_to.required_if' => 'Debe asignar el activo a un usuario cuando el estado es "Asignado".',
-            'assigned_to.exists' => 'El usuario asignado no es válido.',
+            
             // Otros mensajes personalizados...
         ];
     }

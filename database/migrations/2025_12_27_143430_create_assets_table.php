@@ -21,12 +21,13 @@ return new class extends Migration
             $table->string('serial_number')->nullable();
             $table->date('purchase_date')->nullable();
             $table->date('warranty_expiration')->nullable();
+            $table->boolean('is_new')->default(true);
 
             $table->unsignedBigInteger('type_id')->nullable();
             $table->foreign('type_id')->references('id')->on('assets_type');
 
-            $table->unsignedInteger('assigned_to_id')->nullable();
-            $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');
+            // $table->unsignedInteger('assigned_to_id')->nullable();
+            // $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');
 
             $table->timestamps();
         });

@@ -31,7 +31,8 @@ class UpdateAssetRequest extends FormRequest
             'serial_number' => ['nullable', 'string', 'max:255'],
             'purchase_date' => ['nullable', 'date'],
             'warranty_expiration' => ['nullable', 'date'],
-            'assigned_to' => ['required_if:status,' . AssetStatus::ASSIGNED->value, 'exists:ost_staff,staff_id'],
+            'is_new' => ['boolean'],
+            
             //
         ];
     }

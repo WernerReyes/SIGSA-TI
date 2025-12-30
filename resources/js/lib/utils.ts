@@ -1,3 +1,4 @@
+import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { InertiaLinkProps } from '@inertiajs/vue3';
 import type { Updater } from '@tanstack/vue-table';
 import type { ClassValue } from 'clsx';
@@ -29,4 +30,11 @@ export function valueUpdater<T extends Updater<any>>(
         typeof updaterOrValue === 'function'
             ? updaterOrValue(ref.value)
             : updaterOrValue;
+}
+
+export function getCurrAssign(assignments: AssetAssignment[]) {
+    if (assignments.length === 0) {
+        return null;
+    }
+    return assignments.filter((a) => a.current_owner)[0] || null;
 }

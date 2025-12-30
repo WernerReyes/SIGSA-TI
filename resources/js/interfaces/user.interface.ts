@@ -1,3 +1,5 @@
+import { Department } from "./department.interace";
+
 export interface User {
     staff_id: number;
     full_name: string;
@@ -46,4 +48,5 @@ export interface User {
     id_cargo?: number;
     id_area?: number;
     activo: number;
+    department?: Department;
 }

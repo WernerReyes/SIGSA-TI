@@ -19,6 +19,7 @@ class Asset extends Model
         'warranty_expiration',
         'assigned_to_id',
         'type_id',
+        'is_new',
     ];
 
     protected $casts = [
@@ -31,6 +32,21 @@ class Asset extends Model
     public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to_id', 'staff_id');
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(AssetType::class, 'type_id');
+    }
+
+    public function assignment()
+    {
+        return $this->hasOne(AssetAssignment::class, 'asset_id');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(AssetHistory::class, 'asset_id');
     }
 
 }

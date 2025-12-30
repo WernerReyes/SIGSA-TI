@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
+use App\Http\Requests\Asset\AssignAssetRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
 use App\Services\AssetService;
@@ -92,6 +94,22 @@ class AssetController extends Controller
                 return back()->withErrors(['error' => $e->getMessage()]);
             }
             return back()->withErrors(['error' => 'Ocurrió un error al actualizar el activo. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
+    public function assignAsset(AssignAssetRequest $request, AssetService $assetService)
+    {
+        $validated = $request->validated();
+        $dto = AssignAssetDto::fromArray($validated);   
+        try {
+            $assetService->assignAsset($dto);
+            return back()->with('success', 'Activo asignado correctamente');
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al asignar el activo. Por favor, inténtelo de nuevo.']);
         }
     }
 }

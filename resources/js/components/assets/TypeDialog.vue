@@ -9,9 +9,7 @@
         </DialogTrigger>
         <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
             <DialogHeader>
-                <!-- {{ assetTypes2 }} -->
                 <DialogTitle>Nuevo Tipo</DialogTitle>
-                {{ selectedType }}
             </DialogHeader>
 
             <form id="typeDialogForm" @submit.prevent=" 

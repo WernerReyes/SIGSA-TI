@@ -2,10 +2,12 @@
 import Card from '@/components/assets/Card.vue';
 import Dialog from '@/components/assets/Dialog.vue';
 import DialogDetails from '@/components/assets/DialogDetails.vue';
+import Table from '@/components/assets/Table.vue';
 import { type Asset, type AssetType } from '@/interfaces/asset.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
-import { Box, BoxIcon } from 'lucide-vue-next';
+import { Head } from '@inertiajs/vue3';
+import { BoxIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 
@@ -14,6 +16,7 @@ defineProps<{ types: AssetType[], assets: Asset[] }>();
 const currentAsset = ref<Asset | null>(null);
 
 const openDetails = ref(false);
+const openEditor = ref(false);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -27,13 +30,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 <template>
 
-    <Head title="Tickets" />
+    <Head title="Activos TI" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
 
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
-            <Dialog :assetTypes="types" v-model:current-asset="currentAsset" />
+            <Dialog includeButton  v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
 
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -93,23 +96,23 @@ const breadcrumbs: BreadcrumbItem[] = [
                 </div>
             </div>
 
-            <div v-if="assets.length === 0" class="flex flex-1 flex-col items-center justify-center gap-4 py-8">
+            <!-- <div v-if="assets.length === 0" class="flex flex-1 flex-col items-center justify-center gap-4 py-8">
                 <BoxIcon class="size-12 text-muted-foreground" />
                 <p class="text-center text-sm text-muted-foreground">No se encontraron activos. ¡Agrega tu primer
                     activo!</p>
             </div>
 
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card v-for="asset in assets" :key="asset.id" :asset="asset" @update:asset="currentAsset = $event"
+                <Card v-for="asset in assets" :key="asset.id" :asset="asset" @update:asset="currentAsset = $event; openEditor = true"
                     @detail:asset="(asset) => {
-                        // currentAsset = asset;
+                        currentAsset = asset;
                         openDetails = true;
                     }"
                 />
-            </div>
-
-            {{ openDetails }}
-            <DialogDetails v-model:open="openDetails" />
+            </div> -->
+            <Table :assets="assets" />
+            
+            <DialogDetails v-model:open="openDetails" v-model:asset="currentAsset" />
         </div>
 
     </AppLayout>

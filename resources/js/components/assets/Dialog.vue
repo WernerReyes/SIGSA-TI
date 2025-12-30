@@ -4,7 +4,7 @@
             handleResetForm();
         }
     }">
-        <DialogTrigger as-child>
+        <DialogTrigger v-if="includeButton" as-child>
             <Button class="w-fit ml-auto">
                 <Laptop />
 
@@ -80,7 +80,8 @@
                                     </SelectTrigger>
                                     <SelectContent>
 
-                                        <SelectItem v-for="status in Object.values(assetStatusOptions)"
+                                        <SelectItem
+                                            v-for="status in Object.values(assetStatusOptions).filter(s => s.value !== AssetStatus.ASSIGNED)"
                                             :key="status.value" :value="status.value">
                                             <Badge :class="status.bg">{{ status.label }}</Badge>
                                         </SelectItem>
@@ -115,21 +116,19 @@
                 </div>
 
 
-                <div class="grid gap-4 items-center" :class="{
-                    'md:grid-cols-2': values.status === AssetStatus.ASSIGNED,
-                }">
+                <!-- <div class="grid gap-4 items-center"> -->
 
-                    <FieldGroup>
-                        <VeeField name="serial_number" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="serial_number">Número de Serie</FieldLabel>
-                                <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
+                <FieldGroup>
+                    <VeeField name="serial_number" v-slot="{ componentField, errors }">
+                        <Field :data-invalid="!!errors.length">
+                            <FieldLabel for="serial_number">Número de Serie</FieldLabel>
+                            <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
+                            <FieldError v-if="errors.length" :errors="errors" />
+                        </Field>
+                    </VeeField>
+                </FieldGroup>
 
-                    <FieldGroup v-if="values.status === AssetStatus.ASSIGNED">
+                <!-- <FieldGroup v-if="values.status === AssetStatus.ASSIGNED">
                         <VeeField name="assigned_to" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Asignar a Usuario</FieldLabel>
@@ -147,8 +146,8 @@
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
-                    </FieldGroup>
-                </div>
+                    </FieldGroup> -->
+                <!-- </div> -->
 
 
                 <div class="grid gap-4 items-center md:grid-cols-2">
@@ -215,15 +214,28 @@
                     </FieldGroup>
 
 
+                    <FieldGroup>
+                        <VeeField name="is_new" v-slot="{ value, setValue, errors }">
+
+
+                            <div class="flex items-center gap-3">
+                                <Checkbox :model-value="value" @update:model-value="setValue($event)" />
+                                <FieldLabel for="terms">¿Es un activo nuevo?</FieldLabel>
+                            </div>
+                            <FieldError v-if="errors.length" :errors="errors" />
+
+                        </VeeField>
+                    </FieldGroup>
+
+
                 </div>
-
-
-
 
             </form>
 
             <DialogFooter>
-               
+
+
+
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0
                     " type="submit" form="dialogForm">
@@ -278,6 +290,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Spinner } from '@/components/ui/spinner'
 import { Asset, AssetStatus, assetStatusOptions, AssetType } from '@/interfaces/asset.interface'
 import { type User } from '@/interfaces/user.interface'
@@ -288,23 +301,29 @@ import * as z from 'zod'
 import TypeDialog from './TypeDialog.vue'
 
 defineProps<{
-    assetTypes: AssetType[]
-
+    includeButton?: boolean
 }>();
-
 
 const currentAsset = defineModel<Asset | null>('current-asset', {
     type: Object as () => Asset | null,
     required: false
 })
 
+const openEditor = defineModel<boolean>('open-editor', {
+    type: Boolean,
+    required: true
+});
+
+
+const assetTypes = computed<AssetType[]>(() => (usePage().props.types || []) as AssetType[]);
 const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
 
 const open = ref(false);
 const isSubmitting = ref(false);
 
-watch(() => currentAsset.value, (newAsset) => {
-    if (newAsset) {
+watch(() => openEditor.value, (editor) => {
+    const newAsset = currentAsset.value;
+    if (editor && newAsset) {
         open.value = true;
         setValues({
             name: newAsset.name,
@@ -319,11 +338,12 @@ watch(() => currentAsset.value, (newAsset) => {
             warranty_expiration: parseDate(
                 newAsset.warranty_expiration.split('T')[0]
             ),
-            assigned_to: newAsset.assigned_to_id || undefined,
+            // assigned_to: newAsset.assigned_to_id || undefined,
         });
     } else {
         open.value = false;
-        handleReset();
+        openEditor.value = false;
+        handleResetForm();
     }
 });
 
@@ -345,18 +365,11 @@ const formSchema = toTypedSchema(z.object({
     serial_number: z.string().min(1, 'El número de serie es obligatorio'),
     purchase_date: z.instanceof(CalendarDate).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
     warranty_expiration: z.instanceof(CalendarDate).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
-    assigned_to: z.number().optional(),
+    is_new: z.boolean().optional().default(true),
+    // assigned_to: z.number().optional(),
 
 
-}).refine((data) => {
-    if (data.status === AssetStatus.ASSIGNED) {
-        return data.assigned_to !== undefined;
-    }
-    return true;
-}, {
-    message: 'Debe asignar el activo a un usuario',
-    path: ['assigned_to']
-}))
+}));
 
 
 const initialFormValues = {
@@ -368,6 +381,7 @@ const initialFormValues = {
     type_id: undefined,
     purchase_date: today(getLocalTimeZone()),
     warranty_expiration: today(getLocalTimeZone()),
+    is_new: true,
     assigned_to: undefined,
 };
 
@@ -412,7 +426,10 @@ function onSubmit(values: any) {
 const handleResetForm = () => {
     handleReset();
     currentAsset.value = null;
+    openEditor.value = false;
     setValues(initialFormValues);
+
+
 }
 
 </script>
