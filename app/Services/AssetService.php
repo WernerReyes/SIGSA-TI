@@ -11,6 +11,10 @@ use App\Models\AssetHistory;
 use App\Models\AssetType;
 
 use DB;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\TemplateProcessor;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
@@ -55,11 +59,8 @@ class AssetService
     public function getAll()
     {
         return Asset::with(
-
             'type:id,name',
-            // 'assignedTo:staff_id,firstname,lastname,dept_id',
-            // 'assignedTo.department:id,name',
-            'assignment.assignedTo:staff_id,firstname,lastname',
+            'assignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'assignment.assignedTo.department:id,name',
         )->get();
     }
@@ -72,10 +73,17 @@ class AssetService
             $asset = Asset::create([
                 'name' => $dto->name,
                 'type_id' => $dto->type_id,
-                'status' => $dto->status,
+                // 'status' => $dto->status,
+                'color' => $dto->color,
+                'status' => AssetStatus::AVAILABLE->value,
                 'brand' => $dto->brand,
                 'model' => $dto->model,
                 'serial_number' => $dto->serial_number,
+                'processor' => $dto->processor,
+                'ram' => $dto->ram,
+                'storage' => $dto->storage,
+                'phone' => $dto->phone,
+                'imei' => $dto->imei,
                 'purchase_date' => $dto->purchase_date,
                 'warranty_expiration' => $dto->warranty_expiration,
                 'is_new' => $dto->is_new,
@@ -135,25 +143,30 @@ class AssetService
                 }
             }
 
-
             $asset->update([
                 'name' => $dto->name ?? $asset->name,
                 'type_id' => $dto->type_id ?? $asset->type_id,
-                'status' => $dto->status ?? $asset->status,
+                // 'status' => $dto->status ?? $asset->status,
+                'color' => $dto->color ?? $asset->color,
                 'brand' => $dto->brand ?? $asset->brand,
                 'model' => $dto->model ?? $asset->model,
                 'serial_number' => $dto->serial_number ?? $asset->serial_number,
+                'processor' => $dto->processor ?? $asset->processor,
+                'ram' => $dto->ram ?? $asset->ram,
+                'storage' => $dto->storage ?? $asset->storage,
+                'phone' => $dto->phone ?? $asset->phone,
+                'imei' => $dto->imei ?? $asset->imei,
                 'purchase_date' => $dto->purchase_date ?? $asset->purchase_date,
                 'warranty_expiration' => $dto->warranty_expiration ?? $asset->warranty_expiration,
                 'is_new' => $dto->is_new ?? $asset->is_new,
             ]);
 
-            if ($dto->status !== AssetStatus::ASSIGNED->value) {
-                $assignment = $asset->assignment;
-                if ($assignment) {
-                    $assignment->delete();
-                }
-            }
+            // if ($dto->status !== AssetStatus::ASSIGNED->value) {
+            //     $assignment = $asset->assignment;
+            //     if ($assignment) {
+            //         $assignment->delete();
+            //     }
+            // }
 
 
             AssetHistory::create([
@@ -182,7 +195,12 @@ class AssetService
             'brand' => 'Marca',
             'model' => 'Modelo',
             'serial_number' => 'Número de serie',
+            'processor' => 'Procesador',
+            'ram' => 'RAM',
+            'storage' => 'Almacenamiento',
             'purchase_date' => 'Fecha de compra',
+            'phone' => 'Teléfono',
+            'imei' => 'IMEI',
             'warranty_expiration' => 'Vencimiento de garantía',
             'is_new' => 'Es nuevo',
         ];
@@ -219,7 +237,7 @@ class AssetService
                 ['asset_id' => $dto->asset_id],
                 [
                     'assigned_to_id' => $dto->assigned_to_id,
-                    'assigned_at' => now(),
+                    'assigned_at' => $dto->assign_date,
                     'comment' => $dto->comment,
                 ]
             );
@@ -236,4 +254,112 @@ class AssetService
 
         });
     }
+
+    public function devolveAsset(int $assetId)
+    {
+        DB::transaction(function () use ($assetId) {
+
+            $asset = Asset::find($assetId);
+            if (!$asset) {
+                throw new NotFoundHttpException('No se encontró el activo');
+            }
+
+            $asset->status = AssetStatus::AVAILABLE->value;
+            // $asset->assigned_to_id = null;
+            $asset->save();
+
+            $assignment = $asset->assignment;
+            if ($assignment) {
+                $assignment->delete();
+            }
+
+            AssetHistory::create([
+                'action' => "Activo devuelto y disponible",
+                'asset_id' => $assetId,
+                'performed_by' => auth()->user()->staff_id,
+                'performed_at' => now(),
+            ]);
+        });
+    }
+
+
+    public function generateLaptopAssignmentDocument(
+        int $assetId
+    ) {
+        $asset = Asset::find($assetId);
+        if (!$asset) {
+            throw new NotFoundHttpException('No se encontró el activo');
+        }
+
+        $asset->load('assignment.assignedTo');
+
+        if (!$asset->assignment || !$asset->assignment->assignedTo) {
+            throw new BadRequestException('El activo no está asignado a ningún usuario');
+        }
+
+        Storage::disk('public')->makeDirectory('documents');
+
+
+        $template = new TemplateProcessor(storage_path('app/templates/cargo-laptop.docx'));
+
+        $template->setValue('assign_date', $asset->assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
+        $template->setValue('fullname', strtoupper($asset->assignment->assignedTo->full_name));
+        $template->setValue('dni', $asset->assignment->assignedTo->dni ?? 'N/A');
+        $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
+        $template->setValue('brand', strtoupper($asset->brand));
+        $template->setValue('model', strtoupper($asset->model));
+        $template->setValue('serial_number', $asset->serial_number);
+        $template->setValue('processor', strtoupper($asset->processor ?? 'N/A'));
+        $template->setValue('ram', strtoupper($asset->ram ?? 'N/A'));
+        $template->setValue('storage', strtoupper($asset->storage ?? 'N/A'));
+
+        $template->setValue('comment', $asset->assignment->comment ?? 'N/A');
+
+
+        $fileName = 'cargo_laptop_' . strtolower(str_replace(' ', '_', $asset->assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
+        $path = storage_path('app/public/documents/' . $fileName);
+        $template->saveAs($path);
+
+        return $path;
+    }
+
+    public function generateCellphoneAssignmentDocument(
+        int $assetId
+    ) {
+        $asset = Asset::find($assetId);
+        if (!$asset) {
+            throw new NotFoundHttpException('No se encontró el activo');
+        }
+
+        $asset->load('assignment.assignedTo');
+        if (!$asset->assignment || !$asset->assignment->assignedTo) {
+            throw new BadRequestException('El activo no está asignado a ningún usuario');
+        }
+
+        Storage::disk('public')->makeDirectory('documents');
+
+        $template = new TemplateProcessor(storage_path('app/templates/cargo-celular.docx'));
+
+
+        // 24/11/2025
+        $template->setValue('assign_date', $asset->assignment->assigned_at->format('d/m/Y'));
+        $template->setValue('fullname', strtoupper($asset->assignment->assignedTo->full_name));
+        $template->setValue('dni', $asset->assignment->assignedTo->dni ?? 'N/A');
+        $template->setValue('department', strtoupper($asset->assignment->assignedTo->department->name ?? 'N/A'));
+        $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
+        $template->setValue('brand', strtoupper($asset->brand));
+        $template->setValue('model', strtoupper($asset->model));
+        $template->setValue('comment', $asset->assignment->comment ?? 'N/A');
+        $template->setValue('phone', $asset->phone ?? 'N/A');
+        $template->setValue('imei', $asset->imei ?? 'N/A');
+
+        $fileName = 'cargo_celular_' . strtolower(str_replace(' ', '_', $asset->assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
+        $path = storage_path('app/public/documents/' . $fileName);
+
+        $template->saveAs($path);
+
+        return $path;
+
+    }
+
 }

@@ -44,7 +44,7 @@ class User extends Authenticatable
 
     public function department()
     {
-        return $this->belongsTo(Department::class, 'dept_id', 'id');
+        return $this->belongsTo(Department::class, 'dept_id');
     }
 
     // protected $hidden = [

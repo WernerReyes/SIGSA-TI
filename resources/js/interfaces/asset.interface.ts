@@ -12,8 +12,12 @@ export interface AssetType {
 export interface Asset {
     id: number;
     type_id: number;
+    color?: string;
     model: string;
     serial_number: string;
+    processor: string;
+    ram: string;
+    storage: string;
     purchase_date: string;
     warranty_expiration: string;
     status: AssetStatus;

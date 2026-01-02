@@ -22,11 +22,13 @@ class AssetController extends Controller
         $types = $assetService->getTypes();
         $assets = $assetService->getAll();
         $users = $userService->getAllUsers();
-        ds($assets->toArray());
+        $TIUsers = $userService->getTIDepartmentUsers();
+        
         return Inertia::render('Assets', [
             'types' => $types,
             'assets' => $assets,
             'users' => $users,
+            'TIUsers' => $TIUsers,
         ]);
     }
 
@@ -110,6 +112,37 @@ class AssetController extends Controller
                 return back()->withErrors(['error' => $e->getMessage()]);
             }
             return back()->withErrors(['error' => 'Ocurrió un error al asignar el activo. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
+    public function generateLaptopAssignmentDocument(int $assetId, AssetService $assetService)
+    {
+        try {
+            $filePath = $assetService->generateLaptopAssignmentDocument($assetId);
+
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al generar el documento. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
+    public function generateCellphoneAssignmentDocument(int $assetId, AssetService $assetService)
+    {
+        try {
+            $filePath = $assetService->generateCellphoneAssignmentDocument($assetId);
+            ds($filePath);
+
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al generar el documento. Por favor, inténtelo de nuevo.']);
         }
     }
 }

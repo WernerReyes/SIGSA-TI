@@ -13,11 +13,17 @@ return new class extends Migration
     {
         Schema::create('assets_assignments', function (Blueprint $table) {
             $table->id();
+            
             $table->date( 'assigned_at');
             $table->date( 'returned_at')->nullable();
             $table->text( 'comment')->nullable();
 
             $table->foreignId('asset_id')->unique()->references('id')->on('assets');
+
+            
+            $table->unsignedInteger( 'responsible_id' )->nullable();
+            $table->foreign('responsible_id')->references('staff_id')->on('ost_staff');
+            $table->index('responsible_id');
 
             $table->unsignedInteger( 'assigned_to_id' );
             $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');

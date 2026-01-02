@@ -1,4 +1,4 @@
-import { Department } from "./department.interace";
+import { Department } from './department.interace';
 
 export interface User {
     staff_id: number;
@@ -50,3 +50,4 @@ export interface User {
     activo: number;
     department?: Department;
 }
+

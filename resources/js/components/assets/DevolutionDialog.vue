@@ -8,7 +8,7 @@
     }">
         <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
             <DialogHeader>
-                <DialogTitle>Asignar Equipo</DialogTitle>
+                <DialogTitle>Devolver Equipo</DialogTitle>
             </DialogHeader>
 
 
@@ -18,20 +18,18 @@
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
 
                     <div class="flex gap-2 flex-wrap">
-                        <div v-if="asset?.assignment"
-                            class="flex flex-col w-fit gap-2 mt-2 mx-auto">
-                           
+
+                        <div v-if="asset?.assignment?.responsible_id" class="flex flex-col w-fit gap-2 mt-2 mx-auto">
+
                             <div class="flex items-center gap-2">
 
                                 <Button variant="secondary" size="sm" @click="handleDownloadCargo">
                                     <Download /> Cargo
-                                    <Laptop />
+                                    <MonitorSmartphone />
                                 </Button>
 
-                                <Button variant="secondary" size="sm" @click="handleDownloadPhoneCargo">
-                                    <Download /> Cargo
-                                    <Smartphone />
-                                </Button>
+
+
                             </div>
 
                             <div class="w-48 mx-auto">
@@ -46,32 +44,6 @@
 
                         </div>
 
-                        <!-- <div v-if="asset?.assignment"
-                            class="flex flex-col w-fit gap-2 mt-2 mx-auto border p-2 rounded-md">
-                            <span class="text-sm ">Devolución:</span>
-                            <div class="flex items-center gap-2">
-
-                                <Button variant="secondary" size="sm" @click="handleDownloadCargo">
-                                    <Download /> Cargo
-                                    <MonitorSmartphone />
-                                </Button>
-                                
-
-
-                            </div>
-
-                            <div class="w-48 mx-auto">
-
-                                <FileUpload label="Subir documento firmado" accept="application/pdf" @error="(msg) => {
-                                    console.log('Upload error:', msg);
-                                }" @update:file="(file) => {
-                                    console.log('Uploaded file:', file);
-                                }" />
-
-                                </div>
-
-                        </div> -->
-
                     </div>
 
 
@@ -82,18 +54,18 @@
                 <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
 
                     <FieldGroup>
-                        <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
+                        <VeeField name="responsible_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
+                                <FieldLabel for="responsible_id">Responsable</FieldLabel>
                                 <Select v-bind="componentField">
-                                    <SelectTrigger id="assigned_to_id">
-                                        <SelectValue placeholder="Seleccionar empleado" />
+                                    <SelectTrigger id="responsible_id">
+                                        <SelectValue placeholder="Seleccionar responsable" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectLabel>Empleados</SelectLabel>
+                                            <SelectLabel>Responsable (TI)</SelectLabel>
 
-                                            <SelectItem v-for="user in users" :key="user.staff_id"
+                                            <SelectItem v-for="user in TIUsers" :key="user.staff_id"
                                                 :value="user.staff_id">
                                                 {{ user.full_name }}
                                             </SelectItem>
@@ -107,9 +79,9 @@
 
 
                     <FieldGroup>
-                        <VeeField name="assign_date" v-slot="{ componentField, errors }">
+                        <VeeField name="returned_date" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="assign_date">Fecha de Entrega</FieldLabel>
+                                <FieldLabel for="returned_date">Fecha de Devolución</FieldLabel>
                                 <Popover v-slot="{ close }">
                                     <PopoverTrigger as-child>
                                         <Button variant="outline" class="w-48 justify-between font-normal">
@@ -158,7 +130,7 @@
                     || Object.keys(errors).length > 0
                     " type="submit" form="dialogForm">
                     <Spinner v-if="isSubmitting" />
-                    {{ isSubmitting ? 'Asignando...' : 'Asignar Equipo' }}
+                    {{ isSubmitting ? 'Devolviendo...' : 'Devolver Equipo' }}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -169,9 +141,11 @@
 <script setup lang="ts">
 
 import { useForm, Field as VeeField } from 'vee-validate';
+import { computed, ref, watch } from 'vue';
 import z from 'zod';
-import { computed, ref, watch, h } from 'vue';
 
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
     Dialog,
     DialogContent,
@@ -185,6 +159,7 @@ import {
     FieldGroup,
     FieldLabel
 } from '@/components/ui/field';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -193,26 +168,26 @@ import {
     SelectLabel,
     SelectTrigger,
     SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+} from '@/components/ui/select';
 
-import { type Asset } from '@/interfaces/asset.interface';
-import { type User } from '@/interfaces/user.interface';
-import { router, usePage } from '@inertiajs/vue3';
-import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
-import { ChevronDownIcon, Download, Laptop, Phone, Smartphone, MonitorSmartphone, Upload } from 'lucide-vue-next';
 import { Textarea } from '@/components/ui/textarea';
-import { toTypedSchema } from '@vee-validate/zod';
+import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { type User } from '@/interfaces/user.interface';
+import { usePage } from '@inertiajs/vue3';
+import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
+import { toTypedSchema } from '@vee-validate/zod';
+import { isBefore, parseISO } from 'date-fns';
+import { ChevronDownIcon, Download, MonitorSmartphone } from 'lucide-vue-next';
 import FileUpload from '../FileUpload.vue';
 
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
-const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
+const TIUsers = computed<User[]>(() => {
+    return (usePage().props.TIUsers || []) as User[];
+});
 
 const assign = computed<AssetAssignment | null>(() => {
     return asset.value?.assignment || null;
@@ -222,18 +197,24 @@ const isSubmitting = ref(false);
 
 const formSchema = toTypedSchema(
     z.object({
-        assigned_to_id: z.number({ invalid_type_error: 'Seleccione un empleado', required_error: 'Seleccione un empleado' }),
-        assign_date: z.instanceof(CalendarDate, {
+        responsible_id: z.number({ invalid_type_error: 'Seleccione un responsable', required_error: 'Seleccione un responsable' }),
+        returned_date: z.instanceof(CalendarDate, {
             message: 'Seleccione una fecha de entrega',
-        }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+        }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())).refine((date) => {
+            const assignedAtDate = assign.value ? parseISO(assign.value.assigned_at.split('T')[0]) : null;
+
+            return isBefore(assignedAtDate!, date);
+        }, {
+            message: 'La fecha de devolución debe ser posterior a la fecha de asignación y no puede ser una fecha pasada',
+        }),
         comment: z.string().optional(),
     })
 );
 
 const { handleSubmit, errors, setValues } = useForm({
     initialValues: {
-        assigned_to_id: undefined,
-        assign_date: today(getLocalTimeZone()),
+        responsible_id: undefined,
+        returned_date: today(getLocalTimeZone()),
         comment: '',
     },
     validationSchema: formSchema,
@@ -244,8 +225,8 @@ const { handleSubmit, errors, setValues } = useForm({
 watch(assign, (assignment) => {
     if (assignment) {
         setValues({
-            assigned_to_id: assignment.assigned_to_id,
-            assign_date: parseDate(assignment.assigned_at.split('T')[0]),
+            responsible_id: assignment.responsible_id || undefined,
+            returned_date: parseDate(assignment.assigned_at.split('T')[0]),
             comment: assignment.comment || '',
         });
     }
@@ -255,20 +236,20 @@ watch(assign, (assignment) => {
 const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
-    router.post('/assets/assign', {
-        asset_id: asset.value?.id,
-        assigned_to_id: values.assigned_to_id,
-        assign_date: values.assign_date,
-        comment: values.comment,
-    }, {
-        onFinish: () => {
-            isSubmitting.value = false;
-        },
-        onSuccess: () => {
-            open.value = false;
-            asset.value = null;
-        }
-    });
+    // router.post('/assets/assign', {
+    //     asset_id: asset.value?.id,
+    //     responsible_id: values.responsible_id,
+    //     returned_date: values.returned_date,
+    //     comment: values.comment,
+    // }, {
+    //     onFinish: () => {
+    //         isSubmitting.value = false;
+    //     },
+    //     onSuccess: () => {
+    //         open.value = false;
+    //         asset.value = null;
+    //     }
+    // });
 };
 
 const handleDownloadCargo = () => {

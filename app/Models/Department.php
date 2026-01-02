@@ -8,7 +8,6 @@ class Department extends Model
 {
     //
     protected $table = 'ost_department';
-    protected $primaryKey = 'id';
 
     public function users() {
         return $this->hasMany(User::class, 'dept_id', 'id');

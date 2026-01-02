@@ -1,4 +1,4 @@
-import type { User } from "@/types";
+import type { User } from '@/types';
 
 export interface Department {
     id: number;
@@ -20,4 +20,8 @@ export interface Department {
     users: Array<User>;
     updated: Date;
     created: Date;
+}
+
+export enum DepartmentAllowed {
+    SYSTEM_TI = 11,
 }

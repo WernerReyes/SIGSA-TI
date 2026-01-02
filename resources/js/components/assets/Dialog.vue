@@ -71,10 +71,10 @@
                     </FieldGroup>
 
                     <FieldGroup>
-                        <VeeField name="status" v-slot="{ componentField, errors }">
+                        <VeeField name="color" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel>Estado</FieldLabel>
-                                <Select v-bind="componentField">
+                                <FieldLabel>Color</FieldLabel>
+                                <!-- <Select v-bind="componentField">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccionar" />
                                     </SelectTrigger>
@@ -86,7 +86,8 @@
                                             <Badge :class="status.bg">{{ status.label }}</Badge>
                                         </SelectItem>
                                     </SelectContent>
-                                </Select>
+                                </Select> -->
+                                <Input id="color" placeholder="Ingresa un color (EJ: Rojo, Azul)" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -117,38 +118,73 @@
 
 
                 <!-- <div class="grid gap-4 items-center"> -->
-
-                <FieldGroup>
-                    <VeeField name="serial_number" v-slot="{ componentField, errors }">
-                        <Field :data-invalid="!!errors.length">
-                            <FieldLabel for="serial_number">Número de Serie</FieldLabel>
-                            <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
-                            <FieldError v-if="errors.length" :errors="errors" />
-                        </Field>
-                    </VeeField>
-                </FieldGroup>
-
-                <!-- <FieldGroup v-if="values.status === AssetStatus.ASSIGNED">
-                        <VeeField name="assigned_to" v-slot="{ componentField, errors }">
+                <div class="grid gap-4 items-center md:grid-cols-2">
+                    <FieldGroup>
+                        <VeeField name="serial_number" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel>Asignar a Usuario</FieldLabel>
-                                <Select v-bind="componentField">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar usuario" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Sin asignar</SelectItem>
-                                        <SelectItem v-for="user in users" :key="user.staff_id" :value="user.staff_id">
-                                            {{ user.full_name }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <FieldLabel for="serial_number">Número de Serie</FieldLabel>
+                                <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
-                    </FieldGroup> -->
-                <!-- </div> -->
+                    </FieldGroup>
 
+                    <FieldGroup>
+                        <VeeField name="processor" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="processor">Procesador</FieldLabel>
+                                <Input id="processor" placeholder="EJ: Intel Core i7-10750H" v-bind="componentField" />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+                </div>
+
+
+                <div class="grid gap-4 items-center md:grid-cols-2">
+                    <FieldGroup>
+                        <VeeField name="ram" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="ram">Memoria RAM</FieldLabel>
+                                <Input id="ram" placeholder="EJ: 16GB DDR4" v-bind="componentField" />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+
+                    <FieldGroup>
+                        <VeeField name="storage" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="storage">Almacenamiento</FieldLabel>
+                                <Input id="storage" placeholder="EJ: 512GB SSD" v-bind="componentField" />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+                </div>
+
+
+                <div class="grid gap-4 items-center md:grid-cols-2">
+                    <FieldGroup>
+                        <VeeField name="phone" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="phone">Número de Teléfono</FieldLabel>
+                                <Input id="phone" placeholder="EJ: +1234567890" v-bind="componentField" />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+
+                    <FieldGroup>
+                        <VeeField name="imei" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="imei">IMEI</FieldLabel>
+                                <Input id="imei" placeholder="EJ: 356789012345678" v-bind="componentField" />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+                </div>
 
                 <div class="grid gap-4 items-center md:grid-cols-2">
 
@@ -226,16 +262,11 @@
 
                         </VeeField>
                     </FieldGroup>
-
-
                 </div>
 
             </form>
 
             <DialogFooter>
-
-
-
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0
                     " type="submit" form="dialogForm">
@@ -327,10 +358,13 @@ watch(() => openEditor.value, (editor) => {
         open.value = true;
         setValues({
             name: newAsset.name,
-            status: newAsset.status,
+            color: newAsset.color,
             brand: newAsset.brand,
             model: newAsset.model,
             serial_number: newAsset.serial_number,
+            processor: newAsset.processor,
+            ram: newAsset.ram,
+            storage: newAsset.storage,
             type_id: newAsset.type_id,
             purchase_date: parseDate(
                 newAsset.purchase_date.split('T')[0]
@@ -338,6 +372,7 @@ watch(() => openEditor.value, (editor) => {
             warranty_expiration: parseDate(
                 newAsset.warranty_expiration.split('T')[0]
             ),
+            is_new: Boolean(newAsset.is_new),
             // assigned_to: newAsset.assigned_to_id || undefined,
         });
     } else {
@@ -351,18 +386,18 @@ const formSchema = toTypedSchema(z.object({
     name: z.string({
         message: 'El nombre es obligatorio'
     }).min(1, 'El nombre es obligatorio'),
-    status: z.nativeEnum(
-        AssetStatus,
-        {
-            errorMap: () => ({ message: 'El estado del activo es obligatorio' })
-        }
-    ),
+    color: z.string().optional().nullable(),
     type_id: z.number({
         message: 'El tipo de activo es obligatorio'
     }),
     brand: z.string().min(1, 'La marca es obligatoria'),
-    model: z.string().min(1, 'El modelo es obligatorio'),
-    serial_number: z.string().min(1, 'El número de serie es obligatorio'),
+    model: z.string().optional().nullable(),
+    serial_number: z.string().optional().nullable(),
+    processor: z.string().optional().nullable(),
+    ram: z.string().optional().nullable(),
+    storage: z.string().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    imei: z.string().optional().nullable(),
     purchase_date: z.instanceof(CalendarDate).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
     warranty_expiration: z.instanceof(CalendarDate).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
     is_new: z.boolean().optional().default(true),
@@ -374,13 +409,18 @@ const formSchema = toTypedSchema(z.object({
 
 const initialFormValues = {
     name: '',
-    status: undefined,
+    color: '',
     brand: '',
     model: '',
     serial_number: '',
     type_id: undefined,
     purchase_date: today(getLocalTimeZone()),
     warranty_expiration: today(getLocalTimeZone()),
+    processor: '',
+    ram: '',
+    storage: '',
+    phone: '',
+    imei: '',
     is_new: true,
     assigned_to: undefined,
 };
@@ -393,6 +433,8 @@ const { handleSubmit, handleReset, errors, values, setValues } = useForm({
 
 function onSubmit(values: any) {
     isSubmitting.value = true;
+
+    console.log('Submitting form with values:', values);
 
     if (currentAsset.value) {
         router.put('/assets', {
@@ -409,6 +451,7 @@ function onSubmit(values: any) {
         })
         return;
     }
+    
 
     router.post('/assets', values, {
         onSuccess: () => {

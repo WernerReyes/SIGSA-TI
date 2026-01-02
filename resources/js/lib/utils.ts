@@ -32,9 +32,3 @@ export function valueUpdater<T extends Updater<any>>(
             : updaterOrValue;
 }
 
-export function getCurrAssign(assignments: AssetAssignment[]) {
-    if (assignments.length === 0) {
-        return null;
-    }
-    return assignments.filter((a) => a.current_owner)[0] || null;
-}

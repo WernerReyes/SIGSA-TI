@@ -6,8 +6,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
 import AuthBase from '@/layouts/AuthLayout.vue';
 
-import { Form } from '@inertiajs/vue3';
-import { toast, Toaster } from 'vue-sonner';
+import { Form, Head } from '@inertiajs/vue3';
+import { Toaster } from 'vue-sonner';
 import 'vue-sonner/style.css';
 
 const { appearance } = useAppearance();
@@ -19,22 +19,17 @@ const { appearance } = useAppearance();
     <Toaster position="top-right" :theme="appearance" :closeButton="true" closeButtonPosition="top-right" />
     <AuthBase title="Iniciar sesión" description="Ingresa tus credenciales para acceder a tu cuenta">
 
-        <Head title="Log in" />
+        <Head title="Login" />
 
-        <div class="mb-4 text-center text-sm font-medium text-green-600">
-
-        </div>
-
-        <!-- v-bind="store.form()" -->
-        <!-- v-bind:action="" -->
+        
         <Form action="/login" :reset-on-success="['password']" method="post" class="flex flex-col gap-6"
         
-            v-slot="{ errors, processing }" @error="toast.error($event.username)">
+            v-slot="{ processing }">
             <div class="grid gap-6">
                 <div class="grid gap-2">
                     <Label for="email">Email address</Label>
                     <Input id="email" type="text" name="username" required autofocus :tabindex="1"
-                        default-value="isaac.ramos" autocomplete="username" placeholder="Email, DNI or Username" />
+                        default-value="isaac.ramos" autocomplete="username" placeholder="Correo, DNI o Usuario" />
 
                 </div>
 

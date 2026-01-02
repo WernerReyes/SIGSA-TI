@@ -15,10 +15,16 @@ return new class extends Migration
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('color')->nullable();
             $table->enum('status', AssetStatus::values());
             $table->string('brand')->nullable();
             $table->string('model')->nullable();
             $table->string('serial_number')->nullable();
+            $table->string('processor')->nullable();
+            $table->string('ram')->nullable();
+            $table->string('storage')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('imei')->nullable();
             $table->date('purchase_date')->nullable();
             $table->date('warranty_expiration')->nullable();
             $table->boolean('is_new')->default(true);

@@ -25,10 +25,16 @@ class StoreAssetRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'type_id' => ['exists:assets_type,id'],
-            'status' => ['required', 'in:' . implode(',', AssetStatus::values([AssetStatus::ASSIGNED->value]))],
+            // 'status' => ['required', 'in:' . implode(',', AssetStatus::values([AssetStatus::ASSIGNED->value]))],
+            'color' => ['nullable', 'string', 'max:100'],
             'brand' => ['nullable', 'string', 'max:255'],
             'model' => ['nullable', 'string', 'max:255'],
             'serial_number' => ['nullable', 'string', 'max:255'],
+            'processor' => ['nullable', 'string', 'max:255'],
+            'ram' => ['nullable', 'string', 'max:255'],
+            'storage' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'imei' => ['nullable', 'string', 'max:255'],
             'purchase_date' => ['nullable', 'date'],
             'warranty_expiration' => ['nullable', 'date'],
             'is_new' => ['boolean'],
@@ -43,7 +49,7 @@ class StoreAssetRequest extends FormRequest
     {
         return [
             'type_id.exists' => 'El tipo de activo seleccionado no es válido.',
-            'status.in' => 'El estado del activo seleccionado no es válido.',
+            // 'status.in' => 'El estado del activo seleccionado no es válido.',
             
             // Otros mensajes personalizados...
         ];
