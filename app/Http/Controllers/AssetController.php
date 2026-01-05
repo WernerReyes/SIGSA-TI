@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
+use App\DTOs\Asset\UploadDeliveryRecordDto;
+use App\Enums\Asset\AssetStatus;
 use App\Http\Requests\Asset\AssignAssetRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
+use App\Http\Requests\asset\UploadDeliveryRecord;
+use App\Http\Requests\asset\UploadDeliveryRecordRequest;
+use App\Models\AssetAssignment;
 use App\Services\AssetService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
@@ -23,7 +28,8 @@ class AssetController extends Controller
         $assets = $assetService->getAll();
         $users = $userService->getAllUsers();
         $TIUsers = $userService->getTIDepartmentUsers();
-        
+
+
         return Inertia::render('Assets', [
             'types' => $types,
             'assets' => $assets,
@@ -99,10 +105,30 @@ class AssetController extends Controller
         }
     }
 
+    public function changeAssetStatus(Request $request, AssetService $assetService)
+    {
+        $assetId = $request->input('asset_id');
+        $newStatus = $request->input('status');
+        if (!in_array($newStatus, AssetStatus::values())) {
+            return back()->withErrors(['error' => 'Estado de activo inválido proporcionado.']);
+        }
+
+        try {
+            $assetService->changeAssetStatus($assetId, $newStatus);
+            return back()->with('success', 'Estado del activo actualizado correctamente.');
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al actualizar el estado del activo. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
     public function assignAsset(AssignAssetRequest $request, AssetService $assetService)
     {
         $validated = $request->validated();
-        $dto = AssignAssetDto::fromArray($validated);   
+        $dto = AssignAssetDto::fromArray($validated);
         try {
             $assetService->assignAsset($dto);
             return back()->with('success', 'Activo asignado correctamente');
@@ -138,11 +164,28 @@ class AssetController extends Controller
 
             return response()->download($filePath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
-            ds($e->getMessage());
+            ds($e->getMessage(), $e->getCode());
             if ($e->getCode() !== 500) {
                 return back()->withErrors(['error' => $e->getMessage()]);
             }
             return back()->withErrors(['error' => 'Ocurrió un error al generar el documento. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
+
+    public function uploadDeliveryRecord(UploadDeliveryRecordRequest $request, AssetAssignment $assignment, AssetService $assetService)
+    {
+        $validated = $request->validated();
+        $dto = UploadDeliveryRecordDto::fromArray($validated, $assignment);
+        try {
+            $file_url = $assetService->uploadDeliveryRecord($dto);
+            return back()->with('success', 'Registro de entrega subido correctamente.')->with('file_url', $file_url);
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al subir el registro de entrega. Por favor, inténtelo de nuevo.']);
         }
     }
 }

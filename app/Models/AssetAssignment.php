@@ -31,4 +31,14 @@ class AssetAssignment extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to_id');
     }
+
+    public function deliveryRecord()
+    {
+        return $this->hasOne(DeliveryRecord::class, 'assignment_id');
+    }
+
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class, 'asset_id');
+    }
 }

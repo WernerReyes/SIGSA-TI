@@ -14,12 +14,14 @@ class AssetHistory extends Model
     protected $fillable = [
         'action',
         'asset_id',
+        'description',
         'performed_by',
         'performed_at',
+        'related_assignment_id',
     ];
 
 
-    public function performedBy()
+    public function performer()
     {
         return $this->belongsTo(User::class, 'performed_by', 'staff_id');
     }

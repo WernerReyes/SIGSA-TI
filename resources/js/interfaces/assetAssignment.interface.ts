@@ -1,3 +1,4 @@
+import {type DeliveryRecord } from './deliveryRecord.interface';
 import { type User } from './user.interface';
 
 export interface AssetAssignment {
@@ -11,4 +12,5 @@ export interface AssetAssignment {
 
     comment?: string;
     assigned_to?: User;
+    delivery_record?: DeliveryRecord;
 }

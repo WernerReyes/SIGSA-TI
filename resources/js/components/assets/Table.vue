@@ -121,10 +121,16 @@
                             <MonitorSmartphone />
                             Asignar
                         </ContextMenuItem>
-                        <ContextMenuItem v-if="activeRow?.assignment" @click="openDevolution = true">
+                        <ContextMenuItem v-if="activeRow?.current_assignment" @click="openDevolution = true">
                             <MonitorSmartphone />
                             Devolver
                         </ContextMenuItem>
+                        <ContextMenuItem @click="openHistory = true">
+                            <History />
+                            Ver historial
+                        </ContextMenuItem>
+
+
 
                         <!-- <ContextMenuItem @click="changeStatus = true">Cambiar estado</ContextMenuItem> -->
 
@@ -175,6 +181,7 @@
     <StatusDialog v-model:open="changeStatus" :asset="activeRow" />
     <AssignDialog v-model:open="openAssign" v-model:asset="activeRow" />
     <DevolutionDialog v-model:open="openDevolution" v-model:asset="activeRow" />
+    <HistoryDialog v-model:open="openHistory" v-model:asset="activeRow" />
 
 </template>
 
@@ -228,13 +235,14 @@ import { valueUpdater } from '@/lib/utils';
 import { type Asset, AssetStatus, assetStatusOptions, AssetType, statusOp } from '@/interfaces/asset.interface';
 import { usePage } from '@inertiajs/vue3';
 import { format, isAfter, parseISO } from 'date-fns';
-import { ChevronDown, ChevronLeftIcon, Eye, MonitorSmartphone, Pencil, ChevronRightIcon } from 'lucide-vue-next';
+import { ChevronDown, ChevronLeftIcon, Eye, MonitorSmartphone, Pencil, ChevronRightIcon, History } from 'lucide-vue-next';
 import { computed, h, ref } from 'vue';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
 import DialogDetails from './DialogDetails.vue';
 import StatusDialog from './StatusDialog.vue';
+import HistoryDialog from './HistoryDialog.vue';
 
 
 const { assets } = defineProps<{ assets: Asset[] }>()
@@ -246,6 +254,7 @@ const openEdit = ref(false);
 const changeStatus = ref(false);
 const openAssign = ref(false);
 const openDevolution = ref(false);
+const openHistory = ref(false);
 
 const pagination = ref({
     pageIndex: 0,
@@ -326,12 +335,12 @@ const columns: ColumnDef<Asset>[] = [
     },
     {
 
-        accessorFn: row => row?.assignment?.assigned_to ? row.assignment.assigned_to.full_name : 'Sin asignar',
+        accessorFn: row => row?.current_assignment?.assigned_to ? row.current_assignment.assigned_to.full_name : 'Sin asignar',
         id: 'assigned_to',
         header: 'Asignado a',
         cell: info => {
 
-            const assignedTo = info.row.original.assignment?.assigned_to;
+            const assignedTo = info.row.original.current_assignment?.assigned_to;
             if (assignedTo) {
                 return info.getValue();
             } else {

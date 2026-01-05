@@ -23,8 +23,6 @@ class AuthService
             ]);
         }
 
-        ds($user->getAttributes());
-
         Auth::login($user);
 
         return redirect()->intended('/dashboard');

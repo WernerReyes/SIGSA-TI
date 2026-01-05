@@ -1,5 +1,5 @@
 import { type AssetAssignment } from "./assetAssignment.interface";
-import { User } from "./user.interface";
+import { type AssetHistory } from "./assetHistory.interface";
 
 
 export interface AssetType {
@@ -29,7 +29,8 @@ export interface Asset {
     type?: AssetType;
     is_new: boolean;
     // assigned_to_id?: number | null;
-    assignment?: AssetAssignment;
+    current_assignment?: AssetAssignment;
+    histories?: AssetHistory[];
 }
 
 export enum AssetStatus {

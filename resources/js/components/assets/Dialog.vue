@@ -434,7 +434,6 @@ const { handleSubmit, handleReset, errors, values, setValues } = useForm({
 function onSubmit(values: any) {
     isSubmitting.value = true;
 
-    console.log('Submitting form with values:', values);
 
     if (currentAsset.value) {
         router.put('/assets', {

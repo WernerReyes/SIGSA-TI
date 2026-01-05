@@ -4,12 +4,16 @@ namespace App\Services;
 use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
+use App\DTOs\Asset\UploadDeliveryRecord;
+use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Asset\AssetStatus;
+use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
 use App\Models\AssetType;
 
+use App\Models\DeliveryRecord;
 use DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -60,8 +64,11 @@ class AssetService
     {
         return Asset::with(
             'type:id,name',
-            'assignment.assignedTo:staff_id,firstname,lastname,dept_id',
-            'assignment.assignedTo.department:id,name',
+            'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+            'currentAssignment.assignedTo.department:id,name',
+            'currentAssignment.deliveryRecord',
+            'histories',
+            'histories.performer:staff_id,firstname,lastname'
         )->get();
     }
 
@@ -91,7 +98,8 @@ class AssetService
             ]);
 
             AssetHistory::create([
-                'action' => 'Creación de activo',
+                'action' => AssetHistoryAction::CREATED->value,
+                'description' => 'Equipo registrado en el sistema',
                 'asset_id' => $asset->id,
                 'performed_by' => auth()->user()->staff_id,
                 'performed_at' => now(),
@@ -114,34 +122,7 @@ class AssetService
 
 
         $asset = DB::transaction(function () use ($dto, $asset) {
-
-
-            $fieldChanges = [];
-            foreach ($dto as $key => $value) {
-                if ($key === 'id') {
-                    continue;
-                }
-                $formatDateFields = ['purchase_date', 'warranty_expiration'];
-                if (in_array($key, $formatDateFields)) {
-                    $value = $value ? date('Y-m-d', strtotime($value)) : null;
-                    $assetValue = $asset->$key ? date('Y-m-d', strtotime($asset->$key)) : null;
-                    if ($value !== null && $assetValue != $value) {
-                        $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$assetValue}' a '$value'";
-                    }
-                    continue;
-                }
-
-                if ($key === 'status') {
-                    if ($value !== null && $asset->$key != $value) {
-                        $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '" . $this->fromStatusToLabel($asset->$key) . "' a '" . $this->fromStatusToLabel($value) . "'";
-                    }
-                    continue;
-                }
-
-                if ($value !== null && $asset->$key != $value) {
-                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$asset->$key}' a '$value'";
-                }
-            }
+            $description = $this->fieldChangesToDescription($dto, $asset);
 
             $asset->update([
                 'name' => $dto->name ?? $asset->name,
@@ -161,16 +142,10 @@ class AssetService
                 'is_new' => $dto->is_new ?? $asset->is_new,
             ]);
 
-            // if ($dto->status !== AssetStatus::ASSIGNED->value) {
-            //     $assignment = $asset->assignment;
-            //     if ($assignment) {
-            //         $assignment->delete();
-            //     }
-            // }
-
 
             AssetHistory::create([
-                'action' => 'Actualización de activo: ' . implode(', ', $fieldChanges),
+                'action' => AssetHistoryAction::UPDATED->value,
+                'description' => $description,
                 'asset_id' => $asset->id,
                 'performed_by' => auth()->user()->staff_id,
                 'performed_at' => now(),
@@ -184,6 +159,58 @@ class AssetService
 
 
         return $asset;
+    }
+
+
+    private function fieldChangesToDescription(UpdateAssetDto $dto, Asset $asset): string
+    {
+        $fieldChanges = [];
+        foreach ($dto as $key => $value) {
+            if ($key === 'id') {
+                continue;
+            }
+            $formatDateFields = ['purchase_date', 'warranty_expiration'];
+            if (in_array($key, $formatDateFields)) {
+                $value = $value ? date('Y-m-d', strtotime($value)) : null;
+                $assetValue = $asset->$key ? date('Y-m-d', strtotime($asset->$key)) : null;
+                if ($value !== null && $assetValue != $value) {
+                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$assetValue}' a '$value'";
+                }
+                continue;
+            }
+
+            // if ($key === 'status') {
+            //     if ($value !== null && $asset->$key != $value) {
+            //         $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '" . $this->fromStatusToLabel($asset->$key) . "' a '" . $this->fromStatusToLabel($value) . "'";
+            //     }
+            //     continue;
+            // }
+
+            if ($key === 'is_new') {
+                $newValueLabel = $value ? 'Sí' : 'No';
+                $assetValueLabel = $asset->$key ? 'Sí' : 'No';
+                if ($value !== null && $asset->$key != $value) {
+                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$assetValueLabel}' a '{$newValueLabel}'";
+                }
+                continue;
+            }
+
+            if ($key === 'type_id') {
+                $newType = AssetType::find($value);
+                $oldType = AssetType::find($asset->$key);
+                $newTypeName = $newType ? $newType->name : 'N/A';
+                $oldTypeName = $oldType ? $oldType->name : 'N/A';
+                if ($value !== null && $asset->$key != $value) {
+                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$oldTypeName}' a '{$newTypeName}'";
+                }
+                continue;
+            }
+
+            if ($value !== null && $asset->$key != $value) {
+                $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$asset->$key}' a '$value'";
+            }
+        }
+        return implode(', ', $fieldChanges);
     }
 
     private function fromKeyToLabel(string $key): string
@@ -221,6 +248,37 @@ class AssetService
     }
 
 
+    public function changeAssetStatus(int $assetId, string $newStatus)
+    {
+        $asset = Asset::find($assetId);
+        if (!$asset) {
+            throw new NotFoundHttpException('No se encontró el activo');
+        }
+
+        if ($asset->status === $newStatus) {
+            throw new BadRequestException('El activo ya tiene el estado proporcionado.');
+        }
+
+        if ($asset->currentAssignment) {
+            throw new BadRequestException('No se puede cambiar el estado de un activo asignado. Primero debe devolverlo.');
+        }
+
+        $oldStatus = $asset->status;
+
+        $asset->update([
+            'status' => $newStatus,
+        ]);
+
+        AssetHistory::create([
+            'action' => AssetHistoryAction::STATUS_CHANGED->value,
+            'description' => "Estado cambiado de '" . $this->fromStatusToLabel($oldStatus) . "' a '" . $this->fromStatusToLabel($newStatus) . "'",
+            'asset_id' => $asset->id,
+            'performed_by' => auth()->user()->staff_id,
+            'performed_at' => now(),
+        ]);
+    }
+
+
     public function assignAsset(AssignAssetDto $dto)
     {
 
@@ -229,25 +287,103 @@ class AssetService
 
 
             $asset = Asset::find($dto->asset_id);
-            $asset->status = AssetStatus::ASSIGNED->value;
-            // $asset->assigned_to_id = $dto->assigned_to_id;
-            $asset->save();
+            if (!$asset) {
+                throw new NotFoundHttpException('No se encontró el activo');
+            }
 
-            $assigned = AssetAssignment::updateOrCreate(
-                ['asset_id' => $dto->asset_id],
+            $assignment = $asset->currentAssignment;
+
+            // ds($assignment);
+
+            // if ($assignment && $assignment->id != $asset->id) {
+            //     throw new BadRequestException('El activo ya está asignado a un usuario, debe devolverlo antes de reasignarlo.');
+            // }
+
+        
+            // 1️⃣ Si está asignado a otro usuario → bloquear
+            if ($assignment && $assignment->assigned_to_id !== $dto->assigned_to_id) {
+                throw new BadRequestException(
+                    'El activo ya está asignado a un usuario, debe devolverlo antes de reasignarlo.'
+                );
+            }
+
+            // 2️⃣ Si existe asignación activa → posible actualización
+            if ($assignment) {
+
+                // Guardamos valores originales
+                $original = $assignment->getOriginal();
+
+                // Aplicamos cambios
+                $assignment->fill([
+                    'comment' => $dto->comment,
+                    'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
+                ]);
+
+
+
+                // 3️⃣ Si no hay cambios reales
+                if (!$assignment->isDirty()) {
+                    throw new BadRequestException('No se detectaron cambios en la asignación.');
+                }
+
+             
+
+                // Guardar
+                $assignment->save();
+
+                // 4️⃣ Construir descripción de forma correcta
+                $changes = [];
+
+                if ($assignment->wasChanged('comment')) {
+                    $changes[] = "Comentario actualizado a: {$assignment->comment}";
+                }
+
+                if ($assignment->wasChanged('assigned_at')) {
+                    $changes[] = "Fecha de asignación actualizada a: " .
+                        $assignment->assigned_at->format('d/m/Y');
+                }
+
+                $description = implode('. ', $changes);
+
+                // 5️⃣ Historial
+                AssetHistory::create([
+                    'action' => AssetHistoryAction::ASSIGNED->value,
+                    'description' => $description . " para {$assignment->assignedTo->full_name}",
+                    'asset_id' => $asset->id,
+                    'performed_by' => auth()->user()->staff_id,
+                    'performed_at' => now(),
+                    'related_assignment_id' => $assignment->id,
+                ]);
+
+                return;
+            }
+
+
+            $asset->update([
+                'status' => AssetStatus::ASSIGNED->value,
+            ]);
+
+            $assigned = AssetAssignment::create(
                 [
                     'assigned_to_id' => $dto->assigned_to_id,
                     'assigned_at' => $dto->assign_date,
                     'comment' => $dto->comment,
+                    'asset_id' => $dto->asset_id,
                 ]
             );
 
+
             AssetHistory::create([
-                'action' => "Activo asignado a {$assigned->assignedTo->full_name}",
+
+                'action' => AssetHistoryAction::ASSIGNED->value,
+                'description' => "Equipo asignado a {$assigned->assignedTo->full_name}",
                 'asset_id' => $dto->asset_id,
                 'performed_by' => auth()->user()->staff_id,
                 'performed_at' => now(),
+                'related_assignment_id' => $assigned->id,
             ]);
+
+
 
 
 
@@ -259,26 +395,34 @@ class AssetService
     {
         DB::transaction(function () use ($assetId) {
 
-            $asset = Asset::find($assetId);
-            if (!$asset) {
-                throw new NotFoundHttpException('No se encontró el activo');
+            $assignment = AssetAssignment::where('asset_id', $assetId)
+                ->whereNull('returned_at')
+                ->first();
+
+
+            if (!$assignment) {
+                throw new NotFoundHttpException('No se encontró una asignación activa para este equipo');
             }
 
-            $asset->status = AssetStatus::AVAILABLE->value;
-            // $asset->assigned_to_id = null;
-            $asset->save();
+            $assignment->update([
+                'returned_at' => now(),
+            ]);
 
-            $assignment = $asset->assignment;
-            if ($assignment) {
-                $assignment->delete();
-            }
+            Asset::where('id', $assetId)->update([
+                'status' => AssetStatus::AVAILABLE->value,
+            ]);
+
 
             AssetHistory::create([
-                'action' => "Activo devuelto y disponible",
+                'action' => AssetHistoryAction::RETURNED->value,
+                'description' => "Equipo devuelto por {$assignment->assignedTo->full_name}",
                 'asset_id' => $assetId,
                 'performed_by' => auth()->user()->staff_id,
                 'performed_at' => now(),
+                'related_assignment_id' => $assignment->id,
             ]);
+
+
         });
     }
 
@@ -291,9 +435,9 @@ class AssetService
             throw new NotFoundHttpException('No se encontró el activo');
         }
 
-        $asset->load('assignment.assignedTo');
-
-        if (!$asset->assignment || !$asset->assignment->assignedTo) {
+        $asset->load('currentAssignment.assignedTo');
+$assignment = $asset->currentAssignment;
+        if (!$assignment || !$assignment->assignedTo) {
             throw new BadRequestException('El activo no está asignado a ningún usuario');
         }
 
@@ -302,9 +446,9 @@ class AssetService
 
         $template = new TemplateProcessor(storage_path('app/templates/cargo-laptop.docx'));
 
-        $template->setValue('assign_date', $asset->assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
-        $template->setValue('fullname', strtoupper($asset->assignment->assignedTo->full_name));
-        $template->setValue('dni', $asset->assignment->assignedTo->dni ?? 'N/A');
+        $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
+        $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+        $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
         $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
         $template->setValue('brand', strtoupper($asset->brand));
         $template->setValue('model', strtoupper($asset->model));
@@ -313,10 +457,10 @@ class AssetService
         $template->setValue('ram', strtoupper($asset->ram ?? 'N/A'));
         $template->setValue('storage', strtoupper($asset->storage ?? 'N/A'));
 
-        $template->setValue('comment', $asset->assignment->comment ?? 'N/A');
+        $template->setValue('comment', $assignment->comment ?? 'N/A');
 
 
-        $fileName = 'cargo_laptop_' . strtolower(str_replace(' ', '_', $asset->assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
+        $fileName = 'cargo_laptop_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
         $path = storage_path('app/public/documents/' . $fileName);
         $template->saveAs($path);
 
@@ -331,8 +475,9 @@ class AssetService
             throw new NotFoundHttpException('No se encontró el activo');
         }
 
-        $asset->load('assignment.assignedTo');
-        if (!$asset->assignment || !$asset->assignment->assignedTo) {
+        $asset->load('currentAssignment.assignedTo');
+        $assignment = $asset->currentAssignment;
+        if (!$assignment || !$assignment->assignedTo) {
             throw new BadRequestException('El activo no está asignado a ningún usuario');
         }
 
@@ -342,24 +487,69 @@ class AssetService
 
 
         // 24/11/2025
-        $template->setValue('assign_date', $asset->assignment->assigned_at->format('d/m/Y'));
-        $template->setValue('fullname', strtoupper($asset->assignment->assignedTo->full_name));
-        $template->setValue('dni', $asset->assignment->assignedTo->dni ?? 'N/A');
-        $template->setValue('department', strtoupper($asset->assignment->assignedTo->department->name ?? 'N/A'));
+        $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
+        $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+        $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
+        $template->setValue('department', strtoupper($assignment->assignedTo->department->name ?? 'N/A'));
         $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
         $template->setValue('brand', strtoupper($asset->brand));
         $template->setValue('model', strtoupper($asset->model));
-        $template->setValue('comment', $asset->assignment->comment ?? 'N/A');
+        $template->setValue('comment', $assignment->comment ?? 'N/A');
         $template->setValue('phone', $asset->phone ?? 'N/A');
         $template->setValue('imei', $asset->imei ?? 'N/A');
 
-        $fileName = 'cargo_celular_' . strtolower(str_replace(' ', '_', $asset->assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
+        $fileName = 'cargo_celular_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
         $path = storage_path('app/public/documents/' . $fileName);
 
         $template->saveAs($path);
 
         return $path;
 
+    }
+
+
+    public function uploadDeliveryRecord(UploadDeliveryRecordDto $dto)
+    {
+        if (!$dto->assignment) {
+            throw new NotFoundHttpException('No se encontró la asignación del activo');
+        }
+
+        $recordType = $dto->is_assignment ? 'asignación' : 'devolución';
+        $description = "Constancia de {$recordType} subida para '{$dto->assignment->assignedTo->full_name}'";
+
+        $path = '';
+        if ($dto->assignment->deliveryRecord) {
+            Storage::disk('public')->delete($dto->assignment->deliveryRecord->file_path);
+
+            $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
+
+            $dto->assignment->deliveryRecord->update([
+                'file_path' => $path,
+            ]);
+
+            $description = "Constancia de {$recordType} actualizada para '{$dto->assignment->assignedTo->full_name}'";
+
+        } else {
+
+            $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
+
+            DeliveryRecord::create([
+                'file_path' => $path,
+                'assignment_id' => $dto->assignment->id,
+            ]);
+        }
+
+
+        AssetHistory::create([
+            'action' => AssetHistoryAction::DELIVERY_RECORD_UPLOADED->value,
+            'description' => $description,
+            'asset_id' => $dto->assignment->asset_id,
+            'performed_by' => auth()->user()->staff_id,
+            'performed_at' => now(),
+            'related_assignment_id' => $dto->assignment->id,
+        ]);
+
+        return Storage::disk('public')->url($path);
     }
 
 }

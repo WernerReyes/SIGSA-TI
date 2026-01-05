@@ -43,14 +43,14 @@ class Asset extends Model
         return $this->belongsTo(AssetType::class, 'type_id');
     }
 
-    public function assignment()
+    public function currentAssignment()
     {
-        return $this->hasOne(AssetAssignment::class, 'asset_id');
+        return $this->hasOne(AssetAssignment::class, 'asset_id')->whereNull('returned_at');
     }
 
     public function histories()
     {
-        return $this->hasMany(AssetHistory::class, 'asset_id');
+        return $this->hasMany(AssetHistory::class, 'asset_id')->orderBy('performed_at', 'desc');
     }
 
 }

@@ -18,9 +18,8 @@
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
 
                     <div class="flex gap-2 flex-wrap">
-                        <div v-if="asset?.assignment"
-                            class="flex flex-col w-fit gap-2 mt-2 mx-auto">
-                           
+                        <div v-if="asset?.current_assignment" class="flex flex-col w-fit gap-2 mt-2 mx-auto">
+
                             <div class="flex items-center gap-2">
 
                                 <Button variant="secondary" size="sm" @click="handleDownloadCargo">
@@ -35,11 +34,12 @@
                             </div>
 
                             <div class="w-48 mx-auto">
-
-                                <FileUpload label="Subir documento firmado" accept="application/pdf" @error="(msg) => {
-                                    console.log('Upload error:', msg);
-                                }" @update:file="(file) => {
-                                    console.log('Uploaded file:', file);
+                                
+                                <FileUpload :current-url="currentUrl" v-model:reset="resetUpload"
+                                    label="Subir documento firmado" accept="application/pdf,image/*" @error="(msg) => {
+                                        console.log('Upload error:', msg);
+                                    }" @update:file="(file) => {
+                                    handleUploadSignedDocument(file);
                                 }" />
 
                             </div>
@@ -215,10 +215,19 @@ const open = defineModel<boolean>('open');
 const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
 
 const assign = computed<AssetAssignment | null>(() => {
-    return asset.value?.assignment || null;
+    return asset.value?.current_assignment || null;
 });
 
+const url = ref('');
+
+const currentUrl = computed<string>(() => {
+    return url.value || asset.value?.current_assignment?.delivery_record?.file_url || '';
+} );
+
+
 const isSubmitting = ref(false);
+
+const resetUpload = ref(false);
 
 const formSchema = toTypedSchema(
     z.object({
@@ -271,6 +280,7 @@ const onSubmit = async (values: Record<string, any>) => {
     });
 };
 
+
 const handleDownloadCargo = () => {
     if (!asset.value) return;
     window.location.href = `/assets/generate-laptop-assignment-doc/${asset.value.id}`;
@@ -280,4 +290,23 @@ const handleDownloadPhoneCargo = () => {
     if (!asset.value) return;
     window.location.href = `/assets/generate-phone-assignment-doc/${asset.value.id}`;
 }
+
+const handleUploadSignedDocument = (file: File) => {
+    router.post(`/assets/delivery-records/${asset.value?.id}`, {
+        file: file,
+        is_assignment: true,
+    }, {
+        onSuccess: (page) => {
+            const fileUrl = page.props.flash.file_url;
+            console.log('File uploaded successfully. File URL:', fileUrl);
+            // Handle success (e.g., show a notification)
+            url.value = fileUrl;
+            resetUpload.value = true;
+        },
+        onError: (errors) => {
+            // Handle errors (e.g., show error messages)
+        }
+    });
+    // Implement upload logic here
+};
 </script>
