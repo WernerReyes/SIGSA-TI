@@ -16,15 +16,15 @@
                     <DropdownMenuCheckboxItem :disabled="isLoading" v-for="type in types" :key="type.id"
                         class="capitalize" :model-value="form.types.includes(type.id)
                             " @update:model-value="(val) => {
-                            if (val) {
-                                form.types.push(type.id);
-                            } else {
-                                const index = form.types.indexOf(type.id);
-                                if (index > -1) {
-                                    form.types.splice(index, 1);
+                                if (val) {
+                                    form.types.push(type.id);
+                                } else {
+                                    const index = form.types.indexOf(type.id);
+                                    if (index > -1) {
+                                        form.types.splice(index, 1);
+                                    }
                                 }
-                            }
-                        }">
+                            }">
                         {{ type.name }}
 
                     </DropdownMenuCheckboxItem>
@@ -182,10 +182,11 @@
                         Anterior
                     </PaginationPrevious>
                     <template v-for="(item, index) in assets.links.filter(link => +link.label)" :key="index">
-                        <PaginationItem :value="+item.label" :is-active="item.active" :disabled="isLoading" @click="!isLoading && router.visit(item.url, {
-                            preserveScroll: true,
-                            replace: true,
-                        })">
+                        <PaginationItem :value="+item.label" :is-active="item.active"
+                            :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
+                                preserveScroll: true,
+                                replace: true,
+                            })">
 
 
 
@@ -195,7 +196,7 @@
 
                     </template>
 
-                    <PaginationNext :disabled="isLoading || assets.current_page === assets.total" @click="!isLoading && router.visit(assets.next_page_url || '', {
+                    <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="!isLoading && router.visit(assets.next_page_url || '', {
                         preserveScroll: true,
                     })">
 
@@ -247,6 +248,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    //   PaginationLink,
+    PaginationNext,
+    PaginationPrevious
+} from '@/components/ui/pagination';
+import {
     Table,
     TableBody,
     TableCell,
@@ -254,34 +263,23 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    //   PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination'
 import { valueUpdater } from '@/lib/utils';
 
 
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { type Asset, AssetStatus, assetStatusOptions, AssetType, statusOp } from '@/interfaces/asset.interface';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
+import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, parseISO } from 'date-fns';
-import { ChevronDown, ChevronLeftIcon, Eye, MonitorSmartphone, Pencil, ChevronRightIcon, History } from 'lucide-vue-next';
-import { computed, h, onMounted, reactive, ref } from 'vue';
+import { ChevronDown, ChevronLeftIcon, ChevronRightIcon, Eye, History, MonitorSmartphone, Pencil } from 'lucide-vue-next';
+import { computed, h, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { AssetsPaginated } from '../../interfaces/asset.interface';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
 import DialogDetails from './DialogDetails.vue';
-import StatusDialog from './StatusDialog.vue';
 import HistoryDialog from './HistoryDialog.vue';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { AssetsPaginated } from '../../interfaces/asset.interface';
-import { watch } from 'vue';
-import { useDebounceFn } from '@vueuse/core';
-import { onUnmounted } from 'vue';
+import StatusDialog from './StatusDialog.vue';
 
 
 const { assets } = defineProps<{ assets: AssetsPaginated }>()

@@ -43,6 +43,7 @@ export interface AssetsPaginated {
     total: number;
     path: string;
     to: number;
+    last_page: number;
     links: {
         url: string;
         label: string;
