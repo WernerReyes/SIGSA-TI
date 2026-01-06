@@ -111,10 +111,10 @@
 
 
                     <FieldGroup>
-                        <VeeField name="comment" v-slot="{ componentField, errors }">
+                        <VeeField name="return_comment" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="comment">Observaciones</FieldLabel>
-                                <Textarea id="comment" placeholder="Condiciones del equipo, accesorios incluidos..."
+                                <FieldLabel for="return_comment">Observaciones</FieldLabel>
+                                <Textarea id="return_comment" placeholder="Condiciones del equipo, accesorios incluidos..."
                                     rows="3" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
@@ -174,7 +174,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { type User } from '@/interfaces/user.interface';
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
@@ -190,7 +190,7 @@ const TIUsers = computed<User[]>(() => {
 });
 
 const assign = computed<AssetAssignment | null>(() => {
-    return asset.value?.assignment || null;
+    return asset.value?.current_assignment || null;
 });
 
 const isSubmitting = ref(false);
@@ -207,7 +207,7 @@ const formSchema = toTypedSchema(
         }, {
             message: 'La fecha de devolución debe ser posterior a la fecha de asignación y no puede ser una fecha pasada',
         }),
-        comment: z.string().optional(),
+        return_comment: z.string().optional(),
     })
 );
 
@@ -215,26 +215,41 @@ const { handleSubmit, errors, setValues } = useForm({
     initialValues: {
         responsible_id: undefined,
         returned_date: today(getLocalTimeZone()),
-        comment: '',
+        return_comment: '',
     },
     validationSchema: formSchema,
     validateOnMount: false,
 
 });
 
-watch(assign, (assignment) => {
-    if (assignment) {
-        setValues({
-            responsible_id: assignment.responsible_id || undefined,
-            returned_date: parseDate(assignment.assigned_at.split('T')[0]),
-            comment: assignment.comment || '',
-        });
-    }
-}, { immediate: true });
+// watch(assign, (assignment) => {
+//     if (assignment) {
+//         setValues({
+//             responsible_id: assignment.responsible_id || undefined,
+//             // returned_date: parseDate(assignment?.returned_at?.split('T')[0] || '') ,
+//             // comment: assignment.return_comment || '',
+//         });
+//     }
+// }, { immediate: true });
 
 
 const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
+
+    
+    router.post(`/assets/devolve/${assign.value?.id}`, {
+        responsible_id: values.responsible_id,
+        return_date: values.returned_date,
+        return_comment: values.return_comment,
+    }, {
+        onFinish: () => {
+            isSubmitting.value = false;
+        },
+        onSuccess: () => {
+            open.value = false;
+            asset.value = null;
+        }
+    });
 
     // router.post('/assets/assign', {
     //     asset_id: asset.value?.id,

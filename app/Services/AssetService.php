@@ -1,19 +1,25 @@
 <?php
 namespace App\Services;
 
+use App\DTOs\Asset\AssetFiltersDto;
 use App\DTOs\Asset\AssignAssetDto;
+use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
 use App\DTOs\Asset\UploadDeliveryRecord;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Asset\AssetStatus;
 use App\Enums\AssetHistory\AssetHistoryAction;
+use App\Enums\DeliveryRecord\DeliveryRecordType;
+use App\Enums\Department\Allowed;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
 use App\Models\AssetType;
 
 use App\Models\DeliveryRecord;
+use App\Models\User;
+
 use DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -62,15 +68,61 @@ class AssetService
 
     public function getAll()
     {
+
+
         return Asset::with(
             'type:id,name',
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
-            'currentAssignment.deliveryRecord',
+            'currentAssignment.deliveryDocument',
+            'currentAssignment.returnDocument',
+            'assignments',
+            // 'assignments.assignedTo:staff_id,firstname,lastname',
+            'assignments.deliveryDocument',
+            'assignments.returnDocument',
+            'assignments.assignedTo:staff_id,firstname,lastname',
             'histories',
-            'histories.performer:staff_id,firstname,lastname'
+            'histories.performer:staff_id,firstname,lastname',
+            'histories.deliveryRecord:id,file_path',
+
         )->get();
     }
+
+    public function getAll2(AssetFiltersDto $filtersDto)
+    {
+
+        ds($filtersDto);
+        return Asset::query()->with(
+            'type:id,name',
+            'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+            'currentAssignment.assignedTo.department:id,name',
+            'currentAssignment.deliveryDocument',
+            'currentAssignment.returnDocument',
+            'assignments',
+            // 'assignments.assignedTo:staff_id,firstname,lastname',
+            'assignments.deliveryDocument',
+            'assignments.returnDocument',
+            'assignments.assignedTo:staff_id,firstname,lastname',
+            'histories',
+            'histories.performer:staff_id,firstname,lastname',
+            'histories.deliveryRecord:id,file_path',
+
+        )->
+            when($filtersDto->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%")
+                        ->orWhere('model', 'like', "%{$search}%")
+                        ->orWhere('serial_number', 'like', "%{$search}%");
+                });
+            })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
+                $query->whereIn('status', $filtersDto->status);
+            })->when($filtersDto->types, function ($query, $typeId) {
+                $query->where('type_id', $typeId);
+            })->
+            latest()->paginate(10)->withQueryString();
+    }
+
 
     public function storeAsset(StoreAssetDto $dto)
     {
@@ -259,6 +311,10 @@ class AssetService
             throw new BadRequestException('El activo ya tiene el estado proporcionado.');
         }
 
+        if ($newStatus === AssetStatus::ASSIGNED->value) {
+            throw new BadRequestException('No se puede cambiar el estado a ASIGNADO directamente. Use la función de asignación.');
+        }
+
         if ($asset->currentAssignment) {
             throw new BadRequestException('No se puede cambiar el estado de un activo asignado. Primero debe devolverlo.');
         }
@@ -293,13 +349,6 @@ class AssetService
 
             $assignment = $asset->currentAssignment;
 
-            // ds($assignment);
-
-            // if ($assignment && $assignment->id != $asset->id) {
-            //     throw new BadRequestException('El activo ya está asignado a un usuario, debe devolverlo antes de reasignarlo.');
-            // }
-
-        
             // 1️⃣ Si está asignado a otro usuario → bloquear
             if ($assignment && $assignment->assigned_to_id !== $dto->assigned_to_id) {
                 throw new BadRequestException(
@@ -319,14 +368,10 @@ class AssetService
                     'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
                 ]);
 
-
-
                 // 3️⃣ Si no hay cambios reales
                 if (!$assignment->isDirty()) {
                     throw new BadRequestException('No se detectaron cambios en la asignación.');
                 }
-
-             
 
                 // Guardar
                 $assignment->save();
@@ -391,52 +436,63 @@ class AssetService
         });
     }
 
-    public function devolveAsset(int $assetId)
+    public function devolveAsset(DevolveAssetDto $dto)
     {
-        DB::transaction(function () use ($assetId) {
+        DB::transaction(function () use ($dto) {
 
-            $assignment = AssetAssignment::where('asset_id', $assetId)
-                ->whereNull('returned_at')
-                ->first();
-
-
-            if (!$assignment) {
-                throw new NotFoundHttpException('No se encontró una asignación activa para este equipo');
+            // $assignment = AssetAssignment::where('asset_id', $dto->assignment->asset_id)
+            //     ->whereNull('returned_at')
+            //     ->first();
+            if ($dto->assignment->returned_at) {
+                throw new BadRequestException('La asignación ya ha sido devuelta.');
             }
 
-            $assignment->update([
-                'returned_at' => now(),
-            ]);
+            $responsible = User::find($dto->responsible_id);
+            if (!$responsible) {
+                throw new NotFoundHttpException('No se encontró el usuario responsable.');
+            }
 
-            Asset::where('id', $assetId)->update([
-                'status' => AssetStatus::AVAILABLE->value,
-            ]);
+            if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
+                throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
+            }
 
+            DB::transaction(function () use ($dto) {
 
-            AssetHistory::create([
-                'action' => AssetHistoryAction::RETURNED->value,
-                'description' => "Equipo devuelto por {$assignment->assignedTo->full_name}",
-                'asset_id' => $assetId,
-                'performed_by' => auth()->user()->staff_id,
-                'performed_at' => now(),
-                'related_assignment_id' => $assignment->id,
-            ]);
+                AssetAssignment::where('id', $dto->assignment->id)->update([
+                    'returned_at' => Carbon::parse($dto->return_date)->toDateString(),
+                    'return_comment' => $dto->return_comment,
+                    'responsible_id' => $dto->responsible_id,
+                ]);
 
+                Asset::where('id', $dto->assignment->asset_id)->update([
+                    'status' => AssetStatus::AVAILABLE->value,
+                ]);
+
+                AssetHistory::create([
+                    'action' => AssetHistoryAction::RETURNED->value,
+                    'description' => "Equipo devuelto por {$dto->assignment->assignedTo->full_name}",
+                    'asset_id' => $dto->assignment->asset_id,
+                    'performed_by' => auth()->user()->staff_id,
+                    'performed_at' => now(),
+                    'related_assignment_id' => $dto->assignment->id,
+                ]);
+
+            });
 
         });
     }
 
 
     public function generateLaptopAssignmentDocument(
-        int $assetId
+        int $assignmentId
     ) {
-        $asset = Asset::find($assetId);
-        if (!$asset) {
+        $assignment = AssetAssignment::find($assignmentId);
+        if (!$assignment) {
             throw new NotFoundHttpException('No se encontró el activo');
         }
 
-        $asset->load('currentAssignment.assignedTo');
-$assignment = $asset->currentAssignment;
+        $assignment->load('assignedTo');
+        $asset = $assignment->asset;
         if (!$assignment || !$assignment->assignedTo) {
             throw new BadRequestException('El activo no está asignado a ningún usuario');
         }
@@ -507,38 +563,28 @@ $assignment = $asset->currentAssignment;
 
     }
 
-
     public function uploadDeliveryRecord(UploadDeliveryRecordDto $dto)
     {
         if (!$dto->assignment) {
             throw new NotFoundHttpException('No se encontró la asignación del activo');
         }
 
-        $recordType = $dto->is_assignment ? 'asignación' : 'devolución';
+        $recordType = $dto->type === DeliveryRecordType::ASSIGNMENT->value ? 'asignación' : 'devolución';
         $description = "Constancia de {$recordType} subida para '{$dto->assignment->assignedTo->full_name}'";
 
-        $path = '';
-        if ($dto->assignment->deliveryRecord) {
-            Storage::disk('public')->delete($dto->assignment->deliveryRecord->file_path);
-
-            $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
-
-            $dto->assignment->deliveryRecord->update([
-                'file_path' => $path,
-            ]);
-
+        if ($dto->assignment->deliveryRecords()->where('type', $dto->type)->exists()) {
             $description = "Constancia de {$recordType} actualizada para '{$dto->assignment->assignedTo->full_name}'";
-
-        } else {
-
-            $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
-
-            DeliveryRecord::create([
-                'file_path' => $path,
-                'assignment_id' => $dto->assignment->id,
-            ]);
         }
+        // $path = '';
+        $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
 
+        $deliveryRecord = DeliveryRecord::create([
+            'file_path' => $path,
+            'assignment_id' => $dto->assignment->id,
+            'type' => $dto->type,
+        ]);
+
+        $dto->assignment->deliveryRecords()->save($deliveryRecord);
 
         AssetHistory::create([
             'action' => AssetHistoryAction::DELIVERY_RECORD_UPLOADED->value,
@@ -546,8 +592,9 @@ $assignment = $asset->currentAssignment;
             'asset_id' => $dto->assignment->asset_id,
             'performed_by' => auth()->user()->staff_id,
             'performed_at' => now(),
-            'related_assignment_id' => $dto->assignment->id,
+            'related_delivery_record_id' => $deliveryRecord->id,
         ]);
+
 
         return Storage::disk('public')->url($path);
     }

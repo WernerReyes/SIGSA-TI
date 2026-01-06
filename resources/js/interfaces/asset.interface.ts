@@ -30,7 +30,32 @@ export interface Asset {
     is_new: boolean;
     // assigned_to_id?: number | null;
     current_assignment?: AssetAssignment;
+    assignments?: AssetAssignment[];
     histories?: AssetHistory[];
+}
+
+export interface AssetsPaginated {
+    current_page: number;
+    data: Asset[];
+    next_page_url: string | null;
+    per_page: number;
+    prev_page_url: string | null;
+    total: number;
+    path: string;
+    to: number;
+    links: {
+        url: string;
+        label: string;
+        active: boolean;
+    }[]
+    // first_page_url: string;
+    // from: number;
+    // next_page_url: string | null;
+    // path: string;
+    // per_page: number;
+    // prev_page_url: string | null;
+    // to: number;
+    // current_page_url: string;
 }
 
 export enum AssetStatus {

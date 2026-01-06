@@ -7,6 +7,7 @@ import {
     SquarePlus,
 } from 'lucide-vue-next';
 import type { FunctionalComponent } from 'vue';
+import { type DeliveryRecord } from './deliveryRecord.interface';
 import type { User } from './user.interface';
 
 export interface AssetHistory {
@@ -18,6 +19,7 @@ export interface AssetHistory {
     performed_at: string;
     performer?: User;
     related_assignment_id?: number | null;
+    delivery_record?: DeliveryRecord | null;
 }
 
 export enum AssetHistoryAction {
@@ -71,7 +73,7 @@ export const assetHistoryActionOptions: Record<
         bg: 'bg-red-500',
     },
     [AssetHistoryAction.DELIVERY_RECORD_UPLOADED]: {
-        label: 'Cargo de equipo subido',
+        label: 'Archivo Subido',
         value: AssetHistoryAction.DELIVERY_RECORD_UPLOADED,
         icon: MonitorCheck,
         bg: 'bg-teal-500',

@@ -20,8 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('asset_id');
             $table->foreign('asset_id')->references('id')->on('assets');
 
-            $table->unsignedBigInteger('related_assignment_id')->nullable();
-            $table->foreign('related_assignment_id')->references('id')->on('assets_assignments');
+            $table->unsignedBigInteger('related_delivery_record_id')->nullable();
+            $table->foreign('related_delivery_record_id')->references('id')->on('delivery_records');
 
             $table->unsignedInteger('performed_by');
 

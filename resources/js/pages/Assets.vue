@@ -7,8 +7,9 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { AssetsPaginated } from '../interfaces/asset.interface';
 
-defineProps<{ types: AssetType[], assets: Asset[] }>();
+defineProps<{ types: AssetType[], assets: Asset[], assetsPaginated: AssetsPaginated }>();
 
 const currentAsset = ref<Asset | null>(null);
 
@@ -25,16 +26,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 </script>
 
 <template>
-
+    
     <Head title="Activos TI" />
-
+    
     <AppLayout :breadcrumbs="breadcrumbs">
-
+        
+        <!-- <pre>
+    {{ assetsPaginated }}
+        </pre> -->
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
-            <Dialog includeButton  v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
+            <Dialog includeButton v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
 
+            <pre>
 
+            </pre>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-card rounded-xl border shadow-card p-4">
                     <p class="text-sm text-muted-foreground">Total Activos</p>
@@ -92,9 +98,9 @@ const breadcrumbs: BreadcrumbItem[] = [
                 </div>
             </div> -->
 
-           
-            <Table :assets="assets" />
-            
+
+            <Table :assets="assetsPaginated" />
+
             <DialogDetails v-model:open="openDetails" v-model:asset="currentAsset" />
         </div>
 

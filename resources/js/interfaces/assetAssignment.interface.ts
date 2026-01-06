@@ -11,6 +11,10 @@ export interface AssetAssignment {
     responsible_id?: number | null;
 
     comment?: string;
+    return_comment?: string | null;
+
+
     assigned_to?: User;
-    delivery_record?: DeliveryRecord;
+    delivery_document?: DeliveryRecord | null;
+    return_document?: DeliveryRecord | null;
 }

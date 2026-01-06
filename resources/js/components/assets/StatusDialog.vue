@@ -26,7 +26,7 @@
                                 <SelectGroup>
                                     <SelectLabel>Estados</SelectLabel>
 
-                                    <SelectItem v-for="{ value, label, bg } in Object.values(assetStatusOptions)"
+                                    <SelectItem v-for="{ value, label, bg } in Object.values(assetStatusOptions).filter(option => option.value !== AssetStatus.ASSIGNED)"
                                         :key="value" :value="value">
                                         <Badge :class="bg">{{ label }}</Badge>
                                     </SelectItem>

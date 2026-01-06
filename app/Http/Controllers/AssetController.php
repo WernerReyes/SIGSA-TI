@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\Asset\AssetFiltersDto;
 use App\DTOs\Asset\AssignAssetDto;
+use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Asset\AssetStatus;
 use App\Http\Requests\Asset\AssignAssetRequest;
+use App\Http\Requests\asset\DevolveAssetRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
 use App\Http\Requests\asset\UploadDeliveryRecord;
@@ -22,19 +25,26 @@ class AssetController extends Controller
 {
     //
 
-    public function renderView(AssetService $assetService, UserService $userService)
+    public function renderView(AssetService $assetService, UserService $userService, Request $request)
     {
         $types = $assetService->getTypes();
         $assets = $assetService->getAll();
         $users = $userService->getAllUsers();
         $TIUsers = $userService->getTIDepartmentUsers();
 
+        $filters = AssetFiltersDto::fromArray($request->all());
+
+        $assetsPaginated = $assetService->getAll2($filters);
+        // ds($assetsPaginated);
+
 
         return Inertia::render('Assets', [
             'types' => $types,
-            'assets' => $assets,
+            // 'assets' => $assets,
             'users' => $users,
             'TIUsers' => $TIUsers,
+            'filters' => $filters,
+            'assetsPaginated' => $assetsPaginated,
         ]);
     }
 
@@ -141,10 +151,26 @@ class AssetController extends Controller
         }
     }
 
-    public function generateLaptopAssignmentDocument(int $assetId, AssetService $assetService)
+    public function devolveAsset(DevolveAssetRequest $request, AssetService $assetService, AssetAssignment $assignment)
+    {
+        $validated = $request->validated();
+        $dto = DevolveAssetDto::fromArray($validated, $assignment);
+        try {
+            $assetService->devolveAsset($dto);
+            return back()->with('success', 'Activo devuelto correctamente');
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al devolver el activo. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
+    public function generateLaptopAssignmentDocument(int $assignmentId, AssetService $assetService)
     {
         try {
-            $filePath = $assetService->generateLaptopAssignmentDocument($assetId);
+            $filePath = $assetService->generateLaptopAssignmentDocument($assignmentId);
 
             return response()->download($filePath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {

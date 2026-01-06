@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\asset;
 
+use App\Enums\DeliveryRecord\DeliveryRecordType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadDeliveryRecordRequest extends FormRequest
@@ -23,7 +24,8 @@ class UploadDeliveryRecordRequest extends FormRequest
     {
         return [
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
-            'is_assignment' => 'required|boolean',
+            'type' => 'required|in:' . implode(',', DeliveryRecordType::values()),
+
         ];
     }
 
@@ -34,8 +36,6 @@ class UploadDeliveryRecordRequest extends FormRequest
             'file.file' => 'El archivo debe ser un archivo válido.',
             'file.mimes' => 'El archivo debe ser un archivo de tipo: pdf, jpg, jpeg, png.',
             'file.max' => 'El tamaño máximo del archivo es de 5MB.',
-            'is_assignment.required' => 'El campo de asignación es obligatorio.',
-            'is_assignment.boolean' => 'El campo de asignación debe ser verdadero o falso.',
         ];
     }
 }

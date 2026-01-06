@@ -32,10 +32,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/assets', [AssetController::class, 'storeAsset'])->name('assets.store');
     Route::put('/assets', [AssetController::class, 'updateAsset'])->name('assets.update');
     Route::post('/assets/assign', [AssetController::class, 'assignAsset'])->name('assets.assign');
-    Route::post('/assets/unassign', [AssetController::class, 'unassignAsset'])->name('assets.unassign');
+    Route::post('/assets/devolve/{assignment}', [AssetController::class, 'devolveAsset'])->name('assets.devolve');
     Route::put('/assets/status', [AssetController::class, 'changeAssetStatus'])->name('assets.changeStatus');
-    Route::get('/assets/generate-laptop-assignment-doc/{assetId}', [AssetController::class, 'generateLaptopAssignmentDocument'])->name('assets.generateLaptopAssignmentDocument');
-    Route::get('/assets/generate-phone-assignment-doc/{assetId}', [AssetController::class, 'generateCellphoneAssignmentDocument'])->name('assets.generatePhoneAssignmentDocument');
+    Route::get('/assets/generate-laptop-assignment-doc/{assignmentId}', [AssetController::class, 'generateLaptopAssignmentDocument'])->name('assets.generateLaptopAssignmentDocument');
+    Route::get('/assets/generate-phone-assignment-doc/{assignmentId}', [AssetController::class, 'generateCellphoneAssignmentDocument'])->name('assets.generatePhoneAssignmentDocument');
     Route::post('/assets/delivery-records/{assignment}', [AssetController::class, 'uploadDeliveryRecord'])->name('assets.uploadDeliveryRecord');
 
     Route::post('/assets/types', [AssetController::class, 'registerType'])->name('assets.types.register');

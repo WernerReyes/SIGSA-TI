@@ -14,6 +14,7 @@ class DeliveryRecord extends Model
     protected $fillable = [
         'file_path',
         'assignment_id',
+        'type',
     ];
 
     public function getFileUrlAttribute()

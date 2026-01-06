@@ -67,9 +67,20 @@
                 <div class="space-y-6">
 
 
-                    <div v-if="histories.length === 0" class="text-center text-sm text-muted-foreground py-10">
-                        No hay historial para mostrar.
-                    </div>
+                    <Empty v-if="histories.length === 0">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                                <History />
+                            </EmptyMedia>
+                            <EmptyTitle>Sin historial</EmptyTitle>
+                            <EmptyDescription>
+                                No hay historial para este equipo.
+                            </EmptyDescription>
+                        </EmptyHeader>
+
+
+                    </Empty>
+
                     <div v-for="history in histories" class="relative flex gap-4 pl-10">
                         <div
                             class="absolute left-2 w-5 h-5 rounded-full bg-card border-2 flex items-center justify-center text-info">
@@ -118,7 +129,11 @@
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger as-child>
-                                            <Button class="ml-auto" size="icon">
+
+                                            <Button class="ml-auto" size="icon" @click="() => {
+                                                handleDownloadReceipt(history?.delivery_record?.file_url || '')
+                                            }">
+
                                                 <DownloadIcon />
                                             </Button>
                                         </TooltipTrigger>
@@ -158,6 +173,7 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RangeCalendar } from '@/components/ui/range-calendar';
 import {
@@ -175,13 +191,13 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { AssetStatus, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
+import { assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
 import { actionOp, AssetHistoryAction, assetHistoryActionOptions } from '@/interfaces/assetHistory.interface';
-import { DateValue, getLocalTimeZone, today } from '@internationalized/date';
+import { getLocalTimeZone } from '@internationalized/date';
 import { endOfDay, format, isWithinInterval, startOfDay } from 'date-fns';
-import { DownloadIcon } from 'lucide-vue-next';
+import { DownloadIcon, History } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
-import { computed, Ref, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -209,6 +225,11 @@ const histories = computed(() => {
     return filtered;
 });
 
+
+const handleDownloadReceipt = (filePath: string) => {
+    console.log('Downloading file from:', filePath);
+    window.open(filePath, '_blank');
+};
 
 const getStatusOpByDes = (des: string) => {
     return Object.values(assetStatusOptions).find(opt => opt.label.trim().toLowerCase() === des.trim().toLowerCase());

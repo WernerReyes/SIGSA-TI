@@ -48,6 +48,11 @@ class Asset extends Model
         return $this->hasOne(AssetAssignment::class, 'asset_id')->whereNull('returned_at');
     }
 
+    public function assignments()
+    {
+        return $this->hasMany(AssetAssignment::class, 'asset_id')->orderBy('assigned_at', 'desc');
+    }
+
     public function histories()
     {
         return $this->hasMany(AssetHistory::class, 'asset_id')->orderBy('performed_at', 'desc');

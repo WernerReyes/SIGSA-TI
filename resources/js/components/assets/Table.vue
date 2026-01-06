@@ -1,7 +1,6 @@
 <template>
     <div class="flex max-md:flex-col gap-4 items-center p-4 ">
-        <Input class="max-w-sm" placeholder="Buscar activos..." :model-value="table.getState().globalFilter"
-            @update:model-value="table.setGlobalFilter($event)" />
+        <Input class="max-w-sm" placeholder="Buscar activos..." v-model="form.search" />
 
 
         <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap">
@@ -14,14 +13,15 @@
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
 
-                    <DropdownMenuCheckboxItem v-for="type in types" :key="type.id" class="capitalize" :model-value="selectedTypes.includes(type.id)
-                        " @update:model-value="(val) => {
+                    <DropdownMenuCheckboxItem :disabled="isLoading" v-for="type in types" :key="type.id"
+                        class="capitalize" :model-value="form.types.includes(type.id)
+                            " @update:model-value="(val) => {
                             if (val) {
-                                selectedTypes.push(type.id);
+                                form.types.push(type.id);
                             } else {
-                                const index = selectedTypes.indexOf(type.id);
+                                const index = form.types.indexOf(type.id);
                                 if (index > -1) {
-                                    selectedTypes.splice(index, 1);
+                                    form.types.splice(index, 1);
                                 }
                             }
                         }">
@@ -40,14 +40,14 @@
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
 
-                    <DropdownMenuCheckboxItem v-for="status in Object.values(assetStatusOptions)" :key="status.value"
-                        :model-value="statusList.includes(status.value)" @update:model-value="(val) => {
+                    <DropdownMenuCheckboxItem :disabled="isLoading" v-for="status in Object.values(assetStatusOptions)"
+                        :key="status.value" :model-value="form.status.includes(status.value)" @update:model-value="(val) => {
                             if (val) {
-                                statusList.push(status.value);
+                                form.status.push(status.value);
                             } else {
-                                const index = statusList.indexOf(status.value);
+                                const index = form.status.indexOf(status.value);
                                 if (index > -1) {
-                                    statusList.splice(index, 1);
+                                    form.status.splice(index, 1);
                                 }
                             }
                         }">
@@ -65,7 +65,7 @@
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
 
-                    <DropdownMenuCheckboxItem
+                    <DropdownMenuCheckboxItem :disabled="isLoading"
                         v-for="column in table.getAllColumns().filter((column) => column.getCanHide())" :key="column.id"
                         class="capitalize" :model-value="column.getIsVisible()"
                         @update:model-value="column.toggleVisibility()">
@@ -75,7 +75,10 @@
             </DropdownMenu>
         </div>
     </div>
+
+
     <div class="border rounded-md">
+
         <Table>
             <TableHeader>
                 <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -132,7 +135,7 @@
 
 
 
-                        <!-- <ContextMenuItem @click="changeStatus = true">Cambiar estado</ContextMenuItem> -->
+
 
                     </ContextMenuContent>
                 </ContextMenu>
@@ -142,8 +145,23 @@
             <template v-else>
                 <TableBody>
                     <TableRow>
-                        <TableCell :colspan="columns.length" class="h-24 text-center">
-                            No se encontraron activos.
+                        <TableCell :colspan="columns.length" class="text-center">
+
+                            <Empty class="p-1!">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <MonitorSmartphone />
+                                    </EmptyMedia>
+                                    <EmptyTitle>
+                                        Sin resultados
+                                    </EmptyTitle>
+                                    <EmptyDescription>
+                                        No se encontraron equipos que coincidan con los filtros aplicados.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+
+
+                            </Empty>
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -151,30 +169,46 @@
         </Table>
 
         <div class="flex space-x-2 p-4">
-            {{ table.getFilteredRowModel().rows.length }}
-            {{ table.getFilteredRowModel().rows.length === 1 ? 'página encontrada' : 'páginas encontradas' }}.
-            <Pagination v-slot="{ page }" class="flex mx-0 w-fit ml-auto!" :items-per-page="pagination.pageSize"
-                :total="table.getFilteredRowModel().rows.length" :default-page="1">
-                <PaginationContent v-slot="{ items }">
-                    <PaginationPrevious>
+            <!-- {{assets}} -->
+            <Pagination class="flex mx-0 w-fit ml-auto!" :items-per-page="assets.per_page" :total="assets.total"
+                :default-page="assets.current_page">
+                <PaginationContent>
+                    <PaginationPrevious :disabled="isLoading || assets.current_page === 1" @click="!isLoading && router.visit(assets.prev_page_url || '', {
+                        preserveScroll: true,
+                        replace: true,
+                    })">
+
                         <ChevronLeftIcon />
                         Anterior
                     </PaginationPrevious>
-                    <template v-for="(item, index) in items" :key="index">
-                        <PaginationItem @click="table.setPageIndex(item.value - 1)" v-if="item.type === 'page'"
-                            :value="item.value" :is-active="item.value === page">
-                            {{ item.value }}
+                    <template v-for="(item, index) in assets.links.filter(link => +link.label)" :key="index">
+                        <PaginationItem :value="+item.label" :is-active="item.active" :disabled="isLoading" @click="!isLoading && router.visit(item.url, {
+                            preserveScroll: true,
+                            replace: true,
+                        })">
+
+
+
+                            {{ item.label }}
+
                         </PaginationItem>
+
                     </template>
-                    <PaginationEllipsis :index="4" />
-                    <PaginationNext>
+
+                    <PaginationNext :disabled="isLoading || assets.current_page === assets.total" @click="!isLoading && router.visit(assets.next_page_url || '', {
+                        preserveScroll: true,
+                    })">
+
                         Siguiente
                         <ChevronRightIcon />
                     </PaginationNext>
+
                 </PaginationContent>
             </Pagination>
         </div>
     </div>
+
+
 
     <DialogDetails v-model:open="openDetails" v-model:asset="activeRow" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
@@ -233,19 +267,24 @@ import { valueUpdater } from '@/lib/utils';
 
 
 import { type Asset, AssetStatus, assetStatusOptions, AssetType, statusOp } from '@/interfaces/asset.interface';
-import { usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { format, isAfter, parseISO } from 'date-fns';
 import { ChevronDown, ChevronLeftIcon, Eye, MonitorSmartphone, Pencil, ChevronRightIcon, History } from 'lucide-vue-next';
-import { computed, h, ref } from 'vue';
+import { computed, h, onMounted, reactive, ref } from 'vue';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
 import DialogDetails from './DialogDetails.vue';
 import StatusDialog from './StatusDialog.vue';
 import HistoryDialog from './HistoryDialog.vue';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { AssetsPaginated } from '../../interfaces/asset.interface';
+import { watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
+import { onUnmounted } from 'vue';
 
 
-const { assets } = defineProps<{ assets: Asset[] }>()
+const { assets } = defineProps<{ assets: AssetsPaginated }>()
 
 const activeRow = ref<Asset | null>(null)
 
@@ -265,8 +304,9 @@ const statusList = ref<AssetStatus[]>(Object.values(AssetStatus));
 
 const sorting = ref<SortingState>([])
 
+
 const assetsFiltered = computed(() => {
-    let filteredAssets = assets;
+    let filteredAssets = assets.data;
     if (statusList.value.length > 0) {
         filteredAssets = filteredAssets.filter(asset => statusList.value.includes(asset.status));
     }
@@ -279,9 +319,75 @@ const assetsFiltered = computed(() => {
     return filteredAssets;
 });
 
+const filters = computed(() => usePage().props.filters as Record<string, any>);
+
+const form = reactive({
+    search: filters.value.search || '',
+    status: filters.value.status || [],
+    types: filters.value.types || [],
+})
+
+
+watch(
+    () => form.search,
+    useDebounceFn(() => {
+        applyFilters()
+    }, 400)
+)
+
+watch(
+    () => form.status,
+    () => {
+        applyFilters()
+    },
+    { deep: true }
+)
+
+watch(
+    () => form.types,
+    () => {
+        applyFilters()
+    },
+    { deep: true }
+)
+
+
+const applyFilters = () => {
+
+    router.get(
+        assets.path,
+
+        form,
+        {
+            preserveState: true,
+            replace: true,
+        }
+    )
+}
+
+
 const types = computed(() => usePage().props.types as AssetType[]);
 
 const selectedTypes = ref<number[]>(types.value.map(type => type.id));
+
+
+const isLoading = ref(false)
+
+const start = () => (isLoading.value = true)
+const finish = () => (isLoading.value = false)
+
+let unsubscribeStart: (() => void) | null = null
+let unsubscribeFinish: (() => void) | null = null
+
+onMounted(() => {
+    unsubscribeStart = router.on('start', start)
+    unsubscribeFinish = router.on('finish', finish)
+})
+
+onUnmounted(() => {
+    unsubscribeStart?.()
+    unsubscribeFinish?.()
+})
 
 
 const columns: ColumnDef<Asset>[] = [

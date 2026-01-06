@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryRecord\DeliveryRecordType;
 use Illuminate\Database\Eloquent\Model;
 
 class AssetAssignment extends Model
@@ -16,26 +17,39 @@ class AssetAssignment extends Model
         'asset_id',
         'assigned_to_id',
         'assigned_at',
-        'return_date',
+        'returned_at',
         'comment',
+        'return_comment',
+        'responsible_id',
     ];
 
 
     protected $casts = [
         'assigned_at' => 'date',
-        'return_date' => 'date',
+        'returned_at' => 'date',
     ];
-    
+
 
     public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
-    public function deliveryRecord()
+    public function deliveryRecords()
     {
-        return $this->hasOne(DeliveryRecord::class, 'assignment_id');
+        return $this->hasMany(DeliveryRecord::class, 'assignment_id');
     }
+
+    public function deliveryDocument()
+    {
+        return $this->hasOne(DeliveryRecord::class, 'assignment_id')->where('type', DeliveryRecordType::ASSIGNMENT->value)->latestOfMany();
+    }
+
+    public function returnDocument()
+    {
+        return $this->hasOne(DeliveryRecord::class, 'assignment_id')->where('type', DeliveryRecordType::DEVOLUTION->value)->latestOfMany();
+    }
+
 
     public function asset()
     {

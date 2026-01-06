@@ -17,63 +17,7 @@
                     <p class="text-sm font-medium">{{ asset?.name }}</p>
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
 
-                    <div class="flex gap-2 flex-wrap">
-                        <div v-if="asset?.current_assignment" class="flex flex-col w-fit gap-2 mt-2 mx-auto">
-
-                            <div class="flex items-center gap-2">
-
-                                <Button variant="secondary" size="sm" @click="handleDownloadCargo">
-                                    <Download /> Cargo
-                                    <Laptop />
-                                </Button>
-
-                                <Button variant="secondary" size="sm" @click="handleDownloadPhoneCargo">
-                                    <Download /> Cargo
-                                    <Smartphone />
-                                </Button>
-                            </div>
-
-                            <div class="w-48 mx-auto">
-                                
-                                <FileUpload :current-url="currentUrl" v-model:reset="resetUpload"
-                                    label="Subir documento firmado" accept="application/pdf,image/*" @error="(msg) => {
-                                        console.log('Upload error:', msg);
-                                    }" @update:file="(file) => {
-                                    handleUploadSignedDocument(file);
-                                }" />
-
-                            </div>
-
-                        </div>
-
-                        <!-- <div v-if="asset?.assignment"
-                            class="flex flex-col w-fit gap-2 mt-2 mx-auto border p-2 rounded-md">
-                            <span class="text-sm ">Devolución:</span>
-                            <div class="flex items-center gap-2">
-
-                                <Button variant="secondary" size="sm" @click="handleDownloadCargo">
-                                    <Download /> Cargo
-                                    <MonitorSmartphone />
-                                </Button>
-                                
-
-
-                            </div>
-
-                            <div class="w-48 mx-auto">
-
-                                <FileUpload label="Subir documento firmado" accept="application/pdf" @error="(msg) => {
-                                    console.log('Upload error:', msg);
-                                }" @update:file="(file) => {
-                                    console.log('Uploaded file:', file);
-                                }" />
-
-                                </div>
-
-                        </div> -->
-
-                    </div>
-
+                    
 
 
                 </div>
@@ -169,9 +113,11 @@
 <script setup lang="ts">
 
 import { useForm, Field as VeeField } from 'vee-validate';
+import { computed, ref, watch } from 'vue';
 import z from 'zod';
-import { computed, ref, watch, h } from 'vue';
 
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
     Dialog,
     DialogContent,
@@ -185,6 +131,7 @@ import {
     FieldGroup,
     FieldLabel
 } from '@/components/ui/field';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -193,20 +140,19 @@ import {
     SelectLabel,
     SelectTrigger,
     SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+} from '@/components/ui/select';
 
+import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
+import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { type User } from '@/interfaces/user.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
-import { ChevronDownIcon, Download, Laptop, Phone, Smartphone, MonitorSmartphone, Upload } from 'lucide-vue-next';
-import { Textarea } from '@/components/ui/textarea';
 import { toTypedSchema } from '@vee-validate/zod';
-import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { ChevronDownIcon, Download, Laptop, Smartphone } from 'lucide-vue-next';
 import FileUpload from '../FileUpload.vue';
+import { toast } from 'vue-sonner';
+import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -221,8 +167,8 @@ const assign = computed<AssetAssignment | null>(() => {
 const url = ref('');
 
 const currentUrl = computed<string>(() => {
-    return url.value || asset.value?.current_assignment?.delivery_record?.file_url || '';
-} );
+    return url.value || asset.value?.current_assignment?.delivery_document?.file_url || '';
+});
 
 
 const isSubmitting = ref(false);
@@ -263,7 +209,7 @@ watch(assign, (assignment) => {
 
 const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
-
+    
     router.post('/assets/assign', {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
@@ -294,18 +240,18 @@ const handleDownloadPhoneCargo = () => {
 const handleUploadSignedDocument = (file: File) => {
     router.post(`/assets/delivery-records/${asset.value?.id}`, {
         file: file,
-        is_assignment: true,
+        type: DeliveryRecordType.ASSIGNMENT,
     }, {
         onSuccess: (page) => {
             const fileUrl = page.props.flash.file_url;
-            console.log('File uploaded successfully. File URL:', fileUrl);
-            // Handle success (e.g., show a notification)
+
             url.value = fileUrl;
-            resetUpload.value = true;
+            // resetUpload.value = true;
         },
-        onError: (errors) => {
-            // Handle errors (e.g., show error messages)
+        onFinish: () => {
+            resetUpload.value = true;
         }
+
     });
     // Implement upload logic here
 };

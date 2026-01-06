@@ -17,12 +17,17 @@ class AssetHistory extends Model
         'description',
         'performed_by',
         'performed_at',
-        'related_assignment_id',
+        'related_delivery_record_id',
     ];
 
 
     public function performer()
     {
         return $this->belongsTo(User::class, 'performed_by', 'staff_id');
+    }
+
+    public function deliveryRecord()
+    {
+        return $this->belongsTo(DeliveryRecord::class, 'related_delivery_record_id');
     }
 }

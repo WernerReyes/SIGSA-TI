@@ -22,6 +22,8 @@ import AppLogo from './AppLogo.vue';
 
 const user = computed<User>(() => usePage()?.props?.auth?.user as User);
 
+
+
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
         {
@@ -70,7 +72,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         </SidebarContent>
 
         <SidebarFooter>
-            <!-- <NavFooter :items="footerNavItems" /> -->
+          
             <NavUser />
         </SidebarFooter>
     </Sidebar>

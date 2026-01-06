@@ -15,7 +15,10 @@ return new class extends Migration {
 
             $table->date('assigned_at');
             $table->date('returned_at')->nullable();
+
+
             $table->text('comment')->nullable();
+            $table->text('return_comment')->nullable();
 
             $table->foreignId('asset_id')->references('id')->on('assets');
 
