@@ -42,7 +42,7 @@
                         </SelectContent>
                     </Select>
 
-                    <Popover v-slot="{ close }">
+                    <Popover>
                         <PopoverTrigger as-child>
                             <Button variant="outline" class="w-full sm:w-52 justify-between font-normal">
 
