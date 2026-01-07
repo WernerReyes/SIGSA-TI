@@ -50,6 +50,7 @@ class AssetAssignment extends Model
         return $this->hasOne(DeliveryRecord::class, 'assignment_id')->where('type', DeliveryRecordType::DEVOLUTION->value)->latestOfMany();
     }
 
+    
 
     public function asset()
     {

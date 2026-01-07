@@ -24,6 +24,7 @@ use DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\TemplateProcessor;
+use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -33,7 +34,7 @@ class AssetService
 
     public function getTypes()
     {
-        return AssetType::select('id', 'name')->get();
+        return AssetType::get();
     }
 
     public function registerType(string $name, ?int $id = null)
@@ -52,8 +53,15 @@ class AssetService
 
     public function deleteType(int $id)
     {
+        try {
         $assetType = $this->findTypeById($id);
         $assetType->delete();
+        } catch (\Exception $e) {
+            if ($e->getCode() === '23000') {
+                throw new BadRequestException('No se puede eliminar el tipo de activo porque está asociado a uno o más equipos.');
+            }
+            throw new InternalErrorException('Error al eliminar el tipo de activo');
+        }
     }
 
     private function findTypeById(int $id): AssetType
@@ -66,32 +74,9 @@ class AssetService
     }
 
 
-    public function getAll()
+    public function getPaginated(AssetFiltersDto $filtersDto)
     {
 
-
-        return Asset::with(
-            'type:id,name',
-            'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
-            'currentAssignment.assignedTo.department:id,name',
-            'currentAssignment.deliveryDocument',
-            'currentAssignment.returnDocument',
-            'assignments',
-            // 'assignments.assignedTo:staff_id,firstname,lastname',
-            'assignments.deliveryDocument',
-            'assignments.returnDocument',
-            'assignments.assignedTo:staff_id,firstname,lastname',
-            'histories',
-            'histories.performer:staff_id,firstname,lastname',
-            'histories.deliveryRecord:id,file_path',
-
-        )->get();
-    }
-
-    public function getAll2(AssetFiltersDto $filtersDto)
-    {
-
-        ds($filtersDto);
         return Asset::query()->with(
             'type:id,name',
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
@@ -113,20 +98,71 @@ class AssetService
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('brand', 'like', "%{$search}%")
                         ->orWhere('model', 'like', "%{$search}%")
-                        ->orWhere('serial_number', 'like', "%{$search}%");
+                        ->orWhere('serial_number', 'like', "%{$search}%")
+                        ->orWhereHas('assignments.assignedTo', function ($q2) use ($search) {
+                            $q2->where('firstname', 'like', "%{$search}%")
+                                ->orWhere('lastname', 'like', "%{$search}%")->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
+                            // $q2->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
+        
+                        });
                 });
             })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
                 $query->whereIn('status', $filtersDto->status);
             })->when($filtersDto->types, function ($query, $typeId) {
                 $query->where('type_id', $typeId);
+            })->when($filtersDto->assigned_to && count($filtersDto->assigned_to) > 0, function ($query) use ($filtersDto) {
+                // $query->whereHas('currentAssignment', function ($q) use ($filtersDto) {
+                //     $q->whereIn('assigned_to_id', $filtersDto->assigned_to);
+                // });
+                $query->where(function ($q) use ($filtersDto) {
+                    $q->whereHas('currentAssignment', function ($q2) use ($filtersDto) {
+                        $q2->whereIn('assigned_to_id', array_filter($filtersDto->assigned_to, fn($val) => $val !== null));
+                    });
+                    if (in_array(null, $filtersDto->assigned_to, true)) {
+                        $q->orWhereDoesntHave('currentAssignment');
+                    }
+                });
+            })->when($filtersDto->department_id && count($filtersDto->department_id) > 0, function ($query) use ($filtersDto) {
+                $query->where(function ($q) use ($filtersDto) {
+                    $q->whereHas('currentAssignment.assignedTo', function ($q2) use ($filtersDto) {
+                        $q2->whereIn('dept_id', $filtersDto->department_id);
+                    });
+                    // $q->orWhereDoesntHave('currentAssignment');
+                });
             })->
             latest()->paginate(10)->withQueryString();
     }
 
 
+    public function getStats() {
+        
+        $totalAssets = Asset::count();
+
+        $assignedAssets = Asset::where('status', AssetStatus::ASSIGNED->value)->count();
+        $availableAssets = Asset::where('status', AssetStatus::AVAILABLE->value)->count();
+        $inRepairAssets = Asset::where('status', AssetStatus::IN_REPAIR->value)->count();
+        $decommissionedAssets = Asset::where('status', AssetStatus::DECOMMISSIONED->value)->count();
+        
+        $notExpiredWarrantyAssets = Asset::whereDate('warranty_expiration', '>=', now()->toDateString())->count();
+        $expiredWarrantyAssets = Asset::whereDate('warranty_expiration', '<', now()->toDateString())->count();
+
+        return [
+            'total' => $totalAssets,
+            'statuses' => [
+                AssetStatus::ASSIGNED->value => $assignedAssets,
+                AssetStatus::AVAILABLE->value => $availableAssets,
+                AssetStatus::IN_REPAIR->value => $inRepairAssets,
+                AssetStatus::DECOMMISSIONED->value => $decommissionedAssets,
+            ],
+            'not_expired_warranty' => $notExpiredWarrantyAssets,
+            'expired_warranty' => $expiredWarrantyAssets,
+        ];
+    }
+
+
     public function storeAsset(StoreAssetDto $dto)
     {
-
+      try {
         $asset = DB::transaction(function () use ($dto) {
 
             $asset = Asset::create([
@@ -162,6 +198,10 @@ class AssetService
 
 
         return $asset;
+        } catch (\Exception $e) {
+           
+            throw new InternalErrorException('Error al registrar el activo: ' . $e->getMessage());
+        }
 
     }
 
@@ -213,6 +253,8 @@ class AssetService
         return $asset;
     }
 
+    
+
 
     private function fieldChangesToDescription(UpdateAssetDto $dto, Asset $asset): string
     {
@@ -226,23 +268,17 @@ class AssetService
                 $value = $value ? date('Y-m-d', strtotime($value)) : null;
                 $assetValue = $asset->$key ? date('Y-m-d', strtotime($asset->$key)) : null;
                 if ($value !== null && $assetValue != $value) {
-                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$assetValue}' a '$value'";
+                    $fieldChanges[] = $this->messageChange($key, $assetValue, $value);
                 }
                 continue;
             }
 
-            // if ($key === 'status') {
-            //     if ($value !== null && $asset->$key != $value) {
-            //         $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '" . $this->fromStatusToLabel($asset->$key) . "' a '" . $this->fromStatusToLabel($value) . "'";
-            //     }
-            //     continue;
-            // }
 
             if ($key === 'is_new') {
                 $newValueLabel = $value ? 'Sí' : 'No';
                 $assetValueLabel = $asset->$key ? 'Sí' : 'No';
                 if ($value !== null && $asset->$key != $value) {
-                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$assetValueLabel}' a '{$newValueLabel}'";
+                    $fieldChanges[] = $this->messageChange($key, $assetValueLabel, $newValueLabel);
                 }
                 continue;
             }
@@ -253,16 +289,27 @@ class AssetService
                 $newTypeName = $newType ? $newType->name : 'N/A';
                 $oldTypeName = $oldType ? $oldType->name : 'N/A';
                 if ($value !== null && $asset->$key != $value) {
-                    $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$oldTypeName}' a '{$newTypeName}'";
+                    $fieldChanges[] = $this->messageChange($key, $oldTypeName, $newTypeName);
                 }
                 continue;
             }
 
             if ($value !== null && $asset->$key != $value) {
-                $fieldChanges[] = $this->fromKeyToLabel($key) . " cambiado de '{$asset->$key}' a '$value'";
+                $fieldChanges[] = $this->messageChange($key, $asset->$key, $value);
             }
         }
+
+
+
         return implode(', ', $fieldChanges);
+    }
+
+    private function messageChange($key, $old, $new)
+    {
+        if (empty($old)) {
+            return "{$this->fromKeyToLabel($key)} establecido a '{$new}'";
+        }
+        return "{$this->fromKeyToLabel($key)} cambiado de '{$old}' a '{$new}'";
     }
 
     private function fromKeyToLabel(string $key): string
@@ -439,10 +486,6 @@ class AssetService
     public function devolveAsset(DevolveAssetDto $dto)
     {
         DB::transaction(function () use ($dto) {
-
-            // $assignment = AssetAssignment::where('asset_id', $dto->assignment->asset_id)
-            //     ->whereNull('returned_at')
-            //     ->first();
             if ($dto->assignment->returned_at) {
                 throw new BadRequestException('La asignación ya ha sido devuelta.');
             }
@@ -502,6 +545,7 @@ class AssetService
 
         $template = new TemplateProcessor(storage_path('app/templates/cargo-laptop.docx'));
 
+
         $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
         $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
         $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
@@ -513,7 +557,7 @@ class AssetService
         $template->setValue('ram', strtoupper($asset->ram ?? 'N/A'));
         $template->setValue('storage', strtoupper($asset->storage ?? 'N/A'));
 
-        $template->setValue('comment', $assignment->comment ?? 'N/A');
+        $template->setValue('comment', $assignment->comment ?? '');
 
 
         $fileName = 'cargo_laptop_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
@@ -597,6 +641,36 @@ class AssetService
 
 
         return Storage::disk('public')->url($path);
+    }
+
+    public function uploadInvoiceDocument(Asset $asset, string $file)
+    {
+        
+
+        $filePath = Storage::disk('public')->putFile('invoices', $file);
+
+    
+        $description = "Documento de factura subido correctamente.";
+        
+        if ($asset->invoice_url) {
+            $description = "Documento de factura actualizado correctamente.";
+        }
+
+        $asset->update([
+            'invoice_path' => $filePath,
+        ]);
+        
+        AssetHistory::create([
+            'action' => AssetHistoryAction::INVOICE_UPLOADED->value,
+            'description' => $description,
+            'asset_id' => $asset->id,
+            'performed_by' => auth()->user()->staff_id,
+            'performed_at' => now(),
+            'invoice_path' => $filePath,
+           
+        ]);
+        
+        return Storage::disk('public')->url($filePath);
     }
 
 }

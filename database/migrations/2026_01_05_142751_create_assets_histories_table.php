@@ -17,6 +17,8 @@ return new class extends Migration
             $table->enum('action', AssetHistoryAction::values());
             $table->text('description')->nullable();
 
+            $table->text('invoice_path')->nullable();
+
             $table->unsignedBigInteger('asset_id');
             $table->foreign('asset_id')->references('id')->on('assets');
 
@@ -24,8 +26,9 @@ return new class extends Migration
             $table->foreign('related_delivery_record_id')->references('id')->on('delivery_records');
 
             $table->unsignedInteger('performed_by');
-
             $table->foreign('performed_by')->references('staff_id')->on('ost_staff');
+
+            $table->string('performed_by_name')->nullable();
             $table->timestamp('performed_at')->useCurrent();
         });
     }

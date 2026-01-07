@@ -7,8 +7,10 @@
                 @update:model-value=" table.getColumn('name')?.setFilterValue($event)" />
 
         </div>
-        <div class="rounded-md border">
-            <Table>
+        <div class="rounded-md border lg:w-96">
+            <Table
+            
+            >
                 <TableHeader>
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
                         <TableHead v-for="header in headerGroup.headers" :key="header.id">
@@ -139,6 +141,7 @@ import {
 import { type AssetType } from '@/interfaces/asset.interface'
 import { router } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { format } from 'date-fns'
 
 const { assetTypes } = defineProps<{
     assetTypes: Array<AssetType>,
@@ -200,6 +203,25 @@ const columns: ColumnDef<AssetType>[] = [
         },
         cell: ({ row }) => row.getValue('name'),
     },
+    {
+        accessorKey: 'created_at',
+        header: ({ column }) => {
+            return h(Button, {
+                variant: 'ghost',
+                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+            }, () => ['Creado', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => format(row.getValue('created_at') as string, 'dd/MM/yyyy HH:mm:ss'),
+    }, {
+        accessorKey: 'updated_at',
+        header: ({ column }) => {
+            return h(Button, {
+                variant: 'ghost',
+                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+            }, () => ['Actualizado', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
+        },
+        cell: ({ row }) => format(row.getValue('updated_at') as string, 'dd/MM/yyyy HH:mm:ss'),
+    }
 
 ]
 

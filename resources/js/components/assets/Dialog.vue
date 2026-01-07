@@ -289,9 +289,9 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm, Field as VeeField } from 'vee-validate'
 import { computed, ref, watch } from 'vue'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Dialog,
     DialogContent,
@@ -321,9 +321,8 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Spinner } from '@/components/ui/spinner'
-import { Asset, AssetStatus, assetStatusOptions, AssetType } from '@/interfaces/asset.interface'
+import { Asset, AssetType } from '@/interfaces/asset.interface'
 import { type User } from '@/interfaces/user.interface'
 import { router, usePage } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
@@ -390,7 +389,9 @@ const formSchema = toTypedSchema(z.object({
     type_id: z.number({
         message: 'El tipo de activo es obligatorio'
     }),
-    brand: z.string().min(1, 'La marca es obligatoria'),
+    brand: z.string({
+        message: 'La marca es obligatoria'
+    }).min(1, 'La marca es obligatoria'),
     model: z.string().optional().nullable(),
     serial_number: z.string().optional().nullable(),
     processor: z.string().optional().nullable(),
@@ -398,8 +399,12 @@ const formSchema = toTypedSchema(z.object({
     storage: z.string().optional().nullable(),
     phone: z.string().optional().nullable(),
     imei: z.string().optional().nullable(),
-    purchase_date: z.instanceof(CalendarDate).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
-    warranty_expiration: z.instanceof(CalendarDate).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+    purchase_date: z.instanceof(CalendarDate, {
+        message: 'La fecha de compra es obligatoria'
+    }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+    warranty_expiration: z.instanceof(CalendarDate, {
+        message: 'La fecha de vencimiento de la garantía es obligatoria'
+    }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
     is_new: z.boolean().optional().default(true),
     // assigned_to: z.number().optional(),
 

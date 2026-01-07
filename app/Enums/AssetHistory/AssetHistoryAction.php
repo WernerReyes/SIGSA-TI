@@ -12,7 +12,7 @@ enum AssetHistoryAction: string
 
     case DELIVERY_RECORD_UPLOADED = 'DELIVERY_RECORD_UPLOADED';
 
-    
+    case INVOICE_UPLOADED = 'INVOICE_UPLOADED';
 
     public static function values(): array
     {

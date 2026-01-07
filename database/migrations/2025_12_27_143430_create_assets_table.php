@@ -5,8 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -27,6 +26,7 @@ return new class extends Migration
             $table->string('imei')->nullable();
             $table->date('purchase_date')->nullable();
             $table->date('warranty_expiration')->nullable();
+            $table->string('invoice_path')->nullable();
             $table->boolean('is_new')->default(true);
 
             $table->unsignedBigInteger('type_id')->nullable();

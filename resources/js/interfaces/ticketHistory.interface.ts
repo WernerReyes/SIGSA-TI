@@ -7,4 +7,5 @@ export interface TicketHistory {
     performed_by: number;
     performer?: User;
     performed_at: Date;
+    invoice_url?: string;
 }

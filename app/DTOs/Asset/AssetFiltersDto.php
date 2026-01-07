@@ -6,6 +6,8 @@ class AssetFiltersDto
         public ?string $search = null,
         public ?array $status = null,
         public ?array $types = null,
+        public ?array $assigned_to = null,
+        public ?array $department_id = null,
     ) {
     }
 
@@ -15,6 +17,8 @@ class AssetFiltersDto
             search: $data['search'] ?? null,
             status: $data['status'] ?? null,
             types: $data['types'] ?? null,
+            assigned_to: $data['assigned_to'] ?? null,
+            department_id: $data['department_id'] ?? null,
         );
     }
 }

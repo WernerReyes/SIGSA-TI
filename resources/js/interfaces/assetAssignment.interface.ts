@@ -17,4 +17,5 @@ export interface AssetAssignment {
     assigned_to?: User;
     delivery_document?: DeliveryRecord | null;
     return_document?: DeliveryRecord | null;
+    
 }

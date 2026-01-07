@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/assets/generate-laptop-assignment-doc/{assignmentId}', [AssetController::class, 'generateLaptopAssignmentDocument'])->name('assets.generateLaptopAssignmentDocument');
     Route::get('/assets/generate-phone-assignment-doc/{assignmentId}', [AssetController::class, 'generateCellphoneAssignmentDocument'])->name('assets.generatePhoneAssignmentDocument');
     Route::post('/assets/delivery-records/{assignment}', [AssetController::class, 'uploadDeliveryRecord'])->name('assets.uploadDeliveryRecord');
+    Route::post('/assets/invoice-documents/{asset}', [AssetController::class, 'uploadInvoiceDocument'])->name('assets.uploadInvoiceDocument');
 
     Route::post('/assets/types', [AssetController::class, 'registerType'])->name('assets.types.register');
     Route::delete('/assets/types', [AssetController::class, 'deleteType'])->name('assets.types.delete');

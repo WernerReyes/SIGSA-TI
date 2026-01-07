@@ -18,6 +18,7 @@ export interface AssetHistory {
     performed_by: number;
     performed_at: string;
     performer?: User;
+    invoice_url?: string;
     related_assignment_id?: number | null;
     delivery_record?: DeliveryRecord | null;
 }
@@ -29,6 +30,7 @@ export enum AssetHistoryAction {
     ASSIGNED = 'ASSIGNED',
     RETURNED = 'RETURNED',
     DELIVERY_RECORD_UPLOADED = 'DELIVERY_RECORD_UPLOADED',
+    INVOICE_UPLOADED = 'INVOICE_UPLOADED',
 }
 
 export type AssetHistoryActionOption = {
@@ -36,6 +38,7 @@ export type AssetHistoryActionOption = {
     value: AssetHistoryAction;
     icon: FunctionalComponent<LucideProps, any>;
     bg: string;
+    
 };
 
 export const assetHistoryActionOptions: Record<
@@ -73,10 +76,16 @@ export const assetHistoryActionOptions: Record<
         bg: 'bg-red-500',
     },
     [AssetHistoryAction.DELIVERY_RECORD_UPLOADED]: {
-        label: 'Archivo Subido',
+        label: 'Asignación Subida',
         value: AssetHistoryAction.DELIVERY_RECORD_UPLOADED,
         icon: MonitorCheck,
         bg: 'bg-teal-500',
+    },
+    [AssetHistoryAction.INVOICE_UPLOADED]: {
+        label: 'Factura Subida',
+        value: AssetHistoryAction.INVOICE_UPLOADED,
+        icon: MonitorCheck,
+        bg: 'bg-indigo-500',
     },
 };
 

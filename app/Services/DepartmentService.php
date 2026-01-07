@@ -20,4 +20,8 @@ class DepartmentService
         $deptWithUsers = $techDept->load('users:staff_id,firstname,lastname,dept_id');
         return $deptWithUsers;
     }
+
+    function getAll() {
+        return Department::select('id', 'name')->get();
+    }
 }

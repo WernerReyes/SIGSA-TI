@@ -13,10 +13,11 @@ use App\Http\Requests\Asset\AssignAssetRequest;
 use App\Http\Requests\asset\DevolveAssetRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
-use App\Http\Requests\asset\UploadDeliveryRecord;
 use App\Http\Requests\asset\UploadDeliveryRecordRequest;
+use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Services\AssetService;
+use App\Services\DepartmentService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,18 +26,18 @@ class AssetController extends Controller
 {
     //
 
-    public function renderView(AssetService $assetService, UserService $userService, Request $request)
+    public function renderView(AssetService $assetService, UserService $userService, DepartmentService $departmentService, Request $request)
     {
         $types = $assetService->getTypes();
-        $assets = $assetService->getAll();
+
         $users = $userService->getAllUsers();
         $TIUsers = $userService->getTIDepartmentUsers();
+        $depatments = $departmentService->getAll();
 
         $filters = AssetFiltersDto::fromArray($request->all());
+        $assetsPaginated = $assetService->getPaginated($filters);
 
-        $assetsPaginated = $assetService->getAll2($filters);
-        // ds($assetsPaginated);
-
+        $stats = $assetService->getStats();
 
         return Inertia::render('Assets', [
             'types' => $types,
@@ -44,7 +45,9 @@ class AssetController extends Controller
             'users' => $users,
             'TIUsers' => $TIUsers,
             'filters' => $filters,
+            'departments' => $depatments,
             'assetsPaginated' => $assetsPaginated,
+            'stats' => $stats,
         ]);
     }
 
@@ -73,11 +76,7 @@ class AssetController extends Controller
             $assetService->deleteType($id);
             return back()->with('success', 'Tipo de activo eliminado correctamente.');
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al eliminar el tipo de activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -212,6 +211,24 @@ class AssetController extends Controller
                 return back()->withErrors(['error' => $e->getMessage()]);
             }
             return back()->withErrors(['error' => 'Ocurrió un error al subir el registro de entrega. Por favor, inténtelo de nuevo.']);
+        }
+    }
+
+    public function uploadInvoiceDocument(Request $request, Asset $asset, AssetService $assetService)
+    {
+        $request->validate([
+            'invoice' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048', // Max 2MB
+        ]);
+
+        try {
+            $fileUrl = $assetService->uploadInvoiceDocument($asset, $request->file('invoice'));
+            return back()->with('success', 'Factura subida correctamente.')->with('file_url', $fileUrl);
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            if ($e->getCode() !== 500) {
+                return back()->withErrors(['error' => $e->getMessage()]);
+            }
+            return back()->withErrors(['error' => 'Ocurrió un error al subir la factura. Por favor, inténtelo de nuevo.']);
         }
     }
 }

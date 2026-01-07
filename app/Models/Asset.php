@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Asset extends Model
 {
@@ -24,11 +25,26 @@ class Asset extends Model
         'assigned_to_id',
         'type_id',
         'is_new',
+        'invoice_path'
     ];
+
+    public function getInvoiceUrlAttribute()
+    {
+        if (!$this->invoice_path) {
+            return null;
+        }
+        return Storage::disk('public')->url($this->invoice_path);
+    }
+
 
     protected $casts = [
         'purchase_date' => 'date',
         'warranty_expiration' => 'date',
+        
+    ];
+
+    protected $appends = [
+        'invoice_url',
     ];
 
 

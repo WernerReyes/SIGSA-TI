@@ -34,7 +34,9 @@
 
                                 <SelectItem v-for="action in Object.values(assetHistoryActionOptions)"
                                     :key="action.value" :value="action.value">
-                                    <Badge :class="action.bg">{{ action.label }}</Badge>
+                                    <Badge :class="action.bg">
+                                         <component :is="action.icon" class="size-4" />
+                                        {{ action.label }}</Badge>
                                 </SelectItem>
                             </SelectGroup>
                         </SelectContent>
@@ -58,7 +60,7 @@
                         <PopoverContent class="w-auto overflow-hidden p-0" align="start">
 
                             <RangeCalendar v-model="dateRange" class="rounded-md border shadow-sm" :number-of-months="2"
-                                disable-days-outside-current-view />
+                                disable-days-outside-current-view locale="es" />
                         </PopoverContent>
                     </Popover>
                 </div>
@@ -110,7 +112,9 @@
                                     <template v-for="(des, i) in history.description.split(`'`)" :key="i">
 
                                         <Badge v-if="getStatusOpByDes(des)" class="mx-1"
-                                            :class="getStatusOpByDes(des)?.bg">{{
+                                            :class="getStatusOpByDes(des)?.bg">
+                                            <component :is="getStatusOpByDes(des)?.icon" class="size-4" />
+                                            {{
                                                 getStatusOpByDes(des)?.label }}
                                         </Badge>
                                         <span v-else>
@@ -124,14 +128,14 @@
                             </template>
 
                             <div class="flex items-center mt-2 gap-2"
-                                v-if="history.action === AssetHistoryAction.DELIVERY_RECORD_UPLOADED">
+                                v-if="[AssetHistoryAction.DELIVERY_RECORD_UPLOADED, AssetHistoryAction.INVOICE_UPLOADED].includes(history.action)">
 
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger as-child>
 
                                             <Button class="ml-auto" size="icon" @click="() => {
-                                                handleDownloadReceipt(history?.delivery_record?.file_url || '')
+                                                handleDownloadReceipt(history?.delivery_record?.file_url || history.invoice_url || '')
                                             }">
 
                                                 <DownloadIcon />
@@ -227,7 +231,6 @@ const histories = computed(() => {
 
 
 const handleDownloadReceipt = (filePath: string) => {
-    console.log('Downloading file from:', filePath);
     window.open(filePath, '_blank');
 };
 
