@@ -86,7 +86,7 @@ import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Boxes, EllipsisVertical, ShieldCheck, ShieldX, Wrench } from 'lucide-vue-next';
+import { Boxes, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
 
 const { stats } = defineProps<{ types: AssetType[], assets: Asset[], assetsPaginated: AssetsPaginated, stats: AssetStats }>();
 
@@ -113,7 +113,7 @@ const statsView = computed(() => [
         bg: 'bg-slate-100 dark:bg-slate-800',
     },
     {
-        label: 'Garantías Activos',
+        label: 'Garantías Vigentes',
         value: stats.not_expired_warranty,
         icon: ShieldCheck,
         color: 'text-emerald-600 dark:text-emerald-400',

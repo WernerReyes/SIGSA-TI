@@ -1,4 +1,3 @@
-import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { InertiaLinkProps } from '@inertiajs/vue3';
 import type { Updater } from '@tanstack/vue-table';
 import type { ClassValue } from 'clsx';
@@ -31,4 +30,3 @@ export function valueUpdater<T extends Updater<any>>(
             ? updaterOrValue(ref.value)
             : updaterOrValue;
 }
-

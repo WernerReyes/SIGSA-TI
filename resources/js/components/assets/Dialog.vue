@@ -441,8 +441,8 @@ function onSubmit(values: any) {
 
 
     if (currentAsset.value) {
-        router.put('/assets', {
-            id: currentAsset.value.id,
+        router.put(`/assets/${currentAsset.value.id}`, {
+            // id: currentAsset.value.id,
             ...values
         }, {
             onSuccess: () => {

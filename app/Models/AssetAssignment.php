@@ -26,7 +26,7 @@ class AssetAssignment extends Model
 
     protected $casts = [
         'assigned_at' => 'date',
-        'returned_at' => 'date',
+        'returned_at' => 'datetime',
     ];
 
 
@@ -48,6 +48,11 @@ class AssetAssignment extends Model
     public function returnDocument()
     {
         return $this->hasOne(DeliveryRecord::class, 'assignment_id')->where('type', DeliveryRecordType::DEVOLUTION->value)->latestOfMany();
+    }
+
+    public function responsible()
+    {
+        return $this->belongsTo(User::class, 'responsible_id');
     }
 
     

@@ -17,7 +17,7 @@
                     <p class="text-sm font-medium">{{ asset?.name }}</p>
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
 
-                    
+
 
 
                 </div>
@@ -145,14 +145,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { type User } from '@/interfaces/user.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { ChevronDownIcon, Download, Laptop, Smartphone } from 'lucide-vue-next';
-import FileUpload from '../FileUpload.vue';
-import { toast } from 'vue-sonner';
-import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
+import { ChevronDownIcon } from 'lucide-vue-next';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -164,16 +162,10 @@ const assign = computed<AssetAssignment | null>(() => {
     return asset.value?.current_assignment || null;
 });
 
-const url = ref('');
-
-const currentUrl = computed<string>(() => {
-    return url.value || asset.value?.current_assignment?.delivery_document?.file_url || '';
-});
 
 
 const isSubmitting = ref(false);
 
-const resetUpload = ref(false);
 
 const formSchema = toTypedSchema(
     z.object({
@@ -203,13 +195,19 @@ watch(assign, (assignment) => {
             assign_date: parseDate(assignment.assigned_at.split('T')[0]),
             comment: assignment.comment || '',
         });
+    } else {
+        setValues({
+            assigned_to_id: undefined,
+            assign_date: today(getLocalTimeZone()),
+            comment: '',
+        });
     }
 }, { immediate: true });
 
 
 const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
-    
+
     router.post('/assets/assign', {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
@@ -227,32 +225,5 @@ const onSubmit = async (values: Record<string, any>) => {
 };
 
 
-const handleDownloadCargo = () => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-laptop-assignment-doc/${asset.value.id}`;
-}
 
-const handleDownloadPhoneCargo = () => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-phone-assignment-doc/${asset.value.id}`;
-}
-
-const handleUploadSignedDocument = (file: File) => {
-    router.post(`/assets/delivery-records/${asset.value?.id}`, {
-        file: file,
-        type: DeliveryRecordType.ASSIGNMENT,
-    }, {
-        onSuccess: (page) => {
-            const fileUrl = page.props.flash.file_url;
-
-            url.value = fileUrl;
-            // resetUpload.value = true;
-        },
-        onFinish: () => {
-            resetUpload.value = true;
-        }
-
-    });
-    // Implement upload logic here
-};
 </script>

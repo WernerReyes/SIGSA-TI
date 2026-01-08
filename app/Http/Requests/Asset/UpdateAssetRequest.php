@@ -22,7 +22,7 @@ class UpdateAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'integer'],
+            // 'id' => ['required', 'integer'],
             'name' => ['nullable', 'string', 'max:255'],
             'type_id' => ['nullable', 'exists:assets_type,id'],
             // 'status' => ['nullable', 'in:' . implode(',', AssetStatus::values())],

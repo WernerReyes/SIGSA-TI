@@ -48,6 +48,24 @@ class AssetController extends Controller
             'departments' => $depatments,
             'assetsPaginated' => $assetsPaginated,
             'stats' => $stats,
+            'asset' => Inertia::lazy(
+                fn() =>
+                request()->asset_id
+                ? Asset::with([
+                    'histories.performer',
+                    'assignments.assignedTo',
+                ])->findOrFail(request()->asset_id)
+                : null
+            ),
+        ]);
+    }
+
+    public function renderAsset(Asset $asset, AssetService $assetService)
+    {
+        $asset = $assetService->getDetails($asset);
+
+        return Inertia::render('Assets', [
+            'asset' => $asset,
         ]);
     }
 
@@ -61,11 +79,7 @@ class AssetController extends Controller
             $message = $id ? 'Tipo de activo actualizado: ' : 'Tipo de activo registrado: ';
             return back()->with('success', $message . $assetType->name);
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() === 23000) { // Integrity constraint violation
-                return back()->withErrors(['error' => 'El tipo de activo ya existe.']);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al registrar el tipo de activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -90,47 +104,34 @@ class AssetController extends Controller
             $asset = $assetService->storeAsset($dto);
             return back()->with('success', 'Activo registrado correctamente: ' . $asset->name);
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al registrar el activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
-    public function updateAsset(UpdateAssetRequest $request, AssetService $assetService)
+    public function updateAsset(UpdateAssetRequest $request, Asset $asset, AssetService $assetService)
     {
         $validated = $request->validated();
         $dto = UpdateAssetDto::fromArray($validated);
         try {
-            $asset = $assetService->updateAsset($dto);
+            $asset = $assetService->updateAsset($dto, $asset);
             return back()->with('success', 'Activo actualizado correctamente: ' . $asset->name);
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al actualizar el activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
-    public function changeAssetStatus(Request $request, AssetService $assetService)
+    public function changeAssetStatus(Request $request, Asset $asset, AssetService $assetService)
     {
-        $assetId = $request->input('asset_id');
         $newStatus = $request->input('status');
         if (!in_array($newStatus, AssetStatus::values())) {
             return back()->withErrors(['error' => 'Estado de activo inválido proporcionado.']);
         }
 
         try {
-            $assetService->changeAssetStatus($assetId, $newStatus);
+            $assetService->changeAssetStatus($asset, $newStatus);
             return back()->with('success', 'Estado del activo actualizado correctamente.');
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al actualizar el estado del activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -142,11 +143,7 @@ class AssetController extends Controller
             $assetService->assignAsset($dto);
             return back()->with('success', 'Activo asignado correctamente');
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al asignar el activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -158,42 +155,46 @@ class AssetController extends Controller
             $assetService->devolveAsset($dto);
             return back()->with('success', 'Activo devuelto correctamente');
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al devolver el activo. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
-    public function generateLaptopAssignmentDocument(int $assignmentId, AssetService $assetService)
+    public function generateLaptopAssignmentDocument(AssetAssignment $assignment, AssetService $assetService)
     {
         try {
-            $filePath = $assetService->generateLaptopAssignmentDocument($assignmentId);
+            $filePath = $assetService->generateLaptopAssignmentDocument($assignment);
 
             return response()->download($filePath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al generar el documento. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
-    public function generateCellphoneAssignmentDocument(int $assetId, AssetService $assetService)
+    public function generateCellphoneAssignmentDocument(AssetAssignment $assignment, AssetService $assetService)
     {
         try {
-            $filePath = $assetService->generateCellphoneAssignmentDocument($assetId);
-            ds($filePath);
+            $filePath = $assetService->generateCellphoneAssignmentDocument($assignment);
+
 
             return response()->download($filePath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
-            ds($e->getMessage(), $e->getCode());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al generar el documento. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
+
+
+        }
+    }
+
+    public function generateReturnDocument(AssetAssignment $assignment, AssetService $assetService)
+    {
+        try {
+            $filePath = $assetService->generateReturnDocument($assignment);
+
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+
+            return back()->withErrors(['error' => $e->getMessage()]);
+
+
         }
     }
 
@@ -206,11 +207,10 @@ class AssetController extends Controller
             $file_url = $assetService->uploadDeliveryRecord($dto);
             return back()->with('success', 'Registro de entrega subido correctamente.')->with('file_url', $file_url);
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al subir el registro de entrega. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
+
+
+
         }
     }
 
@@ -224,11 +224,7 @@ class AssetController extends Controller
             $fileUrl = $assetService->uploadInvoiceDocument($asset, $request->file('invoice'));
             return back()->with('success', 'Factura subida correctamente.')->with('file_url', $fileUrl);
         } catch (\Exception $e) {
-            ds($e->getMessage());
-            if ($e->getCode() !== 500) {
-                return back()->withErrors(['error' => $e->getMessage()]);
-            }
-            return back()->withErrors(['error' => 'Ocurrió un error al subir la factura. Por favor, inténtelo de nuevo.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 }

@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'dept_id');
     }
 
+    public function charge()
+    {
+        return $this->belongsTo(Charge::class, 'id_cargo');
+    }
+
     // protected $hidden = [
     //     'password',
     // ];

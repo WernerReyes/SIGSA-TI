@@ -12,7 +12,9 @@
                 <h2 class="text-lg font-semibold">Cargar Factura</h2>
             </DialogHeader>
 
-            <FileUpload :current-url="invoiceUrl" v-model:reset="resetUpload" @error="(msg) => toast.error(msg)"
+            <FileUpload
+            :max-size-mb="2"
+            :current-url="invoiceUrl" v-model:reset="resetUpload" @error="(msg) => toast.error(msg)"
                 accept="application/pdf,image/*" @update:file="handleUploadInvoiceDocument($event)" />
 
         </DialogContent>

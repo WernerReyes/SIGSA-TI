@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AssetAssignment\ReturnReason;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,11 +15,13 @@ return new class extends Migration {
             $table->id();
 
             $table->date('assigned_at');
-            $table->date('returned_at')->nullable();
+            $table->dateTime('returned_at')->nullable();
 
 
             $table->text('comment')->nullable();
             $table->text('return_comment')->nullable();
+
+            $table->enum('return_reason', ReturnReason::values())->nullable();
 
             $table->foreignId('asset_id')->references('id')->on('assets');
 

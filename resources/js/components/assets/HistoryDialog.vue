@@ -35,8 +35,9 @@
                                 <SelectItem v-for="action in Object.values(assetHistoryActionOptions)"
                                     :key="action.value" :value="action.value">
                                     <Badge :class="action.bg">
-                                         <component :is="action.icon" class="size-4" />
-                                        {{ action.label }}</Badge>
+                                        <component :is="action.icon" class="size-4" />
+                                        {{ action.label }}
+                                    </Badge>
                                 </SelectItem>
                             </SelectGroup>
                         </SelectContent>
@@ -45,8 +46,7 @@
                     <Popover>
                         <PopoverTrigger as-child>
                             <Button variant="outline" class="w-full sm:w-52 justify-between font-normal">
-
-                                {{ Object.keys(dateRange || {}).length > 0
+                                {{ JSON.stringify(dateRange) !== '{}' && dateRange
                                     ?
                                     `${dateRange?.start?.toDate(getLocalTimeZone()).toLocaleDateString()}
                                 ${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString() ? ' - ' : ''}

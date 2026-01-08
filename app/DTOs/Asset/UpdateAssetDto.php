@@ -5,7 +5,7 @@ namespace App\DTOs\Asset;
 class UpdateAssetDto
 {
     private function __construct(
-        public int $id,
+        // public int $id,
         public ?string $name,
         public ?int $type_id,
         public ?string $color,
@@ -28,7 +28,7 @@ class UpdateAssetDto
     public static function fromArray(array $data): self
     {
         return new self(
-            id: $data['id'],
+            // id: $data['id'],
             name: $data['name'] ?? null,
             type_id: $data['type_id'] ?? null,
             color: $data['color'] ?? null,

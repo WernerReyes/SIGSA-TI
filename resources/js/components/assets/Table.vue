@@ -183,7 +183,10 @@
                 <ContextMenu>
                     <ContextMenuTrigger as-child>
                         <TableBody>
-                            <TableRow @contextmenu="activeRow = row.original" :key="row.id"
+                            <TableRow @contextmenu="() => {
+                                console.log(row.original);
+                                activeRow = row.original
+                            }" :key="row.id"
                                 v-for="row in table.getRowModel().rows"
                                 :data-state="row.getIsSelected() ? 'selected' : undefined" class="cursor-context-menu">
                                 <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="pl-5"
@@ -196,7 +199,7 @@
 
                     <ContextMenuContent class="w-52">
 
-                        <ContextMenuItem @click="openDetails = true">
+                        <ContextMenuItem @click="handleOpenDetails()">
                             <Eye />
                             Ver detalle
                         </ContextMenuItem>
@@ -299,7 +302,7 @@
     </div>
 
 
-
+    {{ openDetails }}
     <DialogDetails v-model:open="openDetails" v-model:asset="activeRow" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
     <InvoiceDialog v-model:open="openInvoice" :asset="activeRow" />
@@ -362,7 +365,7 @@ import { type Asset, AssetStatus, assetStatusOptions, AssetType, statusOp } from
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isEqual, parseISO } from 'date-fns';
-import { Check, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Component, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, X } from 'lucide-vue-next';
+import { Check, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Component, Eye, UserIcon,  History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, X } from 'lucide-vue-next';
 import { computed, h, onMounted, onUnmounted, reactive, ref, useTemplateRef, watch } from 'vue';
 import { AssetsPaginated } from '../../interfaces/asset.interface';
 import AssignDialog from './AssignDialog.vue';
@@ -371,7 +374,7 @@ import Dialog from './Dialog.vue';
 import DialogDetails from './DialogDetails.vue';
 import HistoryDialog from './HistoryDialog.vue';
 import StatusDialog from './StatusDialog.vue';
-import { User } from '@/interfaces/user.interface';
+import { type User } from '@/interfaces/user.interface';
 import { Department } from '@/interfaces/department.interace';
 import InvoiceDialog from './InvoiceDialog.vue';
 
@@ -478,6 +481,48 @@ onUnmounted(() => {
     unsubscribeFinish?.()
 })
 
+// const handleOpenDetails = () => {
+//    router.reload({
+//     preserveUrl: true,
+//     preserveState: true,
+//     only: ['asset'],
+//     data: {
+//       asset_id: activeRow.value?.id,
+//     },
+//     onSuccess: () => {
+//       openDetails.value = true
+//     }
+//   })
+//     // activeRow.value = asset;
+//     // openDetails.value = true;
+// }
+
+const handleOpenDetails = () => {
+    router.get(
+        `/assets/${activeRow.value?.id}`,
+        {
+            
+        },
+        {   
+            preserveState: true,
+            preserveUrl: true,
+            preserveScroll: true,
+            // replace: true,
+            only: ['asset'],
+            onSuccess: (page) => {
+                // const assetData = page.props.asset as Asset;
+                // activeRow.value = assetData;
+                console.log(page.props.asset);
+                //  activeRow.value = page.props.asset as Asset;
+                openDetails.value = true;
+            }
+        }
+    )
+    // activeRow.value = asset;
+    // openDetails.value = true;
+}
+
+
 
 const applyFilters = () => {
 
@@ -550,9 +595,15 @@ const columns: ColumnDef<Asset>[] = [
 
             const assignedTo = info.row.original.current_assignment?.assigned_to;
             if (assignedTo) {
-                return info.getValue();
+                return h(Badge, { variant: 'default' }, () => [
+                    h(UserIcon),
+                    assignedTo.full_name
+                ]);
             } else {
-                return h(Badge, { variant: 'secondary' }, () => 'Sin asignar');
+                return h(Badge, { variant: 'secondary' }, () => [
+                    h(X),
+                    'Sin asignar'
+                ]);
             }
         },
     },

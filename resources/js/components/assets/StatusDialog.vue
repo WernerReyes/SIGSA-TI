@@ -118,10 +118,10 @@ const handleFormSubmit = (values: { status: AssetStatus }) => {
     isSubmitting.value = true;
 
     router.put(
-        `/assets/status`,
+        `/assets/status/${asset?.value?.id}`,
         {
             status: values.status,
-            asset_id: asset?.value?.id
+            // asset_id: asset?.value?.id
         },
         {
             onSuccess: () => {

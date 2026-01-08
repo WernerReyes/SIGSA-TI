@@ -8,6 +8,7 @@ class DevolveAssetDto
         public readonly ?string $return_comment,
         public readonly int $responsible_id,
         public readonly string $return_date,
+        public readonly string $return_reason,
         public AssetAssignment $assignment,
     ) {
     }
@@ -19,6 +20,7 @@ class DevolveAssetDto
             responsible_id: $data['responsible_id'],
             return_date: $data['return_date'],
             assignment: $assignment,
+            return_reason: $data['return_reason'],
         );
     }
 }

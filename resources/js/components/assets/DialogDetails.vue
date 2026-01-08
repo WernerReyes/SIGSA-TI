@@ -201,7 +201,8 @@
                                                 <DropdownMenuSubContent>
                                                     <DropdownMenuItem @click="() => handleDownloadCargo(assignment.id)">
                                                         <Laptop />
-                                                        Laptop
+                                                        
+                                                         {{ capitalize(asset?.type?.name || 'Laptop') }}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         @click="() => handleDownloadPhoneCargo(assignment.id)">
@@ -333,7 +334,7 @@ import {
 import { Asset, statusOp } from '@/interfaces/asset.interface';
 import { format, isAfter, parseISO } from 'date-fns';
 import { Calendar, Eye, FileText, Laptop, Monitor, Shield, User, Upload, Download, Smartphone, MonitorSmartphone } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { capitalize, computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import FileUpload from '../FileUpload.vue';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
@@ -385,7 +386,7 @@ const handleDownloadPhoneCargo = (assignmentId: number) => {
 
 const handleDownloadReturnCargo = (assignmentId: number) => {
     if (!asset.value) return;
-    window.location.href = `/assets/generate-laptop-assignment-doc/${assignmentId}`;
+    window.location.href = `/assets/generate-return-doc/${assignmentId}`;
 }
 
 
@@ -436,5 +437,6 @@ const handleUploadSignedDocument = (file: File) => {
     });
     // Implement upload logic here
 };
+
 
 </script>

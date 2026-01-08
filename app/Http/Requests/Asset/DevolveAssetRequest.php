@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\asset;
 
+use App\Enums\AssetAssignment\ReturnReason;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DevolveAssetRequest extends FormRequest
@@ -25,6 +26,7 @@ class DevolveAssetRequest extends FormRequest
             'return_comment' => 'nullable|string|max:500',
             'responsible_id' => 'required|exists:ost_staff,staff_id',
             'return_date' => 'required|date',
+            'return_reason' => 'required|in:' . implode(',', ReturnReason::values()),
         ];
     }
 
@@ -37,6 +39,8 @@ class DevolveAssetRequest extends FormRequest
             'responsible_id.exists' => 'El ID del responsable proporcionado no existe.',
             'return_date.required' => 'La fecha de devolución es obligatoria.',
             'return_date.date' => 'La fecha de devolución debe ser una fecha válida.',
+            'return_reason.required' => 'El motivo de devolución es obligatorio.',
+            'return_reason.in' => 'El motivo de devolución seleccionado no es válido.',
         ];
     }
 }

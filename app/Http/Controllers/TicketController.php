@@ -21,8 +21,7 @@ class TicketController extends Controller
         $departmentsWithUsers = $departmentService->getTechDepartmentUsers();
         $ticketsOrderedByPriority = $ticketService->getAllOrderedByPriority();
         $TIUsers = $userService->getTIDepartmentUsers();
-        ds($ticketsOrderedByPriority->toArray());
-        ds($TIUsers->toArray());
+    
         return Inertia::render('Tickets', [
             'departments' => $departmentsWithUsers,
             'tickets' => $ticketsOrderedByPriority,
@@ -53,7 +52,6 @@ class TicketController extends Controller
             // return redirect()->route('tickets')->with('success', 'El ticket ha sido creado exitosamente.');
             return back()->with('success', 'El ticket ha sido creado exitosamente.');
         } catch (\Exception $e) {
-            ds($e->getMessage());
             return back()->withErrors(['error' => 'Ocurrió un error al crear el ticket. Por favor, inténtelo de nuevo.']);
         }
 
