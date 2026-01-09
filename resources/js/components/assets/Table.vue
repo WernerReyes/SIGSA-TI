@@ -4,7 +4,11 @@
 
         <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap">
 
-            <DropdownMenu>
+            <DropdownMenu @update:open="(val) => {
+                if (val && !users.length) {
+                    getAllUsers('/assets')
+                }
+            }" :disable="isLoading">
                 <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="ml-auto">
 
@@ -39,7 +43,11 @@
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
+            <DropdownMenu @update:open="(val) => {
+                if (val && !departments.length) {
+                    getAllDepartments('/assets')
+                }
+            }" :disable="isLoading">
                 <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="ml-auto">
                         Departamentos
@@ -116,12 +124,10 @@
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                     <DropdownMenuLabel 
-                     @click="() => {
+                    <DropdownMenuLabel @click="() => {
                         if (isLoading || !form.status?.length) return;
                         form.status = []
-                     }"
-                    class="cursor-pointer gap-2 flex items-center" >
+                    }" class="cursor-pointer gap-2 flex items-center">
                         <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
                         Refrescar lista
 
@@ -139,7 +145,8 @@
                         }">
                         <Badge :class="status.bg">
                             <component :is="status.icon" class="size-4" />
-                            {{ status.label }}</Badge>
+                            {{ status.label }}
+                        </Badge>
                     </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -184,10 +191,9 @@
                     <ContextMenuTrigger as-child>
                         <TableBody>
                             <TableRow @contextmenu="() => {
-                                console.log(row.original);
+                                // console.log(row.original);
                                 activeRow = row.original
-                            }" :key="row.id"
-                                v-for="row in table.getRowModel().rows"
+                            }" :key="row.id" v-for="row in table.getRowModel().rows"
                                 :data-state="row.getIsSelected() ? 'selected' : undefined" class="cursor-context-menu">
                                 <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="pl-5"
                                     :style="{ width: cell.column.getSize() + 'px' }">
@@ -212,10 +218,10 @@
                             Cambiar estado
                         </ContextMenuItem>
 
-                        <ContextMenuItem  @click="openInvoice = true">
+                        <ContextMenuItem @click="openInvoice = true">
                             <UploadCloud />
                             Cargar factura
-                            </ContextMenuItem>
+                        </ContextMenuItem>
 
 
                         <ContextMenuItem @click="openAssign = true">
@@ -226,20 +232,14 @@
                             <MonitorSmartphone />
                             Devolver
                         </ContextMenuItem>
-                        <ContextMenuItem @click="openHistory = true">
+                        <ContextMenuItem @click="handleOpenHistories()">
                             <History />
                             Ver historial
                         </ContextMenuItem>
-
-
-
-
-
                     </ContextMenuContent>
                 </ContextMenu>
-
-
             </template>
+            
             <template v-else>
                 <TableBody>
                     <TableRow>
@@ -301,16 +301,14 @@
         </div>
     </div>
 
-
-    {{ openDetails }}
-    <DialogDetails v-model:open="openDetails" v-model:asset="activeRow" />
+    <DialogDetails v-if="openDetails" v-model:open="openDetails" v-model:asset="activeRow" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
-    <InvoiceDialog v-model:open="openInvoice" :asset="activeRow" />
-    <StatusDialog v-model:open="changeStatus" :asset="activeRow" />
-    <AssignDialog v-model:open="openAssign" v-model:asset="activeRow" />
-    <DevolutionDialog v-model:open="openDevolution" v-model:asset="activeRow" />
-    <HistoryDialog v-model:open="openHistory" v-model:asset="activeRow" />
-    
+    <InvoiceDialog v-if="openInvoice" v-model:open="openInvoice" :asset="activeRow" />
+    <StatusDialog v-if="changeStatus" v-model:open="changeStatus" :asset="activeRow" />
+    <AssignDialog v-if="openAssign" v-model:open="openAssign" v-model:asset="activeRow" />
+    <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" v-model:asset="activeRow" />
+    <HistoryDialog v-if="openHistory" v-model:open="openHistory" v-model:asset="activeRow" />
+
 
 </template>
 
@@ -362,21 +360,24 @@ import { valueUpdater } from '@/lib/utils';
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { type Asset, AssetStatus, assetStatusOptions, AssetType, statusOp } from '@/interfaces/asset.interface';
+import { Department } from '@/interfaces/department.interace';
+import { type User } from '@/interfaces/user.interface';
+import { getAssetDetails, getAssetHistories } from '@/services/asset.service';
+import { getAllDepartments } from '@/services/department.service';
+import { getAllUsers } from '@/services/user.service';
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isEqual, parseISO } from 'date-fns';
-import { Check, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Component, Eye, UserIcon,  History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, X } from 'lucide-vue-next';
-import { computed, h, onMounted, onUnmounted, reactive, ref, useTemplateRef, watch } from 'vue';
+import { Check, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
+import { computed, h, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { AssetsPaginated } from '../../interfaces/asset.interface';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
 import DialogDetails from './DialogDetails.vue';
 import HistoryDialog from './HistoryDialog.vue';
-import StatusDialog from './StatusDialog.vue';
-import { type User } from '@/interfaces/user.interface';
-import { Department } from '@/interfaces/department.interace';
 import InvoiceDialog from './InvoiceDialog.vue';
+import StatusDialog from './StatusDialog.vue';
 
 const { assets } = defineProps<{ assets: AssetsPaginated }>()
 
@@ -393,17 +394,15 @@ const openInvoice = ref(false);
 const sorting = ref<SortingState>([])
 
 
-const users = computed(() => {
-    return [{
-        staff_id: null,
-        full_name: 'Sin asignar'
-    }, ...(usePage().props.users || []) as User[]];
-});
-const departments = computed(() => (usePage().props.departments || []) as Department[]);
+
+const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
+const departments = computed<Department[]>(() => (usePage().props.departments || []) as Department[]);
 
 const filters = computed(() => usePage().props.filters as Record<string, any>);
 
 const types = computed(() => usePage().props.types as AssetType[]);
+
+const assetId = computed(() => activeRow.value?.id || null);
 
 const form = reactive<{
     search: string;
@@ -418,6 +417,8 @@ const form = reactive<{
     assigned_to: filters.value.assigned_to || [],
     department_id: filters.value.department_id || [],
 })
+
+
 
 
 watch(
@@ -481,56 +482,29 @@ onUnmounted(() => {
     unsubscribeFinish?.()
 })
 
-// const handleOpenDetails = () => {
-//    router.reload({
-//     preserveUrl: true,
-//     preserveState: true,
-//     only: ['asset'],
-//     data: {
-//       asset_id: activeRow.value?.id,
-//     },
-//     onSuccess: () => {
-//       openDetails.value = true
-//     }
-//   })
-//     // activeRow.value = asset;
-//     // openDetails.value = true;
-// }
-
 const handleOpenDetails = () => {
-    router.get(
-        `/assets/${activeRow.value?.id}`,
-        {
-            
-        },
-        {   
-            preserveState: true,
-            preserveUrl: true,
-            preserveScroll: true,
-            // replace: true,
-            only: ['asset'],
-            onSuccess: (page) => {
-                // const assetData = page.props.asset as Asset;
-                // activeRow.value = assetData;
-                console.log(page.props.asset);
-                //  activeRow.value = page.props.asset as Asset;
-                openDetails.value = true;
-            }
-        }
-    )
-    // activeRow.value = asset;
-    // openDetails.value = true;
+    getAssetDetails(assetId.value as number, (page) => {
+        activeRow.value = page.props.asset as Asset;
+        openDetails.value = true;
+    });
+
 }
 
+const handleOpenHistories = () => {
+    getAssetHistories(assetId.value as number, (page) => {
+        activeRow.value = page.props.asset as Asset;
+        openHistory.value = true;
+    });
+}
 
 
 const applyFilters = () => {
 
     router.get(
         assets.path,
-
         form,
         {
+
             preserveState: true,
             replace: true,
         }

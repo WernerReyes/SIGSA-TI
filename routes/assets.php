@@ -6,8 +6,10 @@ use App\Http\Controllers\AssetController;
 Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () {
 
     Route::get('/assets', [AssetController::class, 'renderView'])->name('assets');
+    Route::get('/assets/users', [AssetController::class, 'renderUsers'])->name('assets.users');
+    Route::get('/assets/departments', [AssetController::class, 'renderDepartments'])->name('assets.departments');
     Route::get('/assets/{asset}', [AssetController::class, 'renderAsset'])->name('assets.show');
-
+    Route::get('/assets/{asset}/histories', [AssetController::class, 'renderHistories'])->name('assets.histories');
 
     Route::post('/assets', [AssetController::class, 'storeAsset'])->name('assets.store');
     Route::put('/assets/{asset}', [AssetController::class, 'updateAsset'])->name('assets.update');

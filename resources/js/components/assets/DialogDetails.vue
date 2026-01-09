@@ -135,13 +135,11 @@
 
 
                         </Empty>
-
                         <div v-else v-for="assignment in assignments" :key="assignment.id"
                             class="flex items-center justify-between gap-4 p-3 rounded-lg" :class="{
                                 'bg-green-500/20': !assignment.returned_at,
                                 'bg-muted/30': assignment.returned_at
                             }">
-
                             <div class="flex items-center gap-4">
 
                                 <div class="w-2 h-2 rounded-full bg-primary"></div>
@@ -201,8 +199,8 @@
                                                 <DropdownMenuSubContent>
                                                     <DropdownMenuItem @click="() => handleDownloadCargo(assignment.id)">
                                                         <Laptop />
-                                                        
-                                                         {{ capitalize(asset?.type?.name || 'Laptop') }}
+
+                                                        {{ capitalize(asset?.type?.name || 'Laptop') }}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         @click="() => handleDownloadPhoneCargo(assignment.id)">
@@ -268,12 +266,6 @@
 
 
 
-
-
-            <DialogFooter>
-
-
-            </DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -303,7 +295,6 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
-    DialogFooter,
     DialogHeader
 } from '@/components/ui/dialog';
 import {
@@ -315,11 +306,9 @@ import {
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
     DropdownMenuTrigger
-
 } from '@/components/ui/dropdown-menu';
 import {
     Empty,
-    EmptyContent,
     EmptyDescription,
     EmptyHeader,
     EmptyMedia,
@@ -332,17 +321,18 @@ import {
     TabsTrigger
 } from '@/components/ui/tabs';
 import { Asset, statusOp } from '@/interfaces/asset.interface';
-import { format, isAfter, parseISO } from 'date-fns';
-import { Calendar, Eye, FileText, Laptop, Monitor, Shield, User, Upload, Download, Smartphone, MonitorSmartphone } from 'lucide-vue-next';
-import { capitalize, computed, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
-import FileUpload from '../FileUpload.vue';
-import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
-import { toast } from 'vue-sonner';
 import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
+import { router } from '@inertiajs/vue3';
+import { format, isAfter, parseISO } from 'date-fns';
+import { Calendar, Download, Eye, FileText, Laptop, Monitor, MonitorSmartphone, Shield, Smartphone, Upload, User } from 'lucide-vue-next';
+import { capitalize, computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import FileUpload from '../FileUpload.vue';
 
 
 const asset = defineModel<Asset | null>('asset');
+
 
 const open = defineModel<boolean>('open');
 

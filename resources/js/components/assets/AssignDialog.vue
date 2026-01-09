@@ -29,7 +29,15 @@
                         <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
-                                <Select v-bind="componentField">
+                                <Select
+                                 v-bind="componentField" @update:open="(val) => {
+                                    if (val) {
+                                        if (users.length === 0) {
+
+                                            getAllUsers('/assets')
+                                        }
+                                    }
+                                }">
                                     <SelectTrigger id="assigned_to_id">
                                         <SelectValue placeholder="Seleccionar empleado" />
                                     </SelectTrigger>
@@ -145,12 +153,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
-import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { type User } from '@/interfaces/user.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { ChevronDownIcon } from 'lucide-vue-next';
+import { getAllUsers } from '@/services/user.service';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -165,6 +173,8 @@ const assign = computed<AssetAssignment | null>(() => {
 
 
 const isSubmitting = ref(false);
+
+
 
 
 const formSchema = toTypedSchema(

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UserService;
 use Illuminate\Http\Request;
-use UserService;
 
 class UserController extends Controller
 {
- 
+  
 }

@@ -12,6 +12,8 @@ export interface AssetAssignment {
     
     responsible_id?: number | null;
 
+    accesory_id?: number | null;
+
     comment?: string;
     return_comment?: string | null;
 

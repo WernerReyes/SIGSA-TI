@@ -1,15 +1,9 @@
-import {type  Component } from "vue";
-import { type AssetAssignment } from "./assetAssignment.interface";
-import { type AssetHistory } from "./assetHistory.interface";
-import { CheckCircle, Trash2, UserCheck, Wrench } from "lucide-vue-next";
+import { CheckCircle, Trash2, UserCheck, Wrench } from 'lucide-vue-next';
+import { type Component } from 'vue';
+import { type AssetAssignment } from './assetAssignment.interface';
+import { type AssetHistory } from './assetHistory.interface';
+import { type AssetType } from './assetType.interface';
 
-
-export interface AssetType {
-    id: number;
-    name: string;
-    created_at: Date;
-    updated_at: Date;
-}
 
 export interface Asset {
     id: number;
@@ -51,7 +45,7 @@ export interface AssetsPaginated {
         url: string;
         label: string;
         active: boolean;
-    }[]
+    }[];
     // first_page_url: string;
     // from: number;
     // next_page_url: string | null;
@@ -67,7 +61,6 @@ export interface AssetStats {
     statuses: Record<AssetStatus, number>;
     not_expired_warranty: number;
     expired_warranty: number;
-
 }
 
 export enum AssetStatus {
@@ -80,7 +73,7 @@ export type AssetStatusOption = {
     label: string;
     value: AssetStatus;
     bg: string;
-    icon: Component
+    icon: Component;
 };
 export const assetStatusOptions: Record<AssetStatus, AssetStatusOption> = {
     [AssetStatus.AVAILABLE]: {
@@ -99,16 +92,16 @@ export const assetStatusOptions: Record<AssetStatus, AssetStatusOption> = {
         label: 'En Reparación',
         value: AssetStatus.IN_REPAIR,
         bg: 'bg-yellow-500',
-        icon:Wrench,
+        icon: Wrench,
     },
     [AssetStatus.DECOMMISSIONED]: {
         label: 'Dado de Baja',
         value: AssetStatus.DECOMMISSIONED,
         bg: 'bg-red-500',
-        icon: Trash2
+        icon: Trash2,
     },
 };
 
 export const statusOp = (status: AssetStatus): AssetStatusOption => {
     return assetStatusOptions[status];
-}
+};

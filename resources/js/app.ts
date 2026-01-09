@@ -12,7 +12,7 @@ router.on('error', (event) => {
 
     const message = Object.values(errors)[0]
     if (message) {
-        toast.error(message as string)
+        toast.error(message)
     }
 })
 
@@ -26,10 +26,6 @@ router.on('success', (event) => {
     if (flash.success) {
         toast.success(flash.success)
     }
-
-    // if (flash.error) {
-    //     toast.error(flash.error)
-    // }
 })
 
 

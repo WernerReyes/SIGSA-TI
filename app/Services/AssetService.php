@@ -85,8 +85,65 @@ class AssetService
         }
     }
 
-
     public function getPaginated(AssetFiltersDto $filtersDto)
+    {
+        try {
+            return Asset::query()->with(
+                'type:id,name',
+                'currentAssignment:id,asset_id,assigned_to_id,assigned_at',
+                'currentAssignment.assignedTo:staff_id,firstname,lastname',
+            )->
+                when($filtersDto->search, function ($query, $search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('brand', 'like', "%{$search}%")
+                            ->orWhere('model', 'like', "%{$search}%")
+                            ->orWhere('serial_number', 'like', "%{$search}%")
+                            ->orWhereHas('currentAssignment.assignedTo', function ($q2) use ($search) {
+                                $q2->where('firstname', 'like', "%{$search}%")
+                                    ->orWhere('lastname', 'like', "%{$search}%")->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
+                                // $q2->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
+        
+                            });
+                    });
+                })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
+                    $query->whereIn('status', $filtersDto->status);
+                })->when($filtersDto->types, function ($query, $typeId) {
+                    $query->where('type_id', $typeId);
+                })->when($filtersDto->assigned_to, function ($query) use ($filtersDto) {
+                    $ids = array_filter($filtersDto->assigned_to);
+
+                    $query->where(function ($q) use ($ids, $filtersDto) {
+                        if ($ids) {
+                            $q->whereHas(
+                                'currentAssignment',
+                                fn($q2) =>
+                                $q2->whereIn('assigned_to_id', $ids)
+                            );
+                        }
+
+                        if (in_array(null, $filtersDto->assigned_to, true)) {
+                            $q->orWhereDoesntHave('currentAssignment');
+                        }
+                    });
+                })
+                ->when($filtersDto->department_id && count($filtersDto->department_id) > 0, function ($query) use ($filtersDto) {
+                    $query->where(function ($q) use ($filtersDto) {
+                        $q->whereHas('currentAssignment.assignedTo', function ($q2) use ($filtersDto) {
+                            $q2->whereIn('dept_id', $filtersDto->department_id);
+                        });
+                        // $q->orWhereDoesntHave('currentAssignment');
+                    });
+                })->
+                latest()->paginate(10)->withQueryString();
+
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al obtener los activos');
+        }
+    }
+
+
+    public function getPaginated2(AssetFiltersDto $filtersDto)
     {
         try {
             return Asset::query()->with(
@@ -157,13 +214,29 @@ class AssetService
     {
         return $asset->load(
             'type:id,name',
+
+            'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at',
+            'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
+
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
             'currentAssignment.deliveryDocument',
             'currentAssignment.returnDocument',
-            'assignments',
         );
     }
+
+    public function getHistories(Asset $asset)
+    {
+        try {
+            return $asset->load(
+                'histories.performer:staff_id,firstname,lastname',
+                'histories.deliveryRecord:id,file_path',
+            );
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al obtener el historial del activo');
+        }
+    }
+
 
 
 
@@ -439,6 +512,9 @@ class AssetService
                 $asset = Asset::find($dto->asset_id);
                 if (!$asset) {
                     throw new NotFoundHttpException('No se encontró el activo');
+                }
+                if ($asset->status !== AssetStatus::AVAILABLE->value) {
+                    throw new BadRequestException('Solo se pueden asignar equipos disponibles.');
                 }
 
                 $assignment = $asset->currentAssignment;

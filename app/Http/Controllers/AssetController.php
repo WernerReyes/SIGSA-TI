@@ -30,9 +30,9 @@ class AssetController extends Controller
     {
         $types = $assetService->getTypes();
 
-        $users = $userService->getAllUsers();
+        // $users = $userService->getAllUsers();
         $TIUsers = $userService->getTIDepartmentUsers();
-        $depatments = $departmentService->getAll();
+        // $depatments = $departmentService->getAll();
 
         $filters = AssetFiltersDto::fromArray($request->all());
         $assetsPaginated = $assetService->getPaginated($filters);
@@ -42,21 +42,12 @@ class AssetController extends Controller
         return Inertia::render('Assets', [
             'types' => $types,
             // 'assets' => $assets,
-            'users' => $users,
+            // 'users' => $users,
             'TIUsers' => $TIUsers,
             'filters' => $filters,
-            'departments' => $depatments,
+            // 'departments' => $depatments,
             'assetsPaginated' => $assetsPaginated,
             'stats' => $stats,
-            'asset' => Inertia::lazy(
-                fn() =>
-                request()->asset_id
-                ? Asset::with([
-                    'histories.performer',
-                    'assignments.assignedTo',
-                ])->findOrFail(request()->asset_id)
-                : null
-            ),
         ]);
     }
 
@@ -68,6 +59,38 @@ class AssetController extends Controller
             'asset' => $asset,
         ]);
     }
+
+    public function renderHistories(Asset $asset, AssetService $assetService)
+    {
+        $asset = $assetService->getHistories($asset);
+
+        return Inertia::render('Assets', [
+            'asset' => $asset,
+        ]);
+    }
+
+    public function renderUsers(UserService $userService)
+    {
+        
+        // $TIUsers = $userService->getTIDepartmentUsers();
+        $users = $userService->getAllUsers();
+
+        return Inertia::render('Assets', [
+            'users' => $users,
+            // 'TIUsers' => $TIUsers,
+        ]);
+    }
+
+    public function renderDepartments(DepartmentService $departmentService)
+    {
+        $departments = $departmentService->getAll();
+
+        return Inertia::render('Assets', [
+            'departments' => $departments,
+        ]);
+    }
+
+
 
     public function registerType(Request $request, AssetService $assetService)
     {

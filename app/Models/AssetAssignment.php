@@ -21,8 +21,9 @@ class AssetAssignment extends Model
         'comment',
         'return_comment',
         'responsible_id',
+        'return_reason',
+        'accesory_id',
     ];
-
 
     protected $casts = [
         'assigned_at' => 'date',
@@ -55,7 +56,7 @@ class AssetAssignment extends Model
         return $this->belongsTo(User::class, 'responsible_id');
     }
 
-    
+
 
     public function asset()
     {
