@@ -10,6 +10,7 @@ use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Asset\AssetStatus;
 use App\Enums\AssetAssignment\ReturnReason;
 use App\Enums\AssetHistory\AssetHistoryAction;
+use App\Enums\Company\EmployeeCompany;
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use App\Enums\Department\Allowed;
 use App\Models\Asset;
@@ -92,20 +93,31 @@ class AssetService
                 'type:id,name',
                 'currentAssignment:id,asset_id,assigned_to_id,assigned_at',
                 'currentAssignment.assignedTo:staff_id,firstname,lastname',
+                'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+                'currentAssignment.childrenAssignments.asset.type:id,name',
+                'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at',
+                'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname'
             )->
                 when($filtersDto->search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('brand', 'like', "%{$search}%")
-                            ->orWhere('model', 'like', "%{$search}%")
-                            ->orWhere('serial_number', 'like', "%{$search}%")
-                            ->orWhereHas('currentAssignment.assignedTo', function ($q2) use ($search) {
-                                $q2->where('firstname', 'like', "%{$search}%")
-                                    ->orWhere('lastname', 'like', "%{$search}%")->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
-                                // $q2->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
-        
-                            });
-                    });
+                    $query->
+                        whereHas('currentAssignment', function ($q2)  {
+                            $q2->whereNull('parent_assignment_id');
+                        })->
+                        where(function ($q) use ($search) {
+
+                            $q->
+
+                                where('name', 'like', "%{$search}%")
+                                ->orWhere('brand', 'like', "%{$search}%")
+                                ->orWhere('model', 'like', "%{$search}%")
+                                ->orWhere('serial_number', 'like', "%{$search}%")
+                                ->orWhereHas('currentAssignment.assignedTo', function ($q2) use ($search) {
+                                    $q2->where('firstname', 'like', "%{$search}%")
+                                        ->orWhere('lastname', 'like', "%{$search}%")->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
+                                    // $q2->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
+            
+                                });
+                        });
                 })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
                     $query->whereIn('status', $filtersDto->status);
                 })->when($filtersDto->types, function ($query, $typeId) {
@@ -142,71 +154,17 @@ class AssetService
         }
     }
 
-
-    public function getPaginated2(AssetFiltersDto $filtersDto)
+    public function getAccessories()
     {
         try {
-            return Asset::query()->with(
-                'type:id,name',
-                'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
-                'currentAssignment.assignedTo.department:id,name',
-                'currentAssignment.deliveryDocument',
-                'currentAssignment.returnDocument',
-                'assignments',
-                // 'assignments.assignedTo:staff_id,firstname,lastname',
-                'assignments.deliveryDocument',
-                'assignments.returnDocument',
-                'assignments.assignedTo:staff_id,firstname,lastname',
-                'histories',
-                'histories.performer:staff_id,firstname,lastname',
-                'histories.deliveryRecord:id,file_path',
-
-            )->
-                when($filtersDto->search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('brand', 'like', "%{$search}%")
-                            ->orWhere('model', 'like', "%{$search}%")
-                            ->orWhere('serial_number', 'like', "%{$search}%")
-                            ->orWhereHas('currentAssignment.assignedTo', function ($q2) use ($search) {
-                                $q2->where('firstname', 'like', "%{$search}%")
-                                    ->orWhere('lastname', 'like', "%{$search}%")->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
-                                // $q2->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
-        
-                            });
-                    });
-                })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
-                    $query->whereIn('status', $filtersDto->status);
-                })->when($filtersDto->types, function ($query, $typeId) {
-                    $query->where('type_id', $typeId);
-                })->when($filtersDto->assigned_to, function ($query) use ($filtersDto) {
-                    $ids = array_filter($filtersDto->assigned_to);
-
-                    $query->where(function ($q) use ($ids, $filtersDto) {
-                        if ($ids) {
-                            $q->whereHas(
-                                'currentAssignment',
-                                fn($q2) =>
-                                $q2->whereIn('assigned_to_id', $ids)
-                            );
-                        }
-
-                        if (in_array(null, $filtersDto->assigned_to, true)) {
-                            $q->orWhereDoesntHave('currentAssignment');
-                        }
-                    });
+            return Asset::query()
+                ->whereHas('type', function ($query) {
+                    $query->where('name', 'Accesorio');
                 })
-                ->when($filtersDto->department_id && count($filtersDto->department_id) > 0, function ($query) use ($filtersDto) {
-                    $query->where(function ($q) use ($filtersDto) {
-                        $q->whereHas('currentAssignment.assignedTo', function ($q2) use ($filtersDto) {
-                            $q2->whereIn('dept_id', $filtersDto->department_id);
-                        });
-                        // $q->orWhereDoesntHave('currentAssignment');
-                    });
-                })->
-                latest()->paginate(10)->withQueryString();
+                ->where('status', AssetStatus::AVAILABLE->value)
+                ->get();
         } catch (\Exception $e) {
-            throw new InternalErrorException('Error al obtener los activos');
+            throw new InternalErrorException('Error al obtener los accesorios');
         }
     }
 
@@ -506,7 +464,7 @@ class AssetService
     {
 
         try {
-            DB::transaction(function () use ($dto) {
+            $assignment = DB::transaction(function () use ($dto) {
 
 
                 $asset = Asset::find($dto->asset_id);
@@ -538,6 +496,7 @@ class AssetService
                         'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
                     ]);
 
+
                     // 3️⃣ Si no hay cambios reales
                     if (!$assignment->isDirty()) {
                         throw new BadRequestException('No se detectaron cambios en la asignación.');
@@ -558,6 +517,12 @@ class AssetService
                             $assignment->assigned_at->format('d/m/Y');
                     }
 
+                    if (var_dump($assignment->childrenAssignments->select('id')) === $dto->accessories) {
+                        $changes[] = "Accesorios actualizados.";
+                    }
+
+                    $asset->childrenAssignments()->whereIn('id', $dto->accessories ?? [])->delete();
+
                     $description = implode('. ', $changes);
 
                     // 5️⃣ Historial
@@ -570,7 +535,7 @@ class AssetService
                         'related_assignment_id' => $assignment->id,
                     ]);
 
-                    return;
+                    return $assignment;
                 }
 
 
@@ -587,6 +552,34 @@ class AssetService
                     ]
                 );
 
+                // Asignar accesorios si los hay
+                if ($dto->accessories && is_array($dto->accessories)) {
+                    AssetAssignment::insert(
+                        array_map(function ($accessoryId) use ($assigned, $dto) {
+
+                            return [
+                                'assigned_to_id' => $dto->assigned_to_id,
+                                'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
+                                'parent_assignment_id' => $assigned->id,
+                                // 'comment' => "Accesorio asignado junto al equipo principal.",
+                                'asset_id' => $accessoryId,
+                                // 'assigned_at' => $dto->assign_date,
+    
+                                // 'created_at' => now(),
+                                // 'updated_at' => now(),
+                            ];
+                        }, $dto->accessories)
+
+
+                    );
+
+                    Asset::whereIn('id', $dto->accessories ?? [])->update([
+                        'status' => AssetStatus::ASSIGNED->value,
+                    ]);
+
+
+                }
+
 
                 AssetHistory::create([
 
@@ -601,11 +594,13 @@ class AssetService
 
 
 
-
+                return $assigned;
 
 
             });
+            return $assignment;
         } catch (\Exception $e) {
+            ds($e->getMessage());
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
@@ -666,6 +661,19 @@ class AssetService
     }
 
 
+    private function setCompanyInfoByEmployee(User $employee, TemplateProcessor $template)
+    {
+        if ($employee->id_empresa === EmployeeCompany::CECHRIZA->value) {
+            $template->setValue('company', 'CECHRIZA SAC');
+            $logo = storage_path('app/companies/cechriza-logo.png');
+            $template->setImageValue('logo', ['path' => $logo, 'width' => 280, 'height' => 280]);
+        } else if ($employee->id_empresa === EmployeeCompany::YDIEZA->value) {
+            $template->setValue('company', 'YDIEZA SAC');
+            $logo = storage_path('app/companies/ydieza-logo.png');
+            $template->setImageValue('logo', ['path' => $logo, 'width' => 250, 'height' => 250]);
+        }
+    }
+
     public function generateLaptopAssignmentDocument(
         AssetAssignment $assignment
     ) {
@@ -683,7 +691,7 @@ class AssetService
 
             $template = new TemplateProcessor(storage_path('app/templates/cargo-laptop.docx'));
 
-
+            $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
             $template->setValue('type', strtoupper($asset->type->name));
             $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
@@ -705,13 +713,17 @@ class AssetService
 
             return $path;
         } catch (\Exception $e) {
+            ds($e->getMessage());
             if ($e instanceof BadRequestException) {
                 throw $e;
             }
 
+
             throw new InternalErrorException('Error al generar el documento de asignación de laptop');
         }
     }
+
+
 
     public function generateCellphoneAssignmentDocument(
         AssetAssignment $assignment
@@ -727,6 +739,8 @@ class AssetService
 
             $template = new TemplateProcessor(storage_path('app/templates/cargo-celular.docx'));
             // 24/11/2025
+
+            $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
             $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
@@ -752,6 +766,44 @@ class AssetService
             throw new InternalErrorException('Error al generar el documento de asignación de celular');
         }
 
+    }
+
+    public function generateAccessoriesAssignmentDocument(
+        AssetAssignment $assignment
+    ) {
+        try {
+            if (!$assignment->assignedTo) {
+                throw new BadRequestException('El activo no está asignado a ningún usuario');
+            }
+
+            $asset = $assignment->asset;
+
+            Storage::disk('public')->makeDirectory('documents');
+
+            $template = new TemplateProcessor(storage_path('app/templates/cargo-accesorios.docx'));
+
+            $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
+            $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
+            $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+            $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
+            $template->setValue('type', strtoupper($asset->type->name));
+            $template->setValue('brand', strtoupper($asset->brand));
+            $template->setValue('model', strtoupper($asset->model));
+            $template->setValue('serial_number', $asset->serial_number);
+            $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
+
+            $fileName = 'cargo_accesorios_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
+            $path = storage_path('app/public/documents/' . $fileName);
+            $template->saveAs($path);
+
+            return $path;
+        } catch (\Exception $e) {
+            if ($e instanceof BadRequestException) {
+                throw $e;
+            }
+
+            throw new InternalErrorException('Error al generar el documento de asignación de accesorios');
+        }
     }
 
 

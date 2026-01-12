@@ -39,23 +39,20 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Tipo</FieldLabel>
 
-                                <!-- <Field class="flex gap-2 bg-red-400"> -->
                                 <Select v-bind="componentField">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccionar" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectLabel class="flex justify-center">
-
-                                                <TypeDialog :assetTypes="assetTypes" />
-                                            </SelectLabel>
                                             <SelectItem v-if="assetTypes.length === 0" disabled value="empty">
                                                 No hay tipos de activos disponibles
                                             </SelectItem>
 
                                             <SelectItem v-else v-for="assetType in assetTypes" :key="assetType.id"
                                                 :value="assetType.id">
+                                                <component :is="assetTypeOp(assetType.name)?.icon"
+                                                    class="inline size-4" />
                                                 {{ assetType.name }}
                                             </SelectItem>
 
@@ -64,6 +61,8 @@
 
                                     </SelectContent>
                                 </Select>
+
+
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -74,20 +73,8 @@
                         <VeeField name="color" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Color</FieldLabel>
-                                <!-- <Select v-bind="componentField">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-
-                                        <SelectItem
-                                            v-for="status in Object.values(assetStatusOptions).filter(s => s.value !== AssetStatus.ASSIGNED)"
-                                            :key="status.value" :value="status.value">
-                                            <Badge :class="status.bg">{{ status.label }}</Badge>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select> -->
-                                <Input id="color" placeholder="Ingresa un color (EJ: Rojo, Azul)" v-bind="componentField" />
+                                <Input id="color" placeholder="Ingresa un color (EJ: Rojo, Azul)"
+                                    v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -322,13 +309,15 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
-import { Asset, AssetType } from '@/interfaces/asset.interface'
+import { type Asset } from '@/interfaces/asset.interface'
 import { type User } from '@/interfaces/user.interface'
 import { router, usePage } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { Laptop } from 'lucide-vue-next'
 import * as z from 'zod'
 import TypeDialog from './TypeDialog.vue'
+import { type AssetType, assetTypeOp } from '@/interfaces/assetType.interface'
+
 
 defineProps<{
     includeButton?: boolean
@@ -455,12 +444,12 @@ function onSubmit(values: any) {
         })
         return;
     }
-    
+
 
     router.post('/assets', values, {
         onSuccess: () => {
             open.value = false;
-            handleReset();
+            handleResetForm();
         },
         onFinish: () => {
             isSubmitting.value = false;

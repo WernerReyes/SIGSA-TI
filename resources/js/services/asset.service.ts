@@ -12,7 +12,7 @@ export const getAssetDetails = (
             preserveState: true,
             preserveScroll: true,
             preserveUrl: true,
-            only: ['asset','flash'],
+            only: ['asset', 'flash'],
             onSuccess: (page) => {
                 onSuccess?.(page as Page<PageProps>);
             },
@@ -39,3 +39,15 @@ export const getAssetHistories = (
     );
 };
 
+export const getAssetAccessories = () => {
+    router.get(
+        `/assets/accessories`,
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            preserveUrl: true,
+            only: ['assetAccessories', 'flash'],
+        },
+    );
+};

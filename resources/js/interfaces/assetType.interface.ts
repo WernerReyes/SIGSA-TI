@@ -1,4 +1,4 @@
-import { Cpu, Laptop, Monitor, Smartphone } from 'lucide-vue-next';
+import { Cpu, Headphones, Laptop, Monitor, Smartphone } from 'lucide-vue-next';
 import { Component } from 'vue';
 
 export interface AssetType {
@@ -35,6 +35,10 @@ export const assetTypeOptions: Record<TypeName, TypeNameOption> = {
     },
     [TypeName.ACCESSORY]: {
         value: TypeName.ACCESSORY,
-        icon: Cpu,
+        icon: Headphones,
     },
+};
+
+export const assetTypeOp = (type: TypeName): TypeNameOption => {
+    return assetTypeOptions[type];
 };

@@ -186,31 +186,19 @@
                                             Cargar
                                         </DropdownMenuItem>
 
-
-                                        <DropdownMenuSub>
-                                            <DropdownMenuSubTrigger>
-                                                <div class="flex items-center gap-2">
-                                                    <Download class="size-4" />
-
-                                                    Activo
-                                                </div>
-                                            </DropdownMenuSubTrigger>
-                                            <DropdownMenuPortal>
-                                                <DropdownMenuSubContent>
-                                                    <DropdownMenuItem @click="() => handleDownloadCargo(assignment.id)">
-                                                        <Laptop />
-
-                                                        {{ capitalize(asset?.type?.name || 'Laptop') }}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        @click="() => handleDownloadPhoneCargo(assignment.id)">
-                                                        <Smartphone />
-                                                        Celular
-                                                    </DropdownMenuItem>
-
-                                                </DropdownMenuSubContent>
-                                            </DropdownMenuPortal>
-                                        </DropdownMenuSub>
+                                         <DropdownMenuItem @click="() => {
+                                            if ([TypeName.LAPTOP, TypeName.PC].includes(asset?.type?.name)) {
+                                                handleDownloadCargo(assignment.id);
+                                            } else if (asset?.type?.name === TypeName.CELL_PHONE) {
+                                                handleDownloadPhoneCargo(assignment.id);
+                                            } else if (asset?.type?.name === TypeName.ACCESSORY) {
+                                                handleDownloadAccessoryCargo(assignment.id);
+                                            }
+                                         }">
+                                            <Download />
+                                            Activo
+                                            <component :is="assetTypeOp(asset?.type?.name)?.icon" class="size-4" />
+                                        </DropdownMenuItem>
 
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -301,10 +289,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuPortal,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import {
@@ -320,14 +304,15 @@ import {
     TabsList,
     TabsTrigger
 } from '@/components/ui/tabs';
-import { Asset, statusOp } from '@/interfaces/asset.interface';
+import { type Asset, statusOp } from '@/interfaces/asset.interface';
 import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { router } from '@inertiajs/vue3';
 import { format, isAfter, parseISO } from 'date-fns';
-import { Calendar, Download, Eye, FileText, Laptop, Monitor, MonitorSmartphone, Shield, Smartphone, Upload, User } from 'lucide-vue-next';
-import { capitalize, computed, ref } from 'vue';
+import { Calendar, Download, Eye, FileText, Laptop, Monitor, MonitorSmartphone, Shield, Upload, User } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { assetTypeOp, TypeName } from '../../interfaces/assetType.interface';
 import FileUpload from '../FileUpload.vue';
 
 
@@ -371,6 +356,11 @@ const handleDownloadCargo = (assignmentId: number) => {
 const handleDownloadPhoneCargo = (assignmentId: number) => {
     if (!asset.value) return;
     window.location.href = `/assets/generate-phone-assignment-doc/${assignmentId}`;
+}
+
+const handleDownloadAccessoryCargo = (assignmentId: number) => {
+    if (!asset.value) return;
+    window.location.href = `/assets/generate-accessory-assignment-doc/${assignmentId}`;
 }
 
 

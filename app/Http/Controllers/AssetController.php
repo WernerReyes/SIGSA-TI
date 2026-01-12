@@ -51,6 +51,14 @@ class AssetController extends Controller
         ]);
     }
 
+    public function renderAccessories(AssetService $assetService)
+    {
+        $assetAccessories = $assetService->getAccessories();
+        return Inertia::render('Assets', [
+            'assetAccessories' => $assetAccessories,
+        ]);
+    }
+
     public function renderAsset(Asset $asset, AssetService $assetService)
     {
         $asset = $assetService->getDetails($asset);
@@ -71,7 +79,7 @@ class AssetController extends Controller
 
     public function renderUsers(UserService $userService)
     {
-        
+
         // $TIUsers = $userService->getTIDepartmentUsers();
         $users = $userService->getAllUsers();
 
@@ -163,8 +171,11 @@ class AssetController extends Controller
         $validated = $request->validated();
         $dto = AssignAssetDto::fromArray($validated);
         try {
-            $assetService->assignAsset($dto);
-            return back()->with('success', 'Activo asignado correctamente');
+            $assignment = $assetService->assignAsset($dto);
+            return back()->with([
+                'success' => 'Activo asignado correctamente.',
+                'assignment_id' => $assignment->id,
+            ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }

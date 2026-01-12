@@ -16,12 +16,7 @@
                 <div class="p-3 bg-muted/50 rounded-lg">
                     <p class="text-sm font-medium">{{ asset?.name }}</p>
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
-
-
-
-
                 </div>
-
 
                 <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
 
@@ -29,29 +24,48 @@
                         <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
-                                <Select
-                                 v-bind="componentField" @update:open="(val) => {
-                                    if (val) {
-                                        if (users.length === 0) {
 
-                                            getAllUsers('/assets')
-                                        }
+                                <Popover v-model:open="openUserSelect" @update:open="(val) => {
+                                    if (val && users.length === 0) {
+                                        getAllUsers('/assets')
+
                                     }
                                 }">
-                                    <SelectTrigger id="assigned_to_id">
-                                        <SelectValue placeholder="Seleccionar empleado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>Empleados</SelectLabel>
+                                    <PopoverTrigger as-child>
+                                        <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
+                                            class="w-full justify-between">
+                                            {{
+                                                componentField.modelValue
+                                                    ? !users.length ? asset?.current_assignment?.assigned_to?.full_name :
+                                                        users.find(user => user.staff_id === componentField.modelValue)?.full_name
+                                                    : 'Seleccionar empleado'
+                                            }}
+                                            <ChevronsUpDownIcon class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent class="w-full p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar empleado..." />
+                                            <CommandList>
+                                                <CommandEmpty>Empleado no encontrado</CommandEmpty>
+                                                <CommandGroup>
+                                                    <CommandItem v-for="user in users" :key="user.staff_id"
+                                                        :value="user.staff_id" @select="() => {
+                                                            componentField.onChange(user.staff_id)
 
-                                            <SelectItem v-for="user in users" :key="user.staff_id"
-                                                :value="user.staff_id">
-                                                {{ user.full_name }}
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                                        }">
+
+                                                        {{ user.full_name }}
+                                                        <CheckIcon v-if="componentField.modelValue === user.staff_id"
+                                                            class="ml-auto h-4 w-4" />
+
+                                                    </CommandItem>
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -89,6 +103,73 @@
                     </FieldGroup>
 
 
+                    <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
+                        <VeeField name="accessories" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="accessories">Accesorios</FieldLabel>
+
+                                <Popover v-model:open="openAccessorySelect" @update:open="(val) => {
+                                    if (val && assetAccessories.length === 0) {
+                                        getAssetAccessories()
+
+                                    }
+                                }">
+                                    <PopoverTrigger as-child>
+                                        <Button variant="outline" role="combobox" :aria-expanded="openAccessorySelect"
+                                            class="w-full justify-between">
+
+                                            {{
+                                                componentField.modelValue.length
+                                                    ? !assetAccessories.length ?
+                                                        asset?.current_assignment?.assigned_to?.full_name :
+                                                        assetAccessories
+                                                            .filter(acc => componentField.modelValue.includes(acc.id))
+                                                            .map(acc => acc.name)
+                                                            .join(', ')
+                                                    : 'Seleccionar accesorio'
+                                            }}
+                                            <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent class="w-full p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar accesorio..." />
+                                            <CommandList>
+                                                <CommandEmpty>Accesorio no encontrado</CommandEmpty>
+                                                <CommandGroup>
+                                                    <CommandItem v-for="accessory in assetAccessories"
+                                                        :key="accessory.id" :value="accessory.id" @select="() => {
+                                                            if (componentField.modelValue.includes(accessory.id)) {
+                                                                const filtered = componentField.modelValue.filter(id => id !== accessory.id)
+                                                                componentField.onChange(filtered)
+                                                                return
+                                                            }
+                                                            componentField.onChange([...componentField.modelValue, accessory.id])
+
+                                                        }">
+
+                                                        {{ accessory.name }}
+                                                        <CheckIcon
+                                                            v-if="componentField.modelValue.includes(accessory.id)"
+                                                            class="ml-auto size-4" />
+
+                                                    </CommandItem>
+
+                                                    <CommandItem v-if="assetAccessories.length === 0" disabled>
+                                                        No hay accesorios disponibles
+                                                    </CommandItem>
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+
+
 
                     <FieldGroup>
                         <VeeField name="comment" v-slot="{ componentField, errors }">
@@ -115,7 +196,7 @@
             </DialogFooter>
         </DialogContent>
     </Dialog>
-    <!-- </Form> -->
+
 </template>
 
 <script setup lang="ts">
@@ -140,42 +221,45 @@ import {
     FieldLabel
 } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { type User } from '@/interfaces/user.interface';
+import { getAllUsers } from '@/services/user.service';
 import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { ChevronDownIcon } from 'lucide-vue-next';
-import { getAllUsers } from '@/services/user.service';
+import { CheckIcon, ChevronDownIcon } from 'lucide-vue-next';
+import { TypeName } from '@/interfaces/assetType.interface';
+import { getAssetAccessories } from '../../services/asset.service';
+import { toast } from 'vue-sonner';
 
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
+
+const openUserSelect = ref(false);
+const openAccessorySelect = ref(false);
+const isSubmitting = ref(false);
+
 const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
+
+const assetAccessories = computed<Asset[]>(() => (usePage().props.assetAccessories || []) as Asset[]);
 
 const assign = computed<AssetAssignment | null>(() => {
     return asset.value?.current_assignment || null;
 });
-
-
-
-const isSubmitting = ref(false);
-
-
-
 
 const formSchema = toTypedSchema(
     z.object({
@@ -184,6 +268,7 @@ const formSchema = toTypedSchema(
             message: 'Seleccione una fecha de entrega',
         }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
         comment: z.string().optional(),
+        accessories: z.array(z.number()).optional(),
     })
 );
 
@@ -192,6 +277,7 @@ const { handleSubmit, errors, setValues } = useForm({
         assigned_to_id: undefined,
         assign_date: today(getLocalTimeZone()),
         comment: '',
+        accessories: [],
     },
     validationSchema: formSchema,
     validateOnMount: false,
@@ -218,21 +304,55 @@ watch(assign, (assignment) => {
 const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
+    const accessoriesIds = values.accessories || [];
+    if (asset.value?.type?.name === TypeName.LAPTOP) {
+        const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
+        const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
+        if (!includeCharger) {
+            toast.error('Debe incluir el cargador como accesorio al asignar una laptop.');
+            isSubmitting.value = false;
+            return;
+        }
+    }
     router.post('/assets/assign', {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
         assign_date: values.assign_date,
         comment: values.comment,
+        accessories: values.accessories,
     }, {
+        only: ['flash', 'assetsPaginated', 'stats'],
         onFinish: () => {
             isSubmitting.value = false;
         },
-        onSuccess: () => {
+        onSuccess: (page) => {
+            const type = asset.value?.type?.name;
+            const assignmentId = (page.props as any).flash.assignment_id as number | undefined;
+            if (assignmentId) {
+                if (type === TypeName.CELL_PHONE) {
+                    handleDownloadPhoneCargo(assignmentId);
+
+                } else {
+                    handleDownloadCargo(assignmentId);
+
+                }
+            }
+
             open.value = false;
             asset.value = null;
         }
     });
 };
+
+const handleDownloadCargo = (assignmentId: number) => {
+    if (!asset.value) return;
+    window.location.href = `/assets/generate-laptop-assignment-doc/${assignmentId}`;
+}
+
+const handleDownloadPhoneCargo = (assignmentId: number) => {
+    if (!asset.value) return;
+    window.location.href = `/assets/generate-phone-assignment-doc/${assignmentId}`;
+}
 
 
 

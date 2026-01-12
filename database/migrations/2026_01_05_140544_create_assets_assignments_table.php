@@ -25,9 +25,8 @@ return new class extends Migration {
 
             $table->foreignId('asset_id')->references('id')->on('assets');
 
-            $table->unsignedBigInteger('accesory_id')->nullable();
-            $table->foreign('accesory_id')->references('id')->on('assets');
-            $table->index('accesory_id');
+            $table->unsignedBigInteger('parent_assignment_id')->nullable();
+            $table->foreign('parent_assignment_id')->references('id')->on('assets_assignments');
     
             $table->unsignedInteger('responsible_id')->nullable();
             $table->foreign('responsible_id')->references('staff_id')->on('ost_staff');

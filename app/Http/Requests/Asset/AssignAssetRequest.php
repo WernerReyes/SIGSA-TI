@@ -26,6 +26,8 @@ class AssignAssetRequest extends FormRequest
             'comment' => ['nullable', 'string', 'max:1000'],
             'asset_id' => ['required', 'integer', 'exists:assets,id'],
             'assigned_to_id' => ['required', 'integer', 'exists:ost_staff,staff_id'],
+            'accessories' => ['array'],
+            'accessories.*' => ['integer', 'exists:assets,id'],
         ];
     }
 }

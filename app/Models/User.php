@@ -29,6 +29,7 @@ class User extends Authenticatable
         'password',
         'dni',
         'dept_id',
+        'id_empresa',
     ];
 
     public function scopeActive($query)

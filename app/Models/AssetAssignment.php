@@ -22,7 +22,7 @@ class AssetAssignment extends Model
         'return_comment',
         'responsible_id',
         'return_reason',
-        'accesory_id',
+        'parent_assignment_id',
     ];
 
     protected $casts = [
@@ -54,6 +54,11 @@ class AssetAssignment extends Model
     public function responsible()
     {
         return $this->belongsTo(User::class, 'responsible_id');
+    }
+
+    public function childrenAssignments()
+    {
+        return $this->hasMany(AssetAssignment::class, 'parent_assignment_id');
     }
 
 

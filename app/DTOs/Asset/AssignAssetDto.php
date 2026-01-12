@@ -8,6 +8,7 @@ class AssignAssetDto
         public string $assign_date,
         public ?string $return_date,
         public ?string $comment,
+        public ?array $accessories = null,
     ) {
     }
 
@@ -20,6 +21,7 @@ class AssignAssetDto
             assign_date: $data['assign_date'],
             return_date: $data['return_date'] ?? null,
             comment: $data['comment'] ?? null,
+            accessories: $data['accessories'] ?? null
         );
     }
 }
