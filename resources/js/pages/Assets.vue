@@ -3,10 +3,6 @@
     <Head title="Activos TI" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-
-        <!-- <pre>
-    {{ assetsPaginated }}
-        </pre> -->
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
             <Dialog includeButton v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
@@ -47,6 +43,7 @@
                                         :class="option.bg">
                                             <component :is="option.icon" class="size-4" />
                                             {{ option.label }}
+                                            <Check v-if="statusOp.value === option.value" class="ml-auto" />
                                         </Badge>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -86,7 +83,7 @@ import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Boxes, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
+import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
 
 const { stats } = defineProps<{ types: AssetType[], assets: Asset[], assetsPaginated: AssetsPaginated, stats: AssetStats }>();
 

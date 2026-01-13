@@ -2,6 +2,7 @@ import { type Component } from 'vue';
 import {type DeliveryRecord } from './deliveryRecord.interface';
 import { type User } from './user.interface';
 import { RefreshCcw, UserX, Wrench } from 'lucide-vue-next';
+import type { Asset } from './asset.interface';
 
 export interface AssetAssignment {
     id: number;
@@ -18,8 +19,9 @@ export interface AssetAssignment {
     return_comment?: string | null;
 
     return_reason?: ReturnReason | null;
-
+    parent_assignment_id?: number | null;
     assigned_to?: User;
+    asset?: Asset,
     delivery_document?: DeliveryRecord | null;
     return_document?: DeliveryRecord | null;
     children_assignments?: AssetAssignment[];

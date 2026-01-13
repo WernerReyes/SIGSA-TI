@@ -1,5 +1,5 @@
 - Cuando no hayga accesorios, que envie un correo a compras
-- Verificar que cuando se asigne una laptop verifique qu hayga un cargador disponible.
+- Verificar que cuando se asigne una laptop verifique qu hayga un cargador disponible. ✓
 - tipos: LAPTOP, PC, CELULAR, ACCESORIOS ✓
-- hay 3 actas de entrega
+- hay 3 actas de entrega ✓
 - mejorar el filtro de busqueda de empleados ✓

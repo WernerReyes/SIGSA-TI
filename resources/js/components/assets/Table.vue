@@ -5,20 +5,24 @@
         <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap">
 
             <Popover v-model:open="openUserSelect" @update:open="(val) => {
-                if (val && users.length === 0) {
-                    getAllUsers('/assets')
-
+                if (val && usersServer.length === 0) {
+                    getAllBasicUserInfo(PageConstKey.ASSETS)
                 }
-            }">
+            }
+
+            ">
                 <PopoverTrigger as-child>
                     <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
-                        class="w-fit justify-between">
+                        class="w-fit justify-between ">
 
-                        {{
-                            selectUserId
-                                ? users.find(user => user.staff_id === selectUserId)?.full_name
-                                : 'Seleccionar empleado'
-                        }}
+
+                        <span class="relative flex size-2" v-if="form.assigned_to.length > 0">
+                            <span
+                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                        </span>
+
+                        Empleados
                         <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
@@ -33,7 +37,7 @@
                         <CommandShortcut :disable="isLoading || !form.assigned_to?.length" @click="() => {
                             if (isLoading || !form.assigned_to?.length) return;
                             form.assigned_to = []
-                            selectUserId = null;
+
                         }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
                             Refrescar lista
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
@@ -44,12 +48,18 @@
                             <CommandEmpty>Empleado no encontrado</CommandEmpty>
                             <CommandGroup>
                                 <CommandItem v-for="user in users" :key="user.staff_id" :value="user.staff_id" @select="() => {
-                                    selectUserId = user.staff_id;
+                                    // selectUserId = user.staff_id;
+
+                                    if (form.assigned_to.includes(user.staff_id)) {
+                                        form.assigned_to = [...form.assigned_to.filter(id => id !== user.staff_id)];
+                                    } else {
+                                        form.assigned_to = [...form.assigned_to, user.staff_id];
+                                    }
 
                                 }">
 
                                     {{ user.full_name }}
-                                    <Check v-if="selectUserId === user.staff_id" class="ml-auto h-4 w-4" />
+                                    <Check v-if="form.assigned_to.includes(user.staff_id)" class="ml-auto h-4 w-4" />
                                 </CommandItem>
                             </CommandGroup>
                         </CommandList>
@@ -59,7 +69,7 @@
 
             <Popover v-model:open="openDepartmentSelect" @update:open="(val) => {
                 if (val && departments.length === 0) {
-                    getAllDepartments('/assets')
+                    getAllBasicDepartmentInfo(PageConstKey.ASSETS)
 
                 }
             }">
@@ -67,11 +77,13 @@
                     <Button variant="outline" role="combobox" :aria-expanded="openDepartmentSelect"
                         class="w-fit justify-between">
 
-                        {{
-                            selectDepartmentId
-                                ? departments.find(department => department.id === selectDepartmentId)?.name
-                                : 'Seleccionar departamento'
-                        }}
+                        <span class="relative flex size-2" v-if="form.department_id.length > 0">
+                            <span
+                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                        </span>
+
+                        Departamentos
                         <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
@@ -86,7 +98,7 @@
                         <CommandShortcut :disable="isLoading || !form.department_id?.length" @click="() => {
                             if (isLoading || !form.department_id?.length) return;
                             form.department_id = []
-                            selectDepartmentId = null;
+                            // selectDepartmentId = null;
                         }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
                             Refrescar lista
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
@@ -98,12 +110,16 @@
                             <CommandGroup>
                                 <CommandItem v-for="department in departments" :key="department.id"
                                     :value="department.id" @select="() => {
-                                        selectDepartmentId = department.id;
-
+                                        // selectDepartmentId = department.id;
+                                        if (form.department_id.includes(department.id)) {
+                                            form.department_id = [...form.department_id.filter(id => id !== department.id)];
+                                        } else {
+                                            form.department_id = [...form.department_id, department.id];
+                                        }
                                     }">
 
                                     {{ department.name }}
-                                    <Check v-if="selectDepartmentId === department.id" class="ml-auto h-4 w-4" />
+                                    <Check v-if="form.department_id.includes(department.id)" class="ml-auto h-4 w-4" />
                                 </CommandItem>
                             </CommandGroup>
                         </CommandList>
@@ -111,9 +127,20 @@
                 </PopoverContent>
             </Popover>
 
-            <DropdownMenu>
+            <DropdownMenu @update:open="(val) => {
+                if (val && types.length === 0) {
+                    getAssetTypes(PageConstKey.ASSETS)
+
+                }
+            }">
                 <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="ml-auto">
+                        <span class="relative flex size-2" v-if="form.types.length > 0">
+                            <span
+                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                        </span>
+
                         Tipos
                         <ChevronDown class="ml-2 h-4 w-4" />
                     </Button>
@@ -149,7 +176,13 @@
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="ml-auto">
-                        Todos los estados
+                        <span class="relative flex size-2" v-if="form.status.length > 0">
+                            <span
+                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                        </span>
+
+                        Estados
                         <ChevronDown class="ml-2 h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -221,7 +254,6 @@
                     <ContextMenuTrigger as-child>
                         <TableBody>
                             <TableRow @contextmenu="() => {
-                                // console.log(row.original);
                                 activeRow = row.original
                             }" :key="row.id" v-for="row in table.getRowModel().rows"
                                 :data-state="row.getIsSelected() ? 'selected' : undefined" class="cursor-context-menu">
@@ -231,20 +263,6 @@
                                 </TableCell>
                             </TableRow>
                         </TableBody>
-
-                        <!-- <TableBody>
-  {table.getRowModel().rows.map(row => (
-    <Fragment key={row.id}>
-      <TableRow>
-        {row.getVisibleCells().map(cell => (
-          <TableCell key={cell.id}>
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
-      </TableRow>
-    </Fragment>
-  ))}
-</TableBody> -->
 
                     </ContextMenuTrigger>
 
@@ -408,18 +426,22 @@ import { valueUpdater } from '@/lib/utils';
 
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PageConstKey } from '@/constants/pages.constant';
 import { type Asset, AssetStatus, assetStatusOptions, statusOp } from '@/interfaces/asset.interface';
+import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 import { Department } from '@/interfaces/department.interace';
 import { type User } from '@/interfaces/user.interface';
 import { getAssetDetails, getAssetHistories } from '@/services/asset.service';
-import { getAllDepartments } from '@/services/department.service';
-import { getAllUsers } from '@/services/user.service';
+import { getAssetTypes } from '@/services/assetType.service';
+import { getAllBasicUserInfo } from '@/services/user.service';
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isEqual, parseISO } from 'date-fns';
 import { Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, ChevronsUpDown, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
 import { computed, h, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { AssetsPaginated } from '../../interfaces/asset.interface';
+import { getAllBasicDepartmentInfo } from '../../services/department.service';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
@@ -427,8 +449,6 @@ import DialogDetails from './DialogDetails.vue';
 import HistoryDialog from './HistoryDialog.vue';
 import InvoiceDialog from './InvoiceDialog.vue';
 import StatusDialog from './StatusDialog.vue';
-import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 const { assets } = defineProps<{ assets: AssetsPaginated }>()
 
@@ -446,18 +466,22 @@ const sorting = ref<SortingState>([])
 
 
 const openUserSelect = ref(false);
-const selectUserId = ref<number | null>(null);
 
 const openDepartmentSelect = ref(false);
-const selectDepartmentId = ref<number | null>(null);
 
 
-const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
+const usersServer = computed<User[]>(() => (usePage().props.users || []) as User[]);
+const users = computed<Partial<User>[]>(() => {
+    return [{
+        staff_id: null,
+        full_name: 'Sin asignar',
+    }, ...usersServer.value];
+});
 const departments = computed<Department[]>(() => (usePage().props.departments || []) as Department[]);
 
 const filters = computed(() => usePage().props.filters as Record<string, any>);
 
-const types = computed(() => usePage().props.types as AssetType[]);
+const types = computed(() => (usePage().props.types || []) as AssetType[]);
 
 const assetId = computed(() => activeRow.value?.id || null);
 
@@ -471,34 +495,11 @@ const form = reactive<{
     search: filters.value.search || '',
     status: filters.value.status || [],
     types: filters.value.types || [],
-    assigned_to: filters.value.assigned_to || [],
+    assigned_to: filters.value.assigned_to?.map((id: string | null) => id ? +id : null) || [],
     department_id: filters.value.department_id || [],
 })
 
 
-watch(
-    () => selectUserId.value,
-    (newVal) => {
-
-        if (newVal !== null) {
-            form.assigned_to = [newVal];
-        } else {
-            form.assigned_to = [];
-        }
-    }
-)
-
-watch(
-    () => selectDepartmentId.value,
-    (newVal) => {
-
-        if (newVal !== null) {
-            form.department_id = [newVal];
-        } else {
-            form.department_id = [];
-        }
-    }
-)
 
 
 watch(
@@ -599,9 +600,8 @@ const columns: ColumnDef<Asset>[] = [
         header: 'Nombre',
         minSize: 180,
         enableGlobalFilter: true,
-        
-        cell: ({ row} ) => {
-            console.log(row.getCanExpand());
+
+        cell: ({ row }) => {
             return row.getCanExpand() ? (
                 h('div', { class: 'flex items-center gap-2' }, [
                     h(
@@ -622,16 +622,7 @@ const columns: ColumnDef<Asset>[] = [
                 row.original.name || h(Badge, { variant: 'secondary' }, () => 'N/A')
             );
         }
-    //     cell: ({ row }) =>
-    // row.getCanExpand() ? (
-    //   <Button
-    //     variant="ghost"
-    //     size="icon"
-    //     onClick={row.getToggleExpandedHandler()}
-    //   >
-    //     {row.getIsExpanded() ? <ChevronDown /> : <ChevronRight />}
-    //   </Button>
-    // ) : null,
+
 
     },
     {
@@ -786,7 +777,6 @@ const isWarrantyValid = (warrantyEndDate: string): boolean => {
 }
 
 const expanded = ref<ExpandedState>({})
-console.log(assets.data);
 const table = useVueTable({
     get data() { return assets.data },
     get columns() { return columns },

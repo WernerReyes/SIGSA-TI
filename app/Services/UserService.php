@@ -14,6 +14,11 @@ class UserService {
         return User::active()->whereIn('dept_id', [9,10])->get();
     }
 
+
+    function getAllBasicInfo() {
+        return User::active()->select('staff_id', 'firstname', 'lastname')->get();
+    }
+
     function getAllUsers() {
         return User::active()->select('staff_id', 'firstname', 'lastname')->get();
     }

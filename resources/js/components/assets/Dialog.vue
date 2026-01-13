@@ -1,8 +1,8 @@
 <template>
-    <Dialog v-model:open="open" @update:open="(isOpen) => {
-        if (!isOpen) {
-            handleResetForm();
-        }
+
+    <Dialog v-model:open="open" @update:open="() => {
+        handleResetForm();
+
     }">
         <DialogTrigger v-if="includeButton" as-child>
             <Button class="w-fit ml-auto">
@@ -39,7 +39,11 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Tipo</FieldLabel>
 
-                                <Select v-bind="componentField">
+                                <Select v-bind="componentField" @update:open="(val) => {
+                                    if(val && assetTypes.length === 0) {
+                                        getAssetTypes(PageConstKey.ASSETS)
+                                    }
+                                }">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccionar" />
                                     </SelectTrigger>
@@ -304,24 +308,27 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { type Asset } from '@/interfaces/asset.interface'
-import { type User } from '@/interfaces/user.interface'
+import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
+import { useAssetStore } from '@/store/useAssetStore'
 import { router, usePage } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { Laptop } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import * as z from 'zod'
-import TypeDialog from './TypeDialog.vue'
-import { type AssetType, assetTypeOp } from '@/interfaces/assetType.interface'
+import { getAssetTypes } from '../../services/assetType.service';
+import { PageConstKey } from '../../constants/pages.constant';
 
 
 defineProps<{
     includeButton?: boolean
 }>();
+
+
 
 const currentAsset = defineModel<Asset | null>('current-asset', {
     type: Object as () => Asset | null,
@@ -333,9 +340,10 @@ const openEditor = defineModel<boolean>('open-editor', {
     required: true
 });
 
+const { refetchAccessories } = storeToRefs(useAssetStore());
+
 
 const assetTypes = computed<AssetType[]>(() => (usePage().props.types || []) as AssetType[]);
-const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
 
 const open = ref(false);
 const isSubmitting = ref(false);
@@ -419,10 +427,11 @@ const initialFormValues = {
     assigned_to: undefined,
 };
 
-const { handleSubmit, handleReset, errors, values, setValues } = useForm({
+const { handleSubmit, handleReset, errors, setValues } = useForm({
     validationSchema: formSchema,
     initialValues: initialFormValues
 })
+
 
 
 function onSubmit(values: any) {
@@ -437,6 +446,12 @@ function onSubmit(values: any) {
             onSuccess: () => {
                 open.value = false;
                 handleResetForm();
+
+                const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
+
+                if (type == TypeName.ACCESSORY) {
+                    refetchAccessories.value = true;
+                }
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -450,6 +465,12 @@ function onSubmit(values: any) {
         onSuccess: () => {
             open.value = false;
             handleResetForm();
+
+            const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
+
+            if (type == TypeName.ACCESSORY) {
+                refetchAccessories.value = true;
+            }
         },
         onFinish: () => {
             isSubmitting.value = false;

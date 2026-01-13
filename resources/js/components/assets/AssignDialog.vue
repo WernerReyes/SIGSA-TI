@@ -18,7 +18,8 @@
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
                 </div>
 
-                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
+                <form :aria-disabled="true" @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
+                    class="space-y-3">
 
                     <FieldGroup>
                         <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
@@ -27,7 +28,7 @@
 
                                 <Popover v-model:open="openUserSelect" @update:open="(val) => {
                                     if (val && users.length === 0) {
-                                        getAllUsers('/assets')
+                                        getAllBasicUserInfo(PageConstKey.ASSETS)
 
                                     }
                                 }">
@@ -78,7 +79,9 @@
                                 <FieldLabel for="assign_date">Fecha de Entrega</FieldLabel>
                                 <Popover v-slot="{ close }">
                                     <PopoverTrigger as-child>
-                                        <Button variant="outline" class="w-48 justify-between font-normal">
+
+                                        <Button :disabled="asset?.current_assignment?.parent_assignment_id"
+                                            variant="outline" class="w-48 justify-between font-normal">
                                             {{ componentField.modelValue
                                                 ?
                                                 componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
@@ -88,6 +91,7 @@
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+
                                         <Calendar v-bind="componentField" locale="es" layout="month-and-year"
                                             selection-mode="single" @update:model-value="(value) => {
                                                 if (value) {
@@ -108,9 +112,18 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                <Popover v-model:open="openAccessorySelect" @update:open="(val) => {
-                                    if (val && assetAccessories.length === 0) {
-                                        getAssetAccessories()
+                                <Popover v-model:open="openAccessorySelect" @vue:mounted="() => {
+                                    if (accessoriesLoaded) return;
+                                    getAssetAccessories(() => {
+
+                                        accessoriesLoaded = true;
+                                    })
+                                }" @update:open="(val) => {
+                                    if (val && refetchAccessories) {
+                                        getAssetAccessories(() => {
+                                            accessoriesLoaded = true;
+                                            refetchAccessories = false;
+                                        })
 
                                     }
                                 }">
@@ -121,7 +134,10 @@
                                             {{
                                                 componentField.modelValue.length
                                                     ? !assetAccessories.length ?
-                                                        asset?.current_assignment?.assigned_to?.full_name :
+                                                        childrenAssets
+                                                            .filter(acc => componentField.modelValue.includes(acc.id))
+                                                            .map(acc => acc.name)
+                                                            .join(', ') :
                                                         assetAccessories
                                                             .filter(acc => componentField.modelValue.includes(acc.id))
                                                             .map(acc => acc.name)
@@ -155,7 +171,7 @@
 
                                                     </CommandItem>
 
-                                                    <CommandItem v-if="assetAccessories.length === 0" disabled>
+                                                    <CommandItem v-if="assetAccessories.length === 0">
                                                         No hay accesorios disponibles
                                                     </CommandItem>
                                                 </CommandGroup>
@@ -171,7 +187,7 @@
 
 
 
-                    <FieldGroup>
+                    <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
                         <VeeField name="comment" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="comment">Observaciones</FieldLabel>
@@ -234,31 +250,48 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { TypeName } from '@/interfaces/assetType.interface';
 import { type User } from '@/interfaces/user.interface';
 import { getAllUsers } from '@/services/user.service';
+import { useAssetStore } from '@/store/useAssetStore';
 import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { CheckIcon, ChevronDownIcon } from 'lucide-vue-next';
-import { TypeName } from '@/interfaces/assetType.interface';
-import { getAssetAccessories } from '../../services/asset.service';
+import { storeToRefs } from 'pinia';
 import { toast } from 'vue-sonner';
-
+import { getAssetAccessories } from '../../services/asset.service';
+import { getAllBasicUserInfo } from '../../services/user.service';
+import { PageConstKey } from '../../constants/pages.constant';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
+// const { setAccessoriesCreated } = useAssetStore();
+const { refetchAccessories, accessoriesLoaded } = storeToRefs(useAssetStore());
 
 const openUserSelect = ref(false);
 const openAccessorySelect = ref(false);
 const isSubmitting = ref(false);
+const hasRequestedAccessories = ref(false);
 
 const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
 
-const assetAccessories = computed<Asset[]>(() => (usePage().props.assetAccessories || []) as Asset[]);
+const serverAssetAccessories = computed<Asset[]>(() => {
+    return (usePage().props.assetAccessories || []) as Asset[];
+});
+
+const assetAccessories = computed<Asset[]>(() => {
+    return [...childrenAssets.value, ...serverAssetAccessories.value];
+});
 
 const assign = computed<AssetAssignment | null>(() => {
     return asset.value?.current_assignment || null;
+});
+
+const childrenAssets = computed<Asset[]>(() => {
+    if (!assign.value) return [];
+    return assign.value.children_assignments?.flatMap(ca => ca.asset).filter((asset): asset is Asset => !!asset) || [];
 });
 
 const formSchema = toTypedSchema(
@@ -290,12 +323,14 @@ watch(assign, (assignment) => {
             assigned_to_id: assignment.assigned_to_id,
             assign_date: parseDate(assignment.assigned_at.split('T')[0]),
             comment: assignment.comment || '',
+            accessories: assignment.children_assignments?.map(ca => ca.asset_id) || [],
         });
     } else {
         setValues({
             assigned_to_id: undefined,
             assign_date: today(getLocalTimeZone()),
             comment: '',
+            accessories: [],
         });
     }
 }, { immediate: true });
@@ -305,11 +340,12 @@ const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
     const accessoriesIds = values.accessories || [];
-    if (asset.value?.type?.name === TypeName.LAPTOP) {
+    const type = asset.value?.type?.name;
+    if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type as TypeName)) {
         const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
         const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
         if (!includeCharger) {
-            toast.error('Debe incluir el cargador como accesorio al asignar una laptop.');
+            toast.error('Debe incluir el cargador en los accesorios del equipo.');
             isSubmitting.value = false;
             return;
         }
@@ -318,23 +354,30 @@ const onSubmit = async (values: Record<string, any>) => {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
         assign_date: values.assign_date,
-        comment: values.comment,
+        comment: type === TypeName.ACCESSORY ? null : values.comment,
         accessories: values.accessories,
     }, {
-        only: ['flash', 'assetsPaginated', 'stats'],
+        only: ['flash', 'assetsPaginated', 'stats', 'assetAccessories'],
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
         onFinish: () => {
             isSubmitting.value = false;
+
         },
         onSuccess: (page) => {
             const type = asset.value?.type?.name;
             const assignmentId = (page.props as any).flash.assignment_id as number | undefined;
+            refetchAccessories.value = true;
             if (assignmentId) {
                 if (type === TypeName.CELL_PHONE) {
                     handleDownloadPhoneCargo(assignmentId);
 
-                } else {
+                } else if (type === TypeName.ACCESSORY) {
+                    handleDownloadAccessoryCargo(assignmentId);
+                }
+                else {
                     handleDownloadCargo(assignmentId);
-
                 }
             }
 
@@ -354,6 +397,11 @@ const handleDownloadPhoneCargo = (assignmentId: number) => {
     window.location.href = `/assets/generate-phone-assignment-doc/${assignmentId}`;
 }
 
+
+const handleDownloadAccessoryCargo = (assignmentId: number) => {
+    if (!asset.value) return;
+    window.location.href = `/assets/generate-accessory-assignment-doc/${assignmentId}`;
+}
 
 
 </script>

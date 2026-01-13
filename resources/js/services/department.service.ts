@@ -1,9 +1,11 @@
+import type { PageConstKey } from '@/constants/pages.constant';
 import type { Page, PageProps } from '@inertiajs/core';
 import { router } from '@inertiajs/vue3';
 
-export const getAllDepartments = (prefix:string = '', onSuccess?: (page: Page<PageProps>) => void) => {
+
+export const getAllBasicDepartmentInfo = (page:PageConstKey, onSuccess?: (page: Page<PageProps>) => void) => {
     return router.get(
-        `${prefix}/departments`,
+        `departments/basic-info?component=${page}`,
         {},
         {
             preserveState: true,
@@ -15,4 +17,4 @@ export const getAllDepartments = (prefix:string = '', onSuccess?: (page: Page<Pa
             },
         },
     );
-};
+}

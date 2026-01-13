@@ -1,6 +1,8 @@
 import type { Page, PageProps } from '@inertiajs/core';
 import { router } from '@inertiajs/vue3';
 
+
+
 export const getAssetDetails = (
     id: number,
     onSuccess?: (page: Page<PageProps>) => void,
@@ -39,7 +41,9 @@ export const getAssetHistories = (
     );
 };
 
-export const getAssetAccessories = () => {
+export const getAssetAccessories = (
+    onSuccess?: (page: Page<PageProps>) => void,
+) => {
     router.get(
         `/assets/accessories`,
         {},
@@ -48,6 +52,10 @@ export const getAssetAccessories = () => {
             preserveScroll: true,
             preserveUrl: true,
             only: ['assetAccessories', 'flash'],
+            onSuccess: (page) => {
+                onSuccess?.(page as Page<PageProps>);
+            }
         },
+        
     );
 };

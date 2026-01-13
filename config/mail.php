@@ -35,6 +35,8 @@ return [
     |
     */
 
+    'purchases_email' => env('MAIL_PURCHASES_ADDRESS'),
+
     'mailers' => [
 
         'smtp' => [

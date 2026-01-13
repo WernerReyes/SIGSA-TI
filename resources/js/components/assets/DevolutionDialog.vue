@@ -17,34 +17,7 @@
                     <p class="text-sm font-medium">{{ asset?.name }}</p>
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
 
-                    <div class="flex gap-2 flex-wrap">
-
-                        <div v-if="asset?.assignment?.responsible_id" class="flex flex-col w-fit gap-2 mt-2 mx-auto">
-
-                            <div class="flex items-center gap-2">
-
-                                <Button variant="secondary" size="sm" @click="handleDownloadCargo">
-                                    <Download /> Cargo
-                                    <MonitorSmartphone />
-                                </Button>
-
-
-
-                            </div>
-
-                            <div class="w-48 mx-auto">
-
-                                <FileUpload label="Subir documento firmado" accept="application/pdf" @error="(msg) => {
-                                    console.log('Upload error:', msg);
-                                }" @update:file="(file) => {
-                                    console.log('Uploaded file:', file);
-                                }" />
-
-                            </div>
-
-                        </div>
-
-                    </div>
+                    
 
 
 

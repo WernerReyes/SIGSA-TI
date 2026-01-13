@@ -1,44 +1,48 @@
-import { createApp, h } from 'vue'
-import { createInertiaApp } from '@inertiajs/vue3'
-import { initializeTheme } from './composables/useAppearance'
+import { createInertiaApp } from '@inertiajs/vue3';
+import { createPinia } from 'pinia';
+import { createApp, h } from 'vue';
+import { initializeTheme } from './composables/useAppearance';
 
-
-import { router } from '@inertiajs/vue3'
-import { toast } from 'vue-sonner'
+import { router } from '@inertiajs/vue3';
+import { toast } from 'vue-sonner';
 
 router.on('error', (event) => {
-    const errors = event.detail?.errors
-    if (!errors) return
+    const errors = event.detail?.errors;
+    if (!errors) return;
 
-    const message = Object.values(errors)[0]
+    const message = Object.values(errors)[0];
     if (message) {
-        toast.error(message)
+        toast.error(message);
     }
-})
+});
 
 router.on('success', (event) => {
-    const flash = event.detail?.page.props.flash as {
-        success?: string
-        error?: string
-    } | undefined
-    if (!flash) return
+    const flash = event.detail?.page.props.flash as
+        | {
+              success?: string;
+              error?: string;
+          }
+        | undefined;
+    if (!flash) return;
 
     if (flash.success) {
-        toast.success(flash.success)
+        toast.success(flash.success);
     }
-})
+});
 
+const pinia = createPinia();
 
 createInertiaApp({
     resolve: (name: string) => {
-        const pages = import.meta.glob('./pages/**/*.vue', { eager: true })
-        return pages[`./pages/${name}.vue`] as any
+        const pages = import.meta.glob('./pages/**/*.vue', { eager: true });
+        return pages[`./pages/${name}.vue`] as any;
     },
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)
-            .mount(el)
+            .use(pinia)
+            .mount(el);
     },
-})
+});
 // This will set light / dark mode on page load...
 initializeTheme();

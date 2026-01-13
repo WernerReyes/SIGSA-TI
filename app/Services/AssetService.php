@@ -33,131 +33,271 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class AssetService
 {
 
-    public function getTypes()
-    {
-        return AssetType::get();
-    }
+    // public function getTypes()
+    // {
+    //     return AssetType::select('id', 'name')->get();
+    // }
 
-    public function registerType(string $name, ?int $id = null)
-    {
-        try {
-            if ($id) {
-                $assetType = $this->findTypeById($id);
-                $assetType->name = $name;
-                $assetType->save();
-                return $assetType;
-            }
+    // public function registerType(string $name, ?int $id = null)
+    // {
+    //     try {
+    //         if ($id) {
+    //             $assetType = $this->findTypeById($id);
+    //             $assetType->name = $name;
+    //             $assetType->save();
+    //             return $assetType;
+    //         }
 
-            $assetType = AssetType::firstOrCreate(['name' => $name]);
-            return $assetType;
-        } catch (\Exception $e) {
-            throw new InternalErrorException('Error al registrar el tipo de activo');
-        }
-    }
+    //         $assetType = AssetType::firstOrCreate(['name' => $name]);
+    //         return $assetType;
+    //     } catch (\Exception $e) {
+    //         throw new InternalErrorException('Error al registrar el tipo de activo');
+    //     }
+    // }
 
 
-    public function deleteType(int $id)
-    {
-        try {
-            $assetType = $this->findTypeById($id);
-            $assetType->delete();
-        } catch (\Exception $e) {
-            if ($e->getCode() === '23000') {
-                throw new BadRequestException('No se puede eliminar el tipo de activo porque está asociado a uno o más equipos.');
-            }
-            throw new InternalErrorException('Error al eliminar el tipo de activo');
-        }
-    }
+    // public function deleteType(int $id)
+    // {
+    //     try {
+    //         $assetType = $this->findTypeById($id);
+    //         $assetType->delete();
+    //     } catch (\Exception $e) {
+    //         if ($e->getCode() === '23000') {
+    //             throw new BadRequestException('No se puede eliminar el tipo de activo porque está asociado a uno o más equipos.');
+    //         }
+    //         throw new InternalErrorException('Error al eliminar el tipo de activo');
+    //     }
+    // }
 
-    private function findTypeById(int $id): AssetType
-    {
-        try {
-            $assetType = AssetType::find($id);
-            if (!$assetType) {
-                throw new NotFoundHttpException('No se encontró el tipo de activo');
-            }
-            return $assetType;
-        } catch (\Exception $e) {
-            if ($e instanceof NotFoundHttpException) {
-                throw $e;
-            }
+    // private function findTypeById(int $id): AssetType
+    // {
+    //     try {
+    //         $assetType = AssetType::find($id);
+    //         if (!$assetType) {
+    //             throw new NotFoundHttpException('No se encontró el tipo de activo');
+    //         }
+    //         return $assetType;
+    //     } catch (\Exception $e) {
+    //         if ($e instanceof NotFoundHttpException) {
+    //             throw $e;
+    //         }
 
-            throw new InternalErrorException('Error al buscar el tipo de activo');
-        }
-    }
+    //         throw new InternalErrorException('Error al buscar el tipo de activo');
+    //     }
+    // }
+
+    // public function getPaginated(AssetFiltersDto $filtersDto)
+    // {
+
+
+    //     try {
+    //         return Asset::query()->with(
+    //             'type:id,name',
+    //             'currentAssignment:id,asset_id,assigned_to_id,assigned_at',
+    //             'currentAssignment.assignedTo:staff_id,firstname,lastname',
+    //             'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+    //             'currentAssignment.childrenAssignments.asset.type:id,name',
+    //             'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
+    //             'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname'
+    //         )
+    //             ->where(function ($q) {
+    //                 $q->whereDoesntHave('currentAssignment')
+
+    //                     ->orWhereHas('currentAssignment', function ($q2) {
+    //                         $q2->whereNull('parent_assignment_id');
+    //                     });
+    //             })
+    //             ->
+    //             when($filtersDto->search, function ($query, $search) {
+    //                 $query->where(function ($q) use ($search) {
+
+    //                     $q->
+
+    //                         where('name', 'like', "%{$search}%")
+    //                         ->orWhere('brand', 'like', "%{$search}%")
+    //                         ->orWhere('model', 'like', "%{$search}%")
+    //                         ->orWhere('serial_number', 'like', "%{$search}%")
+    //                         ->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($search) {
+    //                             $q2->where('name', 'like', "%{$search}%")
+    //                                 ->orWhere('brand', 'like', "%{$search}%")
+    //                                 ->orWhere('model', 'like', "%{$search}%")
+    //                                 ->orWhere('serial_number', 'like', "%{$search}%");
+    //                         });
+                       
+    //                 });
+    //             })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
+    //                 $query->whereIn('status', $filtersDto->status)->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($filtersDto) {
+    //                     $q2->whereIn('status', $filtersDto->status);
+    //                 });
+    //             })->when($filtersDto->types, function ($query, $typeId) {
+    //                 $query->where('type_id', $typeId)->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($typeId) {
+    //                     $q2->where('type_id', $typeId);
+    //                 });
+    //             })->when($filtersDto->assigned_to, function ($query) use ($filtersDto) {
+    //                 $ids = array_filter($filtersDto->assigned_to);
+
+    //                 $query->where(function ($q) use ($ids, $filtersDto) {
+    //                     if ($ids) {
+    //                         $q->whereHas(
+    //                             'currentAssignment',
+    //                             fn($q2) =>
+    //                             $q2->whereIn('assigned_to_id', $ids)
+    //                         );
+    //                     }
+
+    //                     if (in_array(null, $filtersDto->assigned_to, true)) {
+    //                         $q->orWhereDoesntHave('currentAssignment');
+    //                     }
+    //                 });
+    //             })
+    //             ->when($filtersDto->department_id && count($filtersDto->department_id) > 0, function ($query) use ($filtersDto) {
+    //                 $query->where(function ($q) use ($filtersDto) {
+    //                     $q->whereHas('currentAssignment.assignedTo', function ($q2) use ($filtersDto) {
+    //                         $q2->whereIn('dept_id', $filtersDto->department_id);
+    //                     });
+    //                     // $q->orWhereDoesntHave('currentAssignment');
+    //                 });
+    //             })->
+    //             latest()->paginate(10)->withQueryString();
+
+    //     } catch (\Exception $e) {
+    //         throw new InternalErrorException('Error al obtener los activos');
+    //     }
+    // }
 
     public function getPaginated(AssetFiltersDto $filtersDto)
-    {
-        try {
-            return Asset::query()->with(
+{
+    try {
+        return Asset::query()
+            ->with([
                 'type:id,name',
-                'currentAssignment:id,asset_id,assigned_to_id,assigned_at',
-                'currentAssignment.assignedTo:staff_id,firstname,lastname',
+                'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
+                'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                 'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
                 'currentAssignment.childrenAssignments.asset.type:id,name',
-                'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at',
-                'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname'
-            )->
-                when($filtersDto->search, function ($query, $search) {
-                    $query->
-                        whereHas('currentAssignment', function ($q2)  {
-                            $q2->whereNull('parent_assignment_id');
-                        })->
-                        where(function ($q) use ($search) {
+                'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
+                'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+            ])
 
-                            $q->
+            /*
+            |--------------------------------------------------------------------------
+            | Activos raíz (no accesorios huérfanos)
+            |--------------------------------------------------------------------------
+            */
+            ->where(function ($q) {
+                $q->whereDoesntHave('currentAssignment')
+                  ->orWhereHas('currentAssignment', fn ($q2) =>
+                      $q2->whereNull('parent_assignment_id')
+                  );
+            })
 
-                                where('name', 'like', "%{$search}%")
-                                ->orWhere('brand', 'like', "%{$search}%")
-                                ->orWhere('model', 'like', "%{$search}%")
-                                ->orWhere('serial_number', 'like', "%{$search}%")
-                                ->orWhereHas('currentAssignment.assignedTo', function ($q2) use ($search) {
-                                    $q2->where('firstname', 'like', "%{$search}%")
-                                        ->orWhere('lastname', 'like', "%{$search}%")->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
-                                    // $q2->orWhere(DB::raw("CONCAT(firstname, ' ', lastname)"), 'like', "%{$search}%");
-            
-                                });
-                        });
-                })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
-                    $query->whereIn('status', $filtersDto->status);
-                })->when($filtersDto->types, function ($query, $typeId) {
-                    $query->where('type_id', $typeId);
-                })->when($filtersDto->assigned_to, function ($query) use ($filtersDto) {
-                    $ids = array_filter($filtersDto->assigned_to);
+            /*
+            |--------------------------------------------------------------------------
+            | BÚSQUEDA GENERAL
+            |--------------------------------------------------------------------------
+            */
+            ->when($filtersDto->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('brand', 'like', "%{$search}%")
+                      ->orWhere('model', 'like', "%{$search}%")
+                      ->orWhere('serial_number', 'like', "%{$search}%")
+                      ->orWhereHas(
+                          'currentAssignment.childrenAssignments.asset',
+                          fn ($q2) =>
+                              $q2->where('name', 'like', "%{$search}%")
+                                 ->orWhere('brand', 'like', "%{$search}%")
+                                 ->orWhere('model', 'like', "%{$search}%")
+                                 ->orWhere('serial_number', 'like', "%{$search}%")
+                      );
+                });
+            })
 
-                    $query->where(function ($q) use ($ids, $filtersDto) {
-                        if ($ids) {
-                            $q->whereHas(
-                                'currentAssignment',
-                                fn($q2) =>
+            /*
+            |--------------------------------------------------------------------------
+            | STATUS
+            |--------------------------------------------------------------------------
+            */
+            ->when(!empty($filtersDto->status), function ($query) use ($filtersDto) {
+                $query->where(function ($q) use ($filtersDto) {
+                    $q->whereIn('status', $filtersDto->status)
+                      ->orWhereHas(
+                          'currentAssignment.childrenAssignments.asset',
+                          fn ($q2) =>
+                              $q2->whereIn('status', $filtersDto->status)
+                      );
+                });
+            })
+
+            /*
+            |--------------------------------------------------------------------------
+            | TIPO DE ACTIVO
+            |--------------------------------------------------------------------------
+            */
+            ->when($filtersDto->types, function ($query, $typeId) {
+                $query->where(function ($q) use ($typeId) {
+                    $q->where('type_id', $typeId)
+                      ->orWhereHas(
+                          'currentAssignment.childrenAssignments.asset',
+                          fn ($q2) =>
+                              $q2->where('type_id', $typeId)
+                      );
+                });
+            })
+
+            /*
+            |--------------------------------------------------------------------------
+            | ASIGNADO A USUARIO
+            |--------------------------------------------------------------------------
+            */
+            ->when(!empty($filtersDto->assigned_to), function ($query) use ($filtersDto) {
+                $ids = array_filter($filtersDto->assigned_to, fn ($v) => !is_null($v));
+
+                $query->where(function ($q) use ($ids, $filtersDto) {
+
+                    if (!empty($ids)) {
+                        $q->whereHas(
+                            'currentAssignment',
+                            fn ($q2) =>
                                 $q2->whereIn('assigned_to_id', $ids)
-                            );
-                        }
+                        );
+                    }
 
-                        if (in_array(null, $filtersDto->assigned_to, true)) {
-                            $q->orWhereDoesntHave('currentAssignment');
-                        }
-                    });
-                })
-                ->when($filtersDto->department_id && count($filtersDto->department_id) > 0, function ($query) use ($filtersDto) {
-                    $query->where(function ($q) use ($filtersDto) {
-                        $q->whereHas('currentAssignment.assignedTo', function ($q2) use ($filtersDto) {
-                            $q2->whereIn('dept_id', $filtersDto->department_id);
-                        });
-                        // $q->orWhereDoesntHave('currentAssignment');
-                    });
-                })->
-                latest()->paginate(10)->withQueryString();
+                    if (in_array(null, $filtersDto->assigned_to, true)) {
+                        $q->orWhereDoesntHave('currentAssignment');
+                    }
+                });
+            })
 
-        } catch (\Exception $e) {
-            throw new InternalErrorException('Error al obtener los activos');
-        }
+            /*
+            |--------------------------------------------------------------------------
+            | DEPARTAMENTO
+            |--------------------------------------------------------------------------
+            */
+            ->when(!empty($filtersDto->department_id), function ($query) use ($filtersDto) {
+                $query->whereHas(
+                    'currentAssignment.assignedTo',
+                    fn ($q2) =>
+                        $q2->whereIn('dept_id', $filtersDto->department_id)
+                );
+            })
+
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+    } catch (\Throwable $e) {
+        throw new InternalErrorException('Error al obtener los activos');
     }
+}
+
 
     public function getAccessories()
     {
         try {
-            return Asset::query()
+            return Asset::
+                query()->
+                select('id', 'name', 'status')
                 ->whereHas('type', function ($query) {
                     $query->where('name', 'Accesorio');
                 })
@@ -471,9 +611,9 @@ class AssetService
                 if (!$asset) {
                     throw new NotFoundHttpException('No se encontró el activo');
                 }
-                if ($asset->status !== AssetStatus::AVAILABLE->value) {
-                    throw new BadRequestException('Solo se pueden asignar equipos disponibles.');
-                }
+                // if ($asset->status !== AssetStatus::AVAILABLE->value) {
+                //     throw new BadRequestException('Solo se pueden asignar equipos disponibles.');
+                // }
 
                 $assignment = $asset->currentAssignment;
 
@@ -496,9 +636,20 @@ class AssetService
                         'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
                     ]);
 
+                    $accessoriesChanged = false;
+                    $assetsIds = array_map(
+                        fn($a) => $a['asset_id'],
+                        $assignment->childrenAssignments->select('id', 'asset_id')->toArray()
+                    );
+                    if (
+                        $assetsIds !== $dto->accessories
+                    ) {
+                        $accessoriesChanged = true;
+                    }
+
 
                     // 3️⃣ Si no hay cambios reales
-                    if (!$assignment->isDirty()) {
+                    if (!$assignment->isDirty() && !$accessoriesChanged) {
                         throw new BadRequestException('No se detectaron cambios en la asignación.');
                     }
 
@@ -509,23 +660,81 @@ class AssetService
                     $changes = [];
 
                     if ($assignment->wasChanged('comment')) {
-                        $changes[] = "Comentario actualizado a: {$assignment->comment}";
+                        $changes[] = "Comentario actualizado de '{$original['comment']}' a '{$assignment->comment}'";
                     }
+
+
+
+                    if ($accessoriesChanged) {
+                        $assetsToReleaseIds = array_diff($assetsIds, $dto->accessories ?? []);
+                        $assets = Asset::whereIn('id', $assetsToReleaseIds)->get();
+
+                        $changes[] =
+                            (count($assetsToReleaseIds) > 0 ?
+                                implode(',', $assets->pluck('name')->map(fn($name) => "{$name} liberado")->toArray()) : 'No hay accesorios liberados')
+                            . "," .
+                            (count($dto->accessories ?? []) > 0 ?
+                                implode(',', Asset::whereIn('id', $dto->accessories ?? [])->pluck('name')->map(fn($name) => "{$name} asignado")->toArray()) : 'No hay accesorios asignados');
+
+
+
+                        if (count($assetsToReleaseIds) > 0) {
+                            // Liberar accesorios antiguos
+                            Asset::whereIn('id', $assetsToReleaseIds)->update([
+                                'status' => AssetStatus::AVAILABLE->value,
+                            ]);
+                            $assignment->childrenAssignments()->whereIn('asset_id', $assetsToReleaseIds)->delete();
+                        }
+
+
+
+
+                        // Asignar accesorios nuevos si los hay
+                        if ($dto->accessories && is_array($dto->accessories)) {
+                            $newAccessoryIds = array_diff($dto->accessories, $assetsIds);
+
+                            AssetAssignment::insert(
+                                array_map(function ($accessoryId) use ($assignment, $dto) {
+
+                                    return [
+                                        'assigned_to_id' => $dto->assigned_to_id,
+                                        'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
+                                        'parent_assignment_id' => $assignment->id,
+                                        // 'comment' => "Accesorio asignado junto al equipo principal.",
+                                        'asset_id' => $accessoryId,
+                                        // 'assigned_at' => $dto->assign_date,
+    
+                                        // 'created_at' => now(),
+                                        // 'updated_at' => now(),
+                                    ];
+                                }, $newAccessoryIds)
+                            );
+                            Asset::whereIn('id', $newAccessoryIds)->update([
+                                'status' => AssetStatus::ASSIGNED->value,
+                            ]);
+                        }
+                    }
+
 
                     if ($assignment->wasChanged('assigned_at')) {
-                        $changes[] = "Fecha de asignación actualizada a: " .
+                      
+                        $changes[] = "Fecha de asignación actualizada de " .
+                            $original['assigned_at']->format('d/m/Y') . " a " .
                             $assignment->assigned_at->format('d/m/Y');
+
+                        if ($assignment->childrenAssignments()->count() > 0 && !$accessoriesChanged) {
+                            $assignment->childrenAssignments()->update([
+                                'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
+                            ]);
+                        }
+
                     }
 
-                    if (var_dump($assignment->childrenAssignments->select('id')) === $dto->accessories) {
-                        $changes[] = "Accesorios actualizados.";
-                    }
 
-                    $asset->childrenAssignments()->whereIn('id', $dto->accessories ?? [])->delete();
-
-                    $description = implode('. ', $changes);
+                    $description = implode(',', $changes);
 
                     // 5️⃣ Historial
+
                     AssetHistory::create([
                         'action' => AssetHistoryAction::ASSIGNED->value,
                         'description' => $description . " para {$assignment->assignedTo->full_name}",
@@ -542,6 +751,8 @@ class AssetService
                 $asset->update([
                     'status' => AssetStatus::ASSIGNED->value,
                 ]);
+
+                // Nueva asignación
 
                 $assigned = AssetAssignment::create(
                     [
@@ -600,7 +811,6 @@ class AssetService
             });
             return $assignment;
         } catch (\Exception $e) {
-            ds($e->getMessage());
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
@@ -697,8 +907,8 @@ class AssetService
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
-            $template->setValue('brand', strtoupper($asset->brand));
-            $template->setValue('model', strtoupper($asset->model));
+            $template->setValue('brand', $asset->brand);
+            $template->setValue('model', $asset->model);
             $template->setValue('serial_number', $asset->serial_number);
             $template->setValue('processor', strtoupper($asset->processor ?? 'N/A'));
             $template->setValue('ram', strtoupper($asset->ram ?? 'N/A'));
@@ -706,14 +916,20 @@ class AssetService
 
             $template->setValue('comment', $assignment->comment ?? '');
 
+            $template->setValue(
+                'accessory_list',
+                $assignment->childrenAssignments->map(function ($childAssignment) {
+                    $asset = $childAssignment->asset;
+                    return '- ' . "{$asset->name} ({$asset->brand} {$asset->model})";
+                })->implode('</w:t><w:br/><w:t>')
+            );
 
-            $fileName = 'cargo_laptop_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
+            $fileName = "cargo_{$asset->type->name}_" . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
             $path = storage_path('app/public/documents/' . $fileName);
             $template->saveAs($path);
 
             return $path;
         } catch (\Exception $e) {
-            ds($e->getMessage());
             if ($e instanceof BadRequestException) {
                 throw $e;
             }
@@ -746,8 +962,8 @@ class AssetService
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('department', strtoupper($assignment->assignedTo->department->name ?? 'N/A'));
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
-            $template->setValue('brand', strtoupper($asset->brand));
-            $template->setValue('model', strtoupper($asset->model));
+            $template->setValue('brand', $asset->brand);
+            $template->setValue('model', $asset->model);
             $template->setValue('comment', $assignment->comment ?? 'N/A');
             $template->setValue('phone', $asset->phone ?? 'N/A');
             $template->setValue('imei', $asset->imei ?? 'N/A');
@@ -768,7 +984,7 @@ class AssetService
 
     }
 
-    public function generateAccessoriesAssignmentDocument(
+    public function generateAccessoryAssignmentDocument(
         AssetAssignment $assignment
     ) {
         try {
@@ -780,16 +996,16 @@ class AssetService
 
             Storage::disk('public')->makeDirectory('documents');
 
-            $template = new TemplateProcessor(storage_path('app/templates/cargo-accesorios.docx'));
+            $template = new TemplateProcessor(storage_path('app/templates/cargo-accesorio.docx'));
 
             $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
             $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
-            $template->setValue('type', strtoupper($asset->type->name));
-            $template->setValue('brand', strtoupper($asset->brand));
-            $template->setValue('model', strtoupper($asset->model));
-            $template->setValue('serial_number', $asset->serial_number);
+            $template->setValue('name', $asset->name);
+            $template->setValue('brand', $asset->brand);
+            $template->setValue('model', $asset->model ?? 'N/A');
+            $template->setValue('serial_number', $asset->serial_number ?? 'N/A');
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
 
             $fileName = 'cargo_accesorios_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';

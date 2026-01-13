@@ -17,7 +17,6 @@ use App\Http\Requests\asset\UploadDeliveryRecordRequest;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Services\AssetService;
-use App\Services\DepartmentService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,26 +25,18 @@ class AssetController extends Controller
 {
     //
 
-    public function renderView(AssetService $assetService, UserService $userService, DepartmentService $departmentService, Request $request)
+    public function renderView(AssetService $assetService, UserService $userService, Request $request)
     {
-        $types = $assetService->getTypes();
-
-        // $users = $userService->getAllUsers();
         $TIUsers = $userService->getTIDepartmentUsers();
-        // $depatments = $departmentService->getAll();
-
+      
         $filters = AssetFiltersDto::fromArray($request->all());
         $assetsPaginated = $assetService->getPaginated($filters);
 
         $stats = $assetService->getStats();
 
         return Inertia::render('Assets', [
-            'types' => $types,
-            // 'assets' => $assets,
-            // 'users' => $users,
             'TIUsers' => $TIUsers,
             'filters' => $filters,
-            // 'departments' => $depatments,
             'assetsPaginated' => $assetsPaginated,
             'stats' => $stats,
         ]);
@@ -67,6 +58,7 @@ class AssetController extends Controller
             'asset' => $asset,
         ]);
     }
+    
 
     public function renderHistories(Asset $asset, AssetService $assetService)
     {
@@ -77,55 +69,7 @@ class AssetController extends Controller
         ]);
     }
 
-    public function renderUsers(UserService $userService)
-    {
-
-        // $TIUsers = $userService->getTIDepartmentUsers();
-        $users = $userService->getAllUsers();
-
-        return Inertia::render('Assets', [
-            'users' => $users,
-            // 'TIUsers' => $TIUsers,
-        ]);
-    }
-
-    public function renderDepartments(DepartmentService $departmentService)
-    {
-        $departments = $departmentService->getAll();
-
-        return Inertia::render('Assets', [
-            'departments' => $departments,
-        ]);
-    }
-
-
-
-    public function registerType(Request $request, AssetService $assetService)
-    {
-        $name = $request->input('name');
-        $id = $request->input('id', null);
-        try {
-            $assetType = $assetService->registerType($name, $id);
-
-            $message = $id ? 'Tipo de activo actualizado: ' : 'Tipo de activo registrado: ';
-            return back()->with('success', $message . $assetType->name);
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
-    }
-
-    public function deleteType(Request $request, AssetService $assetService)
-    {
-        $id = $request->input('id');
-        try {
-            $assetService->deleteType($id);
-            return back()->with('success', 'Tipo de activo eliminado correctamente.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
-        }
-    }
-
-
+    
 
     public function storeAsset(StoreAssetRequest $request, AssetService $assetService)
     {
@@ -215,6 +159,17 @@ class AssetController extends Controller
             return back()->withErrors(['error' => $e->getMessage()]);
 
 
+        }
+    }
+
+    public function generateAccessoryAssignmentDocument(AssetAssignment $assignment, AssetService $assetService)
+    {
+        try {
+            $filePath = $assetService->generateAccessoryAssignmentDocument($assignment);
+
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 

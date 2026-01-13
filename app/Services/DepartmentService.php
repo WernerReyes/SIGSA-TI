@@ -24,4 +24,8 @@ class DepartmentService
     function getAll() {
         return Department::select('id', 'name')->get();
     }
+
+    function getBasicInfo() {
+        return Department::select('id', 'name')->get();
+    }
 }
