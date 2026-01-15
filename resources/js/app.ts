@@ -1,5 +1,4 @@
 import { createInertiaApp } from '@inertiajs/vue3';
-import { createPinia } from 'pinia';
 import { createApp, h } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 
@@ -16,21 +15,14 @@ router.on('error', (event) => {
     }
 });
 
-router.on('success', (event) => {
-    const flash = event.detail?.page.props.flash as
-        | {
-              success?: string;
-              error?: string;
-          }
-        | undefined;
-    if (!flash) return;
-
-    if (flash.success) {
-        toast.success(flash.success);
+router.on('flash', (event) => {
+    const flash = event.detail.flash;
+    if (flash?.success) {
+       toast.success(flash.success);
     }
-});
+})
 
-const pinia = createPinia();
+
 
 createInertiaApp({
     resolve: (name: string) => {
@@ -40,9 +32,9 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(pinia)
             .mount(el);
     },
 });
 // This will set light / dark mode on page load...
 initializeTheme();
+

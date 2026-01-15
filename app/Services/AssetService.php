@@ -171,7 +171,7 @@ class AssetService
         return Asset::query()
             ->with([
                 'type:id,name',
-                'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
+                'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                 'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                 'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
                 'currentAssignment.childrenAssignments.asset.type:id,name',
@@ -611,22 +611,19 @@ class AssetService
                 if (!$asset) {
                     throw new NotFoundHttpException('No se encontró el activo');
                 }
-                // if ($asset->status !== AssetStatus::AVAILABLE->value) {
-                //     throw new BadRequestException('Solo se pueden asignar equipos disponibles.');
-                // }
+
+                if (in_array($asset->status, [AssetStatus::IN_REPAIR->value, AssetStatus::DECOMMISSIONED->value])) {
+                    throw new BadRequestException('Solo se pueden asignar equipos disponibles.');
+                }
 
                 $assignment = $asset->currentAssignment;
 
-                // 1️⃣ Si está asignado a otro usuario → bloquear
-                if ($assignment && $assignment->assigned_to_id !== $dto->assigned_to_id) {
-                    throw new BadRequestException(
-                        'El activo ya está asignado a un usuario, debe devolverlo antes de reasignarlo.'
-                    );
-                }
 
                 // 2️⃣ Si existe asignación activa → posible actualización
                 if ($assignment) {
-
+                    if (!$assignment->canBeEdited()) {
+                        throw new BadRequestException('No es posible editar esta asignación, ha pasado el tiempo límite de edición.');
+                    }
                     // Guardamos valores originales
                     $original = $assignment->getOriginal();
 
@@ -634,6 +631,7 @@ class AssetService
                     $assignment->fill([
                         'comment' => $dto->comment,
                         'assigned_at' => Carbon::parse($dto->assign_date)->startOfDay(),
+                        'assigned_to_id' => $dto->assigned_to_id,
                     ]);
 
                     $accessoriesChanged = false;
@@ -662,6 +660,13 @@ class AssetService
                     if ($assignment->wasChanged('comment')) {
                         $changes[] = "Comentario actualizado de '{$original['comment']}' a '{$assignment->comment}'";
                     }
+
+                    if ($assignment->wasChanged('assigned_to_id')) {
+                        $changes[] = "Asignación cambiada de {$assignment->assignedTo->full_name} a " .
+                            User::find($original['assigned_to_id'])->full_name;
+                    }
+
+
 
 
 
@@ -717,7 +722,7 @@ class AssetService
 
 
                     if ($assignment->wasChanged('assigned_at')) {
-                      
+
                         $changes[] = "Fecha de asignación actualizada de " .
                             $original['assigned_at']->format('d/m/Y') . " a " .
                             $assignment->assigned_at->format('d/m/Y');
@@ -734,10 +739,9 @@ class AssetService
                     $description = implode(',', $changes);
 
                     // 5️⃣ Historial
-
                     AssetHistory::create([
                         'action' => AssetHistoryAction::ASSIGNED->value,
-                        'description' => $description . " para {$assignment->assignedTo->full_name}",
+                        'description' => $description . " para {$assignment->assignedTo->full_name} (actualización)",
                         'asset_id' => $asset->id,
                         'performed_by' => auth()->user()->staff_id,
                         'performed_at' => now(),
@@ -760,6 +764,9 @@ class AssetService
                         'assigned_at' => $dto->assign_date,
                         'comment' => $dto->comment,
                         'asset_id' => $dto->asset_id,
+                        'created_at' => now(),
+                        'updated_at' => now()
+
                     ]
                 );
 

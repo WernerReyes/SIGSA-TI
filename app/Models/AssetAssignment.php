@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Asset\AssetStatus;
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,13 +24,23 @@ class AssetAssignment extends Model
         'responsible_id',
         'return_reason',
         'parent_assignment_id',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
         'assigned_at' => 'date',
         'returned_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
+    public function canBeEdited(): bool
+    {
+        return $this->returned_at === null
+            && $this->asset->status === AssetStatus::ASSIGNED->value
+            && $this->created_at->diffInMinutes(now()) <= 15;
+    }
 
     public function assignedTo()
     {

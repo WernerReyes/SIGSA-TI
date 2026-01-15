@@ -32,35 +32,51 @@
                         </Field>
                     </VeeField>
                 </FieldGroup>
-
+                <!-- :selected-label="selectedLabel"
+      :model-value="rootContext.modelValue.value" -->
                 <div class="grid gap-4 items-center md:grid-cols-2">
                     <FieldGroup>
                         <VeeField name="type_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Tipo</FieldLabel>
 
-                                <Select v-bind="componentField" @update:open="(val) => {
-                                    if(val && assetTypes.length === 0) {
-                                        getAssetTypes(PageConstKey.ASSETS)
-                                    }
-                                }">
+                                <Select v-bind="componentField">
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar" />
+                                        <SelectValue :placeholder="currentAsset?.type?.name ||
+                                            'Seleccionar'" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem v-if="assetTypes.length === 0" disabled value="empty">
-                                                No hay tipos de activos disponibles
-                                            </SelectItem>
-
-                                            <SelectItem v-else v-for="assetType in assetTypes" :key="assetType.id"
-                                                :value="assetType.id">
-                                                <component :is="assetTypeOp(assetType.name)?.icon"
-                                                    class="inline size-4" />
-                                                {{ assetType.name }}
-                                            </SelectItem>
 
                                         </SelectGroup>
+                                        <WhenVisible data="types">
+                                            <template #fallback>
+
+                                                <div class="flex flex-col gap-2 p-3">
+
+                                                    <Skeleton v-for="n in 4" :key="n" class="h-6 w-full" />
+                                                </div>
+
+                                            </template>
+
+                                            <SelectGroup>
+                                                <SelectItem v-if="assetTypes.length === 0" disabled value="empty">
+                                                    No hay tipos de activos disponibles
+                                                </SelectItem>
+
+                                                <SelectItem v-else v-for="assetType in assetTypes" :key="assetType.id"
+                                                    :value="assetType.id">
+                                                    <component :is="assetTypeOp(assetType.name)?.icon"
+                                                        class="inline size-4" />
+                                                    {{ assetType.name }}
+                                                    <Skeleton class="h-4 w-full" />
+                                                </SelectItem>
+
+                                            </SelectGroup>
+                                        </WhenVisible>
+
+
+
 
 
                                     </SelectContent>
@@ -258,6 +274,7 @@
             </form>
 
             <DialogFooter>
+
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0
                     " type="submit" form="dialogForm">
@@ -311,24 +328,23 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select'
+
 import { Spinner } from '@/components/ui/spinner'
 import { type Asset } from '@/interfaces/asset.interface'
-import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
-import { useAssetStore } from '@/store/useAssetStore'
-import { router, usePage } from '@inertiajs/vue3'
+import { type AssetType, assetTypeOp } from '@/interfaces/assetType.interface'
+import { router, usePage, WhenVisible } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { Laptop } from 'lucide-vue-next'
-import { storeToRefs } from 'pinia'
+
+import { Skeleton } from '@/components/ui/skeleton'
 import * as z from 'zod'
-import { getAssetTypes } from '../../services/assetType.service';
-import { PageConstKey } from '../../constants/pages.constant';
 
 
 defineProps<{
     includeButton?: boolean
 }>();
 
-
+const page = usePage();
 
 const currentAsset = defineModel<Asset | null>('current-asset', {
     type: Object as () => Asset | null,
@@ -340,10 +356,10 @@ const openEditor = defineModel<boolean>('open-editor', {
     required: true
 });
 
-const { refetchAccessories } = storeToRefs(useAssetStore());
-
-
-const assetTypes = computed<AssetType[]>(() => (usePage().props.types || []) as AssetType[]);
+const assetTypes = computed<AssetType[]>(() => {
+    const types = page.props?.types as AssetType[] | undefined;
+    return types || [];
+});
 
 const open = ref(false);
 const isSubmitting = ref(false);
@@ -441,17 +457,19 @@ function onSubmit(values: any) {
     if (currentAsset.value) {
         router.put(`/assets/${currentAsset.value.id}`, {
             // id: currentAsset.value.id,
-            ...values
+            ...values,
+
         }, {
+            only: ['assetsPaginated', 'stats', 'flash'],
             onSuccess: () => {
                 open.value = false;
                 handleResetForm();
 
-                const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
+                // const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
 
-                if (type == TypeName.ACCESSORY) {
-                    refetchAccessories.value = true;
-                }
+                // if (type == TypeName.ACCESSORY) {
+                //     refetchAccessories.value = true;
+                // }
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -462,15 +480,16 @@ function onSubmit(values: any) {
 
 
     router.post('/assets', values, {
+        only: ['assetsPaginated', 'stats', 'flash'],
         onSuccess: () => {
             open.value = false;
             handleResetForm();
 
-            const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
+            // const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
 
-            if (type == TypeName.ACCESSORY) {
-                refetchAccessories.value = true;
-            }
+            // if (type == TypeName.ACCESSORY) {
+            //     refetchAccessories.value = true;
+            // }
         },
         onFinish: () => {
             isSubmitting.value = false;

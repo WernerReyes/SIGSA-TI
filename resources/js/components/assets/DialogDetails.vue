@@ -379,6 +379,7 @@ const handleUploadSignedDocument = (file: File) => {
         file: file,
         type: type.value,
     }, {
+        
         onSuccess: (page) => {
             const fileUrl = page.props.flash.file_url;
 

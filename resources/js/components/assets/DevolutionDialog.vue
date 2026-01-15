@@ -17,7 +17,7 @@
                     <p class="text-sm font-medium">{{ asset?.name }}</p>
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
 
-                    
+
 
 
 
@@ -35,14 +35,22 @@
                                         <SelectValue placeholder="Seleccionar responsable" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>Responsable (TI)</SelectLabel>
+                                        <SelectLabel>Responsable (TI)</SelectLabel>
+                                        <WhenVisible data="TIUsers">
+                                            <template #fallback>
+                                               <div class="flex flex-col gap-2 p-3">
 
-                                            <SelectItem v-for="user in TIUsers" :key="user.staff_id"
-                                                :value="user.staff_id">
-                                                {{ user.full_name }}
-                                            </SelectItem>
-                                        </SelectGroup>
+                                                    <Skeleton v-for="n in 4" :key="n" class="h-6 w-full" />
+                                                </div>
+                                            </template>
+                                            <SelectGroup>
+                                                <SelectItem v-for="user in TIUsers" :key="user.staff_id"
+                                                    :value="user.staff_id">
+                                                    {{ user.full_name }}
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </WhenVisible>
+
                                     </SelectContent>
                                 </Select>
                                 <FieldError v-if="errors.length" :errors="errors" />
@@ -78,7 +86,7 @@
                                                 }" />
                                         </PopoverContent>
                                     </Popover>
-                                    <Input id="time-picker"  type="time" step="1" :default-value="formatTime"
+                                    <Input id="time-picker" type="time" step="1" :default-value="formatTime"
                                         class="bg-background sm:w-4/12 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none" />
                                 </div>
                                 <FieldError v-if="errors.length" :errors="errors" />
@@ -91,8 +99,8 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="return_reason">Motivo de Devolución</FieldLabel>
                                 <ButtonGroup class="w-full">
-                                    <Button type="button"  class="w-11/12" variant="outline">
-                                       
+                                    <Button type="button" class="w-11/12" variant="outline">
+
                                         <component :is="returnReasonOp(componentField.modelValue).icon" />
                                         {{ returnReasonOp(componentField.modelValue).label }}
                                     </Button>
@@ -106,7 +114,7 @@
                                             <DropdownMenuGroup>
                                                 <DropdownMenuItem v-for="option in returnReasonOptions"
                                                     :key="option.value" @click="() => {
-                                                        
+
                                                         componentField.onChange(option.value)
                                                     }">
                                                     <component :is="option.icon" />
@@ -198,16 +206,16 @@ import {
 } from '@/components/ui/select';
 
 import { ButtonGroup } from '@/components/ui/button-group';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
 import { ReturnReason, returnReasonOp, returnReasonOptions, type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { type User } from '@/interfaces/user.interface';
-import { router, usePage } from '@inertiajs/vue3';
+import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDateTime, DateValue, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
-import { Check, ChevronDownIcon, Download, MonitorSmartphone } from 'lucide-vue-next';
-import FileUpload from '../FileUpload.vue';
+import { Check, ChevronDownIcon } from 'lucide-vue-next';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -255,7 +263,7 @@ const formSchema = toTypedSchema(
     })
 );
 
-const { handleSubmit, errors, setValues } = useForm({
+const { handleSubmit, errors } = useForm({
     initialValues: {
         responsible_id: undefined,
         returned_date: new CalendarDateTime(today(getLocalTimeZone()).year, today(getLocalTimeZone()).month, today(getLocalTimeZone()).day, time.hours, time.minutes, time.seconds),
@@ -267,15 +275,7 @@ const { handleSubmit, errors, setValues } = useForm({
 
 });
 
-// watch(assign, (assignment) => {
-//     if (assignment) {
-//         setValues({
-//             responsible_id: assignment.responsible_id || undefined,
-//             // returned_date: parseDate(assignment?.returned_at?.split('T')[0] || '') ,
-//             // comment: assignment.return_comment || '',
-//         });
-//     }
-// }, { immediate: true });
+
 
 
 const onSubmit = async (values: Record<string, any>) => {
@@ -287,6 +287,13 @@ const onSubmit = async (values: Record<string, any>) => {
         return_comment: values.return_comment,
         return_reason: values.return_reason,
     }, {
+        only: ['assetsPaginated', 'stats', 'accessories'],
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+
+        
+
         onFinish: () => {
             isSubmitting.value = false;
         },
@@ -295,24 +302,6 @@ const onSubmit = async (values: Record<string, any>) => {
             asset.value = null;
         }
     });
-
-
-
-
-    // router.post('/assets/assign', {
-    //     asset_id: asset.value?.id,
-    //     responsible_id: values.responsible_id,
-    //     returned_date: values.returned_date,
-    //     comment: values.comment,
-    // }, {
-    //     onFinish: () => {
-    //         isSubmitting.value = false;
-    //     },
-    //     onSuccess: () => {
-    //         open.value = false;
-    //         asset.value = null;
-    //     }
-    // });
 };
 
 const onDateSelected = (date: DateValue, componentField: any) => {
@@ -326,15 +315,5 @@ const onDateSelected = (date: DateValue, componentField: any) => {
     )
 
     componentField.onChange(dateTime)
-}
-
-const handleDownloadCargo = () => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-laptop-assignment-doc/${asset.value.id}`;
-}
-
-const handleDownloadPhoneCargo = () => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-phone-assignment-doc/${asset.value.id}`;
 }
 </script>

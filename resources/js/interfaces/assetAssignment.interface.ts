@@ -25,6 +25,9 @@ export interface AssetAssignment {
     delivery_document?: DeliveryRecord | null;
     return_document?: DeliveryRecord | null;
     children_assignments?: AssetAssignment[];
+
+    created_at: Date;
+    updated_at: Date;
     
 }
 

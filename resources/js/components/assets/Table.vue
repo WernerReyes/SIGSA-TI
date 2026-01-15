@@ -1,16 +1,13 @@
 <template>
+
     <div class="flex max-md:flex-col gap-4 items-center p-4 ">
         <Input class="max-w-sm" placeholder="Buscar activos..." v-model="form.search" />
 
+
+
         <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap">
 
-            <Popover v-model:open="openUserSelect" @update:open="(val) => {
-                if (val && usersServer.length === 0) {
-                    getAllBasicUserInfo(PageConstKey.ASSETS)
-                }
-            }
-
-            ">
+            <Popover v-model:open="openUserSelect">
                 <PopoverTrigger as-child>
                     <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
                         class="w-fit justify-between ">
@@ -32,10 +29,8 @@
 
                         <CommandInput placeholder="Buscar empleado..." class="w-full" />
 
-
-
                         <CommandShortcut :disable="isLoading || !form.assigned_to?.length" @click="() => {
-                            if (isLoading || !form.assigned_to?.length) return;
+                            if (!form.assigned_to?.length) return;
                             form.assigned_to = []
 
                         }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
@@ -45,34 +40,38 @@
                         </CommandShortcut>
                         <!-- </div> -->
                         <CommandList>
-                            <CommandEmpty>Empleado no encontrado</CommandEmpty>
-                            <CommandGroup>
-                                <CommandItem v-for="user in users" :key="user.staff_id" :value="user.staff_id" @select="() => {
-                                    // selectUserId = user.staff_id;
+                            <WhenVisible data="users">
+                                <template #fallback>
+                                    <CommandGroup>
+                                        <CommandItem v-for="n in 5" :key="n" value="loading">
+                                            <Skeleton class="h-4 w-full" />
+                                        </CommandItem>
+                                    </CommandGroup>
+                                </template>
 
-                                    if (form.assigned_to.includes(user.staff_id)) {
-                                        form.assigned_to = [...form.assigned_to.filter(id => id !== user.staff_id)];
-                                    } else {
-                                        form.assigned_to = [...form.assigned_to, user.staff_id];
-                                    }
+                                <CommandEmpty>Empleado no encontrado</CommandEmpty>
 
-                                }">
-
-                                    {{ user.full_name }}
-                                    <Check v-if="form.assigned_to.includes(user.staff_id)" class="ml-auto h-4 w-4" />
-                                </CommandItem>
-                            </CommandGroup>
+                                <CommandGroup>
+                                    <CommandItem v-for="user in users" :key="user.staff_id || 'user-none'"
+                                        :value="user.staff_id" @select="() => {
+                                            if (form.assigned_to.includes(user.staff_id)) {
+                                                form.assigned_to = form.assigned_to.filter(id => id !== user.staff_id)
+                                            } else {
+                                                form.assigned_to = [...form.assigned_to, user.staff_id]
+                                            }
+                                        }">
+                                        {{ user.full_name }}
+                                        <Check v-if="form.assigned_to.includes(user.staff_id)" class="ml-auto size-4" />
+                                    </CommandItem>
+                                </CommandGroup>
+                            </WhenVisible>
                         </CommandList>
+
                     </Command>
                 </PopoverContent>
             </Popover>
 
-            <Popover v-model:open="openDepartmentSelect" @update:open="(val) => {
-                if (val && departments.length === 0) {
-                    getAllBasicDepartmentInfo(PageConstKey.ASSETS)
-
-                }
-            }">
+            <Popover v-model:open="openDepartmentSelect">
                 <PopoverTrigger as-child>
                     <Button variant="outline" role="combobox" :aria-expanded="openDepartmentSelect"
                         class="w-fit justify-between">
@@ -84,7 +83,7 @@
                         </span>
 
                         Departamentos
-                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronsUpDown class="ml-2 size shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent class="w-full p-0">
@@ -106,35 +105,49 @@
                         </CommandShortcut>
                         <!-- </div> -->
                         <CommandList>
-                            <CommandEmpty>Departamento no encontrado</CommandEmpty>
-                            <CommandGroup>
-                                <CommandItem v-for="department in departments" :key="department.id"
-                                    :value="department.id" @select="() => {
-                                        // selectDepartmentId = department.id;
-                                        if (form.department_id.includes(department.id)) {
-                                            form.department_id = [...form.department_id.filter(id => id !== department.id)];
-                                        } else {
-                                            form.department_id = [...form.department_id, department.id];
-                                        }
-                                    }">
+                            <WhenVisible data="departments">
 
-                                    {{ department.name }}
-                                    <Check v-if="form.department_id.includes(department.id)" class="ml-auto h-4 w-4" />
-                                </CommandItem>
-                            </CommandGroup>
+                                <template #fallback>
+                                    <CommandGroup>
+                                        <CommandItem v-for="n in 5" :key="n" value="loading">
+                                            <Skeleton class="h-4 w-full" />
+                                        </CommandItem>
+                                    </CommandGroup>
+                                </template>
+
+
+
+                                <CommandEmpty>Departamento no encontrado</CommandEmpty>
+                                <CommandGroup>
+
+                                    <CommandItem v-for="department in departments" :key="department.id"
+                                        :value="department.id" @select="() => {
+                                            // selectDepartmentId = department.id;
+                                            if (form.department_id.includes(department.id)) {
+                                                form.department_id = [...form.department_id.filter(id => id !== department.id)];
+                                            } else {
+                                                form.department_id = [...form.department_id, department.id];
+                                            }
+                                        }">
+
+                                        {{ department.name }}
+                                        <Check v-if="form.department_id.includes(department.id)" class="ml-auto size" />
+                                    </CommandItem>
+                                </CommandGroup>
+
+
+                            </WhenVisible>
                         </CommandList>
+
                     </Command>
                 </PopoverContent>
             </Popover>
 
-            <DropdownMenu @update:open="(val) => {
-                if (val && types.length === 0) {
-                    getAssetTypes(PageConstKey.ASSETS)
+            <Popover v-model:open="openAssetTypeSelect">
+                <PopoverTrigger as-child>
+                    <Button variant="outline" role="combobox" :aria-expanded="openAssetTypeSelect"
+                        class="w-fit justify-between">
 
-                }
-            }">
-                <DropdownMenuTrigger as-child>
-                    <Button variant="outline" class="ml-auto">
                         <span class="relative flex size-2" v-if="form.types.length > 0">
                             <span
                                 class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
@@ -142,40 +155,60 @@
                         </span>
 
                         Tipos
-                        <ChevronDown class="ml-2 h-4 w-4" />
+                        <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
                     </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel @click="() => {
-                        if (isLoading || !form.types?.length) return;
-                        form.types = []
-                    }" class="cursor-pointer gap-2 flex items-center">
-                        <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-                        Refrescar lista
+                </PopoverTrigger>
+                <PopoverContent class="w-full p-0">
+                    <Command>
 
-                    </DropdownMenuLabel>
-                    <DropdownMenuCheckboxItem :disabled="isLoading" v-for="type in types" :key="type.id"
-                        class="capitalize" :model-value="form.types.includes(type.id)
-                            " @update:model-value="(val) => {
-                                if (val) {
-                                    form.types.push(type.id);
-                                } else {
-                                    const index = form.types.indexOf(type.id);
-                                    if (index > -1) {
-                                        form.types.splice(index, 1);
-                                    }
-                                }
-                            }">
-                        <component :is="assetTypeOp(type.name)?.icon" class="size-4" />
-                        {{ type.name }}
+                        <CommandShortcut :disable="isLoading || !form.types?.length" @click="() => {
+                            if (isLoading || !form.types?.length) return;
+                            form.types = []
 
-                    </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                        }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
+                            Refrescar lista
+                            <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
 
-            <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <Button variant="outline" class="ml-auto">
+                        </CommandShortcut>
+
+                        <CommandList>
+
+                            <WhenVisible data="types">
+                                <template #fallback>
+                                    <CommandGroup>
+                                        <CommandItem v-for="n in 5" :key="n" value="loading">
+                                            <Skeleton class="h-4 w-full" />
+                                        </CommandItem>
+                                    </CommandGroup>
+                                </template>
+
+                                <CommandEmpty>Tipo no encontrado</CommandEmpty>
+                                <CommandGroup>
+                                    <CommandItem v-for="assetType in types" :key="assetType.id" :value="assetType.id"
+                                        @select="() => {
+                                            
+                                            if (form.types.includes(assetType.id)) {
+                                                form.types = [...form.types.filter(id => id !== assetType.id)];
+                                            } else {
+                                                form.types = [...form.types, assetType.id];
+                                            }
+                                        }">
+                                        <component :is="assetTypeOp(assetType.name)?.icon" class="size-4" />
+                                        {{ assetType.name }}
+                                        <Check v-if="form.types.includes(assetType.id)" class="ml-auto h-4 w-4" />
+                                    </CommandItem>
+                                </CommandGroup>
+                            </WhenVisible>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+
+            <Popover v-model:open="openStatusSelect">
+                <PopoverTrigger as-child>
+                    <Button variant="outline" role="combobox" :aria-expanded="openStatusSelect"
+                        class="w-fit justify-between">
+
                         <span class="relative flex size-2" v-if="form.status.length > 0">
                             <span
                                 class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
@@ -183,37 +216,47 @@
                         </span>
 
                         Estados
-                        <ChevronDown class="ml-2 h-4 w-4" />
+                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel @click="() => {
-                        if (isLoading || !form.status?.length) return;
-                        form.status = []
-                    }" class="cursor-pointer gap-2 flex items-center">
-                        <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-                        Refrescar lista
+                </PopoverTrigger>
+                <PopoverContent class="w-full p-0">
+                    <Command>
+                        <!-- <CommandInput placeholder="Buscar departamento..." class="w-full" /> -->
+                        <CommandShortcut :disable="isLoading || !form.status?.length" @click="() => {
+                            if (isLoading || !form.status?.length) return;
+                            form.status = []
+                            // selectDepartmentId = null;
+                        }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
+                            Refrescar lista
+                            <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
 
-                    </DropdownMenuLabel>
-                    <DropdownMenuCheckboxItem :disabled="isLoading" v-for="status in Object.values(assetStatusOptions)"
-                        :key="status.value" :model-value="form.status.includes(status.value)" @update:model-value="(val) => {
-                            if (val) {
-                                form.status.push(status.value);
-                            } else {
-                                const index = form.status.indexOf(status.value);
-                                if (index > -1) {
-                                    form.status.splice(index, 1);
-                                }
-                            }
-                        }">
-                        <Badge :class="status.bg">
-                            <component :is="status.icon" class="size-4" />
-                            {{ status.label }}
-                        </Badge>
-                    </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                        </CommandShortcut>
+                        <!-- </div> -->
+                        <CommandList>
+                            <CommandEmpty>Estado no encontrado</CommandEmpty>
+                            <CommandGroup>
 
+                                <CommandItem v-for="status in Object.values(assetStatusOptions)" :key="status.value"
+                                    :value="status.value" @select="() => {
+                                        // selectAssetTypeId = assetType.id;
+                                        if (form.status.includes(status.value)) {
+                                            form.status = [...form.status.filter(id => id !== status.value)];
+                                        } else {
+                                            form.status = [...form.status, status.value];
+                                        }
+                                    }">
+                                    <Badge :class="status.bg">
+                                        <component :is="status.icon" class="size-4" />
+                                        {{ status.label }}
+                                    </Badge>
+                                    <Check v-if="form.status.includes(status.value)" class="ml-auto h-4 w-4" />
+
+                                </CommandItem>
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="ml-auto">
@@ -287,11 +330,11 @@
                         </ContextMenuItem>
 
 
-                        <ContextMenuItem @click="openAssign = true">
+                        <ContextMenuItem :disabled="!canAssignEdit" @click="openAssign = true">
                             <MonitorSmartphone />
                             Asignar
                         </ContextMenuItem>
-                        <ContextMenuItem v-if="activeRow?.current_assignment" @click="openDevolution = true">
+                        <ContextMenuItem :disabled="!activeRow?.current_assignment" @click="openDevolution = true">
                             <MonitorSmartphone />
                             Devolver
                         </ContextMenuItem>
@@ -377,6 +420,7 @@
 
 
 <script setup lang="ts">
+
 import type { ColumnDef, ExpandedState, SortingState } from '@tanstack/vue-table';
 import {
     FlexRender,
@@ -400,7 +444,6 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuLabel,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -427,21 +470,19 @@ import { valueUpdater } from '@/lib/utils';
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PageConstKey } from '@/constants/pages.constant';
 import { type Asset, AssetStatus, assetStatusOptions, statusOp } from '@/interfaces/asset.interface';
-import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
-import { Department } from '@/interfaces/department.interace';
-import { type User } from '@/interfaces/user.interface';
+import { AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
+
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Department } from '@/interfaces/department.interace';
+import type { BasicUserInfo } from '@/interfaces/user.interface';
 import { getAssetDetails, getAssetHistories } from '@/services/asset.service';
-import { getAssetTypes } from '@/services/assetType.service';
-import { getAllBasicUserInfo } from '@/services/user.service';
-import { router, usePage } from '@inertiajs/vue3';
+import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { format, isAfter, isEqual, parseISO } from 'date-fns';
+import { addMinutes, format, isAfter, isEqual, parseISO } from 'date-fns';
 import { Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, ChevronsUpDown, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
 import { computed, h, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { AssetsPaginated } from '../../interfaces/asset.interface';
-import { getAllBasicDepartmentInfo } from '../../services/department.service';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
@@ -450,7 +491,9 @@ import HistoryDialog from './HistoryDialog.vue';
 import InvoiceDialog from './InvoiceDialog.vue';
 import StatusDialog from './StatusDialog.vue';
 
+
 const { assets } = defineProps<{ assets: AssetsPaginated }>()
+
 
 const activeRow = ref<Asset | null>(null)
 
@@ -466,22 +509,46 @@ const sorting = ref<SortingState>([])
 
 
 const openUserSelect = ref(false);
-
 const openDepartmentSelect = ref(false);
+const openAssetTypeSelect = ref(false);
+const openStatusSelect = ref(false);
 
 
-const usersServer = computed<User[]>(() => (usePage().props.users || []) as User[]);
-const users = computed<Partial<User>[]>(() => {
+const canAssignEdit = computed(() => {
+    if (!activeRow.value) return false;
+    if ([AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow.value.status)) return false;
+    if (!activeRow.value?.current_assignment) return true;
+    const targetDate = activeRow.value.current_assignment.created_at;
+
+    console.log(addMinutes(targetDate, 15), new Date(), activeRow.value.current_assignment)
+    
+
+    return new Date() <= addMinutes(targetDate, 15)
+},
+
+);
+const users = computed<(Omit<BasicUserInfo, 'staff_id'> & {
+    staff_id: number | null
+})[]>(() => {
+    const users = usePage().props.users as BasicUserInfo[];
     return [{
         staff_id: null,
         full_name: 'Sin asignar',
-    }, ...usersServer.value];
+        firstname: '',
+        lastname: ''
+    }, ...users];
 });
-const departments = computed<Department[]>(() => (usePage().props.departments || []) as Department[]);
+
+const departments = computed(() => {
+    return (usePage().props?.departments || []) as Department[];
+});
+
+const types = computed(() => {
+    return (usePage().props?.types || []) as AssetType[];
+});
+
 
 const filters = computed(() => usePage().props.filters as Record<string, any>);
-
-const types = computed(() => (usePage().props.types || []) as AssetType[]);
 
 const assetId = computed(() => activeRow.value?.id || null);
 
@@ -498,8 +565,6 @@ const form = reactive<{
     assigned_to: filters.value.assigned_to?.map((id: string | null) => id ? +id : null) || [],
     department_id: filters.value.department_id || [],
 })
-
-
 
 
 watch(
@@ -540,9 +605,6 @@ watch(
     },
     { deep: true }
 )
-
-
-
 
 
 const isLoading = ref(false)
@@ -647,24 +709,6 @@ const columns: ColumnDef<Asset>[] = [
 
     },
     {
-        accessorKey: 'processor',
-        id: 'processor',
-        header: 'Procesador',
-        cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
-    },
-    {
-        accessorKey: 'ram',
-        id: 'ram',
-        header: 'RAM',
-        cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
-    },
-    {
-        accessorKey: 'storage',
-        id: 'storage',
-        header: 'Almacenamiento',
-        cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
-    },
-    {
 
         accessorFn: row => row?.current_assignment?.assigned_to ? row.current_assignment.assigned_to.full_name : 'Sin asignar',
         id: 'assigned_to',
@@ -766,8 +810,6 @@ const columns: ColumnDef<Asset>[] = [
 
 ]
 
-
-
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
     const endDate = parseISO(warrantyEndDate.split('T')[0])
     const today = new Date()
@@ -777,10 +819,11 @@ const isWarrantyValid = (warrantyEndDate: string): boolean => {
 }
 
 const expanded = ref<ExpandedState>({})
+
 const table = useVueTable({
     get data() { return assets.data },
     get columns() { return columns },
-    getSubRows: row => row.current_assignment?.children_assignments?.map(child => child.asset) || [],
+    getSubRows: row => row.current_assignment?.children_assignments?.map(child => child.asset!) || [],
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: 'includesString',
@@ -790,10 +833,9 @@ const table = useVueTable({
     onSortingChange: updaterOrValue => valueUpdater(updaterOrValue, sorting),
     onExpandedChange: updaterOrValue => valueUpdater(updaterOrValue, expanded),
     state: {
-        // get pagination() { return pagination.value },
         get sorting() { return sorting.value },
         get expanded() { return expanded.value },
     },
-    // onPaginationChange: updaterOrValue => valueUpdater(updaterOrValue, pagination),
+
 })
 </script>

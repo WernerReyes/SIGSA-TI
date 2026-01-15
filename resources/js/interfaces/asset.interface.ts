@@ -29,6 +29,8 @@ export interface Asset {
     current_assignment?: AssetAssignment;
     assignments?: AssetAssignment[];
     histories?: AssetHistory[];
+
+    
 }
 
 export interface AssetsPaginated {

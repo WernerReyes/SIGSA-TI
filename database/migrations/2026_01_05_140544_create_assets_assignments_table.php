@@ -35,6 +35,8 @@ return new class extends Migration {
             $table->unsignedInteger('assigned_to_id');
             $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');
             $table->index('assigned_to_id');
+            
+            $table->timestamps();
         });
     }
 

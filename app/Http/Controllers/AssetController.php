@@ -16,7 +16,9 @@ use App\Http\Requests\Asset\UpdateAssetRequest;
 use App\Http\Requests\asset\UploadDeliveryRecordRequest;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
+use App\Models\AssetType;
 use App\Services\AssetService;
+use App\Services\DepartmentService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,20 +27,42 @@ class AssetController extends Controller
 {
     //
 
-    public function renderView(AssetService $assetService, UserService $userService, Request $request)
-    {
+    public function renderView(
+        AssetService $assetService,
+        AssetType $assetType,
+        UserService $userService,
+        DepartmentService $departmentService,
+        Request $request
+    ) {
         $TIUsers = $userService->getTIDepartmentUsers();
-      
-        $filters = AssetFiltersDto::fromArray($request->all());
-        $assetsPaginated = $assetService->getPaginated($filters);
 
-        $stats = $assetService->getStats();
+        $filters = AssetFiltersDto::fromArray($request->all());
+        
+        
+
 
         return Inertia::render('Assets', [
-            'TIUsers' => $TIUsers,
             'filters' => $filters,
-            'assetsPaginated' => $assetsPaginated,
-            'stats' => $stats,
+            'TIUsers' => Inertia::optional(function () use ($TIUsers) {
+                return $TIUsers;
+            })->once(),
+            'users' => Inertia::optional(function () use ($userService) {
+                return $userService->getAllBasicInfo();
+            })->once(),
+            'departments' => Inertia::optional(function () use ($departmentService) {
+                return $departmentService->getBasicInfo();
+            })->once(),
+            'types' => Inertia::optional(function () use ($assetType) {
+                return $assetType->all();
+            })->once(),
+
+            'accessories' => Inertia::optional(function () use ($assetService) {
+                return $assetService->getAccessories();
+            })->once(),
+            'assetsPaginated' => fn() => $assetService->getPaginated($filters),
+            'stats' => fn() => $assetService->getStats(),
+
+            
         ]);
     }
 
@@ -58,7 +82,7 @@ class AssetController extends Controller
             'asset' => $asset,
         ]);
     }
-    
+
 
     public function renderHistories(Asset $asset, AssetService $assetService)
     {
@@ -69,7 +93,7 @@ class AssetController extends Controller
         ]);
     }
 
-    
+
 
     public function storeAsset(StoreAssetRequest $request, AssetService $assetService)
     {
@@ -104,6 +128,8 @@ class AssetController extends Controller
 
         try {
             $assetService->changeAssetStatus($asset, $newStatus);
+
+
             return back()->with('success', 'Estado del activo actualizado correctamente.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -116,10 +142,17 @@ class AssetController extends Controller
         $dto = AssignAssetDto::fromArray($validated);
         try {
             $assignment = $assetService->assignAsset($dto);
-            return back()->with([
+            // return back()->with([
+            //     'success' => 'Activo asignado correctamente.',
+            //     'assignment_id' => $assignment->id,
+            // ]);
+
+            Inertia::flash([
                 'success' => 'Activo asignado correctamente.',
                 'assignment_id' => $assignment->id,
             ]);
+
+            return back();
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -131,7 +164,14 @@ class AssetController extends Controller
         $dto = DevolveAssetDto::fromArray($validated, $assignment);
         try {
             $assetService->devolveAsset($dto);
-            return back()->with('success', 'Activo devuelto correctamente');
+
+            Inertia::flash([
+                'success' => 'Activo devuelto correctamente',
+            ]);
+
+            return back();
+
+            // return back()->with('success', 'Activo devuelto correctamente');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }

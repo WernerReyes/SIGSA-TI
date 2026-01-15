@@ -51,3 +51,7 @@ export interface User {
     department?: Department;
 }
 
+export interface BasicUserInfo extends Pick<
+    User,
+    'staff_id' | 'firstname' | 'lastname' | 'full_name'
+> {}

@@ -9,8 +9,23 @@
         <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>Asignar Equipo</DialogTitle>
+
             </DialogHeader>
 
+            <Countdown @timeout="() => {
+                toast.error('El tiempo para editar esta asignación ha expirado.');
+                canEdit = false;
+            }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
+                target-label="Tiempo restante para poder editar la información" :duration="15" />
+
+            <Alert v-else-if="asset?.current_assignment">
+                <LockKeyhole class="size-4" />
+                <AlertTitle>No es posible editar esta asignación</AlertTitle>
+                <AlertDescription>
+                    Han pasado más de 15 minutos desde que se asignó este equipo.
+                </AlertDescription>
+
+            </Alert>
 
             <div class="space-y-4 py-4 ">
                 <div class="p-3 bg-muted/50 rounded-lg">
@@ -18,50 +33,56 @@
                     <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
                 </div>
 
-                <form :aria-disabled="true" @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
-                    class="space-y-3">
+                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
 
                     <FieldGroup>
                         <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
 
-                                <Popover v-model:open="openUserSelect" @update:open="(val) => {
-                                    if (val && users.length === 0) {
-                                        getAllBasicUserInfo(PageConstKey.ASSETS)
-
-                                    }
-                                }">
+                                <Popover v-model:open="openUserSelect">
                                     <PopoverTrigger as-child>
                                         <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
                                             class="w-full justify-between">
                                             {{
                                                 componentField.modelValue
-                                                    ? !users.length ? asset?.current_assignment?.assigned_to?.full_name :
-                                                        users.find(user => user.staff_id === componentField.modelValue)?.full_name
+                                                    ? !users.length ? asset?.current_assignment?.assigned_to?.full_name
+                                                        :
+                                                        users.find(user => user.staff_id ===
+                                                            componentField.modelValue)?.full_name
                                                     : 'Seleccionar empleado'
                                             }}
-                                            <ChevronsUpDownIcon class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent class="w-full p-0">
                                         <Command>
                                             <CommandInput placeholder="Buscar empleado..." />
                                             <CommandList>
-                                                <CommandEmpty>Empleado no encontrado</CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem v-for="user in users" :key="user.staff_id"
-                                                        :value="user.staff_id" @select="() => {
-                                                            componentField.onChange(user.staff_id)
+                                                <WhenVisible data="users">
+                                                    <template #fallback>
+                                                        <CommandGroup>
+                                                            <CommandItem v-for="n in 5" :key="n" value="loading">
+                                                                <Skeleton class="h-4 w-full" />
+                                                            </CommandItem>
+                                                        </CommandGroup>
+                                                    </template>
 
-                                                        }">
+                                                    <CommandEmpty>Empleado no encontrado</CommandEmpty>
+                                                    <CommandGroup>
+                                                        <CommandItem v-for="user in users" :key="user.staff_id"
+                                                            :value="user.staff_id" @select="() => {
+                                                                componentField.onChange(user.staff_id)
+                                                            }">
 
-                                                        {{ user.full_name }}
-                                                        <CheckIcon v-if="componentField.modelValue === user.staff_id"
-                                                            class="ml-auto h-4 w-4" />
+                                                            {{ user.full_name }}
+                                                            <CheckIcon
+                                                                v-if="componentField.modelValue === user.staff_id"
+                                                                class="ml-auto h-4 w-4" />
 
-                                                    </CommandItem>
-                                                </CommandGroup>
+                                                        </CommandItem>
+                                                    </CommandGroup>
+                                                </WhenVisible>
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
@@ -112,21 +133,7 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                <Popover v-model:open="openAccessorySelect" @vue:mounted="() => {
-                                    if (accessoriesLoaded) return;
-                                    getAssetAccessories(() => {
-
-                                        accessoriesLoaded = true;
-                                    })
-                                }" @update:open="(val) => {
-                                    if (val && refetchAccessories) {
-                                        getAssetAccessories(() => {
-                                            accessoriesLoaded = true;
-                                            refetchAccessories = false;
-                                        })
-
-                                    }
-                                }">
+                                <Popover v-model:open="openAccessorySelect">
                                     <PopoverTrigger as-child>
                                         <Button variant="outline" role="combobox" :aria-expanded="openAccessorySelect"
                                             class="w-full justify-between">
@@ -151,30 +158,40 @@
                                         <Command>
                                             <CommandInput placeholder="Buscar accesorio..." />
                                             <CommandList>
-                                                <CommandEmpty>Accesorio no encontrado</CommandEmpty>
-                                                <CommandGroup>
-                                                    <CommandItem v-for="accessory in assetAccessories"
-                                                        :key="accessory.id" :value="accessory.id" @select="() => {
-                                                            if (componentField.modelValue.includes(accessory.id)) {
-                                                                const filtered = componentField.modelValue.filter(id => id !== accessory.id)
-                                                                componentField.onChange(filtered)
-                                                                return
-                                                            }
-                                                            componentField.onChange([...componentField.modelValue, accessory.id])
+                                                <WhenVisible data="assetAccessories">
+                                                    <template #fallback>
+                                                        <CommandGroup>
+                                                            <CommandItem v-for="n in 5" :key="n" value="loading">
+                                                                <Skeleton class="h-4 w-full" />
+                                                            </CommandItem>
+                                                        </CommandGroup>
+                                                    </template>
 
-                                                        }">
+                                                    <CommandEmpty>Accesorio no encontrado</CommandEmpty>
+                                                    <CommandGroup>
+                                                        <CommandItem v-for="accessory in assetAccessories"
+                                                            :key="accessory.id" :value="accessory.id" @select="() => {
+                                                                if (componentField.modelValue.includes(accessory.id)) {
+                                                                    const filtered = componentField.modelValue.filter(id => id !== accessory.id)
+                                                                    componentField.onChange(filtered)
+                                                                    return
+                                                                }
+                                                                componentField.onChange([...componentField.modelValue, accessory.id])
 
-                                                        {{ accessory.name }}
-                                                        <CheckIcon
-                                                            v-if="componentField.modelValue.includes(accessory.id)"
-                                                            class="ml-auto size-4" />
+                                                            }">
 
-                                                    </CommandItem>
+                                                            {{ accessory.name }}
+                                                            <CheckIcon
+                                                                v-if="componentField.modelValue.includes(accessory.id)"
+                                                                class="ml-auto size-4" />
 
-                                                    <CommandItem v-if="assetAccessories.length === 0">
-                                                        No hay accesorios disponibles
-                                                    </CommandItem>
-                                                </CommandGroup>
+                                                        </CommandItem>
+
+                                                        <CommandItem v-if="assetAccessories.length === 0" value="empty">
+                                                            No hay accesorios disponibles
+                                                        </CommandItem>
+                                                    </CommandGroup>
+                                                </WhenVisible>
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
@@ -204,7 +221,7 @@
             <DialogFooter>
 
                 <Button :disabled="isSubmitting
-                    || Object.keys(errors).length > 0
+                    || Object.keys(errors).length > 0 || !canEdit
                     " type="submit" form="dialogForm">
                     <Spinner v-if="isSubmitting" />
                     {{ isSubmitting ? 'Asignando...' : 'Asignar Equipo' }}
@@ -248,41 +265,52 @@ import {
 } from '@/components/ui/command';
 
 import { Textarea } from '@/components/ui/textarea';
+
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { TypeName } from '@/interfaces/assetType.interface';
 import { type User } from '@/interfaces/user.interface';
-import { getAllUsers } from '@/services/user.service';
-import { useAssetStore } from '@/store/useAssetStore';
-import { router, usePage } from '@inertiajs/vue3';
+import { downloadAssignmentDocument } from '@/services/asset.service';
+import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { CheckIcon, ChevronDownIcon } from 'lucide-vue-next';
-import { storeToRefs } from 'pinia';
+import { CheckIcon, ChevronDownIcon, LockKeyhole } from 'lucide-vue-next';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { addMinutes } from 'date-fns';
 import { toast } from 'vue-sonner';
-import { getAssetAccessories } from '../../services/asset.service';
-import { getAllBasicUserInfo } from '../../services/user.service';
-import { PageConstKey } from '../../constants/pages.constant';
+import Countdown from '../Countdown.vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
-// const { setAccessoriesCreated } = useAssetStore();
-const { refetchAccessories, accessoriesLoaded } = storeToRefs(useAssetStore());
+const page = usePage();
 
 const openUserSelect = ref(false);
 const openAccessorySelect = ref(false);
 const isSubmitting = ref(false);
-const hasRequestedAccessories = ref(false);
 
-const users = computed<User[]>(() => (usePage().props.users || []) as User[]);
 
-const serverAssetAccessories = computed<Asset[]>(() => {
-    return (usePage().props.assetAccessories || []) as Asset[];
+const users = computed<User[]>(() => {
+    return (page.props?.users || []) as User[];
+});
+
+const canEdit = computed({
+    get: () => {
+        if (!asset.value?.current_assignment) return true;
+        const targetDate = asset.value.current_assignment.created_at;
+
+
+        return new Date() <= addMinutes(targetDate, 15)
+    },
+    set: (val: boolean) => {
+        return val;
+    }
 });
 
 const assetAccessories = computed<Asset[]>(() => {
-    return [...childrenAssets.value, ...serverAssetAccessories.value];
+    return (page.props?.accessories || []) as Asset[];
 });
 
 const assign = computed<AssetAssignment | null>(() => {
@@ -361,47 +389,26 @@ const onSubmit = async (values: Record<string, any>) => {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
+
+        onFlash: (flash) => {
+            if (flash.assignment_id) {
+                const type = asset.value?.type?.name;
+                if (type) {
+                    downloadAssignmentDocument(flash.assignment_id as number, type);
+                }
+            }
+        },
+        onSuccess: () => {
+            open.value = false;
+            asset.value = null;
+        },
         onFinish: () => {
             isSubmitting.value = false;
 
         },
-        onSuccess: (page) => {
-            const type = asset.value?.type?.name;
-            const assignmentId = (page.props as any).flash.assignment_id as number | undefined;
-            refetchAccessories.value = true;
-            if (assignmentId) {
-                if (type === TypeName.CELL_PHONE) {
-                    handleDownloadPhoneCargo(assignmentId);
-
-                } else if (type === TypeName.ACCESSORY) {
-                    handleDownloadAccessoryCargo(assignmentId);
-                }
-                else {
-                    handleDownloadCargo(assignmentId);
-                }
-            }
-
-            open.value = false;
-            asset.value = null;
-        }
     });
 };
 
-const handleDownloadCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-laptop-assignment-doc/${assignmentId}`;
-}
-
-const handleDownloadPhoneCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-phone-assignment-doc/${assignmentId}`;
-}
-
-
-const handleDownloadAccessoryCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-accessory-assignment-doc/${assignmentId}`;
-}
 
 
 </script>

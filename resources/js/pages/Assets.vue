@@ -38,9 +38,7 @@
                                     <DropdownMenuLabel>Estados</DropdownMenuLabel>
                                     <DropdownMenuItem v-for="option in Object.values(assetStatusOptions)"
                                         :key="option.value" @click="statusOp = option" class="flex items-center gap-2">
-                                        <Badge
-                                         
-                                        :class="option.bg">
+                                        <Badge :class="option.bg">
                                             <component :is="option.icon" class="size-4" />
                                             {{ option.label }}
                                             <Check v-if="statusOp.value === option.value" class="ml-auto" />
@@ -74,7 +72,7 @@ import Dialog from '@/components/assets/Dialog.vue';
 import DialogDetails from '@/components/assets/DialogDetails.vue';
 import Table from '@/components/assets/Table.vue';
 import type { AssetsPaginated, AssetStats, AssetStatusOption } from '@/interfaces/asset.interface';
-import { AssetStatus, assetStatusOptions, type Asset, type AssetType } from '@/interfaces/asset.interface';
+import { AssetStatus, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -85,7 +83,7 @@ import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
 
-const { stats } = defineProps<{ types: AssetType[], assets: Asset[], assetsPaginated: AssetsPaginated, stats: AssetStats }>();
+const { stats } = defineProps<{ assetsPaginated: AssetsPaginated, stats: AssetStats }>();
 
 const currentAsset = ref<Asset | null>(null);
 
