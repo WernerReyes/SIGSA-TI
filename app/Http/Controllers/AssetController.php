@@ -37,8 +37,9 @@ class AssetController extends Controller
         $TIUsers = $userService->getTIDepartmentUsers();
 
         $filters = AssetFiltersDto::fromArray($request->all());
-        
-        
+
+       
+
 
 
         return Inertia::render('Assets', [
@@ -61,8 +62,9 @@ class AssetController extends Controller
             })->once(),
             'assetsPaginated' => fn() => $assetService->getPaginated($filters),
             'stats' => fn() => $assetService->getStats(),
-
             
+
+
         ]);
     }
 
