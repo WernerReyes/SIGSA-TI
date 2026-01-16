@@ -18,7 +18,7 @@
                             <Badge>{{
 
                                 asset?.is_new ? 'Nuevo' : 'Usado'
-                            }}</Badge>
+                                }}</Badge>
 
                         </p>
                         <h2 id="radix-:r1i:" class="font-semibold tracking-tight text-xl mt-1">{{ asset?.name }}</h2>
@@ -148,16 +148,17 @@
                                         Asignado a {{ assignment?.assigned_to?.full_name }}
                                     </p>
                                     <p class="text-xs text-muted-foreground">
-                                        {{ format(parseISO(assignment.assigned_at.split('T')[0]), 'yyyy-MM-dd') }}
+                                        {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
                                         -
                                         <span v-if="assignment.returned_at">
-                                            {{ format(parseISO(assignment.returned_at.split('T')[0]), 'yyyy-MM-dd') }}
+                                            {{ format(assignment.returned_at, 'dd/MM/yyyy') }}
                                         </span>
                                         <Badge v-else class="my-2 bg-green-100 text-green-800">Actualmente asignado
                                         </Badge>
                                     </p>
                                 </div>
                             </div>
+                            <!-- {{assignment}} -->
 
                             <div class="flex items-end gap-2">
 
@@ -186,15 +187,10 @@
                                             Cargar
                                         </DropdownMenuItem>
 
-                                         <DropdownMenuItem @click="() => {
-                                            if ([TypeName.LAPTOP, TypeName.PC].includes(asset?.type?.name)) {
-                                                handleDownloadCargo(assignment.id);
-                                            } else if (asset?.type?.name === TypeName.CELL_PHONE) {
-                                                handleDownloadPhoneCargo(assignment.id);
-                                            } else if (asset?.type?.name === TypeName.ACCESSORY) {
-                                                handleDownloadAccessoryCargo(assignment.id);
-                                            }
-                                         }">
+                                        <DropdownMenuItem @click="() => {
+                                            if (!asset?.type) return;
+                                            downloadAssignmentDocument(assignment.id, asset?.type?.name);
+                                        }">
                                             <Download />
                                             Activo
                                             <component :is="assetTypeOp(asset?.type?.name)?.icon" class="size-4" />
@@ -228,7 +224,8 @@
                                         </DropdownMenuItem>
 
 
-                                        <DropdownMenuItem @click="() => handleDownloadReturnCargo(assignment.id)">
+                                        <DropdownMenuItem
+                                            @click="() => downloadReturnAssignmentDocument(assignment.id)">
                                             <Download />
                                             Activo
                                             <MonitorSmartphone />
@@ -314,12 +311,13 @@ import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { assetTypeOp, TypeName } from '../../interfaces/assetType.interface';
 import FileUpload from '../FileUpload.vue';
+import { useAsset } from '@/composables/useAsset';
 
 
 const asset = defineModel<Asset | null>('asset');
-
-
 const open = defineModel<boolean>('open');
+
+const { downloadAssignmentDocument, downloadReturnAssignmentDocument } = useAsset();
 
 const openUploadDialog = ref(false);
 const type = ref<DeliveryRecordType>(DeliveryRecordType.ASSIGNMENT);
@@ -337,36 +335,13 @@ const assignments = computed({
     }
 });
 
-
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
-    // const warrantyEndDate = asset.warranty_expiration;
-
+  
     const endDate = parseISO(warrantyEndDate.split('T')[0])
     const today = new Date()
     const todayDateOnly = parseISO(today.toISOString().split('T')[0])
 
     return isAfter(endDate, todayDateOnly)
-}
-
-const handleDownloadCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-laptop-assignment-doc/${assignmentId}`;
-}
-
-const handleDownloadPhoneCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-phone-assignment-doc/${assignmentId}`;
-}
-
-const handleDownloadAccessoryCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-accessory-assignment-doc/${assignmentId}`;
-}
-
-
-const handleDownloadReturnCargo = (assignmentId: number) => {
-    if (!asset.value) return;
-    window.location.href = `/assets/generate-return-doc/${assignmentId}`;
 }
 
 
@@ -379,10 +354,9 @@ const handleUploadSignedDocument = (file: File) => {
         file: file,
         type: type.value,
     }, {
-        
-        onSuccess: (page) => {
-            const fileUrl = page.props.flash.file_url;
-
+        only: [],
+        onFlash(flash) {
+            const fileUrl = flash.file_url as string;
             url.value = fileUrl;
 
             assignments.value = assignments.value.map(assignment => {
@@ -409,14 +383,14 @@ const handleUploadSignedDocument = (file: File) => {
                 }
                 return assignment;
             });
-            // resetUpload.value = true;
         },
+
         onFinish: () => {
             resetUpload.value = true;
         }
 
     });
-    // Implement upload logic here
+
 };
 
 

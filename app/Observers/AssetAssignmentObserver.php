@@ -12,16 +12,19 @@ class AssetAssignmentObserver
     /**
      * Handle the AssetAssignment "created" event.
      */
-    public function created(AssetAssignment $assignment)
+
+    private function existsAvailableAccessories(): bool
     {
-        $availableAssetsCount = Asset::where('status', AssetStatus::AVAILABLE)
+        return Asset::where('status', AssetStatus::AVAILABLE)
             ->whereHas('type', function ($query) {
                 $query->where('name', 'Accesorio');
             })
-            ->count();
+            ->exists();
+    }
 
-        // Notify only once when the accessory goes out
-        if ($availableAssetsCount === 0) {
+    public function created(AssetAssignment $assignment)
+    {
+        if (!$this->existsAvailableAccessories()) {
             event(new AccessoryOutOfStock());
         }
 
@@ -33,6 +36,9 @@ class AssetAssignmentObserver
     public function updated(AssetAssignment $assetAssignment): void
     {
         //
+        if (!$this->existsAvailableAccessories()) {
+            event(new AccessoryOutOfStock());
+        }
     }
 
     /**
@@ -41,6 +47,9 @@ class AssetAssignmentObserver
     public function deleted(AssetAssignment $assetAssignment): void
     {
         //
+        if (!$this->existsAvailableAccessories()) {
+            event(new AccessoryOutOfStock());
+        }
     }
 
     /**

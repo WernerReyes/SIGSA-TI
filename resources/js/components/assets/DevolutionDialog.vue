@@ -38,7 +38,7 @@
                                         <SelectLabel>Responsable (TI)</SelectLabel>
                                         <WhenVisible data="TIUsers">
                                             <template #fallback>
-                                               <div class="flex flex-col gap-2 p-3">
+                                                <div class="flex flex-col gap-2 p-3">
 
                                                     <Skeleton v-for="n in 4" :key="n" class="h-6 w-full" />
                                                 </div>
@@ -86,8 +86,16 @@
                                                 }" />
                                         </PopoverContent>
                                     </Popover>
-                                    <Input id="time-picker" type="time" step="1" :default-value="formatTime"
-                                        class="bg-background sm:w-4/12 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none" />
+                                    <InputGroup>
+                                        <InputGroupInput id="time-picker" type="time" step="1"
+                                            :default-value="formatTime" :key="formatTime"
+                                            class="bg-background sm:w-4/12 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none" />
+
+                                        <InputGroupAddon align="inline-end">
+
+                                            <RefreshCcw class="size-4 cursor-pointer" @click="refreshTime" />
+                                        </InputGroupAddon>
+                                    </InputGroup>
                                 </div>
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
@@ -134,6 +142,30 @@
                         </VeeField>
                     </FieldGroup>
 
+
+                     <FieldGroup v-if="accessoriesToReturn.length > 0">
+                        <VeeField name="accessories" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel for="accessories">Accesorios a Devolver</FieldLabel>
+                                <Select v-bind="componentField" multiple>
+                                    <SelectTrigger id="accessories">
+                                        <SelectValue placeholder="Seleccionar accesorio" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Accesorios</SelectLabel>
+
+                                            <SelectItem v-for="accessory in accessoriesToReturn" :key="accessory.id"
+                                                :value="accessory.id">
+                                                {{ accessory.name }} ({{ accessory.brand }} - {{ accessory.model }})
+                                            </SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
 
 
                     <FieldGroup>
@@ -193,7 +225,7 @@ import {
     FieldGroup,
     FieldLabel
 } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
@@ -215,11 +247,14 @@ import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDateTime, DateValue, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
-import { Check, ChevronDownIcon } from 'lucide-vue-next';
+import { Check, ChevronDownIcon, RefreshCcw } from 'lucide-vue-next';
+import { useAsset } from '@/composables/useAsset';
 
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
+
+const { downloadReturnAssignmentDocument } = useAsset();
 
 const time = reactive({
     hours: new Date().getHours(),
@@ -238,7 +273,10 @@ const TIUsers = computed<User[]>(() => {
 const assign = computed<AssetAssignment | null>(() => {
     return asset.value?.current_assignment || null;
 });
-
+const accessoriesToReturn = computed<Asset[]>(() => {
+    if (!assign.value) return [];
+    return assign.value.children_assignments?.flatMap(child => child.asset!) || [];
+});
 
 const isSubmitting = ref(false);
 
@@ -259,6 +297,7 @@ const formSchema = toTypedSchema(
             required_error: 'Seleccione un motivo de devolución',
             // errorMap: () => ({ message: 'Seleccione un motivo de devolución' }),
         }),
+        accessories: z.array(z.number()).optional(),
         return_comment: z.string().optional(),
     })
 );
@@ -269,13 +308,12 @@ const { handleSubmit, errors } = useForm({
         returned_date: new CalendarDateTime(today(getLocalTimeZone()).year, today(getLocalTimeZone()).month, today(getLocalTimeZone()).day, time.hours, time.minutes, time.seconds),
         return_comment: '',
         return_reason: ReturnReason.EQUIPMENT_RENOVATION,
+         accessories: accessoriesToReturn.value.map(acc => acc.id),
     },
     validationSchema: formSchema,
     validateOnMount: false,
 
 });
-
-
 
 
 const onSubmit = async (values: Record<string, any>) => {
@@ -286,13 +324,14 @@ const onSubmit = async (values: Record<string, any>) => {
         return_date: values.returned_date,
         return_comment: values.return_comment,
         return_reason: values.return_reason,
+        accessories: values.accessories,
     }, {
         only: ['assetsPaginated', 'stats', 'accessories'],
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
 
-        
+
 
         onFinish: () => {
             isSubmitting.value = false;
@@ -300,6 +339,8 @@ const onSubmit = async (values: Record<string, any>) => {
         onSuccess: () => {
             open.value = false;
             asset.value = null;
+
+            downloadReturnAssignmentDocument(assign.value!.id);
         }
     });
 };
@@ -315,5 +356,12 @@ const onDateSelected = (date: DateValue, componentField: any) => {
     )
 
     componentField.onChange(dateTime)
+}
+
+const refreshTime = () => {
+    const now = new Date();
+    time.hours = now.getHours();
+    time.minutes = now.getMinutes();
+    time.seconds = now.getSeconds();
 }
 </script>

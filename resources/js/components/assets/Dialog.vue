@@ -32,8 +32,6 @@
                         </Field>
                     </VeeField>
                 </FieldGroup>
-                <!-- :selected-label="selectedLabel"
-      :model-value="rootContext.modelValue.value" -->
                 <div class="grid gap-4 items-center md:grid-cols-2">
                     <FieldGroup>
                         <VeeField name="type_id" v-slot="{ componentField, errors }">
@@ -331,13 +329,14 @@ import {
 
 import { Spinner } from '@/components/ui/spinner'
 import { type Asset } from '@/interfaces/asset.interface'
-import { type AssetType, assetTypeOp } from '@/interfaces/assetType.interface'
+import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
 import { router, usePage, WhenVisible } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { Laptop } from 'lucide-vue-next'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import * as z from 'zod'
+import { isBefore, isEqual } from 'date-fns'
 
 
 defineProps<{
@@ -359,6 +358,10 @@ const openEditor = defineModel<boolean>('open-editor', {
 const assetTypes = computed<AssetType[]>(() => {
     const types = page.props?.types as AssetType[] | undefined;
     return types || [];
+});
+
+const assetAccessories = computed<Asset[]>(() => {
+    return page.props?.accessories as Asset[] || [];
 });
 
 const open = ref(false);
@@ -417,7 +420,12 @@ const formSchema = toTypedSchema(z.object({
     }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
     warranty_expiration: z.instanceof(CalendarDate, {
         message: 'La fecha de vencimiento de la garantía es obligatoria'
-    }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+    }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())).refine((date) => {
+        const purchaseDate = (values.purchase_date as CalendarDate).toDate(getLocalTimeZone()) as Date;
+        return isBefore(purchaseDate, date) || isEqual(purchaseDate, date);
+    }, {
+        message: 'La fecha de vencimiento de la garantía no puede ser anterior a la fecha de compra'
+    }),
     is_new: z.boolean().optional().default(true),
     // assigned_to: z.number().optional(),
 
@@ -443,7 +451,7 @@ const initialFormValues = {
     assigned_to: undefined,
 };
 
-const { handleSubmit, handleReset, errors, setValues } = useForm({
+const { handleSubmit, handleReset, errors, setValues, values } = useForm({
     validationSchema: formSchema,
     initialValues: initialFormValues
 })
@@ -453,23 +461,25 @@ const { handleSubmit, handleReset, errors, setValues } = useForm({
 function onSubmit(values: any) {
     isSubmitting.value = true;
 
+    const only = ['assetsPaginated', 'stats'];
+
+    if (assetTypes.value.find(type => type.id === values.type_id)?.name === TypeName.ACCESSORY
+        || assetAccessories.value.find(accessory => accessory.id === currentAsset.value?.id)
+    ) {
+        only.push('accessories');
+    }
 
     if (currentAsset.value) {
         router.put(`/assets/${currentAsset.value.id}`, {
-            // id: currentAsset.value.id,
             ...values,
 
         }, {
-            only: ['assetsPaginated', 'stats', 'flash'],
+            only,
+
             onSuccess: () => {
                 open.value = false;
                 handleResetForm();
 
-                // const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
-
-                // if (type == TypeName.ACCESSORY) {
-                //     refetchAccessories.value = true;
-                // }
             },
             onFinish: () => {
                 isSubmitting.value = false;
@@ -480,16 +490,10 @@ function onSubmit(values: any) {
 
 
     router.post('/assets', values, {
-        only: ['assetsPaginated', 'stats', 'flash'],
+        only,
         onSuccess: () => {
             open.value = false;
             handleResetForm();
-
-            // const type = assetTypes.value.find(type => type.id === values.type_id)?.name || '' as TypeName
-
-            // if (type == TypeName.ACCESSORY) {
-            //     refetchAccessories.value = true;
-            // }
         },
         onFinish: () => {
             isSubmitting.value = false;

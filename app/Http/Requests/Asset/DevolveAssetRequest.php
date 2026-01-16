@@ -27,6 +27,8 @@ class DevolveAssetRequest extends FormRequest
             'responsible_id' => 'required|exists:ost_staff,staff_id',
             'return_date' => 'required|date',
             'return_reason' => 'required|in:' . implode(',', ReturnReason::values()),
+            'accessories' => 'nullable|array',
+            'accessories.*' => 'integer|exists:assets,id',
         ];
     }
 
@@ -41,6 +43,9 @@ class DevolveAssetRequest extends FormRequest
             'return_date.date' => 'La fecha de devolución debe ser una fecha válida.',
             'return_reason.required' => 'El motivo de devolución es obligatorio.',
             'return_reason.in' => 'El motivo de devolución seleccionado no es válido.',
+            'accessories.array' => 'Los accesorios deben ser un arreglo.',
+            'accessories.*.integer' => 'Cada accesorio debe ser un ID válido.',
+            'accessories.*.exists' => 'El accesorio con el ID proporcionado no existe.',
         ];
     }
 }

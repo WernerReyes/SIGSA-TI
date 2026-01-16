@@ -3,15 +3,11 @@
     <div class="flex max-md:flex-col gap-4 items-center p-4 ">
         <Input class="max-w-sm" placeholder="Buscar activos..." v-model="form.search" />
 
-
-
         <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap">
-
             <Popover v-model:open="openUserSelect">
                 <PopoverTrigger as-child>
                     <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
                         class="w-fit justify-between ">
-
 
                         <span class="relative flex size-2" v-if="form.assigned_to.length > 0">
                             <span
@@ -186,7 +182,7 @@
                                 <CommandGroup>
                                     <CommandItem v-for="assetType in types" :key="assetType.id" :value="assetType.id"
                                         @select="() => {
-                                            
+
                                             if (form.types.includes(assetType.id)) {
                                                 form.types = [...form.types.filter(id => id !== assetType.id)];
                                             } else {
@@ -330,7 +326,7 @@
                         </ContextMenuItem>
 
 
-                        <ContextMenuItem :disabled="!canAssignEdit" @click="openAssign = true">
+                        <ContextMenuItem :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow?.status)" @click="openAssign = true">
                             <MonitorSmartphone />
                             Asignar
                         </ContextMenuItem>
@@ -476,7 +472,6 @@ import { AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interfa
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Department } from '@/interfaces/department.interace';
 import type { BasicUserInfo } from '@/interfaces/user.interface';
-import { getAssetDetails, getAssetHistories } from '@/services/asset.service';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { addMinutes, format, isAfter, isEqual, parseISO } from 'date-fns';
@@ -515,14 +510,10 @@ const openStatusSelect = ref(false);
 
 
 const canAssignEdit = computed(() => {
-    if (!activeRow.value) return false;
-    if ([AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow.value.status)) return false;
+    // if (!activeRow.value) return false;
+    // if ([AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow.value.status)) return false;
     if (!activeRow.value?.current_assignment) return true;
     const targetDate = activeRow.value.current_assignment.created_at;
-
-    console.log(addMinutes(targetDate, 15), new Date(), activeRow.value.current_assignment)
-    
-
     return new Date() <= addMinutes(targetDate, 15)
 },
 
@@ -547,7 +538,6 @@ const types = computed(() => {
     return (usePage().props?.types || []) as AssetType[];
 });
 
-
 const filters = computed(() => usePage().props.filters as Record<string, any>);
 
 const assetId = computed(() => activeRow.value?.id || null);
@@ -561,7 +551,7 @@ const form = reactive<{
 }>({
     search: filters.value.search || '',
     status: filters.value.status || [],
-    types: filters.value.types || [],
+    types: filters.value.types?.map((id: string) => +id) || [],
     assigned_to: filters.value.assigned_to?.map((id: string | null) => id ? +id : null) || [],
     department_id: filters.value.department_id || [],
 })
@@ -626,28 +616,37 @@ onUnmounted(() => {
 })
 
 const handleOpenDetails = () => {
-    getAssetDetails(assetId.value as number, (page) => {
-        activeRow.value = page.props.asset as Asset;
-        openDetails.value = true;
+    router.reload({
+        only: ['details'],
+        data: { asset_id: assetId.value },
+        preserveUrl: true,
+        onSuccess: (page) => {
+            activeRow.value = page.props.details as Asset;
+            openDetails.value = true;
+        }
     });
 
 }
 
 const handleOpenHistories = () => {
-    getAssetHistories(assetId.value as number, (page) => {
-        activeRow.value = page.props.asset as Asset;
-        openHistory.value = true;
+    router.reload({
+        only: ['histories'],
+        data: { asset_id: assetId.value },
+        preserveUrl: true,
+        onSuccess: (page) => {
+            activeRow.value = page.props.histories as Asset;
+            openHistory.value = true;
+        }
     });
 }
 
 
 const applyFilters = () => {
-
     router.get(
         assets.path,
         form,
         {
-            only: ['assetsPaginated', 'filters', 'flash'],
+            only: ['assetsPaginated', 'filters'],
             preserveState: true,
             replace: true,
         }
@@ -714,12 +713,14 @@ const columns: ColumnDef<Asset>[] = [
         id: 'assigned_to',
         header: 'Asignado a',
         cell: info => {
-
             const assignedTo = info.row.original.current_assignment?.assigned_to;
             if (assignedTo) {
-                return h(Badge, { variant: 'default' }, () => [
-                    h(UserIcon),
-                    assignedTo.full_name
+                return h(Badge, { variant: 'default', class: 'flex items-center gap-2' }, () => [
+                    h(UserIcon, { class: '!size-5' }),
+                    h('div', { class: 'flex flex-col' }, [
+                        assignedTo.full_name,
+                        h('small', { class: 'text-[10px] text-gray-400 dark:text-gray-700 italic' }, assignedTo.department ? assignedTo.department.name : 'Sin departamento')
+                    ])
                 ]);
             } else {
                 return h(Badge, { variant: 'secondary' }, () => [
@@ -827,6 +828,8 @@ const table = useVueTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: 'includesString',
+    paginateExpandedRows: false,
+
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),

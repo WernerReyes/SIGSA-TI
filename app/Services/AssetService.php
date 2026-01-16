@@ -173,10 +173,12 @@ class AssetService
                 'type:id,name',
                 'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                 'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+                'currentAssignment.assignedTo.department:id,name',
                 'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
                 'currentAssignment.childrenAssignments.asset.type:id,name',
                 'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
                 'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+                'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
             ])
 
             /*
@@ -236,11 +238,11 @@ class AssetService
             */
             ->when($filtersDto->types, function ($query, $typeId) {
                 $query->where(function ($q) use ($typeId) {
-                    $q->where('type_id', $typeId)
+                    $q->whereIn('type_id', $typeId)
                       ->orWhereHas(
                           'currentAssignment.childrenAssignments.asset',
                           fn ($q2) =>
-                              $q2->where('type_id', $typeId)
+                              $q2->whereIn('type_id', $typeId)
                       );
                 });
             })
@@ -294,10 +296,11 @@ class AssetService
 
     public function getAccessories()
     {
+        ds('getting accessories');
         try {
             return Asset::
                 query()->
-                select('id', 'name', 'status')
+                select('id', 'name', 'model', 'brand', 'status')
                 ->whereHas('type', function ($query) {
                     $query->where('name', 'Accesorio');
                 })
@@ -315,11 +318,13 @@ class AssetService
 
             'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at',
             'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
+            'assignments.deliveryDocument',
+            'assignments.returnDocument',
 
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
-            'currentAssignment.deliveryDocument',
-            'currentAssignment.returnDocument',
+            // 'currentAssignment.deliveryDocument',
+            // 'currentAssignment.returnDocument',
         );
     }
 
@@ -335,9 +340,14 @@ class AssetService
         }
     }
 
-
-
-
+    public function getAssignDocument(AssetAssignment $assignment)
+    {
+        try {
+            return $assignment->load('deliveryDocument');
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al obtener el documento de entrega');
+        }
+    }
 
     public function getStats()
     {
@@ -834,7 +844,7 @@ class AssetService
                     throw new BadRequestException('La asignación ya ha sido devuelta.');
                 }
 
-                $responsible = User::find($dto->responsible_id);
+                $responsible = User::select('dept_id')->find($dto->responsible_id);
                 if (!$responsible) {
                     throw new NotFoundHttpException('No se encontró el usuario responsable.');
                 }
@@ -855,6 +865,22 @@ class AssetService
                     Asset::where('id', $dto->assignment->asset_id)->update([
                         'status' => AssetStatus::AVAILABLE->value,
                     ]);
+
+                    // Return accessories if any
+                    $childAssignments = $dto->assignment->childrenAssignments()->select('id', 'asset_id')->get();
+                    if (!$childAssignments->isEmpty()) {
+                        $asset = $dto->assignment->asset;
+                        AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
+                            'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
+                            'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
+                            'responsible_id' => $dto->responsible_id,
+                            'return_reason' => $dto->return_reason,
+                        ]);
+
+                        Asset::whereIn('id', $childAssignments->pluck('asset_id'))->update([
+                            'status' => AssetStatus::AVAILABLE->value,
+                        ]);
+                    }
 
                     AssetHistory::create([
                         'action' => AssetHistoryAction::RETURNED->value,
@@ -1063,6 +1089,9 @@ class AssetService
             $template->setValue('color', strtoupper($asset->color));
             $template->setValue('serial_number', $asset->serial_number);
             $template->setValue('comments', $assignment->return_comment ?? '');
+            $template->setValue('has_charger', $assignment->childrenAssignments->filter(function ($child) {
+                return stripos($child->asset->name, 'cargador') !== false;
+            })->count() > 0 ? 'X' : '');
             $template->setValue('responsible', strtoupper($assignment->responsible->full_name ?? 'N/A'));
 
             $fileName = 'devolucion_equipo_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';

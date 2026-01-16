@@ -12,10 +12,9 @@
                 <h2 class="text-lg font-semibold">Cargar Factura</h2>
             </DialogHeader>
 
-            <FileUpload
-            :max-size-mb="2"
-            :current-url="invoiceUrl" v-model:reset="resetUpload" @error="(msg) => toast.error(msg)"
-                accept="application/pdf,image/*" @update:file="handleUploadInvoiceDocument($event)" />
+            <FileUpload :max-size-mb="2" :current-url="invoiceUrl" v-model:reset="resetUpload"
+                @error="(msg) => toast.error(msg)" accept="application/pdf,image/*"
+                @update:file="handleUploadInvoiceDocument($event)" />
 
         </DialogContent>
 
@@ -58,10 +57,11 @@ const handleUploadInvoiceDocument = (file: File) => {
             invoice: file,
         },
         {
-            onSuccess: (page) => {
-                invoiceUrl.value = page.props.flash.file_url as string;
-
-                
+            onFlash: (flash) => {
+                const fileUrl = flash.file_url as string;
+                if (fileUrl) {
+                    invoiceUrl.value = fileUrl;
+                }
             },
             onFinish: () => {
                 resetUpload.value = true;

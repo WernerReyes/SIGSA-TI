@@ -17,12 +17,15 @@ router.on('error', (event) => {
 
 router.on('flash', (event) => {
     const flash = event.detail.flash;
+    console.log(flash);
     if (flash?.success) {
-       toast.success(flash.success);
+        toast.success(flash.success);
     }
-})
 
-
+    if (flash?.error) {
+        toast.error(flash.error);
+    }
+});
 
 createInertiaApp({
     resolve: (name: string) => {
@@ -37,4 +40,3 @@ createInertiaApp({
 });
 // This will set light / dark mode on page load...
 initializeTheme();
-

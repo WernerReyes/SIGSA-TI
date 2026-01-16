@@ -45,9 +45,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
+                // 'success' => fn () => $request->session()->get('success'),
                 // 'assignment_id' => $request->session()->get('assignment_id'),
-                'file_url' => fn () => $request->session()->get('file_url'),
+                // 'file_url' => fn () => $request->session()->get('file_url'),
                 'error' => fn () => $request->session()->get('error') || $request->session()->get('errors')?->first('error'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

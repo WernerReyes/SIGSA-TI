@@ -28,9 +28,48 @@
             </Alert>
 
             <div class="space-y-4 py-4 ">
-                <div class="p-3 bg-muted/50 rounded-lg">
-                    <p class="text-sm font-medium">{{ asset?.name }}</p>
-                    <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
+                <div v-if="!canEdit" 
+                  @vue:mounted="() => {
+                    router.reload({
+                        data: {
+                            assignment_id: asset?.current_assignment?.id || 0
+                        },
+                        only: ['assignDocument'],
+                        // preserveState: true,
+                        // preserveScroll: true,
+                        preserveUrl: true,
+                    });
+                  }" 
+                class="p-3 bg-muted/50 rounded-lg">
+                    <!-- always      -->
+                    <WhenVisible  data="assignDocument2"
+                     :params="{ 
+
+                        method: 'get',
+
+
+                        
+                        // queryStringArrayFormat: 'brackets',
+                        data: {
+                        assignment_id: asset?.current_assignment?.id || 0
+                     }, 
+                     
+                     preserveUrl: true,
+
+                      only: ['assignDocument']
+                     }"
+                    >
+                        <template #fallback>
+                            <Skeleton class="h-4 w-3/4 mb-2" />
+                            <Skeleton class="h-4 w-1/2" />
+                        </template>
+                        <!-- {{ url }} -->
+                        <p class="mb-2 text-sm">Subir documento de entrega firmado:</p>
+                        <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
+                            accept="application/pdf,image/*" :reset="resetUpload"
+                            @update:file="handleUploadSignedDocument($event)" />
+                    </WhenVisible>
+
                 </div>
 
                 <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
@@ -42,8 +81,8 @@
 
                                 <Popover v-model:open="openUserSelect">
                                     <PopoverTrigger as-child>
-                                        <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
-                                            class="w-full justify-between">
+                                        <Button :disabled="!canEdit" variant="outline" role="combobox"
+                                            :aria-expanded="openUserSelect" class="w-full justify-between">
                                             {{
                                                 componentField.modelValue
                                                     ? !users.length ? asset?.current_assignment?.assigned_to?.full_name
@@ -101,7 +140,7 @@
                                 <Popover v-slot="{ close }">
                                     <PopoverTrigger as-child>
 
-                                        <Button :disabled="asset?.current_assignment?.parent_assignment_id"
+                                        <Button :disabled="asset?.current_assignment?.parent_assignment_id || !canEdit"
                                             variant="outline" class="w-48 justify-between font-normal">
                                             {{ componentField.modelValue
                                                 ?
@@ -135,30 +174,17 @@
 
                                 <Popover v-model:open="openAccessorySelect">
                                     <PopoverTrigger as-child>
-                                        <Button variant="outline" role="combobox" :aria-expanded="openAccessorySelect"
-                                            class="w-full justify-between">
-
-                                            {{
-                                                componentField.modelValue.length
-                                                    ? !assetAccessories.length ?
-                                                        childrenAssets
-                                                            .filter(acc => componentField.modelValue.includes(acc.id))
-                                                            .map(acc => acc.name)
-                                                            .join(', ') :
-                                                        assetAccessories
-                                                            .filter(acc => componentField.modelValue.includes(acc.id))
-                                                            .map(acc => acc.name)
-                                                            .join(', ')
-                                                    : 'Seleccionar accesorio'
-                                            }}
+                                        <Button :disabled="!canEdit" variant="outline" role="combobox"
+                                            :aria-expanded="openAccessorySelect" class="w-full justify-between">
+                                            {{ selectLabels(componentField.modelValue) }}
                                             <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent class="w-full p-0">
+                                    <PopoverContent class="m-w-full p-0">
                                         <Command>
                                             <CommandInput placeholder="Buscar accesorio..." />
                                             <CommandList>
-                                                <WhenVisible data="assetAccessories">
+                                                <WhenVisible data="accessories">
                                                     <template #fallback>
                                                         <CommandGroup>
                                                             <CommandItem v-for="n in 5" :key="n" value="loading">
@@ -180,7 +206,8 @@
 
                                                             }">
 
-                                                            {{ accessory.name }}
+                                                            {{ accessory.name }} ({{ accessory.brand }} - {{
+                                                                accessory.model }})
                                                             <CheckIcon
                                                                 v-if="componentField.modelValue.includes(accessory.id)"
                                                                 class="ml-auto size-4" />
@@ -219,7 +246,7 @@
 
 
             <DialogFooter>
-
+              
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0 || !canEdit
                     " type="submit" form="dialogForm">
@@ -270,7 +297,8 @@ import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { TypeName } from '@/interfaces/assetType.interface';
 import { type User } from '@/interfaces/user.interface';
-import { downloadAssignmentDocument } from '@/services/asset.service';
+// import { downloadAssignmentDocument } from '@/services/asset.service';
+import { useAsset } from '@/composables/useAsset';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
@@ -281,16 +309,37 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { addMinutes } from 'date-fns';
 import { toast } from 'vue-sonner';
 import Countdown from '../Countdown.vue';
+import FileUpload from '../FileUpload.vue';
+import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
+// import { assign } from '../../routes/assets/index';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
 const page = usePage();
+const { downloadAssignmentDocument } = useAsset();
 
 const openUserSelect = ref(false);
 const openAccessorySelect = ref(false);
 const isSubmitting = ref(false);
+const resetUpload = ref(false);
 
+
+
+const url = computed<string>({
+    get: () =>  {
+    
+      return page.props.assignDocument?.delivery_document?.file_url || '';
+    },
+    set: (value: string) => {
+        if (asset.value && asset.value.current_assignment) {
+            asset.value.current_assignment.delivery_document = {
+                ...asset.value.current_assignment.delivery_document!,
+                file_url: value
+            }
+        }
+    }
+});
 
 const users = computed<User[]>(() => {
     return (page.props?.users || []) as User[];
@@ -309,8 +358,13 @@ const canEdit = computed({
     }
 });
 
+const assignmentId = computed<number>(() => {
+    return asset.value?.current_assignment?.id || 0;
+});
+
 const assetAccessories = computed<Asset[]>(() => {
-    return (page.props?.accessories || []) as Asset[];
+    const accessories = (page.props?.accessories || []) as Asset[];
+    return [...childrenAssets.value, ...accessories];
 });
 
 const assign = computed<AssetAssignment | null>(() => {
@@ -378,6 +432,12 @@ const onSubmit = async (values: Record<string, any>) => {
             return;
         }
     }
+
+    const only = ['assetsPaginated', 'stats'];
+    if (type === TypeName.ACCESSORY) {
+        only.push('accessories');
+    }
+
     router.post('/assets/assign', {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
@@ -385,7 +445,7 @@ const onSubmit = async (values: Record<string, any>) => {
         comment: type === TypeName.ACCESSORY ? null : values.comment,
         accessories: values.accessories,
     }, {
-        only: ['flash', 'assetsPaginated', 'stats', 'assetAccessories'],
+        only,
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
@@ -408,6 +468,78 @@ const onSubmit = async (values: Record<string, any>) => {
         },
     });
 };
+
+const handleUploadSignedDocument = (file: File) => {
+    router.post(`/assets/delivery-records/${assignmentId.value}`, {
+        file: file,
+        type: DeliveryRecordType.ASSIGNMENT,
+    }, {
+        only: [],
+        onFlash(flash) {
+            const fileUrl = flash.file_url as string;
+            console.log('fileUrl', fileUrl);
+            url.value = fileUrl;
+
+            // asset.value!.current_assignment = {
+            //     ...asset.value!.current_assignment!,
+            //     delivery_document: {
+            //         ...asset.value!.current_assignment!.delivery_document!,
+            //         file_url: fileUrl
+            //     }
+            // }
+
+            // assignments.value = assignments.value.map(assignment => {
+            //     if (assignment.id === assignmentId.value) {
+            //         if (type.value === DeliveryRecordType.ASSIGNMENT) {
+            //             return {
+            //                 ...assignment,
+            //                 delivery_document: {
+            //                     id: assignment.delivery_document?.id || 0,
+            //                     ...assignment.delivery_document,
+            //                     file_url: fileUrl
+            //                 }
+            //             } as AssetAssignment;
+            //         } else if (type.value === DeliveryRecordType.DEVOLUTION) {
+            //             return {
+            //                 ...assignment,
+            //                 return_document: {
+            //                     id: assignment.return_document?.id || 0,
+            //                     ...assignment.return_document,
+            //                     file_url: fileUrl
+            //                 }
+            //             } as AssetAssignment;
+            //         }
+            //     }
+            //     return assignment;
+            // });
+        },
+
+        onFinish: () => {
+            resetUpload.value = true;
+        }
+
+    });
+
+};
+
+const selectLabels = (modelValue: Array<number>) => {
+    if (!modelValue.length) return 'Seleccionar accesorio';
+
+    let accesories = assetAccessories.value;
+    if (!accesories.length) {
+        accesories = childrenAssets.value;
+    }
+
+    if (accesories.length > 3 && modelValue.length > 3) {
+        return `${modelValue.length} accesorios seleccionados`;
+    }
+
+    return accesories
+        .filter(acc => modelValue.includes(acc.id))
+        .map(acc => acc.name)
+        .join(', ');
+}
+
 
 
 

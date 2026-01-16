@@ -9,6 +9,7 @@ class DevolveAssetDto
         public readonly int $responsible_id,
         public readonly string $return_date,
         public readonly string $return_reason,
+        public readonly ?array $accessories = null,
         public AssetAssignment $assignment,
     ) {
     }
@@ -20,6 +21,7 @@ class DevolveAssetDto
             responsible_id: $data['responsible_id'],
             return_date: $data['return_date'],
             assignment: $assignment,
+            accessories: $data['accessories'] ?? null,
             return_reason: $data['return_reason'],
         );
     }

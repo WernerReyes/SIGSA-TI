@@ -36,7 +36,7 @@ class StoreAssetRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:255'],
             'imei' => ['nullable', 'string', 'max:255'],
             'purchase_date' => ['nullable', 'date'],
-            'warranty_expiration' => ['nullable', 'date'],
+            'warranty_expiration' => ['nullable', 'date', 'after_or_equal:purchase_date'],
             'is_new' => ['boolean'],
             
             // 'assigned_to' => ['nullable', 'exists:ost_staff,staff_id'],

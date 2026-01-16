@@ -1,63 +1,40 @@
-import { useAssetStore } from '@/store/useAssetStore';
-import { router } from '@inertiajs/vue3';
-import { storeToRefs } from 'pinia';
-import { effect, watch } from 'vue';
+import { TypeName } from '@/interfaces/assetType.interface';
+
 const PREFIX = '/assets';
 
-
-type GetAssetsListFiltered = {
-    preserveUrl?: boolean;
-}
-
 export const useAsset = () => {
-    const { assetsListFiltered, filters, assetListMountedOnce } = storeToRefs(useAssetStore());
+    const downloadAssignmentDocument = (
+        assigmentId: number,
+        type: TypeName,
+    ) => {
+        let endpoint = '';
+        switch (type) {
+            case TypeName.LAPTOP:
+            case TypeName.PC:
+                endpoint = `${PREFIX}/generate-laptop-assignment-doc/${assigmentId}`;
+                break;
 
-    const getAssetsListFiltered = ({
-        preserveUrl = false,
-    } : GetAssetsListFiltered = {}) => {
-        if (!assetsListFiltered.value) {
-            return [];
+            case TypeName.CELL_PHONE:
+                endpoint = `${PREFIX}/generate-phone-assignment-doc/${assigmentId}`;
+                break;
+            case TypeName.ACCESSORY:
+                endpoint = `${PREFIX}/generate-accessory-assignment-doc/${assigmentId}`;
+                break;
+            default:
+                throw new Error(
+                    'Tipo de activo no soportado para descargar el documento de asignación.',
+                );
         }
-        router.get(
-            assetsListFiltered.value.path,
-            {
-                ...filters.value,
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                preserveUrl: true,
-                
-                only: ['assetsPaginated', 'assetFilters', 'flash'],
-            },
-        );
+        window.open(endpoint, '_self');
     };
 
-    // watch(
-    //     filters,
-    //     (current, old) => {
-    //         console.log('Watching filters...', current, old);
-    //         if (JSON.stringify(current) === JSON.stringify(old)) {
-    //             return;
-    //         }
-    //         console.log('Filters changed:', filters.value);
-    //         // getAssetsListFiltered();
-    //     },
-    //     { deep: true },
-    // );
-
-    // effect(() => {
-    //     console.log('Effect triggered for filters:', filters.value);
-    //     // getAssetsListFiltered();
-    // }, );
+    const downloadReturnAssignmentDocument = (assigmentId: number) => {
+        const endpoint = `${PREFIX}/generate-return-doc/${assigmentId}`;
+        window.open(endpoint, '_self');
+    };
 
     return {
-        //* Refs
-        assetsListFiltered,
-        assetsFilters: filters,
-        assetListMountedOnce,
-
-        //* Methods
-        getAssetsListFiltered,
+        downloadAssignmentDocument,
+        downloadReturnAssignmentDocument,
     };
 };
