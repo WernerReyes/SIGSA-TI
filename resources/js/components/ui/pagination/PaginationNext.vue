@@ -11,8 +11,10 @@ import { buttonVariants } from '@/components/ui/button'
 const props = withDefaults(defineProps<PaginationNextProps & {
   size?: ButtonVariants["size"]
   class?: HTMLAttributes["class"]
+  label?: string
 }>(), {
   size: "default",
+  label: "Siguiente"
 })
 
 const delegatedProps = reactiveOmit(props, "class", "size")
@@ -26,7 +28,7 @@ const forwarded = useForwardProps(delegatedProps)
     v-bind="forwarded"
   >
     <slot>
-      <span class="hidden sm:block">Next</span>
+      <span class="hidden sm:block">{{ props.label }}</span>
       <ChevronRightIcon />
     </slot>
   </PaginationNext>

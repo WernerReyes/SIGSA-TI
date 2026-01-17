@@ -10,9 +10,8 @@
             <DialogHeader>
                 <h2 id="radix-:r88:" class="text-lg font-semibold leading-none tracking-tight">Cambiar Estado
                     AST-{{ asset?.id }}</h2>
-
             </DialogHeader>
-
+            
             <div class="space-y-4 py-4">
                 <VeeField name="status" v-slot="{ componentField, errors }">
                     <Field>
@@ -26,7 +25,8 @@
                                 <SelectGroup>
                                     <SelectLabel>Estados</SelectLabel>
 
-                                    <SelectItem v-for="{ value, label, bg } in Object.values(assetStatusOptions).filter(option => option.value !== AssetStatus.ASSIGNED)"
+                                    <SelectItem
+                                        v-for="{ value, label, bg } in Object.values(assetStatusOptions).filter(option => option.value !== AssetStatus.ASSIGNED)"
                                         :key="value" :value="value">
                                         <Badge :class="bg">{{ label }}</Badge>
                                     </SelectItem>
@@ -87,7 +87,6 @@ import { toTypedSchema } from '@vee-validate/zod';
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
-// const open = ref(false);
 const isSubmitting = ref(false);
 
 const formSchema = toTypedSchema(z.object({
@@ -121,9 +120,12 @@ const handleFormSubmit = (values: { status: AssetStatus }) => {
         `/assets/status/${asset?.value?.id}`,
         {
             status: values.status,
-            // asset_id: asset?.value?.id
         },
         {
+            preserveScroll: true,
+            preserveState: true,
+            preserveUrl: true,
+            only: ['assetsPaginated', 'stats'],
             onSuccess: () => {
                 handleReset();
                 open.value = false;

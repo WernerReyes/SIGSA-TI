@@ -17,7 +17,6 @@ router.on('error', (event) => {
 
 router.on('flash', (event) => {
     const flash = event.detail.flash;
-    console.log(flash);
     if (flash?.success) {
         toast.success(flash.success);
     }

@@ -11,8 +11,10 @@ import { buttonVariants } from '@/components/ui/button'
 const props = withDefaults(defineProps<PaginationPrevProps & {
   size?: ButtonVariants["size"]
   class?: HTMLAttributes["class"]
+  label?: string
 }>(), {
   size: "default",
+  label: "Anterior"
 })
 
 const delegatedProps = reactiveOmit(props, "class", "size")
@@ -27,7 +29,7 @@ const forwarded = useForwardProps(delegatedProps)
   >
     <slot>
       <ChevronLeftIcon />
-      <span class="hidden sm:block">Previous</span>
+      <span class="hidden sm:block">{{ props.label }}</span>
     </slot>
   </PaginationPrev>
 </template>

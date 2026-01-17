@@ -67,9 +67,53 @@
 
                 <div class="absolute left-4 top-0 bottom-0 w-px bg-border"></div>
                 <div class="space-y-6">
+                    <Pagination class="mx-0  w-fit ml-auto!" :items-per-page="historiesPaginated.per_page"
+                        :total="historiesPaginated.total" :default-page="historiesPaginated.current_page">
+                        <PaginationContent class="flex-wrap">
+                            <PaginationPrevious :disabled="isLoading || historiesPaginated.current_page === 1" @click="!isLoading && router.visit(historiesPaginated.prev_page_url || '', {
+                                preserveScroll: true,
+                                replace: true,
+                                preserveState: true,
+                                preserveUrl: true,
+                                only: ['historiesPaginated']
+                            })">
+
+                                <ChevronLeftIcon />
+                                Anterior
+                            </PaginationPrevious>
+                            <template v-for="(item, index) in historiesPaginated.links.filter(link => +link.label)"
+                                :key="index">
+                                <PaginationItem :value="+item.label" :is-active="item.active"
+                                    :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
+                                        preserveScroll: true,
+                                        replace: true,
+                                        preserveState: true,
+                                        preserveUrl: true,
+                                        only: ['historiesPaginated']
+                                    })">
+                                    {{ item.label }}
+                                </PaginationItem>
+                            </template>
+
+                            <PaginationNext
+                                :disabled="isLoading || historiesPaginated.current_page === historiesPaginated.last_page"
+                                @click="!isLoading && router.visit(historiesPaginated.next_page_url || '', {
+                                    preserveScroll: true,
+                                    replace: true,
+                                    preserveState: true,
+                                    preserveUrl: true,
+                                    only: ['historiesPaginated']
+                                })" />
 
 
-                    <Empty v-if="histories.length === 0">
+
+                        </PaginationContent>
+                    </Pagination>
+
+
+
+
+                    <Empty v-if="historiesPaginated.data.length === 0">
                         <EmptyHeader>
                             <EmptyMedia variant="icon">
                                 <History />
@@ -83,7 +127,7 @@
 
                     </Empty>
 
-                    <div v-for="history in histories" class="relative flex gap-4 pl-10">
+                    <div v-for="history in historiesPaginated.data" class="relative flex gap-4 pl-10">
                         <div
                             class="absolute left-2 w-5 h-5 rounded-full bg-card border-2 flex items-center justify-center text-info">
 
@@ -102,7 +146,8 @@
 
                             <ul v-if="history.description.split(',').length > 1" class="list-disc pl-5">
                                 <li class="text-xs text-muted-foreground mt-1"
-                                    v-for="desc in history.description.split(',')" :key="desc">{{ desc }}</li>
+                                    v-for="desc in history.description.split(',')" :key="desc">{{
+                                        desc }}</li>
                             </ul>
 
 
@@ -178,6 +223,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationNext,
+    PaginationPrevious
+} from '@/components/ui/pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RangeCalendar } from '@/components/ui/range-calendar';
 import {
@@ -195,39 +247,67 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useApp } from '@/composables/useApp';
 import { assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
-import { actionOp, AssetHistoryAction, assetHistoryActionOptions } from '@/interfaces/assetHistory.interface';
+import { actionOp, AssetHistory, AssetHistoryAction, assetHistoryActionOptions } from '@/interfaces/assetHistory.interface';
+import type { Paginated } from '@/types';
+import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
-import { endOfDay, format, isWithinInterval, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { DownloadIcon, History } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
+
+const page = usePage();
+const { isLoading } = useApp();
 
 const actions = ref<Array<AssetHistoryAction>>([]);
 
 const dateRange = ref<DateRange | undefined>(undefined);
 
+const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
 
-const histories = computed(() => {
-    let filtered = asset?.value?.histories || [];
-    if (actions.value.length > 0) {
-        filtered = filtered.filter((history) => actions.value.includes(history.action));
-    }
-
-    if (dateRange.value && dateRange.value.start && dateRange.value.end) {
-        filtered = filtered.filter((history) => {
-            const historyDate = new Date(history.performed_at);
-            const startDate = dateRange.value?.start?.toDate(getLocalTimeZone());
-            const endDate = dateRange.value?.end?.toDate(getLocalTimeZone());
-            return isWithinInterval(historyDate, { start: startOfDay(startDate), end: endOfDay(endDate) });
-        });
-    }
-
-    return filtered;
+    return (page.props?.historiesPaginated || {
+        data: [],
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 0,
+        links: [],
+    }) as Paginated<AssetHistory>;
 });
+
+
+
+watch(actions, () => {
+    applyFilters();
+});
+
+watch(dateRange, () => {
+    applyFilters();
+});
+
+const applyFilters = () => {
+    router.visit(
+        historiesPaginated.value?.path || '',
+        {
+            preserveScroll: true,
+            replace: true,
+            preserveState: true,
+            preserveUrl: true,
+
+            only: ['historiesPaginated'],
+            data: {
+                asset_id: asset?.value?.id,
+                actions: actions.value,
+                start_date: dateRange.value?.start ? dateRange.value.start.toDate(getLocalTimeZone()).toISOString().split('T')[0] : null,
+                end_date: dateRange.value?.end ? dateRange.value.end.toDate(getLocalTimeZone()).toISOString().split('T')[0] : null,
+            },
+        });
+};
 
 
 const handleDownloadReceipt = (filePath: string) => {

@@ -71,10 +71,10 @@
 import Dialog from '@/components/assets/Dialog.vue';
 import DialogDetails from '@/components/assets/DialogDetails.vue';
 import Table from '@/components/assets/Table.vue';
-import type { AssetsPaginated, AssetStats, AssetStatusOption } from '@/interfaces/asset.interface';
+import type { AssetStats, AssetStatusOption } from '@/interfaces/asset.interface';
 import { AssetStatus, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Paginated } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -83,7 +83,7 @@ import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
 
-const { stats } = defineProps<{ assetsPaginated: AssetsPaginated, stats: AssetStats }>();
+const { stats } = defineProps<{ assetsPaginated: Paginated<Asset>, stats: AssetStats }>();
 
 const currentAsset = ref<Asset | null>(null);
 

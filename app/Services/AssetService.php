@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\DTOs\Asset\AssetFiltersDto;
+use App\DTOs\Asset\AssetHistoryFiltersDto;
 use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
@@ -123,7 +124,7 @@ class AssetService
     //                                 ->orWhere('model', 'like', "%{$search}%")
     //                                 ->orWhere('serial_number', 'like', "%{$search}%");
     //                         });
-                       
+
     //                 });
     //             })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
     //                 $query->whereIn('status', $filtersDto->status)->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($filtersDto) {
@@ -166,132 +167,134 @@ class AssetService
     // }
 
     public function getPaginated(AssetFiltersDto $filtersDto)
-{
-    try {
-        return Asset::query()
-            ->with([
-                'type:id,name',
-                'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
-                'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
-                'currentAssignment.assignedTo.department:id,name',
-                'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-                'currentAssignment.childrenAssignments.asset.type:id,name',
-                'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
-                'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
-                'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
-            ])
+    {
+        try {
+            return Asset::query()
+                ->with([
+                    'type:id,name',
+                    'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
+                    'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+                    'currentAssignment.assignedTo.department:id,name',
+                    'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+                    'currentAssignment.childrenAssignments.asset.type:id,name',
+                    'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
+                    'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+                    'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
+                ])
 
-            /*
-            |--------------------------------------------------------------------------
-            | Activos raíz (no accesorios huérfanos)
-            |--------------------------------------------------------------------------
-            */
-            ->where(function ($q) {
-                $q->whereDoesntHave('currentAssignment')
-                  ->orWhereHas('currentAssignment', fn ($q2) =>
-                      $q2->whereNull('parent_assignment_id')
-                  );
-            })
-
-            /*
-            |--------------------------------------------------------------------------
-            | BÚSQUEDA GENERAL
-            |--------------------------------------------------------------------------
-            */
-            ->when($filtersDto->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('brand', 'like', "%{$search}%")
-                      ->orWhere('model', 'like', "%{$search}%")
-                      ->orWhere('serial_number', 'like', "%{$search}%")
-                      ->orWhereHas(
-                          'currentAssignment.childrenAssignments.asset',
-                          fn ($q2) =>
-                              $q2->where('name', 'like', "%{$search}%")
-                                 ->orWhere('brand', 'like', "%{$search}%")
-                                 ->orWhere('model', 'like', "%{$search}%")
-                                 ->orWhere('serial_number', 'like', "%{$search}%")
-                      );
-                });
-            })
-
-            /*
-            |--------------------------------------------------------------------------
-            | STATUS
-            |--------------------------------------------------------------------------
-            */
-            ->when(!empty($filtersDto->status), function ($query) use ($filtersDto) {
-                $query->where(function ($q) use ($filtersDto) {
-                    $q->whereIn('status', $filtersDto->status)
-                      ->orWhereHas(
-                          'currentAssignment.childrenAssignments.asset',
-                          fn ($q2) =>
-                              $q2->whereIn('status', $filtersDto->status)
-                      );
-                });
-            })
-
-            /*
-            |--------------------------------------------------------------------------
-            | TIPO DE ACTIVO
-            |--------------------------------------------------------------------------
-            */
-            ->when($filtersDto->types, function ($query, $typeId) {
-                $query->where(function ($q) use ($typeId) {
-                    $q->whereIn('type_id', $typeId)
-                      ->orWhereHas(
-                          'currentAssignment.childrenAssignments.asset',
-                          fn ($q2) =>
-                              $q2->whereIn('type_id', $typeId)
-                      );
-                });
-            })
-
-            /*
-            |--------------------------------------------------------------------------
-            | ASIGNADO A USUARIO
-            |--------------------------------------------------------------------------
-            */
-            ->when(!empty($filtersDto->assigned_to), function ($query) use ($filtersDto) {
-                $ids = array_filter($filtersDto->assigned_to, fn ($v) => !is_null($v));
-
-                $query->where(function ($q) use ($ids, $filtersDto) {
-
-                    if (!empty($ids)) {
-                        $q->whereHas(
+                /*
+                |--------------------------------------------------------------------------
+                | Activos raíz (no accesorios huérfanos)
+                |--------------------------------------------------------------------------
+                */
+                ->where(function ($q) {
+                    $q->whereDoesntHave('currentAssignment')
+                        ->orWhereHas(
                             'currentAssignment',
-                            fn ($q2) =>
-                                $q2->whereIn('assigned_to_id', $ids)
+                            fn($q2) =>
+                            $q2->whereNull('parent_assignment_id')
                         );
-                    }
+                })
 
-                    if (in_array(null, $filtersDto->assigned_to, true)) {
-                        $q->orWhereDoesntHave('currentAssignment');
-                    }
-                });
-            })
+                /*
+                |--------------------------------------------------------------------------
+                | BÚSQUEDA GENERAL
+                |--------------------------------------------------------------------------
+                */
+                ->when($filtersDto->search, function ($query, $search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('brand', 'like', "%{$search}%")
+                            ->orWhere('model', 'like', "%{$search}%")
+                            ->orWhere('serial_number', 'like', "%{$search}%")
+                            ->orWhereHas(
+                                'currentAssignment.childrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->where('name', 'like', "%{$search}%")
+                                    ->orWhere('brand', 'like', "%{$search}%")
+                                    ->orWhere('model', 'like', "%{$search}%")
+                                    ->orWhere('serial_number', 'like', "%{$search}%")
+                            );
+                    });
+                })
 
-            /*
-            |--------------------------------------------------------------------------
-            | DEPARTAMENTO
-            |--------------------------------------------------------------------------
-            */
-            ->when(!empty($filtersDto->department_id), function ($query) use ($filtersDto) {
-                $query->whereHas(
-                    'currentAssignment.assignedTo',
-                    fn ($q2) =>
+                /*
+                |--------------------------------------------------------------------------
+                | STATUS
+                |--------------------------------------------------------------------------
+                */
+                ->when(!empty($filtersDto->status), function ($query) use ($filtersDto) {
+                    $query->where(function ($q) use ($filtersDto) {
+                        $q->whereIn('status', $filtersDto->status)
+                            ->orWhereHas(
+                                'currentAssignment.childrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->whereIn('status', $filtersDto->status)
+                            );
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | TIPO DE ACTIVO
+                |--------------------------------------------------------------------------
+                */
+                ->when($filtersDto->types, function ($query, $typeId) {
+                    $query->where(function ($q) use ($typeId) {
+                        $q->whereIn('type_id', $typeId)
+                            ->orWhereHas(
+                                'currentAssignment.childrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->whereIn('type_id', $typeId)
+                            );
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | ASIGNADO A USUARIO
+                |--------------------------------------------------------------------------
+                */
+                ->when(!empty($filtersDto->assigned_to), function ($query) use ($filtersDto) {
+                    $ids = array_filter($filtersDto->assigned_to, fn($v) => !is_null($v));
+
+                    $query->where(function ($q) use ($ids, $filtersDto) {
+
+                        if (!empty($ids)) {
+                            $q->whereHas(
+                                'currentAssignment',
+                                fn($q2) =>
+                                $q2->whereIn('assigned_to_id', $ids)
+                            );
+                        }
+
+                        if (in_array(null, $filtersDto->assigned_to, true)) {
+                            $q->orWhereDoesntHave('currentAssignment');
+                        }
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | DEPARTAMENTO
+                |--------------------------------------------------------------------------
+                */
+                ->when(!empty($filtersDto->department_id), function ($query) use ($filtersDto) {
+                    $query->whereHas(
+                        'currentAssignment.assignedTo',
+                        fn($q2) =>
                         $q2->whereIn('dept_id', $filtersDto->department_id)
-                );
-            })
+                    );
+                })
 
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+                ->latest()
+                ->paginate(10)
+                ->withQueryString();
 
-    } catch (\Throwable $e) {
-        throw new InternalErrorException('Error al obtener los activos');
+        } catch (\Throwable $e) {
+            throw new InternalErrorException('Error al obtener los activos');
+        }
     }
-}
 
 
     public function getAccessories()
@@ -340,6 +343,29 @@ class AssetService
         }
     }
 
+    public function getHistoriesPaginated(Asset $asset, AssetHistoryFiltersDto $filtersDto)
+    {   
+        ds($filtersDto);
+        try {
+            return $asset->histories()
+                ->with('performer:staff_id,firstname,lastname', 'deliveryRecord:id,file_path')
+                ->when($filtersDto->actions && count($filtersDto->actions) > 0, function ($query) use ($filtersDto) {
+                    $query->whereIn('action', $filtersDto->actions);
+                })
+                ->when($filtersDto->start_date, function ($query) use ($filtersDto) {
+                    $query->whereDate('performed_at', '>=', $filtersDto->start_date);
+                })
+                ->when($filtersDto->end_date, function ($query) use ($filtersDto) {
+                    $query->whereDate('performed_at', '<=', $filtersDto->end_date);
+                })
+                ->latest('performed_at')
+                ->
+                paginate(10, ['*'], 'page_histories')->withQueryString();
+        } catch (\Exception $e) {
+            ds($e);
+            throw new InternalErrorException('Error al obtener el historial del activo');
+        }
+    }
     public function getAssignDocument(AssetAssignment $assignment)
     {
         try {

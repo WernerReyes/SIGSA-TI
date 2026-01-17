@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\DTOs\Asset\AssetFiltersDto;
+use App\DTOs\Asset\AssetHistoryFiltersDto;
 use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
@@ -38,8 +39,6 @@ class AssetController extends Controller
         $assetId = $request->input('asset_id');
         $assignmentId = $request->input('assignment_id');
 
-        ds($assignmentId);
-
         return Inertia::render('Assets', [
             'filters' => $filters,
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
@@ -50,9 +49,15 @@ class AssetController extends Controller
             'assetsPaginated' => fn() => $assetService->getPaginated($filters),
             'stats' => fn() => $assetService->getStats(),
 
-
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
             'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),
+            'historiesPaginated' => Inertia::optional(function () use ($assetService, $assetId, $request) {
+                if (!$assetId) {
+                    return null;
+                }
+                $filters = AssetHistoryFiltersDto::fromArray($request->all());
+                return $assetService->getHistoriesPaginated(Asset::find($assetId), $filters);
+            }),
             'assignDocument' => Inertia::optional(fn() => $assignmentId ? $assetService->getAssignDocument(AssetAssignment::find($assignmentId)) : null),
         ]);
     }
@@ -63,23 +68,18 @@ class AssetController extends Controller
         $dto = StoreAssetDto::fromArray($validated);
         try {
             $asset = $assetService->storeAsset($dto);
-            // return back()->with('success', 'Activo registrado correctamente: ' . $asset->name);
 
             Inertia::flash([
                 'success' => 'Activo registrado correctamente: ' . $asset->name,
                 'timestamp' => now()->timestamp,
             ]);
-
-
-            return back();
         } catch (\Exception $e) {
-            // return back()->withErrors(['error' => $e->getMessage()]);
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            return back();
         }
+        return back();
     }
 
     public function updateAsset(UpdateAssetRequest $request, Asset $asset, AssetService $assetService)
@@ -94,15 +94,14 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
 
-            return back();
-            // return back()->with('success', 'Activo actualizado correctamente: ' . $asset->name);
         } catch (\Exception $e) {
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            // return back()->withErrors(['error' => $e->getMessage()]);
+
         }
+        return back();
     }
 
     public function changeAssetStatus(Request $request, Asset $asset, AssetService $assetService)
@@ -114,25 +113,22 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
             return back();
-            // return back()->withErrors(['error' => 'Estado de activo inválido proporcionado.']);
         }
 
         try {
             $assetService->changeAssetStatus($asset, $newStatus);
 
-
             Inertia::flash([
                 'success' => 'Estado de activo actualizado correctamente: ' . $asset->name,
                 'timestamp' => now()->timestamp,
             ]);
-            return back();
         } catch (\Exception $e) {
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            // return back()->withErrors(['error' => $e->getMessage()]);
         }
+        return back();
     }
 
     public function assignAsset(AssignAssetRequest $request, AssetService $assetService)
@@ -141,10 +137,6 @@ class AssetController extends Controller
         $dto = AssignAssetDto::fromArray($validated);
         try {
             $assignment = $assetService->assignAsset($dto);
-            // return back()->with([
-            //     'success' => 'Activo asignado correctamente.',
-            //     'assignment_id' => $assignment->id,
-            // ]);
 
             Inertia::flash([
                 'success' => 'Activo asignado correctamente.',
@@ -152,14 +144,14 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
 
-            return back();
+
         } catch (\Exception $e) {
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            // return back()->withErrors(['error' => $e->getMessage()]);
         }
+        return back();
     }
 
     public function devolveAsset(DevolveAssetRequest $request, AssetService $assetService, AssetAssignment $assignment)
@@ -174,16 +166,14 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
 
-            return back();
-
-            // return back()->with('success', 'Activo devuelto correctamente');
         } catch (\Exception $e) {
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            // return back()->withErrors(['error' => $e->getMessage()]);
+
         }
+        return back();
     }
 
     public function generateLaptopAssignmentDocument(AssetAssignment $assignment, AssetService $assetService)
@@ -198,7 +188,6 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
             return back();
-            // return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -214,9 +203,7 @@ class AssetController extends Controller
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            // return back()->withErrors(['error' => $e->getMessage()]);
-
-
+            return back();
         }
     }
 
@@ -232,7 +219,6 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
             return back();
-            // return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -243,15 +229,11 @@ class AssetController extends Controller
 
             return response()->download($filePath)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
-
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
             return back();
-            // return back()->withErrors(['error' => $e->getMessage()]);
-
-
         }
     }
 
@@ -267,19 +249,13 @@ class AssetController extends Controller
                 'file_url' => $file_url,
                 'timestamp' => now()->timestamp,
             ]);
-            return back();
-            // return back()->with('success', 'Registro de entrega subido correctamente.')->with('file_url', $file_url);
         } catch (\Exception $e) {
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            return back();
-            // return back()->withErrors(['error' => $e->getMessage()]);
-
-
-
         }
+        return back();
     }
 
     public function uploadInvoiceDocument(Request $request, Asset $asset, AssetService $assetService)
@@ -295,15 +271,12 @@ class AssetController extends Controller
                 'file_url' => $fileUrl,
                 'timestamp' => now()->timestamp,
             ]);
-            return back();
-            // return back()->with('success', 'Factura subida correctamente.')->with('file_url', $fileUrl);
         } catch (\Exception $e) {
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
-            return back();
-            // return back()->withErrors(['error' => $e->getMessage()]);
         }
+        return back();
     }
 }

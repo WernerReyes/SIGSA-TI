@@ -28,47 +28,33 @@
             </Alert>
 
             <div class="space-y-4 py-4 ">
-                <div v-if="!canEdit" 
-                  @vue:mounted="() => {
+                <div v-if="!canEdit" @vue:mounted="() => {
+                    loadingAssignDocument = true;
                     router.reload({
                         data: {
                             assignment_id: asset?.current_assignment?.id || 0
                         },
                         only: ['assignDocument'],
-                        // preserveState: true,
-                        // preserveScroll: true,
+
                         preserveUrl: true,
+                        onFinish: () => {
+                            loadingAssignDocument = false;
+                        }
                     });
-                  }" 
-                class="p-3 bg-muted/50 rounded-lg">
-                    <!-- always      -->
-                    <WhenVisible  data="assignDocument2"
-                     :params="{ 
+                }" class="p-3 bg-muted/50 rounded-lg">
 
-                        method: 'get',
+                    <template v-if="loadingAssignDocument">
+                        <Skeleton class="h-4 w-3/4 mb-2" />
+                        <Skeleton class="h-4 w-1/2" />
+                    </template>
 
-
-                        
-                        // queryStringArrayFormat: 'brackets',
-                        data: {
-                        assignment_id: asset?.current_assignment?.id || 0
-                     }, 
-                     
-                     preserveUrl: true,
-
-                      only: ['assignDocument']
-                     }"
-                    >
-                        <template #fallback>
-                            <Skeleton class="h-4 w-3/4 mb-2" />
-                            <Skeleton class="h-4 w-1/2" />
-                        </template>
-                        <!-- {{ url }} -->
+                    <template v-else>
                         <p class="mb-2 text-sm">Subir documento de entrega firmado:</p>
                         <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
                             accept="application/pdf,image/*" :reset="resetUpload"
                             @update:file="handleUploadSignedDocument($event)" />
-                    </WhenVisible>
+                    </template>
+                    <!-- </WhenVisible> -->
 
                 </div>
 
@@ -246,7 +232,7 @@
 
 
             <DialogFooter>
-              
+
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0 || !canEdit
                     " type="submit" form="dialogForm">
@@ -297,7 +283,6 @@ import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { TypeName } from '@/interfaces/assetType.interface';
 import { type User } from '@/interfaces/user.interface';
-// import { downloadAssignmentDocument } from '@/services/asset.service';
 import { useAsset } from '@/composables/useAsset';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
@@ -311,7 +296,6 @@ import { toast } from 'vue-sonner';
 import Countdown from '../Countdown.vue';
 import FileUpload from '../FileUpload.vue';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
-// import { assign } from '../../routes/assets/index';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -323,13 +307,12 @@ const openUserSelect = ref(false);
 const openAccessorySelect = ref(false);
 const isSubmitting = ref(false);
 const resetUpload = ref(false);
-
+const loadingAssignDocument = ref(false);
 
 
 const url = computed<string>({
-    get: () =>  {
-    
-      return page.props.assignDocument?.delivery_document?.file_url || '';
+    get: () => {
+        return asset.value?.current_assignment?.delivery_document?.file_url || page.props.assignDocument?.delivery_document?.file_url || '';
     },
     set: (value: string) => {
         if (asset.value && asset.value.current_assignment) {
@@ -477,41 +460,7 @@ const handleUploadSignedDocument = (file: File) => {
         only: [],
         onFlash(flash) {
             const fileUrl = flash.file_url as string;
-            console.log('fileUrl', fileUrl);
             url.value = fileUrl;
-
-            // asset.value!.current_assignment = {
-            //     ...asset.value!.current_assignment!,
-            //     delivery_document: {
-            //         ...asset.value!.current_assignment!.delivery_document!,
-            //         file_url: fileUrl
-            //     }
-            // }
-
-            // assignments.value = assignments.value.map(assignment => {
-            //     if (assignment.id === assignmentId.value) {
-            //         if (type.value === DeliveryRecordType.ASSIGNMENT) {
-            //             return {
-            //                 ...assignment,
-            //                 delivery_document: {
-            //                     id: assignment.delivery_document?.id || 0,
-            //                     ...assignment.delivery_document,
-            //                     file_url: fileUrl
-            //                 }
-            //             } as AssetAssignment;
-            //         } else if (type.value === DeliveryRecordType.DEVOLUTION) {
-            //             return {
-            //                 ...assignment,
-            //                 return_document: {
-            //                     id: assignment.return_document?.id || 0,
-            //                     ...assignment.return_document,
-            //                     file_url: fileUrl
-            //                 }
-            //             } as AssetAssignment;
-            //         }
-            //     }
-            //     return assignment;
-            // });
         },
 
         onFinish: () => {

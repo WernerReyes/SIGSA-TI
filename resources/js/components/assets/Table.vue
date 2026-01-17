@@ -326,7 +326,9 @@
                         </ContextMenuItem>
 
 
-                        <ContextMenuItem :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow?.status)" @click="openAssign = true">
+                        <ContextMenuItem
+                            :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow?.status)"
+                            @click="openAssign = true">
                             <MonitorSmartphone />
                             Asignar
                         </ContextMenuItem>
@@ -474,10 +476,12 @@ import type { Department } from '@/interfaces/department.interace';
 import type { BasicUserInfo } from '@/interfaces/user.interface';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { addMinutes, format, isAfter, isEqual, parseISO } from 'date-fns';
+import { format, isAfter, isEqual, parseISO } from 'date-fns';
 import { Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, ChevronsUpDown, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
-import { computed, h, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { AssetsPaginated } from '../../interfaces/asset.interface';
+import { computed, h, reactive, ref, watch } from 'vue';
+
+import { useApp } from '@/composables/useApp';
+import type { Paginated } from '@/types';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
@@ -487,7 +491,10 @@ import InvoiceDialog from './InvoiceDialog.vue';
 import StatusDialog from './StatusDialog.vue';
 
 
-const { assets } = defineProps<{ assets: AssetsPaginated }>()
+const { assets } = defineProps<{ assets: Paginated<Asset> }>()
+
+
+const { isLoading } = useApp();
 
 
 const activeRow = ref<Asset | null>(null)
@@ -509,15 +516,17 @@ const openAssetTypeSelect = ref(false);
 const openStatusSelect = ref(false);
 
 
-const canAssignEdit = computed(() => {
-    // if (!activeRow.value) return false;
-    // if ([AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow.value.status)) return false;
-    if (!activeRow.value?.current_assignment) return true;
-    const targetDate = activeRow.value.current_assignment.created_at;
-    return new Date() <= addMinutes(targetDate, 15)
-},
+// const canAssignEdit = computed(() => {
+//     // if (!activeRow.value) return false;
+//     // if ([AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow.value.status)) return false;
+//     if (!activeRow.value?.current_assignment) return true;
+//     const targetDate = activeRow.value.current_assignment.created_at;
+//     return new Date() <= addMinutes(targetDate, 15)
+// },
 
-);
+// );
+
+
 const users = computed<(Omit<BasicUserInfo, 'staff_id'> & {
     staff_id: number | null
 })[]>(() => {
@@ -597,23 +606,23 @@ watch(
 )
 
 
-const isLoading = ref(false)
+// const isLoading = ref(false)
 
-const start = () => (isLoading.value = true)
-const finish = () => (isLoading.value = false)
+// const start = () => (isLoading.value = true)
+// const finish = () => (isLoading.value = false)
 
-let unsubscribeStart: (() => void) | null = null
-let unsubscribeFinish: (() => void) | null = null
+// let unsubscribeStart: (() => void) | null = null
+// let unsubscribeFinish: (() => void) | null = null
 
-onMounted(() => {
-    unsubscribeStart = router.on('start', start)
-    unsubscribeFinish = router.on('finish', finish)
-})
+// onMounted(() => {
+//     unsubscribeStart = router.on('start', start)
+//     unsubscribeFinish = router.on('finish', finish)
+// })
 
-onUnmounted(() => {
-    unsubscribeStart?.()
-    unsubscribeFinish?.()
-})
+// onUnmounted(() => {
+//     unsubscribeStart?.()
+//     unsubscribeFinish?.()
+// })
 
 const handleOpenDetails = () => {
     router.reload({
@@ -630,7 +639,7 @@ const handleOpenDetails = () => {
 
 const handleOpenHistories = () => {
     router.reload({
-        only: ['histories'],
+        only: ['histories', 'historiesPaginated'],
         data: { asset_id: assetId.value },
         preserveUrl: true,
         onSuccess: (page) => {

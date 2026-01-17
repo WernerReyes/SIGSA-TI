@@ -88,4 +88,42 @@ export type BreadcrumbItemType = BreadcrumbItem;
 //     activo: boolean;
 // }
 
-export type Variant = 'neutral' | 'Stone' | 'Slate'  | 'Gray' | 'Red' | 'Orange' | 'Amber' | 'Yellow' | 'Lime' | 'Green' | 'Emerald' | 'Teal' | 'Cyan' | 'Sky' | 'Blue' | 'Indigo' | 'Violet' | 'Purple' | 'Fuchsia' | 'Pink' | 'Rose';
+export type Variant =
+    | 'neutral'
+    | 'Stone'
+    | 'Slate'
+    | 'Gray'
+    | 'Red'
+    | 'Orange'
+    | 'Amber'
+    | 'Yellow'
+    | 'Lime'
+    | 'Green'
+    | 'Emerald'
+    | 'Teal'
+    | 'Cyan'
+    | 'Sky'
+    | 'Blue'
+    | 'Indigo'
+    | 'Violet'
+    | 'Purple'
+    | 'Fuchsia'
+    | 'Pink'
+    | 'Rose';
+
+export interface Paginated<T> {
+    current_page: number;
+    data: T[];
+    next_page_url: string | null;
+    per_page: number;
+    prev_page_url: string | null;
+    total: number;
+    path: string;
+    to: number;
+    last_page: number;
+    links: {
+        url: string;
+        label: string;
+        active: boolean;
+    }[];
+}
