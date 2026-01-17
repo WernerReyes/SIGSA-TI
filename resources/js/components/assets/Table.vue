@@ -29,7 +29,8 @@
                             if (!form.assigned_to?.length) return;
                             form.assigned_to = []
 
-                        }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
+                        }" class="w-full justify-center gap-2  flex items-center p-2"
+                            :class="isLoading || !form.assigned_to?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                             Refrescar lista
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
 
@@ -94,7 +95,8 @@
                             if (isLoading || !form.department_id?.length) return;
                             form.department_id = []
                             // selectDepartmentId = null;
-                        }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
+                        }" class="w-full justify-center gap-2  flex items-center p-2"
+                            :class="isLoading || !form.department_id?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                             Refrescar lista
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
 
@@ -161,7 +163,8 @@
                             if (isLoading || !form.types?.length) return;
                             form.types = []
 
-                        }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
+                        }" class="w-full justify-center gap-2  flex items-center p-2"
+                            :class="isLoading || !form.types?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                             Refrescar lista
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
 
@@ -217,12 +220,11 @@
                 </PopoverTrigger>
                 <PopoverContent class="w-full p-0">
                     <Command>
-                        <!-- <CommandInput placeholder="Buscar departamento..." class="w-full" /> -->
                         <CommandShortcut :disable="isLoading || !form.status?.length" @click="() => {
                             if (isLoading || !form.status?.length) return;
                             form.status = []
-                            // selectDepartmentId = null;
-                        }" class="cursor-pointer  w-full justify-center gap-2  flex items-center p-2">
+                        }" class="w-full justify-center gap-2  flex items-center p-2"
+                            :class="isLoading || !form.status?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                             Refrescar lista
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
 
@@ -327,7 +329,7 @@
 
 
                         <ContextMenuItem
-                            :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow?.status)"
+                            :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow!.status)"
                             @click="openAssign = true">
                             <MonitorSmartphone />
                             Asignar
@@ -515,18 +517,6 @@ const openDepartmentSelect = ref(false);
 const openAssetTypeSelect = ref(false);
 const openStatusSelect = ref(false);
 
-
-// const canAssignEdit = computed(() => {
-//     // if (!activeRow.value) return false;
-//     // if ([AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow.value.status)) return false;
-//     if (!activeRow.value?.current_assignment) return true;
-//     const targetDate = activeRow.value.current_assignment.created_at;
-//     return new Date() <= addMinutes(targetDate, 15)
-// },
-
-// );
-
-
 const users = computed<(Omit<BasicUserInfo, 'staff_id'> & {
     staff_id: number | null
 })[]>(() => {
@@ -605,24 +595,6 @@ watch(
     { deep: true }
 )
 
-
-// const isLoading = ref(false)
-
-// const start = () => (isLoading.value = true)
-// const finish = () => (isLoading.value = false)
-
-// let unsubscribeStart: (() => void) | null = null
-// let unsubscribeFinish: (() => void) | null = null
-
-// onMounted(() => {
-//     unsubscribeStart = router.on('start', start)
-//     unsubscribeFinish = router.on('finish', finish)
-// })
-
-// onUnmounted(() => {
-//     unsubscribeStart?.()
-//     unsubscribeFinish?.()
-// })
 
 const handleOpenDetails = () => {
     router.reload({

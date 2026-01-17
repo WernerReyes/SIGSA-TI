@@ -59,7 +59,7 @@
                         </PopoverTrigger>
                         <PopoverContent class="w-auto overflow-hidden p-0" align="start">
 
-                            <RangeCalendar v-model="dateRange" class="rounded-md border shadow-sm" :number-of-months="2"
+                            <RangeCalendar v-model="dateRange as any" class="rounded-md border shadow-sm" :number-of-months="2"
                                 disable-days-outside-current-view locale="es" />
                         </PopoverContent>
                     </Popover>

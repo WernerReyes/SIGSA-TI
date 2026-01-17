@@ -86,86 +86,7 @@ class AssetService
     //         throw new InternalErrorException('Error al buscar el tipo de activo');
     //     }
     // }
-
-    // public function getPaginated(AssetFiltersDto $filtersDto)
-    // {
-
-
-    //     try {
-    //         return Asset::query()->with(
-    //             'type:id,name',
-    //             'currentAssignment:id,asset_id,assigned_to_id,assigned_at',
-    //             'currentAssignment.assignedTo:staff_id,firstname,lastname',
-    //             'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-    //             'currentAssignment.childrenAssignments.asset.type:id,name',
-    //             'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
-    //             'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname'
-    //         )
-    //             ->where(function ($q) {
-    //                 $q->whereDoesntHave('currentAssignment')
-
-    //                     ->orWhereHas('currentAssignment', function ($q2) {
-    //                         $q2->whereNull('parent_assignment_id');
-    //                     });
-    //             })
-    //             ->
-    //             when($filtersDto->search, function ($query, $search) {
-    //                 $query->where(function ($q) use ($search) {
-
-    //                     $q->
-
-    //                         where('name', 'like', "%{$search}%")
-    //                         ->orWhere('brand', 'like', "%{$search}%")
-    //                         ->orWhere('model', 'like', "%{$search}%")
-    //                         ->orWhere('serial_number', 'like', "%{$search}%")
-    //                         ->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($search) {
-    //                             $q2->where('name', 'like', "%{$search}%")
-    //                                 ->orWhere('brand', 'like', "%{$search}%")
-    //                                 ->orWhere('model', 'like', "%{$search}%")
-    //                                 ->orWhere('serial_number', 'like', "%{$search}%");
-    //                         });
-
-    //                 });
-    //             })->when($filtersDto->status && count($filtersDto->status) > 0, function ($query) use ($filtersDto) {
-    //                 $query->whereIn('status', $filtersDto->status)->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($filtersDto) {
-    //                     $q2->whereIn('status', $filtersDto->status);
-    //                 });
-    //             })->when($filtersDto->types, function ($query, $typeId) {
-    //                 $query->where('type_id', $typeId)->orWhereHas('currentAssignment.childrenAssignments.asset', function ($q2) use ($typeId) {
-    //                     $q2->where('type_id', $typeId);
-    //                 });
-    //             })->when($filtersDto->assigned_to, function ($query) use ($filtersDto) {
-    //                 $ids = array_filter($filtersDto->assigned_to);
-
-    //                 $query->where(function ($q) use ($ids, $filtersDto) {
-    //                     if ($ids) {
-    //                         $q->whereHas(
-    //                             'currentAssignment',
-    //                             fn($q2) =>
-    //                             $q2->whereIn('assigned_to_id', $ids)
-    //                         );
-    //                     }
-
-    //                     if (in_array(null, $filtersDto->assigned_to, true)) {
-    //                         $q->orWhereDoesntHave('currentAssignment');
-    //                     }
-    //                 });
-    //             })
-    //             ->when($filtersDto->department_id && count($filtersDto->department_id) > 0, function ($query) use ($filtersDto) {
-    //                 $query->where(function ($q) use ($filtersDto) {
-    //                     $q->whereHas('currentAssignment.assignedTo', function ($q2) use ($filtersDto) {
-    //                         $q2->whereIn('dept_id', $filtersDto->department_id);
-    //                     });
-    //                     // $q->orWhereDoesntHave('currentAssignment');
-    //                 });
-    //             })->
-    //             latest()->paginate(10)->withQueryString();
-
-    //     } catch (\Exception $e) {
-    //         throw new InternalErrorException('Error al obtener los activos');
-    //     }
-    // }
-
+    
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
@@ -299,7 +220,6 @@ class AssetService
 
     public function getAccessories()
     {
-        ds('getting accessories');
         try {
             return Asset::
                 query()->
@@ -345,7 +265,6 @@ class AssetService
 
     public function getHistoriesPaginated(Asset $asset, AssetHistoryFiltersDto $filtersDto)
     {   
-        ds($filtersDto);
         try {
             return $asset->histories()
                 ->with('performer:staff_id,firstname,lastname', 'deliveryRecord:id,file_path')
@@ -362,7 +281,6 @@ class AssetService
                 ->
                 paginate(10, ['*'], 'page_histories')->withQueryString();
         } catch (\Exception $e) {
-            ds($e);
             throw new InternalErrorException('Error al obtener el historial del activo');
         }
     }
@@ -590,10 +508,6 @@ class AssetService
 
     public function changeAssetStatus(Asset $asset, string $newStatus)
     {
-        // $asset = Asset::find($assetId);
-        // if (!$asset) {
-        //     throw new NotFoundHttpException('No se encontró el activo');
-        // }
         try {
 
             if ($asset->status === $newStatus) {

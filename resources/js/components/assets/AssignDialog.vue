@@ -184,7 +184,7 @@
                                                         <CommandItem v-for="accessory in assetAccessories"
                                                             :key="accessory.id" :value="accessory.id" @select="() => {
                                                                 if (componentField.modelValue.includes(accessory.id)) {
-                                                                    const filtered = componentField.modelValue.filter(id => id !== accessory.id)
+                                                                    const filtered = componentField.modelValue.filter((id:number) => id !== accessory.id)
                                                                     componentField.onChange(filtered)
                                                                     return
                                                                 }
@@ -312,7 +312,10 @@ const loadingAssignDocument = ref(false);
 
 const url = computed<string>({
     get: () => {
-        return asset.value?.current_assignment?.delivery_document?.file_url || page.props.assignDocument?.delivery_document?.file_url || '';
+        const assignDocument = page.props?.assignDocument as
+            | { delivery_document: { file_url: string } }
+            | undefined;
+        return asset.value?.current_assignment?.delivery_document?.file_url || assignDocument?.delivery_document.file_url || '';
     },
     set: (value: string) => {
         if (asset.value && asset.value.current_assignment) {
