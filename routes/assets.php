@@ -11,6 +11,7 @@ Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () 
 
         Route::post('/', [AssetController::class, 'storeAsset'])->name('assets.store');
         Route::put('/{asset}', [AssetController::class, 'updateAsset'])->name('assets.update');
+        Route::delete('/{asset}', [AssetController::class, 'deleteAsset'])->name('assets.delete');
         Route::post('/assign', [AssetController::class, 'assignAsset'])->name('assets.assign');
         Route::post('/devolve/{assignment}', [AssetController::class, 'devolveAsset'])->name('assets.devolve');
         Route::put('/status/{asset}', [AssetController::class, 'changeAssetStatus'])->name('assets.changeStatus');

@@ -1,7 +1,6 @@
 <?php
 namespace App\DTOs\Asset;
 
-use App\Models\AssetAssignment;
 class DevolveAssetDto
 {
     private function __construct(
@@ -10,17 +9,16 @@ class DevolveAssetDto
         public readonly string $return_date,
         public readonly string $return_reason,
         public readonly ?array $accessories = null,
-        public AssetAssignment $assignment,
+        
     ) {
     }
 
-    public static function fromArray(array $data, AssetAssignment $assignment): self
+    public static function fromArray(array $data): self
     {
         return new self(
             return_comment: $data['return_comment'] ?? null,
             responsible_id: $data['responsible_id'],
             return_date: $data['return_date'],
-            assignment: $assignment,
             accessories: $data['accessories'] ?? null,
             return_reason: $data['return_reason'],
         );

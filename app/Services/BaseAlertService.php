@@ -1,0 +1,87 @@
+<?php
+namespace App\Services;
+
+use App\Enums\Alert\AlertStatus;
+use App\Enums\Alert\AlertType;
+use App\Enums\Alert\EntityType;
+use App\Events\AlertTriggered;
+use App\Models\Alert;
+abstract class BaseAlertService
+{
+    protected AlertType $alertType;
+
+    protected array $messages;
+    protected EntityType $entityType;
+
+    protected ?int $entityId = null;
+
+    // Tiempo mínimo entre notificaciones
+    protected ?int $cooldownHours = null;
+
+    abstract protected function conditionMet(): bool;
+
+
+
+    public function check(): void
+    {
+        $alert = Alert::firstOrCreate(
+            [
+                'type' => $this->alertType,
+                'entity_type' => $this->entityType,
+                'entity_id' => $this->entityId,
+            ],
+            [
+                'status' => AlertStatus::RESOLVED->value,
+            ]
+        );
+        
+
+        if ($this->conditionMet()) {
+            $this->activate($alert);
+        } else {
+            $this->resolve($alert);
+        }
+    }
+
+    protected function activate(Alert $alert): void
+    {
+        if ($alert->status === AlertStatus::ACTIVE->value) {
+            return;
+        }
+
+        if (!$this->canNotify($alert)) {
+            return;
+        }
+
+        $alert->update([
+            'status' => AlertStatus::ACTIVE->value,
+            'last_notified_at' => now(),
+            'message' => $this->messages[AlertStatus::ACTIVE->value] ?? '',
+        ]);
+
+        event(new AlertTriggered($alert));
+    }
+
+    protected function resolve(Alert $alert): void
+    {
+        if ($alert->status === AlertStatus::RESOLVED->value) {
+            return;
+        }
+
+        $alert->update([
+            'status' => AlertStatus::RESOLVED->value,
+            'message' => $this->messages[AlertStatus::RESOLVED->value] ?? '',
+        ]);
+    }
+
+    protected function canNotify(Alert $alert): bool
+    {
+        if (!$alert->last_notified_at || !$this->cooldownHours) {
+            return true;
+        }
+
+
+        return $alert->last_notified_at
+            ->diffInHours(now()) >= $this->cooldownHours;
+    }
+}

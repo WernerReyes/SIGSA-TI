@@ -104,6 +104,26 @@ class AssetController extends Controller
         return back();
     }
 
+    public function deleteAsset(Asset $asset, AssetService $assetService)
+    {
+        try {
+            $assetService->deleteAsset($asset);
+
+            Inertia::flash([
+                'success' => 'Activo eliminado correctamente: ' . $asset->name,
+                'timestamp' => now()->timestamp,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+
+        }
+        return back();
+    }
+
     public function changeAssetStatus(Request $request, Asset $asset, AssetService $assetService)
     {
         $newStatus = $request->input('status');
@@ -157,9 +177,9 @@ class AssetController extends Controller
     public function devolveAsset(DevolveAssetRequest $request, AssetService $assetService, AssetAssignment $assignment)
     {
         $validated = $request->validated();
-        $dto = DevolveAssetDto::fromArray($validated, $assignment);
+        $dto = DevolveAssetDto::fromArray($validated);
         try {
-            $assetService->devolveAsset($dto);
+            $assetService->devolveAsset($assignment, $dto);
 
             Inertia::flash([
                 'success' => 'Activo devuelto correctamente',

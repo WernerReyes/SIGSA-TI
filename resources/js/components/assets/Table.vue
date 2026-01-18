@@ -342,6 +342,11 @@
                             <History />
                             Ver historial
                         </ContextMenuItem>
+                        <ContextMenuItem @click="openDelete = true"
+                            :disabled="AssetStatus.AVAILABLE !== activeRow?.status">
+                            <X />
+                            Eliminar
+                        </ContextMenuItem>
                     </ContextMenuContent>
                 </ContextMenu>
             </template>
@@ -415,6 +420,35 @@
     <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" v-model:asset="activeRow" />
     <HistoryDialog v-if="openHistory" v-model:open="openHistory" v-model:asset="activeRow" />
 
+    <AlertDialog v-if="openDelete" v-model:open="openDelete">
+
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro de que deseas eliminar este equipo?</AlertDialogTitle>
+                <AlertDialogDescription>
+
+                    Esta acción no se puede deshacer. El equipo será eliminado permanentemente del sistema, incluyendo
+                    todos
+                    sus registros asociados ( asignaciones, historial de cambios de estado, etc. ).
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction @click="
+                    router.delete(`
+                     /assets/${activeRow?.id}
+                    `, {
+                        only: ['assetsPaginated', 'stats'],
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            activeRow = null;
+                            openDelete = false;
+                        }
+                    });
+                ">Continuar</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
 
 </template>
 
@@ -463,6 +497,17 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from '@/components/ui/command';
 
 import { valueUpdater } from '@/lib/utils';
@@ -478,7 +523,7 @@ import type { Department } from '@/interfaces/department.interace';
 import type { BasicUserInfo } from '@/interfaces/user.interface';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { format, isAfter, isEqual, parseISO } from 'date-fns';
+import { format, isAfter, isEqual, isSameDay, parseISO, startOfDay } from 'date-fns';
 import { Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, ChevronsUpDown, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
 
@@ -508,6 +553,7 @@ const openAssign = ref(false);
 const openDevolution = ref(false);
 const openHistory = ref(false);
 const openInvoice = ref(false);
+const openDelete = ref(false);
 
 const sorting = ref<SortingState>([])
 
@@ -793,12 +839,10 @@ const columns: ColumnDef<Asset>[] = [
 ]
 
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
-    const endDate = parseISO(warrantyEndDate.split('T')[0])
-    const today = new Date()
-    const todayDateOnly = parseISO(today.toISOString().split('T')[0])
-
-    return isAfter(endDate, todayDateOnly) || isEqual(endDate, todayDateOnly)
-}
+  const endDate = startOfDay(new Date(warrantyEndDate));
+  const today = startOfDay(new Date());
+  return isAfter(endDate, today) || isSameDay(endDate, today);
+};
 
 const expanded = ref<ExpandedState>({})
 
@@ -820,6 +864,6 @@ const table = useVueTable({
         get sorting() { return sorting.value },
         get expanded() { return expanded.value },
     },
-
 })
+
 </script>

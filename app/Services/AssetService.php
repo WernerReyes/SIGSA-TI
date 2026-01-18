@@ -86,7 +86,7 @@ class AssetService
     //         throw new InternalErrorException('Error al buscar el tipo de activo');
     //     }
     // }
-    
+
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
@@ -264,7 +264,7 @@ class AssetService
     }
 
     public function getHistoriesPaginated(Asset $asset, AssetHistoryFiltersDto $filtersDto)
-    {   
+    {
         try {
             return $asset->histories()
                 ->with('performer:staff_id,firstname,lastname', 'deliveryRecord:id,file_path')
@@ -503,6 +503,21 @@ class AssetService
         ];
 
         return $mapping[$status] ?? $status;
+    }
+
+
+    public function deleteAsset(Asset $asset)
+    {
+        if ($asset->status !== AssetStatus::AVAILABLE->value) {
+            throw new BadRequestException('Solo se pueden eliminar equipos disponibles');
+        }
+
+        try {
+            $asset->delete();
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            throw new InternalErrorException('Error al eliminar el activo');
+        }
     }
 
 
@@ -759,11 +774,7 @@ class AssetService
                     'related_assignment_id' => $assigned->id,
                 ]);
 
-
-
-
                 return $assigned;
-
 
             });
             return $assignment;
@@ -772,15 +783,17 @@ class AssetService
                 throw $e;
             }
 
+            ds($e->getMessage());
+
             throw new InternalErrorException('Error al asignar el activo');
         }
     }
 
-    public function devolveAsset(DevolveAssetDto $dto)
+    public function devolveAsset( AssetAssignment $assignment, DevolveAssetDto $dto)
     {
         try {
-            DB::transaction(function () use ($dto) {
-                if ($dto->assignment->returned_at) {
+            // DB::transaction(function () use ($assignment, $dto) {
+                if ($assignment->returned_at) {
                     throw new BadRequestException('La asignación ya ha sido devuelta.');
                 }
 
@@ -793,23 +806,23 @@ class AssetService
                     throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
                 }
 
-                DB::transaction(function () use ($dto) {
+                DB::transaction(function () use ($dto, $assignment) {
+                    Asset::where('id', $assignment->asset_id)->update([
+                        'status' => AssetStatus::AVAILABLE->value,
+                    ]);
 
-                    AssetAssignment::where('id', $dto->assignment->id)->update([
+                    $assignment->update([
                         'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                         'return_comment' => $dto->return_comment,
                         'responsible_id' => $dto->responsible_id,
                         'return_reason' => $dto->return_reason,
                     ]);
 
-                    Asset::where('id', $dto->assignment->asset_id)->update([
-                        'status' => AssetStatus::AVAILABLE->value,
-                    ]);
 
                     // Return accessories if any
-                    $childAssignments = $dto->assignment->childrenAssignments()->select('id', 'asset_id')->get();
+                    $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
                     if (!$childAssignments->isEmpty()) {
-                        $asset = $dto->assignment->asset;
+                        $asset = $assignment->asset;
                         AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
                             'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                             'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
@@ -824,17 +837,19 @@ class AssetService
 
                     AssetHistory::create([
                         'action' => AssetHistoryAction::RETURNED->value,
-                        'description' => "Equipo devuelto por {$dto->assignment->assignedTo->full_name} por motivo: " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
-                        'asset_id' => $dto->assignment->asset_id,
+                        'description' => "Equipo devuelto por {$assignment->assignedTo->full_name} por motivo: " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
+                        'asset_id' => $assignment->asset_id,
                         'performed_by' => auth()->user()->staff_id,
                         'performed_at' => now(),
-                        'related_assignment_id' => $dto->assignment->id,
+                        'related_assignment_id' => $assignment->id,
                     ]);
 
                 });
 
-            });
+            // });
         } catch (\Exception $e) {
+            ds($e->getMessage());
+
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
@@ -1014,7 +1029,12 @@ class AssetService
             $dayMonth = $assignment->returned_at->translatedFormat('d \d\e F');
             $year = $assignment->returned_at->translatedFormat('Y');
 
-            $template->setValue('type', strtoupper($asset->type->name));
+            $type = $asset->type->name;
+            if ($type === 'Accesorio') {
+                $type = 'Accesorio de ' . $asset->name;
+            }
+
+            $template->setValue('type', strtoupper($type));
             $template->setValue('hour', $hour);
             $template->setValue('day_month', $dayMonth);
             $template->setValue('year', $year);

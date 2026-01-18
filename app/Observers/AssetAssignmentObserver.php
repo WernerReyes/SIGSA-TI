@@ -2,31 +2,17 @@
 
 namespace App\Observers;
 
-use App\Enums\Asset\AssetStatus;
-use App\Events\AccessoryOutOfStock;
-use App\Models\Asset;
+
 use App\Models\AssetAssignment;
+use App\Services\AccessoryOutOfStockAlertService;
 
 class AssetAssignmentObserver
 {
-    /**
-     * Handle the AssetAssignment "created" event.
-     */
-
-    private function existsAvailableAccessories(): bool
-    {
-        return Asset::where('status', AssetStatus::AVAILABLE)
-            ->whereHas('type', function ($query) {
-                $query->where('name', 'Accesorio');
-            })
-            ->exists();
-    }
+    
 
     public function created(AssetAssignment $assignment)
     {
-        if (!$this->existsAvailableAccessories()) {
-            event(new AccessoryOutOfStock());
-        }
+        app(AccessoryOutOfStockAlertService::class)->check();
 
     }
 
@@ -35,10 +21,8 @@ class AssetAssignmentObserver
      */
     public function updated(AssetAssignment $assetAssignment): void
     {
-        //
-        if (!$this->existsAvailableAccessories()) {
-            event(new AccessoryOutOfStock());
-        }
+        ds('AssetAssignment updated observer triggered');
+        app(AccessoryOutOfStockAlertService::class)->check();
     }
 
     /**
@@ -46,10 +30,7 @@ class AssetAssignmentObserver
      */
     public function deleted(AssetAssignment $assetAssignment): void
     {
-        //
-        if (!$this->existsAvailableAccessories()) {
-            event(new AccessoryOutOfStock());
-        }
+        app(AccessoryOutOfStockAlertService::class)->check();
     }
 
     /**
