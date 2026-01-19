@@ -350,20 +350,23 @@ import {
     TabsList,
     TabsTrigger
 } from '@/components/ui/tabs';
+import { useAsset } from '@/composables/useAsset';
 import { type Asset, statusOp } from '@/interfaces/asset.interface';
 import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { router } from '@inertiajs/vue3';
 import { format, isAfter, parseISO } from 'date-fns';
 import {
-    Calendar, Download, Eye, FileText, Laptop, Monitor, MonitorSmartphone, Shield, Upload, User, Sparkles,
-    History
+    Calendar, Download, Eye, FileText,
+    History,
+    Laptop, Monitor, MonitorSmartphone, Shield,
+    Sparkles,
+    Upload, User
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 import FileUpload from '../FileUpload.vue';
-import { useAsset } from '@/composables/useAsset';
 
 
 const asset = defineModel<Asset | null>('asset');

@@ -22,7 +22,6 @@ class AccessoryOutOfStockMail extends Mailable
 
     }
 
-
     private function getAccessories()
     {
         return Asset::
