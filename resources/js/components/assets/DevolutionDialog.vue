@@ -319,7 +319,7 @@ const { handleSubmit, errors } = useForm({
         returned_date: new CalendarDateTime(today(getLocalTimeZone()).year, today(getLocalTimeZone()).month, today(getLocalTimeZone()).day, time.hours, time.minutes, time.seconds),
         return_comment: '',
         return_reason: ReturnReason.EQUIPMENT_RENOVATION,
-        accessories: accessoriesToReturn.value.map(acc => acc.id),
+        // accessories: accessoriesToReturn.value.map(acc => acc.id),
     },
     validationSchema: formSchema,
     validateOnMount: false,
