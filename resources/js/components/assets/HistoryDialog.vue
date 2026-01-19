@@ -232,7 +232,6 @@
                                     </template>
 
                                     <template v-else-if="history.description.includes('con los accesorios')">
-                                        <!-- {{history.description.split(' junto con los accesorios:')}} -->
                                         {{parsedAccessories(history.description)}}
                                         <template v-for="(part, index) in history.description.split(' con los accesorios ')">
 
@@ -442,26 +441,6 @@ const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
         links: [],
     }) as Paginated<AssetHistory>;
 });
-// const parsedHistory = computed(() => {
-//   const text = history.description
-
-//   const separator = ' junto con los accesorios:'
-//   if (!text.includes(separator)) {
-//     return null
-//   }
-
-//   const [base, accessoriesRaw] = text.split(separator)
-
-//   const accessories = accessoriesRaw
-//     ?.split(',')
-//     .map(a => a.trim())
-//     .filter(Boolean)
-
-//   return {
-//     base,
-//     accessories,
-//   }
-// })
 
 const parsedAccessories = (description: string) => {
     const separator = ' junto con los accesorios:'
@@ -532,14 +511,6 @@ const getReturnReasonByDes = (des: string) => {
     return Object.values(returnReasonOptions).find(opt => opt.label.trim().toLowerCase() === des.trim().toLowerCase());
 };
 
-// const test = () => {
-// const texto = "Nombre cambiado de 'Otro mas7' a 'Otro a mas7e'";
-// const resultado = texto?.match(/'([^']+)'/g)?.map(s => s.replace(/'/g, ""));
-// console.log(resultado); // ["Otro mas7", "Otro a mas7e"]
-// };
 
-const getUpdatedNames = (description: string) => {
-    return description?.match(/'([^']+)'/g)?.map(s => s.replace(/'/g, ""));
-};
 
 </script>
