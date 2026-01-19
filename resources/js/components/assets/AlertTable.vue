@@ -21,7 +21,7 @@
           </tr>
         </thead>
        
-        <WhenVisible as="tbody" class="divide-y" data="accessoriesOutOfStockAlerts">
+        <WhenVisible as="tbody" class="divide-y" data="accessoriesOutOfStockAlert">
           <template #fallback>
             <tr v-for="n in 5" :key="n" class="animate-pulse">
               <td class="px-4 py-3">
@@ -135,7 +135,7 @@ import Countdown from '../Countdown.vue';
 const page = usePage();
 
 const alerts = computed<Alert[]>(() => {
-  return (page.props?.accessoriesOutOfStockAlerts || []) as Alert[];
+  return (page.props?.accessoriesOutOfStockAlert || []) as Alert[];
 });
 
 

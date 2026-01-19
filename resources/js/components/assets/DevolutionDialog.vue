@@ -6,32 +6,41 @@
 
         }
     }">
-        <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle>Devolver Equipo</DialogTitle>
+        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto space-y-5">
+            <DialogHeader class="space-y-3 pb-3 border-b">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
+                        <Undo2 class="size-6 text-primary" />
+                    </div>
+                    <div class="flex-1">
+                        <DialogTitle class="text-xl font-semibold">Devolver Equipo</DialogTitle>
+                        <p class="text-sm text-muted-foreground">Registra la devolución del activo y opcionalmente
+                            adjunta los accesorios.</p>
+                        <p v-if="asset"
+                            class="text-xs text-muted-foreground mt-1 inline-flex gap-2 items-center bg-muted px-2 py-1 rounded-md">
+                            <span class="font-mono">AST-{{ asset?.id }}</span>
+                            <span class="text-foreground">·</span>
+                            <span class="font-medium line-clamp-1">{{ asset?.name }}</span>
+                        </p>
+                    </div>
+                </div>
             </DialogHeader>
 
 
-            <div class="space-y-4 py-4 ">
-                <div class="p-3 bg-muted/50 rounded-lg">
-                    <p class="text-sm font-medium">{{ asset?.name }}</p>
-                    <p class="text-xs text-muted-foreground">AST-{{ asset?.id }}</p>
+            <div class="space-y-5 py-2">
 
 
-
-
-
-                </div>
-
-
-                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
+                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
+                    class="space-y-4 p-4 rounded-xl border bg-card/70">
+                    <!-- <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3"> -->
 
                     <FieldGroup>
                         <VeeField name="responsible_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="responsible_id">Responsable</FieldLabel>
                                 <Select v-bind="componentField">
-                                    <SelectTrigger id="responsible_id">
+                                    <SelectTrigger id="responsible_id" class="w-full">
                                         <SelectValue placeholder="Seleccionar responsable" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -39,7 +48,6 @@
                                         <WhenVisible data="TIUsers">
                                             <template #fallback>
                                                 <div class="flex flex-col gap-2 p-3">
-
                                                     <Skeleton v-for="n in 4" :key="n" class="h-6 w-full" />
                                                 </div>
                                             </template>
@@ -80,7 +88,6 @@
                                                 selection-mode="single" @update:model-value="(value) => {
                                                     if (value) {
                                                         onDateSelected(value, componentField)
-                                                        // componentField.onChange(value)
                                                         close()
                                                     }
                                                 }" />
@@ -106,26 +113,25 @@
                         <VeeField name="return_reason" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="return_reason">Motivo de Devolución</FieldLabel>
-                                <ButtonGroup class="w-full">
-                                    <Button type="button" class="w-11/12" variant="outline">
-
-                                        <component :is="returnReasonOp(componentField.modelValue).icon" />
+                                <div class="flex gap-2">
+                                    <Button type="button" class="flex-1 justify-start gap-2" variant="outline">
+                                        <component :is="returnReasonOp(componentField.modelValue).icon"
+                                            class="size-4" />
                                         {{ returnReasonOp(componentField.modelValue).label }}
                                     </Button>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger as-child>
-                                            <Button type="button" class="w-1/12" variant="outline" size="icon">
+                                            <Button type="button" class="w-12" variant="outline" size="icon">
                                                 <ChevronDownIcon />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" class="[--radius:1rem]">
+                                        <DropdownMenuContent align="end" class="[--radius:1rem] min-w-56">
                                             <DropdownMenuGroup>
                                                 <DropdownMenuItem v-for="option in returnReasonOptions"
-                                                    :key="option.value" @click="() => {
-
+                                                    :key="option.value" class="gap-2" @click="() => {
                                                         componentField.onChange(option.value)
                                                     }">
-                                                    <component :is="option.icon" />
+                                                    <component :is="option.icon" class="size-4" />
                                                     {{ option.label }}
                                                     <DropdownMenuShortcut
                                                         v-if="componentField.modelValue === option.value">
@@ -136,14 +142,14 @@
 
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </ButtonGroup>
+                                </div>
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
                     </FieldGroup>
 
 
-                    <FieldGroup v-if="accessoriesToReturn.length > 0">
+                    <!-- <FieldGroup v-if="accessoriesToReturn.length > 0">
                         <VeeField name="accessories" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios a Devolver</FieldLabel>
@@ -165,7 +171,7 @@
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
-                    </FieldGroup>
+                    </FieldGroup> -->
 
 
                     <FieldGroup>
@@ -183,11 +189,11 @@
             </div>
 
 
-            <DialogFooter>
-
+            <DialogFooter class="gap-2 pt-2 border-t">
+                <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0
-                    " type="submit" form="dialogForm">
+                    " type="submit" form="dialogForm" class="min-w-36">
                     <Spinner v-if="isSubmitting" />
                     {{ isSubmitting ? 'Devolviendo...' : 'Devolver Equipo' }}
                 </Button>
@@ -236,8 +242,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-
-import { ButtonGroup } from '@/components/ui/button-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
@@ -247,14 +251,15 @@ import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDateTime, DateValue, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
-import { Check, ChevronDownIcon, RefreshCcw } from 'lucide-vue-next';
+import { Check, ChevronDownIcon, Info, RefreshCcw, Undo2 } from 'lucide-vue-next';
 import { useAsset } from '@/composables/useAsset';
-import { Alert } from '../../interfaces/alert.interface';
+import { type Alert } from '@/interfaces/alert.interface';
 
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
+const page = usePage();
 const { downloadReturnAssignmentDocument } = useAsset();
 
 const time = reactive({
@@ -280,7 +285,7 @@ const accessoriesToReturn = computed<Asset[]>(() => {
 });
 
 const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
-    const alerts = (page.props?.accessoriesOutOfStockAlerts || []) as Alert[];
+    const alerts = (page.props?.accessoriesOutOfStockAlert || []) as Alert[];
     return alerts.length > 0;
 });
 
@@ -303,7 +308,7 @@ const formSchema = toTypedSchema(
             required_error: 'Seleccione un motivo de devolución',
             // errorMap: () => ({ message: 'Seleccione un motivo de devolución' }),
         }),
-        accessories: z.array(z.number()).optional(),
+        // accessories: z.array(z.number()).optional(),
         return_comment: z.string().optional(),
     })
 );
@@ -330,7 +335,7 @@ const onSubmit = async (values: Record<string, any>) => {
         return_date: values.returned_date,
         return_comment: values.return_comment,
         return_reason: values.return_reason,
-        accessories: values.accessories,
+        // accessories: values.accessories,
     }, {
         only: ['assetsPaginated', 'stats', 'accessories'],
         preserveScroll: true,
@@ -340,7 +345,7 @@ const onSubmit = async (values: Record<string, any>) => {
         onFlash: (flash) => {
             if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
                 router.reload({
-                    only: ['accessoriesOutOfStockAlerts'],
+                    only: ['accessoriesOutOfStockAlert'],
                 });
 
             }

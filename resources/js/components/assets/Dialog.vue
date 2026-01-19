@@ -11,27 +11,49 @@
                 Nuevo Activo
             </Button>
         </DialogTrigger>
-        <DialogContent class="sm:max-w-8/12 max-h-screen overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle class="flex items-center gap-2">
-                    <Laptop />
-                    {{ currentAsset ? 'Editar Activo' : 'Nuevo Activo' }}
-                </DialogTitle>
+        <DialogContent class="sm:max-w-4xl">
+            <DialogHeader class="space-y-3 pb-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Laptop class="size-5 text-primary" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <DialogTitle class="text-xl font-semibold">
+                            {{ currentAsset ? 'Editar Activo' : 'Crear Nuevo Activo' }}
+                        </DialogTitle>
+                        <p class="text-sm text-muted-foreground">
+                            {{ currentAsset ? 'Actualiza la información del activo' : 'Completa los datos del nuevo activo tecnológico' }}
+                        </p>
+                    </div>
+                </div>
             </DialogHeader>
 
             <form id="dialogForm" @submit.prevent=" 
                 handleSubmit(onSubmit)()
-                " class="space-y-3">
-                <!-- NOMBRE -->
-                <FieldGroup>
-                    <VeeField name="name" v-slot="{ componentField, errors }">
-                        <Field :data-invalid="!!errors.length">
-                            <FieldLabel for="name">Nombre</FieldLabel>
-                            <Input id="name" placeholder="EJ: Laptop de Desarrollo" v-bind="componentField" />
-                            <FieldError v-if="errors.length" :errors="errors" />
-                        </Field>
-                    </VeeField>
-                </FieldGroup>
+                " class="space-y-5 py-4 max-h-96 overflow-y-auto">
+                
+                <Accordion type="multiple" :default-value="['info', 'specs', 'dates']" class="w-full space-y-3">
+                    <!-- Sección: Información Básica -->
+                    <AccordionItem value="info" class="border rounded-lg px-4">
+                        <AccordionTrigger class="hover:no-underline">
+                            <div class="flex items-center gap-2">
+                                <div class="size-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                    <Laptop class="size-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <span class="font-semibold">Información Básica</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent force-mount class="space-y-4 pt-4">
+                            <!-- NOMBRE -->
+                            <FieldGroup>
+                                <VeeField name="name" v-slot="{ componentField, errors }">
+                                    <Field :data-invalid="!!errors.length">
+                                        <FieldLabel for="name">Nombre del Activo</FieldLabel>
+                                        <Input id="name" placeholder="EJ: Laptop de Desarrollo" v-bind="componentField" />
+                                        <FieldError v-if="errors.length" :errors="errors" />
+                                    </Field>
+                                </VeeField>
+                            </FieldGroup>
                 <div class="grid gap-4 items-center md:grid-cols-2">
                     <FieldGroup>
                         <VeeField name="type_id" v-slot="{ componentField, errors }">
@@ -120,19 +142,32 @@
                         </VeeField>
                     </FieldGroup>
                 </div>
+                        </AccordionContent>
+                    </AccordionItem>
 
-
-                <!-- <div class="grid gap-4 items-center"> -->
-                <div class="grid gap-4 items-center md:grid-cols-2">
-                    <FieldGroup>
-                        <VeeField name="serial_number" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="serial_number">Número de Serie</FieldLabel>
-                                <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
+                    <!-- Sección: Especificaciones Técnicas -->
+                    <AccordionItem value="specs" class="border rounded-lg px-4">
+                        <AccordionTrigger class="hover:no-underline">
+                            <div class="flex items-center gap-2">
+                                <div class="size-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                    </svg>
+                                </div>
+                                <span class="font-semibold">Especificaciones Técnicas</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent force-mount class="space-y-4 pt-4">
+                            <div class="grid gap-4 items-center md:grid-cols-2">
+                                <FieldGroup>
+                                    <VeeField name="serial_number" v-slot="{ componentField, errors }">
+                                        <Field :data-invalid="!!errors.length">
+                                            <FieldLabel for="serial_number">Número de Serie</FieldLabel>
+                                            <Input id="serial_number" placeholder="EJ: SN1234567890" v-bind="componentField" />
+                                            <FieldError v-if="errors.length" :errors="errors" />
+                                        </Field>
+                                    </VeeField>
+                                </FieldGroup>
 
                     <FieldGroup>
                         <VeeField name="processor" v-slot="{ componentField, errors }">
@@ -190,13 +225,28 @@
                         </VeeField>
                     </FieldGroup>
                 </div>
+                        </AccordionContent>
+                    </AccordionItem>
 
-                <div class="grid gap-4 items-center md:grid-cols-2">
+                    <!-- Sección: Fechas y Garantía -->
+                    <AccordionItem value="dates" class="border rounded-lg px-4">
+                        <AccordionTrigger class="hover:no-underline">
+                            <div class="flex items-center gap-2">
+                                <div class="size-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <span class="font-semibold">Fechas y Garantía</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent force-mount class="space-y-4 pt-4">
+                            <div class="grid gap-4 items-center md:grid-cols-2">
 
-                    <FieldGroup>
-                        <VeeField name="purchase_date" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="purchase_date">Fecha de Compra</FieldLabel>
+                                <FieldGroup>
+                                    <VeeField name="purchase_date" v-slot="{ componentField, errors }">
+                                        <Field :data-invalid="!!errors.length">
+                                            <FieldLabel for="purchase_date">Fecha de Compra</FieldLabel>
                                 <Popover v-slot="{ close }">
                                     <PopoverTrigger as-child>
                                         <Button variant="outline" class="w-48 justify-between font-normal">
@@ -268,14 +318,18 @@
                         </VeeField>
                     </FieldGroup>
                 </div>
+                        </AccordionContent>
+                    </AccordionItem>
+
+                </Accordion>
 
             </form>
 
-            <DialogFooter>
-
-                <Button :disabled="isSubmitting
-                    || Object.keys(errors).length > 0
-                    " type="submit" form="dialogForm">
+            <DialogFooter class="gap-2 pt-4 border-t">
+                <Button variant="outline" @click="() => { open = false; handleResetForm(); }" :disabled="isSubmitting">
+                    Cancelar
+                </Button>
+                <Button :disabled="isSubmitting || Object.keys(errors).length > 0" type="submit" form="dialogForm" class="min-w-32">
                     <Spinner v-if="isSubmitting" />
                     <template v-if="currentAsset">
                         {{ isSubmitting ? 'Actualizando...' : 'Actualizar Activo' }}
@@ -298,6 +352,12 @@ import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion'
 import {
     Dialog,
     DialogContent,
@@ -332,7 +392,7 @@ import { type Asset } from '@/interfaces/asset.interface'
 import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
 import { router, usePage, WhenVisible } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
-import { Laptop } from 'lucide-vue-next'
+import { ChevronDownIcon, Laptop } from 'lucide-vue-next'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import * as z from 'zod'

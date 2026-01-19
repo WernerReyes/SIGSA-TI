@@ -4,54 +4,91 @@
 
     <AppLayout :breadcrumbs="breadcrumbs">
 
+        <!-- Botón flotante de alerta -->
+        <Teleport to="body" v-if="generalAlert">
+            <!-- <div class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
+                <button
+                    class="relative flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-lg transition hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                    @click="showAlertPanel = !showAlertPanel"
+                    :aria-expanded="showAlertPanel"
+                    aria-label="Ver alerta de accesorios"
+                >
+                    <Bell class="size-5" />
+                    <span
+                        class="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-white text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 shadow"
+                    >!</span>
+                </button>
+
+                <div
+                    v-if="showAlertPanel"
+                    class="w-80 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-4 shadow-2xl"
+                >
+                    <div class="flex items-start gap-3">
+                        <div class="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 grid place-content-center">
+                            <AlertCircle class="size-5 text-slate-700 dark:text-slate-200" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Accesorios sin stock</p>
+                            <p class="text-sm text-slate-700 dark:text-slate-300 mt-1 line-clamp-2">
+                                {{ generalAlert?.message || 'Correo enviado a Ventas indicando faltante de accesorios.' }}
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Se notificó a Ventas para reabastecer.</p>
+                            <div class="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                                <span>Última notificación: 
+                                        {{ format(new Date(generalAlert?.last_notified_at), 'dd/MM/yyyy HH:mm') }}
+
+                                </span>
+                            </div>
+                            <div class="mt-2">
+                                <Badge :class="isAlertActive ? 'bg-slate-800 text-white' : 'bg-emerald-600 text-white'">
+                                    {{ isAlertActive ? 'Activa' : 'Resuelta' }}
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-end gap-2">
+                        <button class="px-3 py-1.5 text-xs rounded-md border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" @click="handleResendAlert" :disabled="!isAlertActive">Reenviar a Ventas</button>
+                        <button class="px-3 py-1.5 text-xs rounded-md bg-slate-800 text-white hover:bg-slate-900" @click="handleResolveAlert" :disabled="!isAlertActive">Marcar como resuelta</button>
+                    </div>
+                </div>
+            </div> -->
+            <AlertAccessoryOutStock  />
+        </Teleport>
+
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
             <Dialog includeButton v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
 
-            <!-- Tabs para cambiar entre Activos y Alertas -->
-            <div class="flex gap-2 border-b">
-                <button @click="activeTab = 'assets'" :class="[
-                    'px-4 py-2 font-medium transition border-b-2',
-                    activeTab === 'assets'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'
-                ]">
-                    Activos TI
-                </button>
-                <button @click="activeTab = 'alerts'" :class="[
-                    'px-4 py-2 font-medium transition border-b-2 flex items-center gap-2',
-                    activeTab === 'alerts'
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'
-                ]">
-                    <AlertCircle class="size-4" />
-                    Alertas de Accesorios
-                    <Badge v-if="unreadAlerts > 0" class="ml-1 bg-rose-500">{{ unreadAlerts }}</Badge>
-                </button>
-            </div>
-
-            <!-- Tab: Activos -->
-            <div v-show="activeTab === 'assets'" class="space-y-4">
+            <!-- Contenido principal -->
+            <div class="space-y-4">
                 <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <Card v-for="stat in statsView" :key="stat.label"
-                        class="rounded-xl border shadow-card transition hover:shadow-lg">
-                        <CardContent>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <div class="size-8 rounded-lg flex items-center justify-center" :class="stat.bg">
+                        class="group relative overflow-hidden rounded-xl border bg-lineal-to-br from-background via-background to-muted/40 shadow-card transition hover:-translate-y-0.5 hover:shadow-2xl">
+
+                        <div class="pointer-events-none absolute inset-0 opacity-50" :class="stat.bg"></div>
+                        <div class="pointer-events-none absolute inset-0 bg-lineal-to-br from-white/60 via-transparent to-white/10 dark:from-white/5"></div>
+
+                        <CardContent class="relative space-y-4 p-4 sm:p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-10 rounded-xl flex items-center justify-center ring-2 ring-white/40 shadow-sm"
+                                        :class="stat.bg">
                                         <component :is="stat.icon" class="size-5" :class="stat.color" />
                                     </div>
-                                    <CardTitle class="text-sm font-medium text-muted-foreground">
-                                        {{ stat.label }}
-                                    </CardTitle>
+                                    <div class="flex flex-col">
+                                        <CardTitle class="text-sm font-semibold text-foreground">
+                                            {{ stat.label }}
+                                        </CardTitle>
+                                        <span class="text-xs text-muted-foreground">Indicador actualizado</span>
+                                    </div>
                                 </div>
                                 <DropdownMenu v-if="stat.label === statusOp.label">
                                     <DropdownMenuTrigger as-child>
-                                        <button class="p-1 rounded-md hover:bg-muted transition">
+                                        <button class="p-1.5 rounded-lg hover:bg-muted transition" title="Cambiar estado">
                                             <EllipsisVertical class="size-4 text-muted-foreground" />
                                         </button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent class="w-40" align="end">
+                                    <DropdownMenuContent class="w-44" align="end">
                                         <DropdownMenuLabel>Estados</DropdownMenuLabel>
                                         <DropdownMenuItem v-for="option in Object.values(assetStatusOptions)"
                                             :key="option.value" @click="statusOp = option"
@@ -66,9 +103,10 @@
                                 </DropdownMenu>
                             </div>
                             <div class="flex items-end justify-between">
-                                <span class="text-3xl font-bold tracking-tight" :class="stat.color">
+                                <span class="text-4xl font-black leading-none tracking-tight" :class="stat.color">
                                     {{ stat.value }}
                                 </span>
+                                <span class="text-xs text-muted-foreground group-hover:text-foreground transition">Estadística</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -79,47 +117,7 @@
                 <DialogDetails v-model:open="openDetails" v-model:asset="currentAsset" />
             </div>
 
-            <!-- Tab: Alertas -->
-            <div v-show="activeTab === 'alerts'" class="space-y-4">
-                <div class="flex justify-between items-center">
-
-                    <div class="flex gap-2">
-                        <button @click="filterStatus = 'all'" :class="[
-                            'px-3 py-1 rounded-lg text-sm transition',
-                            filterStatus === 'all'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-muted hover:bg-muted/80'
-                        ]">
-                            Todas
-                        </button>
-                        <button @click="filterStatus = 'active'" :class="[
-                            'px-3 py-1 rounded-lg text-sm transition',
-                            filterStatus === 'active'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-muted hover:bg-muted/80'
-                        ]">
-                            Activas
-                        </button>
-                        <button @click="filterStatus = 'resolved'" :class="[
-                            'px-3 py-1 rounded-lg text-sm transition',
-                            filterStatus === 'resolved'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-muted hover:bg-muted/80'
-                        ]">
-                            Resueltas
-                        </button>
-                    </div>
-                </div>
-
-                <AlertsTable :alerts="filteredAlerts" @view-details="handleViewDetails"
-                    @mark-resolved="handleMarkResolved" @archive="handleArchive" />
-
-                <AlertDialog v-model:open="openAlertDetails" :alert="selectedAlert"
-                    @mark-resolved="handleMarkResolvedFromDialog" />
-            </div>
-
         </div>
-
     </AppLayout>
 </template>
 
@@ -127,84 +125,31 @@
 import Dialog from '@/components/assets/Dialog.vue';
 import DialogDetails from '@/components/assets/DialogDetails.vue';
 import Table from '@/components/assets/Table.vue';
-import AlertsTable from '@/components/assets/AlertTable.vue';
-import AlertDialog from '@/components/assets/AlertDialog.vue';
 import type { AssetStats, AssetStatusOption } from '@/interfaces/asset.interface';
 import { AssetStatus, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
 import type { Alert } from '@/interfaces/alert.interface';
 import { AlertStatus } from '@/interfaces/alert.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX, AlertCircle } from 'lucide-vue-next';
+import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX, AlertCircle, Bell } from 'lucide-vue-next';
+import { format } from 'date-fns';
+import AlertAccessoryOutStock from '@/components/assets/AlertAccessoryOutStock.vue';
 
 const { assetsPaginated, stats } = defineProps<{ assetsPaginated: Paginated<Asset>, stats: AssetStats }>();
 
 const currentAsset = ref<Asset | null>(null);
 const openDetails = ref(false);
 const openEditor = ref(false);
-const openAlertDetails = ref(false);
 const statusOp = ref<AssetStatusOption>(assetStatusOptions[AssetStatus.ASSIGNED]);
-const activeTab = ref<'assets' | 'alerts'>('assets');
-const filterStatus = ref<'all' | 'active' | 'resolved'>('all');
-const selectedAlert = ref<Alert | null>(null);
+const showAlertPanel = ref(false);
 
-// Datos de ejemplo para alertas
-const alerts = ref<Alert[]>([
-    {
-        id: 1,
-        entity_type: 'Accesorio',
-        entity_id: 1,
-        type: 'Stock Bajo',
-        message: 'Se notificó a ventas que el Mouse Logitech MX Master 3 se ha agotado',
-        status: AlertStatus.ACTIVE,
-        last_notified_at: '2026-01-18T10:30:00',
-        metadata: { product: 'Mouse Logitech MX Master 3', stock: 0, min_stock: 5 },
-        created_at: '2026-01-18T10:30:00',
-        updated_at: '2026-01-18T10:30:00',
-    },
-    {
-        id: 2,
-        entity_type: 'Accesorio',
-        entity_id: 2,
-        type: 'Stock Bajo',
-        message: 'Se notificó a ventas que el Teclado Mecánico Corsair K95 se ha agotado',
-        status: AlertStatus.ACTIVE,
-        last_notified_at: '2026-01-17T15:45:00',
-        metadata: { product: 'Teclado Mecánico Corsair K95', stock: 0, min_stock: 3 },
-        created_at: '2026-01-17T15:45:00',
-        updated_at: '2026-01-17T15:45:00',
-    },
-    {
-        id: 3,
-        entity_type: 'Accesorio',
-        entity_id: 3,
-        type: 'Stock Bajo',
-        message: 'Se notificó a ventas que los Cable USB-C se han agotado',
-        status: AlertStatus.RESOLVED,
-        last_notified_at: '2026-01-15T09:20:00',
-        metadata: { product: 'Cable USB-C', stock: 0, min_stock: 10 },
-        created_at: '2026-01-15T09:20:00',
-        updated_at: '2026-01-16T14:30:00',
-    },
-    {
-        id: 4,
-        entity_type: 'Accesorio',
-        entity_id: 4,
-        type: 'Stock Bajo',
-        message: 'Se notificó a ventas que el Monitor Dell UltraWide se ha agotado',
-        status: AlertStatus.ACTIVE,
-        last_notified_at: '2026-01-18T08:15:00',
-        metadata: { product: 'Monitor Dell UltraWide 34"', stock: 0, min_stock: 2 },
-        created_at: '2026-01-18T08:15:00',
-        updated_at: '2026-01-18T08:15:00',
-    },
-]);
+// Alerta general a partir de props
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -213,14 +158,33 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const unreadAlerts = computed(() =>
-    alerts.value.filter(a => a.status === AlertStatus.ACTIVE).length
-);
-
-const filteredAlerts = computed(() => {
-    if (filterStatus.value === 'all') return alerts.value;
-    return alerts.value.filter(a => a.status === filterStatus.value);
+const generalAlert = computed(() => {
+    const p = usePage().props as any;
+    return (p.accessoriesOutOfStockAlert || null) as Alert | null;
 });
+
+const isAlertActive = computed(() => generalAlert.value?.status === AlertStatus.ACTIVE);
+
+const handleResendAlert = () => {
+    if (!generalAlert.value) return;
+    router.post('/alerts/resend', { alert_id: generalAlert.value.id }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            router.reload({ only: ['accessoriesOutOfStockAlert'] });
+        }
+    });
+};
+
+const handleResolveAlert = () => {
+    if (!generalAlert.value) return;
+    router.post('/alerts/resolve', { alert_id: generalAlert.value.id }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showAlertPanel.value = false;
+            router.reload({ only: ['accessoriesOutOfStockAlert', 'stats'] });
+        }
+    });
+};
 
 const statsView = computed(() => [
     {
@@ -253,31 +217,5 @@ const statsView = computed(() => [
     },
 ]);
 
-const handleViewDetails = (alert: Alert) => {
-    selectedAlert.value = alert;
-    openAlertDetails.value = true;
-};
 
-const handleMarkResolved = (alert: Alert) => {
-    const index = alerts.value.findIndex(a => a.id === alert.id);
-    if (index !== -1) {
-        alerts.value[index].status = AlertStatus.RESOLVED;
-        alerts.value[index].updated_at = new Date().toISOString();
-    }
-};
-
-const handleMarkResolvedFromDialog = () => {
-    if (selectedAlert.value) {
-        handleMarkResolved(selectedAlert.value);
-        openAlertDetails.value = false;
-    }
-};
-
-const handleArchive = (alert: Alert) => {
-    const index = alerts.value.findIndex(a => a.id === alert.id);
-    if (index !== -1) {
-        alerts.value[index].status = AlertStatus.ARCHIVED;
-        alerts.value[index].updated_at = new Date().toISOString();
-    }
-};
 </script>

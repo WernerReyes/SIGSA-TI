@@ -1,403 +1,420 @@
 <template>
 
-    <div class="flex max-md:flex-col gap-4 items-center p-4 ">
-        <Input class="max-w-sm" placeholder="Buscar activos..." v-model="form.search" />
-
-        <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap">
-            <Popover v-model:open="openUserSelect">
-                <PopoverTrigger as-child>
-                    <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
-                        class="w-fit justify-between ">
-
-                        <span class="relative flex size-2" v-if="form.assigned_to.length > 0">
-                            <span
-                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                        </span>
-
-                        Empleados
-                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent class="w-full p-0">
-                    <Command>
-                        <!-- <div class="flex"> -->
-
-                        <CommandInput placeholder="Buscar empleado..." class="w-full" />
-
-                        <CommandShortcut :disable="isLoading || !form.assigned_to?.length" @click="() => {
-                            if (!form.assigned_to?.length) return;
-                            form.assigned_to = []
-
-                        }" class="w-full justify-center gap-2  flex items-center p-2"
-                            :class="isLoading || !form.assigned_to?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                            Refrescar lista
+    <div class="space-y-4">
+        <div class="rounded-xl border bg-linear-to-br from-muted/40 via-background to-background shadow-sm">
+            <div class="flex max-md:flex-col gap-4 items-start p-4">
+                <div class="flex flex-col gap-2 w-full max-w-xl">
+                    <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Activos</p>
+                    <div class="flex items-center gap-2">
+                        <Input class="w-full" placeholder="Buscar activos..." v-model="form.search" />
+                        <Button variant="ghost" size="icon" :disabled="isLoading || !hasFilters"
+                            class="rounded-full" @click="resetFilters">
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
+                        </Button>
+                    </div>
+                    <div v-if="hasFilters"
+                        class="flex flex-wrap gap-2 text-xs text-muted-foreground items-center animate-in fade-in-50">
+                        <Badge variant="outline" class="rounded-full">{{ filterCount }} filtros activos</Badge>
+                        <Badge v-if="form.search" variant="secondary" class="rounded-full">Texto</Badge>
+                        <Badge v-if="form.assigned_to.length" variant="secondary" class="rounded-full">Empleados</Badge>
+                        <Badge v-if="form.department_id.length" variant="secondary" class="rounded-full">Departamentos</Badge>
+                        <Badge v-if="form.types.length" variant="secondary" class="rounded-full">Tipos</Badge>
+                        <Badge v-if="form.status.length" variant="secondary" class="rounded-full">Estados</Badge>
+                    </div>
+                </div>
 
-                        </CommandShortcut>
-                        <!-- </div> -->
-                        <CommandList>
-                            <WhenVisible data="users">
-                                <template #fallback>
+                <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap justify-end">
+                    <Popover v-model:open="openUserSelect">
+                        <PopoverTrigger as-child>
+                            <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
+                                class="w-fit justify-between">
+
+                                <span class="relative flex size-2" v-if="form.assigned_to.length > 0">
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                                </span>
+
+                                Empleados
+                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                            <Command>
+
+                                <CommandInput placeholder="Buscar empleado..." class="w-full" />
+
+                                <CommandShortcut :disable="isLoading || !form.assigned_to?.length" @click="() => {
+                                    if (!form.assigned_to?.length) return;
+                                    form.assigned_to = []
+
+                                }" class="w-full justify-center gap-2  flex items-center p-2"
+                                    :class="isLoading || !form.assigned_to?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                                    Refrescar lista
+                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
+
+                                </CommandShortcut>
+
+                                <CommandList>
+                                    <WhenVisible data="users">
+                                        <template #fallback>
+                                            <CommandGroup>
+                                                <CommandItem v-for="n in 5" :key="n" value="loading">
+                                                    <Skeleton class="h-4 w-full" />
+                                                </CommandItem>
+                                            </CommandGroup>
+                                        </template>
+
+                                        <CommandEmpty>Empleado no encontrado</CommandEmpty>
+
+                                        <CommandGroup>
+                                            <CommandItem v-for="user in users" :key="user.staff_id || 'user-none'"
+                                                :value="user.staff_id" @select="() => {
+                                                    if (form.assigned_to.includes(user.staff_id)) {
+                                                        form.assigned_to = form.assigned_to.filter(id => id !== user.staff_id)
+                                                    } else {
+                                                        form.assigned_to = [...form.assigned_to, user.staff_id]
+                                                    }
+                                                }">
+                                                {{ user.full_name }}
+                                                <Check v-if="form.assigned_to.includes(user.staff_id)" class="ml-auto size-4" />
+                                            </CommandItem>
+                                        </CommandGroup>
+                                    </WhenVisible>
+                                </CommandList>
+
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+
+                    <Popover v-model:open="openDepartmentSelect">
+                        <PopoverTrigger as-child>
+                            <Button variant="outline" role="combobox" :aria-expanded="openDepartmentSelect"
+                                class="w-fit justify-between">
+
+                                <span class="relative flex size-2" v-if="form.department_id.length > 0">
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                                </span>
+
+                                Departamentos
+                                <ChevronsUpDown class="ml-2 size shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                            <Command>
+
+                                <CommandInput placeholder="Buscar departamento..." class="w-full" />
+
+
+
+                                <CommandShortcut :disable="isLoading || !form.department_id?.length" @click="() => {
+                                    if (isLoading || !form.department_id?.length) return;
+                                    form.department_id = []
+                                }" class="w-full justify-center gap-2  flex items-center p-2"
+                                    :class="isLoading || !form.department_id?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                                    Refrescar lista
+                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
+
+                                </CommandShortcut>
+
+                                <CommandList>
+                                    <WhenVisible data="departments">
+
+                                        <template #fallback>
+                                            <CommandGroup>
+                                                <CommandItem v-for="n in 5" :key="n" value="loading">
+                                                    <Skeleton class="h-4 w-full" />
+                                                </CommandItem>
+                                            </CommandGroup>
+                                        </template>
+
+
+
+                                        <CommandEmpty>Departamento no encontrado</CommandEmpty>
+                                        <CommandGroup>
+
+                                            <CommandItem v-for="department in departments" :key="department.id"
+                                                :value="department.id" @select="() => {
+                                                    if (form.department_id.includes(department.id)) {
+                                                        form.department_id = [...form.department_id.filter(id => id !== department.id)];
+                                                    } else {
+                                                        form.department_id = [...form.department_id, department.id];
+                                                    }
+                                                }">
+
+                                                {{ department.name }}
+                                                <Check v-if="form.department_id.includes(department.id)" class="ml-auto size" />
+                                            </CommandItem>
+                                        </CommandGroup>
+
+
+                                    </WhenVisible>
+                                </CommandList>
+
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+
+                    <Popover v-model:open="openAssetTypeSelect">
+                        <PopoverTrigger as-child>
+                            <Button variant="outline" role="combobox" :aria-expanded="openAssetTypeSelect"
+                                class="w-fit justify-between">
+
+                                <span class="relative flex size-2" v-if="form.types.length > 0">
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                                </span>
+
+                                Tipos
+                                <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                            <Command>
+
+                                <CommandShortcut :disable="isLoading || !form.types?.length" @click="() => {
+                                    if (isLoading || !form.types?.length) return;
+                                    form.types = []
+
+                                }" class="w-full justify-center gap-2  flex items-center p-2"
+                                    :class="isLoading || !form.types?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                                    Refrescar lista
+                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
+
+                                </CommandShortcut>
+
+                                <CommandList>
+
+                                    <WhenVisible data="types">
+                                        <template #fallback>
+                                            <CommandGroup>
+                                                <CommandItem v-for="n in 5" :key="n" value="loading">
+                                                    <Skeleton class="h-4 w-full" />
+                                                </CommandItem>
+                                            </CommandGroup>
+                                        </template>
+
+                                        <CommandEmpty>Tipo no encontrado</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem v-for="assetType in types" :key="assetType.id" :value="assetType.id"
+                                                @select="() => {
+
+                                                    if (form.types.includes(assetType.id)) {
+                                                        form.types = [...form.types.filter(id => id !== assetType.id)];
+                                                    } else {
+                                                        form.types = [...form.types, assetType.id];
+                                                    }
+                                                }">
+                                                <component :is="assetTypeOp(assetType.name)?.icon" class="size-4" />
+                                                {{ assetType.name }}
+                                                <Check v-if="form.types.includes(assetType.id)" class="ml-auto h-4 w-4" />
+                                            </CommandItem>
+                                        </CommandGroup>
+                                    </WhenVisible>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+
+                    <Popover v-model:open="openStatusSelect">
+                        <PopoverTrigger as-child>
+                            <Button variant="outline" role="combobox" :aria-expanded="openStatusSelect"
+                                class="w-fit justify-between">
+
+                                <span class="relative flex size-2" v-if="form.status.length > 0">
+                                    <span
+                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
+                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
+                                </span>
+
+                                Estados
+                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                            <Command>
+                                <CommandShortcut :disable="isLoading || !form.status?.length" @click="() => {
+                                    if (isLoading || !form.status?.length) return;
+                                    form.status = []
+                                }" class="w-full justify-center gap-2  flex items-center p-2"
+                                    :class="isLoading || !form.status?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                                    Refrescar lista
+                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
+
+                                </CommandShortcut>
+                                <CommandList>
+                                    <CommandEmpty>Estado no encontrado</CommandEmpty>
                                     <CommandGroup>
-                                        <CommandItem v-for="n in 5" :key="n" value="loading">
-                                            <Skeleton class="h-4 w-full" />
+
+                                        <CommandItem v-for="status in Object.values(assetStatusOptions)" :key="status.value"
+                                            :value="status.value" @select="() => {
+                                                if (form.status.includes(status.value)) {
+                                                    form.status = [...form.status.filter(id => id !== status.value)];
+                                                } else {
+                                                    form.status = [...form.status, status.value];
+                                                }
+                                            }">
+                                            <Badge :class="status.bg">
+                                                <component :is="status.icon" class="size-4" />
+                                                {{ status.label }}
+                                            </Badge>
+                                            <Check v-if="form.status.includes(status.value)" class="ml-auto h-4 w-4" />
+
                                         </CommandItem>
                                     </CommandGroup>
-                                </template>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button variant="outline" class="ml-auto">
+                                Columnas
+                                <ChevronDown class="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
 
-                                <CommandEmpty>Empleado no encontrado</CommandEmpty>
-
-                                <CommandGroup>
-                                    <CommandItem v-for="user in users" :key="user.staff_id || 'user-none'"
-                                        :value="user.staff_id" @select="() => {
-                                            if (form.assigned_to.includes(user.staff_id)) {
-                                                form.assigned_to = form.assigned_to.filter(id => id !== user.staff_id)
-                                            } else {
-                                                form.assigned_to = [...form.assigned_to, user.staff_id]
-                                            }
-                                        }">
-                                        {{ user.full_name }}
-                                        <Check v-if="form.assigned_to.includes(user.staff_id)" class="ml-auto size-4" />
-                                    </CommandItem>
-                                </CommandGroup>
-                            </WhenVisible>
-                        </CommandList>
-
-                    </Command>
-                </PopoverContent>
-            </Popover>
-
-            <Popover v-model:open="openDepartmentSelect">
-                <PopoverTrigger as-child>
-                    <Button variant="outline" role="combobox" :aria-expanded="openDepartmentSelect"
-                        class="w-fit justify-between">
-
-                        <span class="relative flex size-2" v-if="form.department_id.length > 0">
-                            <span
-                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                        </span>
-
-                        Departamentos
-                        <ChevronsUpDown class="ml-2 size shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent class="w-full p-0">
-                    <Command>
-                        <!-- <div class="flex"> -->
-
-                        <CommandInput placeholder="Buscar departamento..." class="w-full" />
-
-
-
-                        <CommandShortcut :disable="isLoading || !form.department_id?.length" @click="() => {
-                            if (isLoading || !form.department_id?.length) return;
-                            form.department_id = []
-                            // selectDepartmentId = null;
-                        }" class="w-full justify-center gap-2  flex items-center p-2"
-                            :class="isLoading || !form.department_id?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                            Refrescar lista
-                            <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                        </CommandShortcut>
-                        <!-- </div> -->
-                        <CommandList>
-                            <WhenVisible data="departments">
-
-                                <template #fallback>
-                                    <CommandGroup>
-                                        <CommandItem v-for="n in 5" :key="n" value="loading">
-                                            <Skeleton class="h-4 w-full" />
-                                        </CommandItem>
-                                    </CommandGroup>
-                                </template>
-
-
-
-                                <CommandEmpty>Departamento no encontrado</CommandEmpty>
-                                <CommandGroup>
-
-                                    <CommandItem v-for="department in departments" :key="department.id"
-                                        :value="department.id" @select="() => {
-                                            // selectDepartmentId = department.id;
-                                            if (form.department_id.includes(department.id)) {
-                                                form.department_id = [...form.department_id.filter(id => id !== department.id)];
-                                            } else {
-                                                form.department_id = [...form.department_id, department.id];
-                                            }
-                                        }">
-
-                                        {{ department.name }}
-                                        <Check v-if="form.department_id.includes(department.id)" class="ml-auto size" />
-                                    </CommandItem>
-                                </CommandGroup>
-
-
-                            </WhenVisible>
-                        </CommandList>
-
-                    </Command>
-                </PopoverContent>
-            </Popover>
-
-            <Popover v-model:open="openAssetTypeSelect">
-                <PopoverTrigger as-child>
-                    <Button variant="outline" role="combobox" :aria-expanded="openAssetTypeSelect"
-                        class="w-fit justify-between">
-
-                        <span class="relative flex size-2" v-if="form.types.length > 0">
-                            <span
-                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                        </span>
-
-                        Tipos
-                        <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent class="w-full p-0">
-                    <Command>
-
-                        <CommandShortcut :disable="isLoading || !form.types?.length" @click="() => {
-                            if (isLoading || !form.types?.length) return;
-                            form.types = []
-
-                        }" class="w-full justify-center gap-2  flex items-center p-2"
-                            :class="isLoading || !form.types?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                            Refrescar lista
-                            <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                        </CommandShortcut>
-
-                        <CommandList>
-
-                            <WhenVisible data="types">
-                                <template #fallback>
-                                    <CommandGroup>
-                                        <CommandItem v-for="n in 5" :key="n" value="loading">
-                                            <Skeleton class="h-4 w-full" />
-                                        </CommandItem>
-                                    </CommandGroup>
-                                </template>
-
-                                <CommandEmpty>Tipo no encontrado</CommandEmpty>
-                                <CommandGroup>
-                                    <CommandItem v-for="assetType in types" :key="assetType.id" :value="assetType.id"
-                                        @select="() => {
-
-                                            if (form.types.includes(assetType.id)) {
-                                                form.types = [...form.types.filter(id => id !== assetType.id)];
-                                            } else {
-                                                form.types = [...form.types, assetType.id];
-                                            }
-                                        }">
-                                        <component :is="assetTypeOp(assetType.name)?.icon" class="size-4" />
-                                        {{ assetType.name }}
-                                        <Check v-if="form.types.includes(assetType.id)" class="ml-auto h-4 w-4" />
-                                    </CommandItem>
-                                </CommandGroup>
-                            </WhenVisible>
-                        </CommandList>
-                    </Command>
-                </PopoverContent>
-            </Popover>
-
-            <Popover v-model:open="openStatusSelect">
-                <PopoverTrigger as-child>
-                    <Button variant="outline" role="combobox" :aria-expanded="openStatusSelect"
-                        class="w-fit justify-between">
-
-                        <span class="relative flex size-2" v-if="form.status.length > 0">
-                            <span
-                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                            <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                        </span>
-
-                        Estados
-                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent class="w-full p-0">
-                    <Command>
-                        <CommandShortcut :disable="isLoading || !form.status?.length" @click="() => {
-                            if (isLoading || !form.status?.length) return;
-                            form.status = []
-                        }" class="w-full justify-center gap-2  flex items-center p-2"
-                            :class="isLoading || !form.status?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                            Refrescar lista
-                            <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                        </CommandShortcut>
-                        <!-- </div> -->
-                        <CommandList>
-                            <CommandEmpty>Estado no encontrado</CommandEmpty>
-                            <CommandGroup>
-
-                                <CommandItem v-for="status in Object.values(assetStatusOptions)" :key="status.value"
-                                    :value="status.value" @select="() => {
-                                        // selectAssetTypeId = assetType.id;
-                                        if (form.status.includes(status.value)) {
-                                            form.status = [...form.status.filter(id => id !== status.value)];
-                                        } else {
-                                            form.status = [...form.status, status.value];
-                                        }
-                                    }">
-                                    <Badge :class="status.bg">
-                                        <component :is="status.icon" class="size-4" />
-                                        {{ status.label }}
-                                    </Badge>
-                                    <Check v-if="form.status.includes(status.value)" class="ml-auto h-4 w-4" />
-
-                                </CommandItem>
-                            </CommandGroup>
-                        </CommandList>
-                    </Command>
-                </PopoverContent>
-            </Popover>
-            <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                    <Button variant="outline" class="ml-auto">
-                        Columnas
-                        <ChevronDown class="ml-2 h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-
-                    <DropdownMenuCheckboxItem :disabled="isLoading"
-                        v-for="column in table.getAllColumns().filter((column) => column.getCanHide())" :key="column.id"
-                        class="capitalize" :model-value="column.getIsVisible()"
-                        @update:model-value="column.toggleVisibility()">
-                        {{ column.columnDef.header }}
-                    </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                            <DropdownMenuCheckboxItem :disabled="isLoading"
+                                v-for="column in table.getAllColumns().filter((column) => column.getCanHide())" :key="column.id"
+                                class="capitalize" :model-value="column.getIsVisible()"
+                                @update:model-value="column.toggleVisibility()">
+                                {{ column.columnDef.header }}
+                            </DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
         </div>
-    </div>
 
 
-    <div class="border rounded-md">
+        <div class="rounded-xl border bg-card/70 shadow-sm backdrop-blur overflow-hidden">
 
-        <Table>
-            <TableHeader>
-                <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                    <TableHead class="pl-5" v-for="header in headerGroup.headers" :key="header.id" :style="{
-                        width: header.getSize() + 'px'
-                    }">
-                        <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                            :props="header.getContext()" />
-                    </TableHead>
-                </TableRow>
-            </TableHeader>
-            <template v-if="table.getRowModel().rows?.length">
+            <div class="overflow-x-auto">
+                <Table class="min-w-full">
+                    <TableHeader class="bg-muted/70 backdrop-blur sticky top-0 z-10">
+                        <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                            <TableHead class="pl-5 uppercase text-[11px] tracking-wide text-muted-foreground" v-for="header in headerGroup.headers" :key="header.id" :style="{
+                                width: header.getSize() + 'px'
+                            }">
+                                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                                    :props="header.getContext()" />
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <template v-if="table.getRowModel().rows?.length">
 
-                <ContextMenu>
-                    <ContextMenuTrigger as-child>
+                        <ContextMenu>
+                            <ContextMenuTrigger as-child>
+                                <TableBody>
+                                    <TableRow @contextmenu="() => {
+                                        activeRow = row.original
+                                    }" :key="row.id" v-for="row in table.getRowModel().rows"
+                                        :data-state="row.getIsSelected() ? 'selected' : undefined"
+                                        class="cursor-context-menu transition hover:bg-muted/60 odd:bg-muted/30">
+                                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="pl-5 align-middle"
+                                            :style="{ width: cell.column.getSize() + 'px' }">
+                                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+
+                            </ContextMenuTrigger>
+
+                            <ContextMenuContent class="w-52">
+
+                                <ContextMenuItem @click="handleOpenDetails()">
+                                    <Eye />
+                                    Ver detalle
+                                </ContextMenuItem>
+                                <ContextMenuItem @click="openEdit = true">
+                                    <Pencil />
+                                    Editar
+                                </ContextMenuItem>
+                                <ContextMenuItem @click="changeStatus = true">
+                                    <Pencil />
+                                    Cambiar estado
+                                </ContextMenuItem>
+
+                                <ContextMenuItem @click="openInvoice = true">
+                                    <UploadCloud />
+                                    Cargar factura
+                                </ContextMenuItem>
+
+
+                                <ContextMenuItem
+                                    :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow!.status)"
+                                    @click="openAssign = true">
+                                    <MonitorSmartphone />
+                                    Asignar
+                                </ContextMenuItem>
+                                <ContextMenuItem :disabled="!activeRow?.current_assignment" @click="openDevolution = true">
+                                    <MonitorSmartphone />
+                                    Devolver
+                                </ContextMenuItem>
+                                <ContextMenuItem @click="handleOpenHistories()">
+                                    <History />
+                                    Ver historial
+                                </ContextMenuItem>
+                                <ContextMenuItem @click="openDelete = true"
+                                    :disabled="AssetStatus.AVAILABLE !== activeRow?.status">
+                                    <X />
+                                    Eliminar
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
+                    </template>
+
+                    <template v-else>
                         <TableBody>
-                            <TableRow @contextmenu="() => {
-                                activeRow = row.original
-                            }" :key="row.id" v-for="row in table.getRowModel().rows"
-                                :data-state="row.getIsSelected() ? 'selected' : undefined" class="cursor-context-menu">
-                                <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="pl-5"
-                                    :style="{ width: cell.column.getSize() + 'px' }">
-                                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                            <TableRow>
+                                <TableCell :colspan="columns.length" class="text-center">
+
+                                    <Empty class="p-6">
+                                        <EmptyHeader>
+                                            <EmptyMedia variant="icon">
+                                                <MonitorSmartphone />
+                                            </EmptyMedia>
+                                            <EmptyTitle>
+                                                Sin resultados
+                                            </EmptyTitle>
+                                            <EmptyDescription>
+                                                No se encontraron equipos que coincidan con los filtros aplicados.
+                                            </EmptyDescription>
+                                        </EmptyHeader>
+
+
+                                    </Empty>
                                 </TableCell>
                             </TableRow>
                         </TableBody>
+                    </template>
+                </Table>
+            </div>
 
-                    </ContextMenuTrigger>
+            <div class="flex space-x-2 p-4">
+                <Pagination class="mx-0  w-fit ml-auto!" :items-per-page="assets.per_page" :total="assets.total"
+                    :default-page="assets.current_page">
+                    <PaginationContent class="flex-wrap">
+                        <PaginationPrevious :disabled="isLoading || assets.current_page === 1" @click="!isLoading && router.visit(assets.prev_page_url || '', {
+                            preserveScroll: true,
+                            replace: true,
+                        })">
 
-                    <ContextMenuContent class="w-52">
-
-                        <ContextMenuItem @click="handleOpenDetails()">
-                            <Eye />
-                            Ver detalle
-                        </ContextMenuItem>
-                        <ContextMenuItem @click="openEdit = true">
-                            <Pencil />
-                            Editar
-                        </ContextMenuItem>
-                        <ContextMenuItem @click="changeStatus = true">
-                            <Pencil />
-                            Cambiar estado
-                        </ContextMenuItem>
-
-                        <ContextMenuItem @click="openInvoice = true">
-                            <UploadCloud />
-                            Cargar factura
-                        </ContextMenuItem>
-
-
-                        <ContextMenuItem
-                            :disabled="[AssetStatus.DECOMMISSIONED, AssetStatus.IN_REPAIR].includes(activeRow!.status)"
-                            @click="openAssign = true">
-                            <MonitorSmartphone />
-                            Asignar
-                        </ContextMenuItem>
-                        <ContextMenuItem :disabled="!activeRow?.current_assignment" @click="openDevolution = true">
-                            <MonitorSmartphone />
-                            Devolver
-                        </ContextMenuItem>
-                        <ContextMenuItem @click="handleOpenHistories()">
-                            <History />
-                            Ver historial
-                        </ContextMenuItem>
-                        <ContextMenuItem @click="openDelete = true"
-                            :disabled="AssetStatus.AVAILABLE !== activeRow?.status">
-                            <X />
-                            Eliminar
-                        </ContextMenuItem>
-                    </ContextMenuContent>
-                </ContextMenu>
-            </template>
-
-            <template v-else>
-                <TableBody>
-                    <TableRow>
-                        <TableCell :colspan="columns.length" class="text-center">
-
-                            <Empty class="p-1!">
-                                <EmptyHeader>
-                                    <EmptyMedia variant="icon">
-                                        <MonitorSmartphone />
-                                    </EmptyMedia>
-                                    <EmptyTitle>
-                                        Sin resultados
-                                    </EmptyTitle>
-                                    <EmptyDescription>
-                                        No se encontraron equipos que coincidan con los filtros aplicados.
-                                    </EmptyDescription>
-                                </EmptyHeader>
-
-
-                            </Empty>
-                        </TableCell>
-                    </TableRow>
-                </TableBody>
-            </template>
-        </Table>
-
-        <div class="flex space-x-2 p-4">
-            <!-- {{assets}} -->
-            <Pagination class="mx-0  w-fit ml-auto!" :items-per-page="assets.per_page" :total="assets.total"
-                :default-page="assets.current_page">
-                <PaginationContent class="flex-wrap">
-                    <PaginationPrevious :disabled="isLoading || assets.current_page === 1" @click="!isLoading && router.visit(assets.prev_page_url || '', {
-                        preserveScroll: true,
-                        replace: true,
-                    })">
-
-                        <ChevronLeftIcon />
-                        Anterior
-                    </PaginationPrevious>
-                    <template v-for="(item, index) in assets.links.filter(link => +link.label)" :key="index">
-                        <PaginationItem :value="+item.label" :is-active="item.active"
-                            :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
-                                preserveScroll: true,
-                                replace: true,
-                            })">
-                            {{ item.label }}
-                        </PaginationItem>
+                            <ChevronLeftIcon />
+                            Anterior
+                        </PaginationPrevious>
+                        <template v-for="(item, index) in assets.links.filter(link => +link.label)" :key="index">
+                            <PaginationItem :value="+item.label" :is-active="item.active"
+                                :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
+                                    preserveScroll: true,
+                                    replace: true,
+                                })">
+                                {{ item.label }}
+                            </PaginationItem>
                     </template>
 
                     <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="!isLoading && router.visit(assets.next_page_url || '', {
@@ -411,6 +428,7 @@
             </Pagination>
         </div>
     </div>
+</div>
 
     <DialogDetails v-if="openDetails" v-model:open="openDetails" v-model:asset="activeRow" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
@@ -601,6 +619,14 @@ const form = reactive<{
     department_id: filters.value.department_id || [],
 })
 
+const filterCount = computed(() => {
+    const base = form.search ? 1 : 0;
+    const buckets = [form.status.length, form.types.length, form.assigned_to.length, form.department_id.length];
+    return base + buckets.filter(Boolean).length;
+});
+
+const hasFilters = computed(() => filterCount.value > 0);
+
 
 watch(
     () => form.search,
@@ -679,6 +705,15 @@ const applyFilters = () => {
         }
     )
 }
+
+const resetFilters = () => {
+    form.search = '';
+    form.status = [];
+    form.types = [];
+    form.assigned_to = [];
+    form.department_id = [];
+    applyFilters();
+};
 
 const columns: ColumnDef<Asset>[] = [
     {

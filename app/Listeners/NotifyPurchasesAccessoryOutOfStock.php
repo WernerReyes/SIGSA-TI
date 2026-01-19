@@ -7,7 +7,7 @@ use App\Mail\AccessoryOutOfStockMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Mail;
 
-class NotifyPurchasesAccessoryOutOfStock implements ShouldQueue
+class NotifyPurchasesAccessoryOutOfStock
 {
     /**
      * Create the event listener.

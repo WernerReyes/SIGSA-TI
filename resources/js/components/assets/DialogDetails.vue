@@ -6,110 +6,145 @@
 
         }
     }">
-        <DialogContent class="sm:max-w-6/12 max-h-screen overflow-y-auto">
-            <DialogHeader>
-                <div class="flex items-center gap-4">
-                    <div class="size-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Laptop class="size-7" />
+        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto">
+            <DialogHeader class="space-y-3 pb-4">
+                <div
+                    class="flex items-start gap-4 p-4 rounded-xl bg-linear-to-br from-muted/40 via-background to-background border">
+                    <div
+                        class="size-16 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/20 shadow-sm">
+                        <Laptop class="size-8 text-primary" />
                     </div>
-                    <div>
-                        <p class="font-mono text-sm text-muted-foreground">AST-{{ asset?.id }}
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <p class="font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">AST-{{
+                                asset?.id }}</p>
+                            <Badge variant="outline" class="text-xs">
+                                <template v-if="asset?.is_new">
+                                    <Sparkles />
+                                    Nuevo
+                                </template>
+                                <template v-else>
+                                    <History />
+                                    Usado
+                                </template>
 
-                            <Badge>{{
-
-                                asset?.is_new ? 'Nuevo' : 'Usado'
-                                }}</Badge>
-
-                        </p>
-                        <h2 id="radix-:r1i:" class="font-semibold tracking-tight text-xl mt-1">{{ asset?.name }}</h2>
-                        <p class="text-sm text-muted-foreground">{{ asset?.brand }} {{ asset?.model }}</p>
+                            </Badge>
+                        </div>
+                        <h2 class="font-bold tracking-tight text-2xl">{{ asset?.name }}</h2>
+                        <p class="text-sm text-muted-foreground mt-1">{{ asset?.brand }} {{ asset?.model }}</p>
                     </div>
                 </div>
             </DialogHeader>
 
 
-            <Tabs default-value="history" class="mt-3">
-                <TabsList>
-                    <TabsTrigger value="info">
+            <Tabs default-value="history" class="mt-6">
+                <TabsList class="grid w-full grid-cols-2 h-auto p-1">
+                    <TabsTrigger value="info" class="gap-2 py-2.5">
+                        <FileText class="size-4" />
                         Información
                     </TabsTrigger>
-                    <TabsTrigger value="history">
+                    <TabsTrigger value="history" class="gap-2 py-2.5">
+                        <MonitorSmartphone class="size-4" />
                         Asignaciones
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="info" class="mt-4">
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3">
-
-                                <FileText class="size-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Serial</p>
-                                    <p class="text-sm font-mono">{{ asset?.serial_number }}</p>
+                <TabsContent value="info" class="mt-6">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                                    <FileText class="size-5 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Serial
+                                    </p>
+                                    <p class="text-sm font-mono font-semibold mt-1">{{ asset?.serial_number || 'N/A' }}
+                                    </p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3">
-
-                                <User class="size-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Asignado a</p>
-                                    <p v-if="asset?.current_assignment" class="text-sm font-medium">{{
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                                    <User class="size-5 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Asignado a</p>
+                                    <p v-if="asset?.current_assignment" class="text-sm font-semibold mt-1">{{
                                         asset?.current_assignment?.assigned_to?.full_name }}</p>
-                                    <Badge v-else variant="secondary">Sin asignar</Badge>
+                                    <Badge v-else variant="secondary" class="mt-1">Sin asignar</Badge>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3" v-if="asset?.current_assignment">
-
-                                <Monitor class="size-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Departamento</p>
-                                    <p class="text-sm">{{ asset?.current_assignment?.assigned_to?.department?.name }}
+                            <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition"
+                                v-if="asset?.current_assignment">
+                                <div
+                                    class="size-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                                    <Monitor class="size-5 text-green-600 dark:text-green-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Departamento</p>
+                                    <p class="text-sm font-semibold mt-1">{{
+                                        asset?.current_assignment?.assigned_to?.department?.name }}
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-4">
-                            <div class="flex items-center gap-3">
-
-                                <Calendar class="size-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Fecha de Compra</p>
-                                    <p v-if="asset?.purchase_date" class="text-sm">{{ format(
+                        <div class="space-y-3">
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                                    <Calendar class="size-5 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha
+                                        de Compra</p>
+                                    <p v-if="asset?.purchase_date" class="text-sm font-semibold mt-1">{{ format(
                                         parseISO(asset?.purchase_date.split('T')[0])
                                         , 'dd-MM-yyyy') }}</p>
                                 </div>
                             </div>
 
-
-                            <div class="flex items-center gap-3">
-
-                                <Shield class="size-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Garantía hasta</p>
-
-                                    <Badge v-if="asset?.warranty_expiration"
-                                        :class="isWarrantyValid(asset.warranty_expiration) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div class="size-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                    :class="isWarrantyValid(asset?.warranty_expiration || '') ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'">
+                                    <Shield
+                                        :class="isWarrantyValid(asset?.warranty_expiration || '') ? 'size-5 text-emerald-600 dark:text-emerald-400' : 'size-5 text-rose-600 dark:text-rose-400'" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Garantía</p>
+                                    <Badge v-if="asset?.warranty_expiration" class="mt-1"
+                                        :class="isWarrantyValid(asset.warranty_expiration) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300'">
                                         {{
                                             isWarrantyValid(asset.warranty_expiration)
-                                                ? `Válida hasta ${format(
+                                                ? `✓ Válida hasta ${format(
                                                     parseISO(asset?.warranty_expiration.split('T')[0])
                                                     , 'dd-MM-yyyy')}`
-                                                : `Expirada el ${format(
+                                                : `✗ Expirada el ${format(
                                                     parseISO(asset?.warranty_expiration.split('T')[0])
                                                     , 'dd-MM-yyyy')}`
                                         }}
                                     </Badge>
-
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-3">
-
-                                <Shield class="size-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Estado</p>
-                                    <Badge v-if="asset?.status" :class="statusOp(asset.status)?.bg">{{
+                            <div
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                                    <Shield class="size-5 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado
+                                    </p>
+                                    <Badge v-if="asset?.status" class="mt-1" :class="statusOp(asset.status)?.bg">{{
                                         statusOp(asset.status)?.label }}</Badge>
                                 </div>
                             </div>
@@ -118,59 +153,64 @@
                     </div>
                 </TabsContent>
 
-                <TabsContent value="history" class="mt-4">
+                <TabsContent value="history" class="mt-6">
 
-                    <div class="space-y-3">
+                    <div class="space-y-4">
 
-                        <Empty v-if="assignments.length === 0">
+                        <Empty v-if="assignments.length === 0" class="py-8">
                             <EmptyHeader>
                                 <EmptyMedia variant="icon">
                                     <MonitorSmartphone />
                                 </EmptyMedia>
                                 <EmptyTitle>Sin asignaciones</EmptyTitle>
                                 <EmptyDescription>
-                                    No hay asignaciones para este equipo.
+                                    No hay asignaciones registradas para este equipo.
                                 </EmptyDescription>
                             </EmptyHeader>
 
 
                         </Empty>
                         <div v-else v-for="assignment in assignments" :key="assignment.id"
-                            class="flex items-center justify-between gap-4 p-3 rounded-lg" :class="{
-                                'bg-green-500/20': !assignment.returned_at,
-                                'bg-muted/30': assignment.returned_at
+                            class="flex max-md:flex-col items-start justify-between gap-4 p-4 rounded-xl border transition hover:shadow-md"
+                            :class="{
+                                'bg-linear-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800': !assignment.returned_at,
+                                'bg-muted/30 border-muted': assignment.returned_at
                             }">
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-start gap-4 flex-1">
 
-                                <div class="w-2 h-2 rounded-full bg-primary"></div>
+                                <div
+                                    :class="!assignment.returned_at ? 'w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/50 mt-1' : 'w-3 h-3 rounded-full bg-muted-foreground mt-1'">
+                                </div>
                                 <div class="flex-1">
-                                    <p class="text-sm font-medium">
-                                        Asignado a {{ assignment?.assigned_to?.full_name }}
+                                    <p class="text-sm font-semibold flex items-center gap-2">
+                                        <User class="size-4" />
+                                        {{ assignment?.assigned_to?.full_name }}
                                     </p>
-                                    <p class="text-xs text-muted-foreground">
-                                        {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
-                                        -
-                                        <span v-if="assignment.returned_at">
-                                            {{ format(assignment.returned_at, 'dd/MM/yyyy') }}
+                                    <div class="flex items-center gap-2 mt-1.5">
+                                        <p class="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Calendar class="size-3" />
+                                            {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
+                                        </p>
+                                        <span v-if="assignment.returned_at" class="text-xs text-muted-foreground">
+                                            → {{ format(assignment.returned_at, 'dd/MM/yyyy') }}
                                         </span>
-                                        <Badge v-else class="my-2 bg-green-100 text-green-800">Actualmente asignado
+                                        <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente asignado
                                         </Badge>
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- {{assignment}} -->
 
-                            <div class="flex items-end gap-2">
+                            <div class="flex max-md:justify-end max-md:w-full  items-start gap-2 shrink-0">
 
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger as-child>
-                                        <Button variant="outline" :disabled="!assignment">
-                                            <FileText class="size-4 mr-2" />
+                                        <Button variant="outline" size="sm" :disabled="!assignment" class="gap-2">
+                                            <FileText class="size-4" />
                                             Entrega
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent class="w-12" align="start">
+                                    <DropdownMenuContent class="w-44" align="end">
 
                                         <DropdownMenuItem :disabled="!assignment.delivery_document" @click="() => {
                                             viewDocument(assignment.delivery_document?.file_url)
@@ -202,12 +242,13 @@
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger as-child>
-                                        <Button variant="outline" :disabled="!assignment.returned_at">
-                                            <FileText class="size-4 mr-2" />
+                                        <Button variant="outline" size="sm" :disabled="!assignment.returned_at"
+                                            class="gap-2">
+                                            <FileText class="size-4" />
                                             Devolución
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent class="w-12" align="start">
+                                    <DropdownMenuContent class="w-44" align="end">
                                         <DropdownMenuItem :disabled="!assignment.return_document" @click="() => {
                                             viewDocument(assignment.return_document?.file_url)
                                         }">
@@ -256,9 +297,17 @@
 
     <Dialog v-model:open="openUploadDialog">
 
-        <DialogContent class="sm:max-w-lg">
-            <DialogHeader>
-                <h2 class="text-lg font-semibold">Cargar Documento</h2>
+        <DialogContent class="sm:max-w-3xl max-h-screen overflow-y-auto space-y-4">
+            <DialogHeader class="space-y-3 pb-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Upload class="size-5 text-primary" />
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Cargar Documento</h2>
+                        <p class="text-sm text-muted-foreground">Sube el archivo firmado</p>
+                    </div>
+                </div>
             </DialogHeader>
 
             <FileUpload :current-url="url" v-model:reset="resetUpload" @error="(msg) => toast.error(msg)"
@@ -306,10 +355,13 @@ import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { router } from '@inertiajs/vue3';
 import { format, isAfter, parseISO } from 'date-fns';
-import { Calendar, Download, Eye, FileText, Laptop, Monitor, MonitorSmartphone, Shield, Upload, User } from 'lucide-vue-next';
+import {
+    Calendar, Download, Eye, FileText, Laptop, Monitor, MonitorSmartphone, Shield, Upload, User, Sparkles,
+    History
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { assetTypeOp, TypeName } from '../../interfaces/assetType.interface';
+import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 import FileUpload from '../FileUpload.vue';
 import { useAsset } from '@/composables/useAsset';
 
@@ -336,7 +388,7 @@ const assignments = computed({
 });
 
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
-  
+
     const endDate = parseISO(warrantyEndDate.split('T')[0])
     const today = new Date()
     const todayDateOnly = parseISO(today.toISOString().split('T')[0])

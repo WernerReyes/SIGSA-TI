@@ -48,7 +48,7 @@ class AssetController extends Controller
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
             'assetsPaginated' => fn() => $assetService->getPaginated($filters),
             'stats' => fn() => $assetService->getStats(),
-            'accessoriesOutOfStockAlerts' => Inertia::optional(fn() => $assetService->getAccessoriesOutOfStockAlerts())->once(),
+            'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
             'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),
@@ -63,6 +63,25 @@ class AssetController extends Controller
         ]);
     }
 
+    public function resendAccessoryOutOfStockAlert(AssetService $assetService)
+    {
+        try {
+            $assetService->resendAccessoryOutOfStockAlert();
+
+            Inertia::flash([
+                'success' => 'Alerta de accesorios fuera de stock reenviada correctamente.',
+                'timestamp' => now()->timestamp,
+                'error' => null,
+            ]);
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+        return back();
+    }
+
     public function storeAsset(StoreAssetRequest $request, AssetService $assetService)
     {
         $validated = $request->validated();
@@ -73,6 +92,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'success' => 'Activo registrado correctamente: ' . $asset->name,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
@@ -93,6 +113,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'success' => 'Activo actualizado correctamente: ' . $asset->name,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
 
         } catch (\Exception $e) {
@@ -113,6 +134,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'success' => 'Activo eliminado correctamente: ' . $asset->name,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
 
         } catch (\Exception $e) {
@@ -142,6 +164,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'success' => 'Estado de activo actualizado correctamente: ' . $asset->name,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
@@ -163,6 +186,7 @@ class AssetController extends Controller
                 'success' => 'Activo asignado correctamente.',
                 'assignment_id' => $assignment->id,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
 
 
@@ -185,6 +209,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'success' => 'Activo devuelto correctamente',
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
 
         } catch (\Exception $e) {
@@ -207,6 +232,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
+                
             ]);
             return back();
         }
@@ -269,6 +295,7 @@ class AssetController extends Controller
                 'success' => 'Registro de entrega subido correctamente.',
                 'file_url' => $file_url,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
@@ -291,6 +318,7 @@ class AssetController extends Controller
                 'success' => 'Factura subida correctamente.',
                 'file_url' => $fileUrl,
                 'timestamp' => now()->timestamp,
+                'error' => null,
             ]);
         } catch (\Exception $e) {
             Inertia::flash([

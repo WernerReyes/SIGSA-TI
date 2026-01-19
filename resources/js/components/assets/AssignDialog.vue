@@ -6,15 +6,28 @@
 
         }
     }">
-        <DialogContent class="sm:max-w-106.25 max-h-screen overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle>Asignar Equipo</DialogTitle>
-
+        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto space-y-4">
+            <DialogHeader class="space-y-2 pb-3 border-b">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
+                        <Laptop class="size-6 text-primary" />
+                    </div>
+                    <div class="flex-1">
+                        <DialogTitle class="text-xl font-semibold">Asignar Equipo</DialogTitle>
+                        <p class="text-sm text-muted-foreground">Completa los datos para asignar el activo y registrar
+                            su entrega.</p>
+                        <p v-if="asset"
+                            class="text-xs text-muted-foreground mt-1 inline-flex gap-2 items-center bg-muted px-2 py-1 rounded-md">
+                            <span class="font-mono">AST-{{ asset?.id }}</span>
+                            <span class="text-foreground">·</span>
+                            <span class="font-medium line-clamp-1">{{ asset?.name }}</span>
+                        </p>
+                    </div>
+                </div>
             </DialogHeader>
 
-            <Countdown
-              title="Tiempo para editar la asignación (15 minutos)"
-            @timeout="() => {
+            <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
                 toast.error('El tiempo para editar esta asignación ha expirado.');
                 canEdit = false;
             }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
@@ -29,7 +42,7 @@
 
             </Alert>
 
-            <div class="space-y-4 py-4 ">
+            <div class="space-y-5 py-2">
                 <div v-if="!canEdit" @vue:mounted="() => {
                     loadingAssignDocument = true;
                     router.reload({
@@ -43,7 +56,7 @@
                             loadingAssignDocument = false;
                         }
                     });
-                }" class="p-3 bg-muted/50 rounded-lg">
+                }" class="p-4 rounded-xl border bg-muted/40">
 
                     <template v-if="loadingAssignDocument">
                         <Skeleton class="h-4 w-3/4 mb-2" />
@@ -51,16 +64,16 @@
                     </template>
 
                     <template v-else>
-                        <p class="mb-2 text-sm">Subir documento de entrega firmado:</p>
+                        <p class="mb-2 text-sm font-medium">Subir documento de entrega firmado</p>
+                        <p class="text-xs text-muted-foreground mb-3">Solo PDF o imagen, máx. 2MB.</p>
                         <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
-                            accept="application/pdf,image/*" :reset="resetUpload"
+                            accept="application/pdf,image/*" v-model:reset="resetUpload"
                             @update:file="handleUploadSignedDocument($event)" />
                     </template>
-                    <!-- </WhenVisible> -->
-
                 </div>
 
-                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3">
+                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
+                    class="space-y-4 p-4 rounded-xl border bg-card/70">
 
                     <FieldGroup>
                         <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
@@ -233,11 +246,11 @@
             </div>
 
 
-            <DialogFooter>
-
+            <DialogFooter class="gap-2 pt-2 border-t">
+                <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0 || !canEdit
-                    " type="submit" form="dialogForm">
+                    " type="submit" form="dialogForm" class="min-w-36">
                     <Spinner v-if="isSubmitting" />
                     {{ isSubmitting ? 'Asignando...' : 'Asignar Equipo' }}
                 </Button>
@@ -289,7 +302,7 @@ import { useAsset } from '@/composables/useAsset';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { CheckIcon, ChevronDownIcon, LockKeyhole } from 'lucide-vue-next';
+import { CheckIcon, ChevronDownIcon, Laptop, LockKeyhole } from 'lucide-vue-next';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -318,7 +331,7 @@ const url = computed<string>({
         const assignDocument = page.props?.assignDocument as
             | { delivery_document: { file_url: string } }
             | undefined;
-        return asset.value?.current_assignment?.delivery_document?.file_url || assignDocument?.delivery_document.file_url || '';
+        return asset.value?.current_assignment?.delivery_document?.file_url || assignDocument?.delivery_document?.file_url || '';
     },
     set: (value: string) => {
         if (asset.value && asset.value.current_assignment) {
@@ -353,7 +366,10 @@ const assignmentId = computed<number>(() => {
 
 const assetAccessories = computed<Asset[]>(() => {
     const accessories = (page.props?.accessories || []) as Asset[];
-    return [...childrenAssets.value, ...accessories];
+    if (!accessories.length) {
+        return [...childrenAssets.value];
+    }
+    return accessories;
 });
 
 const assign = computed<AssetAssignment | null>(() => {
@@ -366,7 +382,7 @@ const childrenAssets = computed<Asset[]>(() => {
 });
 
 const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
-    const alerts = (page.props?.accessoriesOutOfStockAlerts || []) as IAlert[];
+    const alerts = (page.props?.accessoriesOutOfStockAlert || []) as IAlert[];
     return alerts.length > 0;
 });
 
@@ -417,8 +433,9 @@ const onSubmit = async (values: Record<string, any>) => {
 
     const accessoriesIds = values.accessories || [];
     const type = asset.value?.type?.name;
+
+    const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
     if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type as TypeName)) {
-        const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
         const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
         if (!includeCharger) {
             toast.error('Debe incluir el cargador en los accesorios del equipo.');
@@ -428,7 +445,7 @@ const onSubmit = async (values: Record<string, any>) => {
     }
 
     const only = ['assetsPaginated', 'stats'];
-    if (type === TypeName.ACCESSORY) {
+    if (type === TypeName.ACCESSORY || accessories.find(acc => accessoriesIds.includes(acc.id))) {
         only.push('accessories');
     }
 
@@ -454,7 +471,7 @@ const onSubmit = async (values: Record<string, any>) => {
 
             if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
                 router.reload({
-                    only: ['accessoriesOutOfStockAlerts'],
+                    only: ['accessoriesOutOfStockAlert'],
                 });
             }
         },

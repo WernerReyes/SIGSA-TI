@@ -30,6 +30,8 @@ return new class extends Migration
 
             $table->string('performed_by_name')->nullable();
             $table->timestamp('performed_at')->useCurrent();
+        
+
         });
     }
 

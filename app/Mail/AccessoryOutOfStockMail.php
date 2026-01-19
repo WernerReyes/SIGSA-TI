@@ -2,6 +2,8 @@
 
 namespace App\Mail;
 
+use App\Enums\Asset\AssetStatus;
+use App\Models\Asset;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -17,7 +19,18 @@ class AccessoryOutOfStockMail extends Mailable
      */
     public function __construct()
     {
-        //
+
+    }
+
+
+    private function getAccessories()
+    {
+        return Asset::
+            select('id', 'name', 'serial_number')
+            ->whereNot('status', AssetStatus::AVAILABLE)
+            ->whereHas('type', fn($q) => $q->where('name', 'Accesorio'))
+            ->get()->unique(fn($item) => strtolower($item->name));
+
     }
 
     /**
@@ -26,7 +39,7 @@ class AccessoryOutOfStockMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Accessory Out Of Stock Mail',
+            subject: 'Accesorios fuera de stock',
         );
     }
 
@@ -37,6 +50,9 @@ class AccessoryOutOfStockMail extends Mailable
     {
         return new Content(
             view: 'emails.accessory-out-of-stock',
+            with: [
+                'assets' => $this->getAccessories(),
+            ],
 
         );
     }

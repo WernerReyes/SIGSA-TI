@@ -19,6 +19,8 @@ abstract class BaseAlertService
     // Tiempo mínimo entre notificaciones
     protected ?int $cooldownHours = null;
 
+    protected bool $once = false;
+
     abstract protected function conditionMet(): bool;
 
 
@@ -36,7 +38,6 @@ abstract class BaseAlertService
             ]
         );
 
-
         if ($this->conditionMet()) {
             $this->activate($alert);
         } else {
@@ -44,13 +45,14 @@ abstract class BaseAlertService
         }
     }
 
-    protected function activate(Alert $alert): void
+    protected function activate(Alert $alert, bool $force = false): void
     {
-        if ($alert->status === AlertStatus::ACTIVE->value) {
+
+        if ($alert->status === AlertStatus::ACTIVE->value && !$force) {
             return;
         }
 
-        if (!$this->canNotify($alert)) {
+        if (!$this->canNotify($alert) && !$force) {
             return;
         }
 
@@ -62,6 +64,7 @@ abstract class BaseAlertService
 
         Inertia::flash('alert_triggered', true);
 
+        
         event(new AlertTriggered($alert));
     }
 
@@ -76,11 +79,16 @@ abstract class BaseAlertService
             'message' => $this->messages[AlertStatus::RESOLVED->value] ?? '',
         ]);
 
+        ds("Alert resolved");
         Inertia::flash('alert_triggered', true);
     }
 
     protected function canNotify(Alert $alert): bool
     {
+        if ($this->once) {
+            return !$alert->last_notified_at;
+        }
+
         if (!$alert->last_notified_at || !$this->cooldownHours) {
             return true;
         }

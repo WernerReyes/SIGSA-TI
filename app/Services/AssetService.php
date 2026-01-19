@@ -326,14 +326,24 @@ class AssetService
         }
     }
 
-    public function getAccessoriesOutOfStockAlerts()
+    public function getAccessoriesOutOfStockAlert()
     {
         try {
             return Alert::where('entity', EntityType::ASSET->value)
                 ->where('type', AlertType::ACCESSORY_OUT_OF_STOCK->value)
-                ->orderBy('last_notified_at', 'asc')->get();
+                ->first();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener las alertas de accesorios agotados');
+        }
+    }
+
+    public function resendAccessoryOutOfStockAlert()
+    {
+        try {
+            $alertService = app(AccessoryOutOfStockAlertService::class);
+            $alertService->forceNotify();
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al reenviar la alerta de accesorios agotados');
         }
     }
 
@@ -646,9 +656,6 @@ class AssetService
                     }
 
 
-
-
-
                     if ($accessoriesChanged) {
                         $assetsToReleaseIds = array_diff($assetsIds, $dto->accessories ?? []);
                         $assets = Asset::whereIn('id', $assetsToReleaseIds)->get();
@@ -688,8 +695,8 @@ class AssetService
                                         'asset_id' => $accessoryId,
                                         // 'assigned_at' => $dto->assign_date,
     
-                                        // 'created_at' => now(),
-                                        // 'updated_at' => now(),
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
                                     ];
                                 }, $newAccessoryIds)
                             );
@@ -720,7 +727,7 @@ class AssetService
                     // 5️⃣ Historial
                     AssetHistory::create([
                         'action' => AssetHistoryAction::ASSIGNED->value,
-                        'description' => $description . " para {$assignment->assignedTo->full_name} (actualización)",
+                        'description' => $description,
                         'asset_id' => $asset->id,
                         'performed_by' => auth()->user()->staff_id,
                         'performed_at' => now(),
@@ -749,6 +756,8 @@ class AssetService
                     ]
                 );
 
+                $description = "Equipo asignado a {$assigned->assignedTo->full_name}";
+
                 // Asignar accesorios si los hay
                 if ($dto->accessories && is_array($dto->accessories)) {
                     AssetAssignment::insert(
@@ -762,17 +771,34 @@ class AssetService
                                 'asset_id' => $accessoryId,
                                 // 'assigned_at' => $dto->assign_date,
     
-                                // 'created_at' => now(),
-                                // 'updated_at' => now(),
+                                'created_at' => now(),
+                                'updated_at' => now(),
                             ];
                         }, $dto->accessories)
 
 
                     );
 
+                    $accesories = Asset::whereIn('id', $dto->accessories ?? [])->get();
                     Asset::whereIn('id', $dto->accessories ?? [])->update([
                         'status' => AssetStatus::ASSIGNED->value,
                     ]);
+
+                    $description = "Equipo asignado a {$assigned->assignedTo->full_name} junto con los accesorios: " . implode(',', $accesories->pluck('name')->map(fn($name) => "{$name}")->toArray());
+
+                    AssetHistory::insert(
+                        array_map(function ($accessoryId) use ($assigned) {
+
+                            return [
+                                'action' => AssetHistoryAction::ASSIGNED->value,
+                                'description' => "Accesorio asignado a {$assigned->assignedTo->full_name} junto al equipo principal ({$assigned->asset->name} - {$assigned->asset->brand} {$assigned->asset->model})",
+                                'asset_id' => $accessoryId,
+                                'performed_by' => auth()->user()->staff_id,
+                                'performed_at' => now(),
+                                // 'related_assignment_id' => $assigned->id,
+                            ];
+                        }, $dto->accessories)
+                    );
 
 
                 }
@@ -781,11 +807,11 @@ class AssetService
                 AssetHistory::create([
 
                     'action' => AssetHistoryAction::ASSIGNED->value,
-                    'description' => "Equipo asignado a {$assigned->assignedTo->full_name}",
+                    'description' => $description,
                     'asset_id' => $dto->asset_id,
                     'performed_by' => auth()->user()->staff_id,
                     'performed_at' => now(),
-                    'related_assignment_id' => $assigned->id,
+                    // 'related_assignment_id' => $assigned->id,
                 ]);
 
                 return $assigned;
@@ -825,37 +851,63 @@ class AssetService
                     'status' => AssetStatus::AVAILABLE->value,
                 ]);
 
+                $description = "Equipo devuelto por {$assignment->assignedTo->full_name} por " . ReturnReason::labels(ReturnReason::from($dto->return_reason));
+                if ($assignment->parent_assignment_id) {
+                    $parentAsset = $assignment->parentAssignment->asset;
+                    $description .= " Accesorio del equipo principal ({$parentAsset->name} - {$parentAsset->brand} {$parentAsset->model}) devuelto por {$assignment->assignedTo->full_name} por" . ReturnReason::labels(ReturnReason::from($dto->return_reason));
+                }
+
+                if (!$assignment->parent_assignment_id) {
+                    $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
+                    if (!$childAssignments->isEmpty()) {
+                        $asset = $assignment->asset;
+                        $description .= " junto con los accesorios: " . $childAssignments->map(function ($childAssignment) {
+                            $asset = $childAssignment->asset;
+                            return "{$asset->name} ({$asset->brand} {$asset->model})";
+                        })->implode(', ');
+
+                        AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
+                            'parent_assignment_id' => null,
+                            'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
+                            'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
+                            'responsible_id' => $dto->responsible_id,
+                            'return_reason' => $dto->return_reason,
+                        ]);
+
+                        AssetHistory::insert(
+                            $childAssignments->map(function ($childAssignment) use ($dto, $asset) {
+                                return [
+                                    'action' => AssetHistoryAction::RETURNED->value,
+                                    'description' => "Accesorio devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model}) por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
+                                    'asset_id' => $childAssignment->asset_id,
+                                    'performed_by' => auth()->user()->staff_id,
+                                    'performed_at' => now(),
+                                    // 'related_assignment_id' => $childAssignment->id,
+                                ];
+                            })->toArray()
+                        );
+
+                        Asset::whereIn('id', $childAssignments->pluck('asset_id'))->update([
+                            'status' => AssetStatus::AVAILABLE->value,
+                        ]);
+                    }
+                }
+
                 $assignment->update([
+                    'parent_assignment_id' => null,
                     'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                     'return_comment' => $dto->return_comment,
                     'responsible_id' => $dto->responsible_id,
                     'return_reason' => $dto->return_reason,
                 ]);
 
-
-                // Return accessories if any
-                $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
-                if (!$childAssignments->isEmpty()) {
-                    $asset = $assignment->asset;
-                    AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
-                        'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
-                        'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
-                        'responsible_id' => $dto->responsible_id,
-                        'return_reason' => $dto->return_reason,
-                    ]);
-
-                    Asset::whereIn('id', $childAssignments->pluck('asset_id'))->update([
-                        'status' => AssetStatus::AVAILABLE->value,
-                    ]);
-                }
-
                 AssetHistory::create([
                     'action' => AssetHistoryAction::RETURNED->value,
-                    'description' => "Equipo devuelto por {$assignment->assignedTo->full_name} por motivo: " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
+                    'description' => $description,
                     'asset_id' => $assignment->asset_id,
                     'performed_by' => auth()->user()->staff_id,
                     'performed_at' => now(),
-                    'related_assignment_id' => $assignment->id,
+                    // 'related_assignment_id' => $assignment->id,
                 ]);
 
             });
