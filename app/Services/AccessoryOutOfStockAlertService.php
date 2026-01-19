@@ -20,8 +20,6 @@ class AccessoryOutOfStockAlertService extends BaseAlertService
 
     protected function conditionMet(): bool
     {
-        ds(Asset::where('status', AssetStatus::AVAILABLE)
-            ->whereHas('type', fn($q) => $q->where('name', 'Accesorio'))->get());
         return !Asset::where('status', AssetStatus::AVAILABLE)
             ->whereHas('type', fn($q) => $q->where('name', 'Accesorio'))
             ->exists();

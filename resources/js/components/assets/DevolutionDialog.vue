@@ -143,7 +143,7 @@
                     </FieldGroup>
 
 
-                     <FieldGroup v-if="accessoriesToReturn.length > 0">
+                    <FieldGroup v-if="accessoriesToReturn.length > 0">
                         <VeeField name="accessories" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios a Devolver</FieldLabel>
@@ -249,6 +249,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
 import { Check, ChevronDownIcon, RefreshCcw } from 'lucide-vue-next';
 import { useAsset } from '@/composables/useAsset';
+import { Alert } from '../../interfaces/alert.interface';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -276,6 +277,11 @@ const assign = computed<AssetAssignment | null>(() => {
 const accessoriesToReturn = computed<Asset[]>(() => {
     if (!assign.value) return [];
     return assign.value.children_assignments?.flatMap(child => child.asset!) || [];
+});
+
+const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
+    const alerts = (page.props?.accessoriesOutOfStockAlerts || []) as Alert[];
+    return alerts.length > 0;
 });
 
 const isSubmitting = ref(false);
@@ -308,7 +314,7 @@ const { handleSubmit, errors } = useForm({
         returned_date: new CalendarDateTime(today(getLocalTimeZone()).year, today(getLocalTimeZone()).month, today(getLocalTimeZone()).day, time.hours, time.minutes, time.seconds),
         return_comment: '',
         return_reason: ReturnReason.EQUIPMENT_RENOVATION,
-         accessories: accessoriesToReturn.value.map(acc => acc.id),
+        accessories: accessoriesToReturn.value.map(acc => acc.id),
     },
     validationSchema: formSchema,
     validateOnMount: false,
@@ -331,6 +337,14 @@ const onSubmit = async (values: Record<string, any>) => {
         preserveState: true,
         preserveUrl: true,
 
+        onFlash: (flash) => {
+            if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
+                router.reload({
+                    only: ['accessoriesOutOfStockAlerts'],
+                });
+
+            }
+        },
 
 
         onFinish: () => {

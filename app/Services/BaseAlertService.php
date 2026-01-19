@@ -6,6 +6,7 @@ use App\Enums\Alert\AlertType;
 use App\Enums\Alert\EntityType;
 use App\Events\AlertTriggered;
 use App\Models\Alert;
+use Inertia\Inertia;
 abstract class BaseAlertService
 {
     protected AlertType $alertType;
@@ -27,14 +28,14 @@ abstract class BaseAlertService
         $alert = Alert::firstOrCreate(
             [
                 'type' => $this->alertType,
-                'entity_type' => $this->entityType,
+                'entity' => $this->entityType,
                 'entity_id' => $this->entityId,
             ],
             [
                 'status' => AlertStatus::RESOLVED->value,
             ]
         );
-        
+
 
         if ($this->conditionMet()) {
             $this->activate($alert);
@@ -59,6 +60,8 @@ abstract class BaseAlertService
             'message' => $this->messages[AlertStatus::ACTIVE->value] ?? '',
         ]);
 
+        Inertia::flash('alert_triggered', true);
+
         event(new AlertTriggered($alert));
     }
 
@@ -72,6 +75,8 @@ abstract class BaseAlertService
             'status' => AlertStatus::RESOLVED->value,
             'message' => $this->messages[AlertStatus::RESOLVED->value] ?? '',
         ]);
+
+        Inertia::flash('alert_triggered', true);
     }
 
     protected function canNotify(Alert $alert): bool

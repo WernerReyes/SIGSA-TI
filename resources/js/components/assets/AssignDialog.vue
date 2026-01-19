@@ -12,7 +12,9 @@
 
             </DialogHeader>
 
-            <Countdown @timeout="() => {
+            <Countdown
+              title="Tiempo para editar la asignación (15 minutos)"
+            @timeout="() => {
                 toast.error('El tiempo para editar esta asignación ha expirado.');
                 canEdit = false;
             }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
@@ -184,7 +186,7 @@
                                                         <CommandItem v-for="accessory in assetAccessories"
                                                             :key="accessory.id" :value="accessory.id" @select="() => {
                                                                 if (componentField.modelValue.includes(accessory.id)) {
-                                                                    const filtered = componentField.modelValue.filter((id:number) => id !== accessory.id)
+                                                                    const filtered = componentField.modelValue.filter((id: number) => id !== accessory.id)
                                                                     componentField.onChange(filtered)
                                                                     return
                                                                 }
@@ -296,6 +298,7 @@ import { toast } from 'vue-sonner';
 import Countdown from '../Countdown.vue';
 import FileUpload from '../FileUpload.vue';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
+import { Alert as IAlert } from '@/interfaces/alert.interface';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -360,6 +363,11 @@ const assign = computed<AssetAssignment | null>(() => {
 const childrenAssets = computed<Asset[]>(() => {
     if (!assign.value) return [];
     return assign.value.children_assignments?.flatMap(ca => ca.asset).filter((asset): asset is Asset => !!asset) || [];
+});
+
+const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
+    const alerts = (page.props?.accessoriesOutOfStockAlerts || []) as IAlert[];
+    return alerts.length > 0;
 });
 
 const formSchema = toTypedSchema(
@@ -442,6 +450,12 @@ const onSubmit = async (values: Record<string, any>) => {
                 if (type) {
                     downloadAssignmentDocument(flash.assignment_id as number, type);
                 }
+            }
+
+            if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
+                router.reload({
+                    only: ['accessoriesOutOfStockAlerts'],
+                });
             }
         },
         onSuccess: () => {

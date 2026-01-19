@@ -9,7 +9,7 @@ class Alert extends Model
     protected $table = 'alerts';
 
     protected $fillable = [
-        'entity_type',
+        'entity',
         'entity_id',
         'type',
         'message',

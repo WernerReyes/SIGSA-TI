@@ -1,7 +1,7 @@
 <template>
   <Card class="w-80 mx-auto text-center">
     <CardHeader>
-      <CardTitle>Cuenta regresiva ({{ duration }} minutos)</CardTitle>
+      <CardTitle>{{ title }}</CardTitle>
       <CardDescription>
         {{ targetLabel }}
       </CardDescription>
@@ -51,8 +51,9 @@ const emit = defineEmits<{
 }>()
 
 
-const { targetDate, targetLabel, duration } = defineProps<{
+const { targetDate, targetLabel, title,  duration } = defineProps<{
   targetDate: Date
+  title: string
   targetLabel: string
   duration: number // in minutes
 }>()

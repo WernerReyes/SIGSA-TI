@@ -14,9 +14,9 @@ return new class extends Migration
     {
         Schema::create('alerts', function (Blueprint $table) {
             $table->id();
-            $table->string('entity_type');
+            $table->string('entity')->unique();
             $table->unsignedBigInteger('entity_id')->nullable();
-            $table->string('type');
+            $table->string('type')->unique();
             $table->text('message')->nullable();
             $table->enum('status', AlertStatus::values())->default(AlertStatus::ACTIVE->value);
             $table->timestamp('last_notified_at')->nullable();

@@ -8,12 +8,15 @@ use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
+use App\Enums\Alert\AlertType;
+use App\Enums\Alert\EntityType;
 use App\Enums\Asset\AssetStatus;
 use App\Enums\AssetAssignment\ReturnReason;
 use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Enums\Company\EmployeeCompany;
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use App\Enums\Department\Allowed;
+use App\Models\Alert;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
@@ -320,6 +323,17 @@ class AssetService
             ];
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener las estadísticas de activos');
+        }
+    }
+
+    public function getAccessoriesOutOfStockAlerts()
+    {
+        try {
+            return Alert::where('entity', EntityType::ASSET->value)
+                ->where('type', AlertType::ACCESSORY_OUT_OF_STOCK->value)
+                ->orderBy('last_notified_at', 'asc')->get();
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al obtener las alertas de accesorios agotados');
         }
     }
 
@@ -789,62 +803,62 @@ class AssetService
         }
     }
 
-    public function devolveAsset( AssetAssignment $assignment, DevolveAssetDto $dto)
+    public function devolveAsset(AssetAssignment $assignment, DevolveAssetDto $dto)
     {
         try {
             // DB::transaction(function () use ($assignment, $dto) {
-                if ($assignment->returned_at) {
-                    throw new BadRequestException('La asignación ya ha sido devuelta.');
-                }
+            if ($assignment->returned_at) {
+                throw new BadRequestException('La asignación ya ha sido devuelta.');
+            }
 
-                $responsible = User::select('dept_id')->find($dto->responsible_id);
-                if (!$responsible) {
-                    throw new NotFoundHttpException('No se encontró el usuario responsable.');
-                }
+            $responsible = User::select('dept_id')->find($dto->responsible_id);
+            if (!$responsible) {
+                throw new NotFoundHttpException('No se encontró el usuario responsable.');
+            }
 
-                if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
-                    throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
-                }
+            if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
+                throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
+            }
 
-                DB::transaction(function () use ($dto, $assignment) {
-                    Asset::where('id', $assignment->asset_id)->update([
-                        'status' => AssetStatus::AVAILABLE->value,
-                    ]);
+            DB::transaction(function () use ($dto, $assignment) {
+                Asset::where('id', $assignment->asset_id)->update([
+                    'status' => AssetStatus::AVAILABLE->value,
+                ]);
 
-                    $assignment->update([
+                $assignment->update([
+                    'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
+                    'return_comment' => $dto->return_comment,
+                    'responsible_id' => $dto->responsible_id,
+                    'return_reason' => $dto->return_reason,
+                ]);
+
+
+                // Return accessories if any
+                $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
+                if (!$childAssignments->isEmpty()) {
+                    $asset = $assignment->asset;
+                    AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
                         'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
-                        'return_comment' => $dto->return_comment,
+                        'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
                         'responsible_id' => $dto->responsible_id,
                         'return_reason' => $dto->return_reason,
                     ]);
 
-
-                    // Return accessories if any
-                    $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
-                    if (!$childAssignments->isEmpty()) {
-                        $asset = $assignment->asset;
-                        AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
-                            'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
-                            'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
-                            'responsible_id' => $dto->responsible_id,
-                            'return_reason' => $dto->return_reason,
-                        ]);
-
-                        Asset::whereIn('id', $childAssignments->pluck('asset_id'))->update([
-                            'status' => AssetStatus::AVAILABLE->value,
-                        ]);
-                    }
-
-                    AssetHistory::create([
-                        'action' => AssetHistoryAction::RETURNED->value,
-                        'description' => "Equipo devuelto por {$assignment->assignedTo->full_name} por motivo: " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
-                        'asset_id' => $assignment->asset_id,
-                        'performed_by' => auth()->user()->staff_id,
-                        'performed_at' => now(),
-                        'related_assignment_id' => $assignment->id,
+                    Asset::whereIn('id', $childAssignments->pluck('asset_id'))->update([
+                        'status' => AssetStatus::AVAILABLE->value,
                     ]);
+                }
 
-                });
+                AssetHistory::create([
+                    'action' => AssetHistoryAction::RETURNED->value,
+                    'description' => "Equipo devuelto por {$assignment->assignedTo->full_name} por motivo: " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
+                    'asset_id' => $assignment->asset_id,
+                    'performed_by' => auth()->user()->staff_id,
+                    'performed_at' => now(),
+                    'related_assignment_id' => $assignment->id,
+                ]);
+
+            });
 
             // });
         } catch (\Exception $e) {

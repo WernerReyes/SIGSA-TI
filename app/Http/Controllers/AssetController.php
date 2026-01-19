@@ -48,6 +48,7 @@ class AssetController extends Controller
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
             'assetsPaginated' => fn() => $assetService->getPaginated($filters),
             'stats' => fn() => $assetService->getStats(),
+            'accessoriesOutOfStockAlerts' => Inertia::optional(fn() => $assetService->getAccessoriesOutOfStockAlerts())->once(),
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
             'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),
