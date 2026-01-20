@@ -11,7 +11,9 @@
                 <div class="flex items-start gap-3">
                     <div
                         class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
-                        <component :is="assetTypeOp(asset?.type?.name).icon" class="size-6 text-primary" />
+                        <component
+                         v-if="asset?.type"
+                        :is="assetTypeOp(asset?.type.name).icon" class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
                         <DialogTitle class="text-xl font-semibold">Devolver {{ asset?.type?.name }}</DialogTitle>

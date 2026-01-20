@@ -151,24 +151,6 @@
                                     'dd/MM/yyyy HH:mm') }}</span>
                             </div>
 
-                            <!-- 
-                            <ul v-if="history.description.split(',').length > 1 && history.action === AssetHistoryAction.UPDATED"
-                                class="list-disc pl-5 mt-2 space-y-1">
-                                <li class="text-xs text-muted-foreground" v-for="desc in history.description.split(',')"
-                                    :key="desc">
-                                    <template v-for="(part, index) in parsedUpdateAction(desc)" :key="index">
-                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                            part.content }}</span>
-                                        <Badge v-else class="mx-1">
-                                            <History class="size-4" />
-                                            {{ part.content }}
-                                        </Badge>
-                                    </template>
-                                </li>
-                            </ul> -->
-
-
-                            <!-- <template v-else> -->
                             <template v-if="history.action === AssetHistoryAction.UPDATED">
                                 <ul v-if="history.description.split(',').length > 1"
                                     class="list-disc pl-5 mt-2 space-y-1">
