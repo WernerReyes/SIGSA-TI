@@ -239,6 +239,8 @@ class AssetService
 
     public function getDetails(Asset $asset)
     {
+
+
         return $asset->load(
             'type:id,name',
 
@@ -252,6 +254,8 @@ class AssetService
             // 'currentAssignment.deliveryDocument',
             // 'currentAssignment.returnDocument',
         );
+
+        
     }
 
     public function getHistories(Asset $asset)
@@ -350,6 +354,9 @@ class AssetService
 
     public function storeAsset(StoreAssetDto $dto)
     {
+
+
+
         try {
             $asset = DB::transaction(function () use ($dto) {
 
@@ -370,7 +377,6 @@ class AssetService
                     'purchase_date' => $dto->purchase_date,
                     'warranty_expiration' => $dto->warranty_expiration,
                     'is_new' => $dto->is_new,
-
                 ]);
 
                 AssetHistory::create([
@@ -378,7 +384,7 @@ class AssetService
                     'description' => 'Equipo registrado en el sistema',
                     'asset_id' => $asset->id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                 ]);
 
                 return $asset;
@@ -424,7 +430,7 @@ class AssetService
                     'description' => $description,
                     'asset_id' => $asset->id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                 ]);
 
                 return $asset;
@@ -539,7 +545,6 @@ class AssetService
         try {
             $asset->delete();
         } catch (\Exception $e) {
-            ds($e->getMessage());
             throw new InternalErrorException('Error al eliminar el activo');
         }
     }
@@ -573,7 +578,7 @@ class AssetService
                     'description' => "Estado cambiado de '" . $this->fromStatusToLabel($oldStatus) . "' a '" . $this->fromStatusToLabel($newStatus) . "'",
                     'asset_id' => $asset->id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                 ]);
             });
 
@@ -695,8 +700,8 @@ class AssetService
                                         'asset_id' => $accessoryId,
                                         // 'assigned_at' => $dto->assign_date,
     
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
+                                        // 'created_at' => now()->utc(),
+                                        // 'updated_at' => now()->utc(),
                                     ];
                                 }, $newAccessoryIds)
                             );
@@ -730,7 +735,7 @@ class AssetService
                         'description' => $description,
                         'asset_id' => $asset->id,
                         'performed_by' => auth()->user()->staff_id,
-                        'performed_at' => now(),
+                        // 'performed_at' => now()->utc(),
                         'related_assignment_id' => $assignment->id,
                     ]);
 
@@ -750,8 +755,8 @@ class AssetService
                         'assigned_at' => $dto->assign_date,
                         'comment' => $dto->comment,
                         'asset_id' => $dto->asset_id,
-                        'created_at' => now(),
-                        'updated_at' => now()
+                        // 'created_at' => now()->utc(),
+                        // 'updated_at' => now()->utc()
 
                     ]
                 );
@@ -771,8 +776,8 @@ class AssetService
                                 'asset_id' => $accessoryId,
                                 // 'assigned_at' => $dto->assign_date,
     
-                                'created_at' => now(),
-                                'updated_at' => now(),
+                                // 'created_at' => now()->utc(),
+                                // 'updated_at' => now()->utc(),
                             ];
                         }, $dto->accessories)
 
@@ -794,7 +799,7 @@ class AssetService
                                 'description' => "Accesorio asignado a {$assigned->assignedTo->full_name} junto al equipo principal ({$assigned->asset->name} - {$assigned->asset->brand} {$assigned->asset->model})",
                                 'asset_id' => $accessoryId,
                                 'performed_by' => auth()->user()->staff_id,
-                                'performed_at' => now(),
+                                // 'performed_at' => now()->utc(),
                                 // 'related_assignment_id' => $assigned->id,
                             ];
                         }, $dto->accessories)
@@ -810,7 +815,7 @@ class AssetService
                     'description' => $description,
                     'asset_id' => $dto->asset_id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                     // 'related_assignment_id' => $assigned->id,
                 ]);
 
@@ -822,8 +827,6 @@ class AssetService
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
-
-            ds($e->getMessage());
 
             throw new InternalErrorException('Error al asignar el activo');
         }
@@ -852,10 +855,10 @@ class AssetService
                 ]);
 
                 $description = "Equipo devuelto por {$assignment->assignedTo->full_name} por " . ReturnReason::labels(ReturnReason::from($dto->return_reason));
-                if ($assignment->parent_assignment_id) {
-                    $parentAsset = $assignment->parentAssignment->asset;
-                    $description .= " Accesorio del equipo principal ({$parentAsset->name} - {$parentAsset->brand} {$parentAsset->model}) devuelto por {$assignment->assignedTo->full_name} por" . ReturnReason::labels(ReturnReason::from($dto->return_reason));
-                }
+                // if ($assignment->parent_assignment_id) {
+                //     $parentAsset = $assignment->parentAssignment->asset;
+                //     $description .= " Accesorio del equipo principal ({$parentAsset->name} - {$parentAsset->brand} {$parentAsset->model}) devuelto por {$assignment->assignedTo->full_name} por" . ReturnReason::labels(ReturnReason::from($dto->return_reason));
+                // }
 
                 if (!$assignment->parent_assignment_id) {
                     $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
@@ -866,8 +869,11 @@ class AssetService
                             return "{$asset->name} ({$asset->brand} {$asset->model})";
                         })->implode(', ');
 
+
+                        
+
                         AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
-                            'parent_assignment_id' => null,
+                            // 'parent_assignment_id' => null,
                             'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                             'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
                             'responsible_id' => $dto->responsible_id,
@@ -881,7 +887,7 @@ class AssetService
                                     'description' => "Accesorio devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model}) por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
                                     'asset_id' => $childAssignment->asset_id,
                                     'performed_by' => auth()->user()->staff_id,
-                                    'performed_at' => now(),
+                                    // 'performed_at' => now()->utc(),
                                     // 'related_assignment_id' => $childAssignment->id,
                                 ];
                             })->toArray()
@@ -906,7 +912,7 @@ class AssetService
                     'description' => $description,
                     'asset_id' => $assignment->asset_id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                     // 'related_assignment_id' => $assignment->id,
                 ]);
 
@@ -914,7 +920,6 @@ class AssetService
 
             // });
         } catch (\Exception $e) {
-            ds($e->getMessage());
 
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
@@ -1116,7 +1121,7 @@ class AssetService
             $template->setValue('serial_number', $asset->serial_number);
             $template->setValue('comments', $assignment->return_comment ?? '');
             $template->setValue('has_charger', $assignment->childrenAssignments->filter(function ($child) {
-                return stripos($child->asset->name, 'cargador') !== false;
+                return stripos($child->asset->name, 'cargador') !== null;
             })->count() > 0 ? 'X' : '');
             $template->setValue('responsible', strtoupper($assignment->responsible->full_name ?? 'N/A'));
 
@@ -1165,7 +1170,7 @@ class AssetService
                     'description' => $description,
                     'asset_id' => $dto->assignment->asset_id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                     'related_delivery_record_id' => $deliveryRecord->id,
                 ]);
             });
@@ -1206,7 +1211,7 @@ class AssetService
                     'description' => $description,
                     'asset_id' => $asset->id,
                     'performed_by' => auth()->user()->staff_id,
-                    'performed_at' => now(),
+                    // 'performed_at' => now()->utc(),
                     'invoice_path' => $filePath,
 
                 ]);

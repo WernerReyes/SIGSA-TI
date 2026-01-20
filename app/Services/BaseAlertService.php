@@ -79,7 +79,6 @@ abstract class BaseAlertService
             'message' => $this->messages[AlertStatus::RESOLVED->value] ?? '',
         ]);
 
-        ds("Alert resolved");
         Inertia::flash('alert_triggered', true);
     }
 

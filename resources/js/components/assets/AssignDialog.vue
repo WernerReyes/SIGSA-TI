@@ -11,10 +11,11 @@
                 <div class="flex items-start gap-3">
                     <div
                         class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
-                        <Laptop class="size-6 text-primary" />
+                        <!-- <Laptop class="size-6 text-primary" /> -->
+                        <component :is="assetTypeOp(asset?.type?.name).icon" class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
-                        <DialogTitle class="text-xl font-semibold">Asignar Equipo</DialogTitle>
+                        <DialogTitle class="text-xl font-semibold">Asignar {{ asset?.type?.name }}</DialogTitle>
                         <p class="text-sm text-muted-foreground">Completa los datos para asignar el activo y registrar
                             su entrega.</p>
                         <p v-if="asset"
@@ -311,7 +312,8 @@ import { toast } from 'vue-sonner';
 import Countdown from '../Countdown.vue';
 import FileUpload from '../FileUpload.vue';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
-import { Alert as IAlert } from '@/interfaces/alert.interface';
+import { assetTypeOp } from '@/interfaces/assetType.interface';
+import type { Alert as IAlert } from '@/interfaces/alert.interface';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -452,7 +454,7 @@ const onSubmit = async (values: Record<string, any>) => {
     router.post('/assets/assign', {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
-        assign_date: values.assign_date,
+        assign_date: values.assign_date.toDateString(),
         comment: type === TypeName.ACCESSORY ? null : values.comment,
         accessories: values.accessories,
     }, {

@@ -12,7 +12,7 @@ class AssetAssignment extends Model
 
     protected $table = 'assets_assignments';
 
-    public $timestamps = false;
+    // public $timestamps = false;
 
     protected $fillable = [
         'asset_id',
@@ -24,15 +24,11 @@ class AssetAssignment extends Model
         'responsible_id',
         'return_reason',
         'parent_assignment_id',
-        'created_at',
-        'updated_at',
     ];
 
     protected $casts = [
         'assigned_at' => 'date',
         'returned_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     public function canBeEdited(): bool

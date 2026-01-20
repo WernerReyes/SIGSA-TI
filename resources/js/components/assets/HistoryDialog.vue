@@ -11,10 +11,12 @@
                 <div class="flex items-start gap-3">
                     <div
                         class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
-                        <History class="size-6 text-primary" />
+                        <!-- <History class="size-6 text-primary" /> -->
+
+                        <component :is="assetTypeOp(asset?.type?.name).icon" class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
-                        <h2 class="text-xl font-semibold leading-tight">Historial de Activo</h2>
+                        <h2 class="text-xl font-semibold leading-tight">Historial de {{ asset?.type?.name }}</h2>
                         <p class="text-sm text-muted-foreground">Consulta los movimientos y acciones realizadas sobre
                             este activo.</p>
                         <p v-if="asset"
@@ -91,13 +93,8 @@
                     <Pagination class="mx-0 w-fit ml-auto!" :items-per-page="historiesPaginated.per_page"
                         :total="historiesPaginated.total" :default-page="historiesPaginated.current_page">
                         <PaginationContent class="flex-wrap">
-                            <PaginationPrevious :disabled="isLoading || historiesPaginated.current_page === 1" @click="!isLoading && router.visit(historiesPaginated.prev_page_url || '', {
-                                preserveScroll: true,
-                                replace: true,
-                                preserveState: true,
-                                preserveUrl: true,
-                                only: ['historiesPaginated']
-                            })">
+                            <PaginationPrevious :disabled="isLoading || historiesPaginated.current_page === 1"
+                                @click="!isLoading && changePage(historiesPaginated.prev_page_url)">
 
                                 <ChevronLeftIcon />
                                 Anterior
@@ -105,26 +102,14 @@
                             <template v-for="(item, index) in historiesPaginated.links.filter(link => +link.label)"
                                 :key="index">
                                 <PaginationItem :value="+item.label" :is-active="item.active"
-                                    :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
-                                        preserveScroll: true,
-                                        replace: true,
-                                        preserveState: true,
-                                        preserveUrl: true,
-                                        only: ['historiesPaginated']
-                                    })">
+                                    :disabled="isLoading || item.active" @click="!isLoading && changePage(item.url)">
                                     {{ item.label }}
                                 </PaginationItem>
                             </template>
 
                             <PaginationNext
                                 :disabled="isLoading || historiesPaginated.current_page === historiesPaginated.last_page"
-                                @click="!isLoading && router.visit(historiesPaginated.next_page_url || '', {
-                                    preserveScroll: true,
-                                    replace: true,
-                                    preserveState: true,
-                                    preserveUrl: true,
-                                    only: ['historiesPaginated']
-                                })" />
+                                @click="!isLoading && changePage(historiesPaginated.next_page_url)" />
 
 
 
@@ -166,124 +151,164 @@
                                     'dd/MM/yyyy HH:mm') }}</span>
                             </div>
 
-                            <ul v-if="history.description.split(',').length > 1" class="list-disc pl-5 mt-2 space-y-1">
+                            <!-- 
+                            <ul v-if="history.description.split(',').length > 1 && history.action === AssetHistoryAction.UPDATED"
+                                class="list-disc pl-5 mt-2 space-y-1">
                                 <li class="text-xs text-muted-foreground" v-for="desc in history.description.split(',')"
                                     :key="desc">
-                                    <template v-for="(part, index) in desc.split(`'`)" :key="index">
-                                        <span v-if="index % 2 === 0" class="text-xs text-muted-foreground mt-2">{{ part
-                                            }}</span>
+                                    <template v-for="(part, index) in parsedUpdateAction(desc)" :key="index">
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
                                         <Badge v-else class="mx-1">
-                                            <component :is="History" class="size-4" />
-                                            {{ part }}
+                                            <History class="size-4" />
+                                            {{ part.content }}
                                         </Badge>
                                     </template>
-
-
-
                                 </li>
-                            </ul>
+                            </ul> -->
 
 
-                            <template v-else>
-
-
-                                <template v-if="history.action === AssetHistoryAction.UPDATED"
-                                    v-for="(part, index) in history.description.split(`'`)" :key="index">
-
-                                    <span v-if="index % 2 === 0" class="text-xs text-muted-foreground mt-2">{{ part
-                                    }}</span>
-                                    <Badge v-else class="mx-1">
-                                        <component :is="History" class="size-4" />
-                                        {{ part }}
-                                    </Badge>
-                                </template>
-
-                                <template v-else-if="history.action === AssetHistoryAction.STATUS_CHANGED"
-                                    v-for="(des, i) in history.description.split(`'`)" :key="i">
-
-                                    <Badge v-if="getStatusOpByDes(des)" class="mx-1" :class="getStatusOpByDes(des)?.bg">
-                                        <component :is="getStatusOpByDes(des)?.icon" class="size-4" />
-                                        {{
-                                            getStatusOpByDes(des)?.label }}
-                                    </Badge>
-                                    <span v-else class="text-xs text-muted-foreground mt-2">
-                                        {{ des }}
-                                    </span>
-                                </template>
-
-                                <template v-else-if="history.action === AssetHistoryAction.ASSIGNED">
-                                    <template v-if="history.description.includes('Asignación cambiada de')">
-                                        <template v-for="(part, index) in history.description.split(/\s+de\s+|\s+a\s+/)"
-                                            :key="index">
-                                            <span v-if="index === 0"
-                                                class="text-xs text-muted-foreground mt-2">Asignación
-                                                cambiada de </span>
-                                            <template v-else>
-                                                <span v-if="index % 2 === 0" class="text-xs text-muted-foreground mt-2">
-                                                    a
-                                                </span>
-                                                <Badge class="mx-1">
-                                                    <User />
-                                                    {{ part }}
-                                                </Badge>
-
-                                            </template>
-                                        </template>
-                                    </template>
-
-                                    <template v-else-if="history.description.includes('con los accesorios')">
-                                        {{parsedAccessories(history.description)}}
-                                        <template v-for="(part, index) in history.description.split(' con los accesorios ')">
-
-                                            <span v-if="index === 0" class="text-xs text-muted-foreground mt-2">{{ part
-                                            }} con los accesorios </span>
+                            <!-- <template v-else> -->
+                            <template v-if="history.action === AssetHistoryAction.UPDATED">
+                                <ul v-if="history.description.split(',').length > 1"
+                                    class="list-disc pl-5 mt-2 space-y-1">
+                                    <li class="text-xs text-muted-foreground"
+                                        v-for="desc in history.description.split(',')" :key="desc">
+                                        <template v-for="(part, index) in parsedUpdateAction(desc)" :key="index">
+                                            <span v-if="part.type === 'text'"
+                                                class="text-xs text-muted-foreground mt-2">{{
+                                                    part.content }}</span>
                                             <Badge v-else class="mx-1">
-                                                <User />
-                                                {{ part }}
+                                                <History class="size-4" />
+                                                {{ part.content }}
                                             </Badge>
                                         </template>
-                                    </template>
-
-                                    <template v-else
-                                        v-for="(part, index) in history.description.split('Equipo asignado a')">
-
-                                        <span v-if="index === 0" class="text-xs text-muted-foreground mt-2">{{ part
-                                        }}Equipo asignado a</span>
-                                        <Badge v-else class="mx-1">
-                                            <User />
-                                            {{ part }}
-                                        </Badge>
-                                    </template>
-
+                                    </li>
+                                </ul>
+                                <template v-else v-for="(part, index) in parsedUpdateAction(history.description)"
+                                    :key="index">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1">
+                                        <History class="size-4" />
+                                        {{ part.content }}
+                                    </Badge>
                                 </template>
-
-                                <template v-else-if="history.action === AssetHistoryAction.RETURNED">
-                                    <template v-for="(part, index) in history.description.split(' por ')" :key="index">
-                                        <span v-if="index % 2 === 0" class="text-xs text-muted-foreground mt-2">
-                                            <template v-if="getReturnReasonByDes(part)">
-                                                por
-                                                <Badge class="mx-1" variant="secondary">
-                                                    <component :is="getReturnReasonByDes(part)?.icon" class="size-4" />
-                                                    {{ getReturnReasonByDes(part)?.label }}
-                                                </Badge>
-                                            </template>
-                                            <template v-else>
-                                                {{ part
-                                                }} por
-                                            </template>
-                                        </span>
-                                        <Badge v-else class="mx-1">
-                                            <User />
-                                            {{ part }}
-                                        </Badge>
-                                    </template>
-
-                                </template>
-
-
-                                <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
-                                </p>
                             </template>
+
+
+                            <template v-else-if="history.action === AssetHistoryAction.STATUS_CHANGED"
+                                v-for="(part, index) in parsedStatusChange(history.description)">
+                                <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                    part.content }}</span>
+                                <Badge v-else :class="part.bg" class="mx-1">
+                                    <component :is="part.icon" class="size-4" />
+                                    {{ part.label }}
+                                </Badge>
+                            </template>
+
+
+                            <template v-else-if="history.action === AssetHistoryAction.ASSIGNED">
+                                <template v-if="includes(history.description, ['junto con los accesorios'])"
+                                    v-for="(part, index) in parsedAssignmentWithAccessories(history.description)"
+                                    :key="index">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+
+                                    <Badge v-else-if="part.type === 'badge'" class="mx-1">
+                                        <component :is="part.icon" class="size-4" />
+                                        {{ part.content }}
+                                    </Badge>
+
+
+                                    <ul v-else-if="part.type === 'list'"
+                                        class="block flex-wrap gap-2 list-disc pl-5 mt-2">
+                                        <li v-for="(acc, accIndex) in part.list" :key="accIndex"
+                                            class="text-xs text-muted-foreground">
+                                            {{ acc }}
+                                        </li>
+                                    </ul>
+
+                                </template>
+
+                                <template v-else-if="includes(history.description, ['junto al equipo principal'])">
+                                    <template
+                                        v-for="(part, index) in parsedAssignmentWithMainParent(history.description)"
+                                        :key="index">
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1" :variant="part.variant">
+                                            <component :is="part.icon" class="size-4" />
+                                            {{ part.content }}
+                                        </Badge>
+
+                                    </template>
+                                </template>
+
+                                <template v-else-if="includes(history.description, ['liberado', 'asignado', ','])">
+                                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                                        <li v-for="(part) in history.description.split(',')"
+                                            class="text-xs text-muted-foreground">
+                                            {{ part }}
+                                        </li>
+                                    </ul>
+                                </template>
+
+                                <template v-else v-for="(part) in parsedAssignmentChange(history.description)">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1">
+                                        <User />
+                                        {{ part.content }}
+                                    </Badge>
+
+                                </template>
+
+
+                            </template>
+
+                            <template v-else-if="history.action === AssetHistoryAction.RETURNED">
+                                <template v-if="includes(history.description, ['junto con los accesorios'])"
+                                    v-for="(part, index) in parsedReturnWithAccessories(history.description)"
+                                    :key="index">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+
+                                    <Badge v-else-if="part.type === 'badge'" class="mx-1" :variant="part.variant">
+                                        <component :is="part.icon" class="size-4" />
+                                        {{ part.content }}
+                                    </Badge>
+
+                                    <ul v-else-if="part.type === 'list'"
+                                        class="block flex-wrap gap-2 list-disc pl-5 mt-2">
+                                        <li v-for="(acc, accIndex) in part.list" :key="accIndex"
+                                            class="text-xs text-muted-foreground">
+                                            {{ acc }}
+                                        </li>
+                                    </ul>
+
+                                </template>
+                                <template v-else-if="includes(history.description, ['junto al equipo principal'])"
+                                    v-for="(part, index) in parsedReturnWithMainParent(history.description)"
+                                    >
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else :variant="part.variant" class="mx-1">
+                                        <component :is="part.icon" class="size-4" />
+                                        {{ part.content }}
+                                    </Badge>
+                                </template>
+                                
+
+                                <span v-else class="text-xs text-muted-foreground mt-2">
+                                    
+                                    </span>
+                            </template>
+
+
+                            <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
+                            </p>
+                            <!-- </template> -->
 
                             <div class="flex items-center mt-3 gap-2"
                                 v-if="[AssetHistoryAction.DELIVERY_RECORD_UPLOADED, AssetHistoryAction.INVOICE_UPLOADED].includes(history.action)">
@@ -320,13 +345,7 @@
                             :total="historiesPaginated.total" :default-page="historiesPaginated.current_page">
                             <PaginationContent class="flex-wrap">
                                 <PaginationPrevious :disabled="isLoading || historiesPaginated.current_page === 1"
-                                    @click="!isLoading && router.visit(historiesPaginated.prev_page_url || '', {
-                                        preserveScroll: true,
-                                        replace: true,
-                                        preserveState: true,
-                                        preserveUrl: true,
-                                        only: ['historiesPaginated']
-                                    })">
+                                    @click="!isLoading && changePage(historiesPaginated.prev_page_url)">
 
                                     <ChevronLeftIcon />
                                     Anterior
@@ -334,43 +353,31 @@
                                 <template v-for="(item, index) in historiesPaginated.links.filter(link => +link.label)"
                                     :key="index">
                                     <PaginationItem :value="+item.label" :is-active="item.active"
-                                        :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
-                                            preserveScroll: true,
-                                            replace: true,
-                                            preserveState: true,
-                                            preserveUrl: true,
-                                            only: ['historiesPaginated']
-                                        })">
+                                        :disabled="isLoading || item.active"
+                                        @click="!isLoading && changePage(item.url)">
                                         {{ item.label }}
                                     </PaginationItem>
                                 </template>
 
                                 <PaginationNext
                                     :disabled="isLoading || historiesPaginated.current_page === historiesPaginated.last_page"
-                                    @click="!isLoading && router.visit(historiesPaginated.next_page_url || '', {
-                                        preserveScroll: true,
-                                        replace: true,
-                                        preserveState: true,
-                                        preserveUrl: true,
-                                        only: ['historiesPaginated']
-                                    })" />
-
-
-
+                                    @click="!isLoading && changePage(historiesPaginated.next_page_url)" />
                             </PaginationContent>
                         </Pagination>
-                        </div>
-
-
-
-
                     </div>
-                </div>
 
+
+
+
+                </div>
+            </div>
+
+
+            {{parsedReturnWithMainParent("Accesorio devuelto junto al equipo principal (Laptop HP - Lenovo A06) por Servicio Técnico")}}
         </DialogContent>
     </Dialog>
 
-    <!-- {{ test() }} -->
+
 </template>
 
 <script setup lang="ts">
@@ -409,15 +416,16 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useApp } from '@/composables/useApp';
-import { assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
+import { AssetStatusOption, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
 import { actionOp, AssetHistory, AssetHistoryAction, assetHistoryActionOptions } from '@/interfaces/assetHistory.interface';
-import type { Paginated } from '@/types';
+import type { Paginated, Variant } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
-import { DownloadIcon, History, RefreshCcw, User } from 'lucide-vue-next';
+import { DownloadIcon, History, MonitorSmartphone, RefreshCcw, User } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
-import { computed, ref, watch } from 'vue';
+import { type Component, computed, ref, watch } from 'vue';
+import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { returnReasonOptions } from '@/interfaces/assetAssignment.interface';
 
 const asset = defineModel<Asset | null>('asset');
@@ -442,28 +450,219 @@ const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
     }) as Paginated<AssetHistory>;
 });
 
-const parsedAccessories = (description: string) => {
-    const separator = ' junto con los accesorios:'
-    if (!description.includes(separator)) {
-        return null
+
+
+const parsedUpdateAction = (description: string) => {
+    const parts = description.split(`'`);
+    const parsed = parts.map((part, index) => {
+        if (index % 2 === 0) {
+            return { type: 'text', content: part };
+        } else {
+            return { type: 'badge', content: part, };
+        }
+    });
+    if (parsed.length !== 5) {
+        return [{ type: 'text', content: description }];
     }
 
-    const [base, accessoriesRaw] = description.split(separator)
-    const [,assignmentTo] = description.split(' asignado a ')
+    return parsed;
 
+};
 
-    const accessories = accessoriesRaw
+const parsedStatusChange = (description: string): Array<(Partial<AssetStatusOption> & {
+    type: 'badge' | 'text';
+    content?: string;
+})> => {
+    const parts = description.split(`'`);
+    const parsed = parts.map((part) => {
+        const statusOpt = Object.values(assetStatusOptions).find(opt => opt.label.trim().toLowerCase() === part.trim().toLowerCase());
+        if (statusOpt) {
+            return { type: 'badge' as const, ...statusOpt };
+        } else {
+            return { type: 'text' as const, content: part };
+        }
+    });
+    if (parsed.length !== 5) {
+        return [{ type: 'text' as const, content: description }];
+    }
+
+    return parsed as Array<(Partial<AssetStatusOption> & {
+        type: 'badge' | 'text';
+        content?: string;
+    })>;
+
+};
+
+const parsedAssignmentChange = (description: string, type = 'Equipo'): any => {
+    const separator = `${type} asignado a `;
+    const parts = description.split(separator);
+    const parsed = parts.map((part, index) => {
+        if (index % 2 === 0) {
+            return { type: 'text', content: separator };
+        } else {
+            return { type: 'badge', content: part, icon: User };
+        }
+    });
+    if (parsed.length !== 2) {
+        return [{ type: 'text', content: description }];
+    }
+
+    return parsed;
+
+};
+
+const parsedAssignmentWithAccessories = (description: string): Array<{
+    type: 'badge' | 'text' | 'list';
+    content?: string;
+    list?: string[];
+    // label?: string;
+    // bg?: string;
+    icon?: Component;
+}> => {
+    const [basePart, accessoriesPart] = description.split(' junto con los accesorios:');
+    // const [,assignmentTo] = basePart.split('Equipo asignado a ');
+    const baseParsed = parsedAssignmentChange(basePart);
+    const accessories = accessoriesPart
         ?.split(',')
         .map(a => a.trim())
         .filter(Boolean)
 
-    return {
-        base,
-        accessories,
+    const parsedAccessories = [
+        ...baseParsed,
+        { type: 'text' as const, content: ' junto con los accesorios: ' },
+        {
+            type: 'list' as const,
+            list: accessories
+        }
+    ];
+
+    if (parsedAccessories.length !== 4) {
+        return [{ type: 'text' as const, content: description }];
     }
+
+    return parsedAccessories;
+};
+
+const parsedAssignmentWithMainParent = (description: string): Array<{
+    type: 'badge' | 'text';
+    content?: string;
+    label?: string;
+    variant?: Variant;
+    icon?: Component;
+}> => {
+    const separator = ' junto al equipo principal ';
+    const [basePart, mainParentPart] = description.split(separator);
+
+
+    const baseParsed = parsedAssignmentChange(basePart, 'Accesorio');
+    const mainParent = mainParentPart
+        ?.replace('(', '')
+        .replace(')', '')
+        .trim();
+    const parsedMainParent = [
+        ...baseParsed,
+        { type: 'text' as const, content: separator },
+        {
+            type: 'badge' as const,
+            content: mainParent,
+            variant: 'secondary',
+            icon: MonitorSmartphone,
+        }
+    ];
+
+   
+
+    if (parsedMainParent.length !== 4) {
+        return [{ type: 'text' as const, content: description }];
+    }
+
+    return parsedMainParent;
+
+};
+
+const parsedReturnWithAccessories = (description: string): Array<{
+    type: 'badge' | 'text' | 'list';
+    content?: string;
+    list?: string[];
+    variant?: Variant;
+    icon?: Component;
+}> => {
+    const [basePart, returnBy, rest] = description.split(' por');
+    // const [,assignmentTo] = basePart.split('Equipo asignado a ');
+    const baseParsed = parsedAssignmentChange(basePart);
+    const [topic, accessoriesPart] = rest.split('junto con los accesorios:');
+    const accessories = accessoriesPart
+        ?.split(',')
+        .map(a => a.trim())
+        .filter(Boolean)
+
+
+    const op = Object.values(returnReasonOptions).find(opt => opt.label.trim().toLowerCase() === topic.trim().toLowerCase());
+
+
+    const parsedAccessories = [
+        ...baseParsed,
+        { type: 'text' as const, content: ' por' },
+        { type: 'badge' as const, content: returnBy, icon: User },
+        { type: 'text' as const, content: ' por' },
+        { type: 'badge' as const, content: topic, icon: op?.icon, variant: 'secondary' },
+        { type: 'text' as const, content: ' junto con los accesorios: ' },
+        {
+            type: 'list' as const,
+            list: accessories
+        }
+    ];
+
+    if (parsedAccessories.length !== 7) {
+        return [{ type: 'text' as const, content: description }];
+    }
+
+    return parsedAccessories;
 };
 
 
+
+const parsedReturnWithMainParent = (description: string): Array<{
+    type: 'badge' | 'text';
+    content?: string;
+    label?: string;
+    variant?: Variant;
+    icon?: Component;
+}> => {
+    const separator = ' junto al equipo principal ';
+    const [basePart, restPart] = description.split(separator);
+    const baseParsed = parsedAssignmentChange(basePart, 'Accesorio');
+    const [mainParentPart, topic] = restPart.split(' por');
+    const mainParent = mainParentPart
+        ?.replace('(', '')
+        .replace(')', '')
+        .trim();
+
+    const op = Object.values(returnReasonOptions).find(opt => opt.label.trim().toLowerCase() === topic.trim().toLowerCase());
+
+    const parsedMainParent = [
+        ...baseParsed,
+        { type: 'text' as const, content: separator },
+        {
+            type: 'badge' as const,
+            content: mainParent,
+            variant: 'secondary',
+            icon: MonitorSmartphone,
+        }
+        ,
+        { type: 'text' as const, content: ' por' },
+        { type: 'badge' as const, content: topic, icon: op?.icon, variant: 'secondary' },
+    ];
+    if (parsedMainParent.length !== 5) {
+        return [{ type: 'text' as const, content: description }];
+    }
+    return parsedMainParent;
+};
+
+
+const includes = (str: string, search: string[]) => {
+    return search.every(s => str.toLowerCase().includes(s.toLowerCase()));
+};
 
 watch(actions, () => {
     applyFilters();
@@ -498,19 +697,20 @@ const resetFilters = () => {
     applyFilters();
 };
 
+const changePage = (url?: string | null) => {
+    router.visit(url || '', {
+        preserveScroll: true,
+        replace: true,
+        preserveState: true,
+        preserveUrl: true,
+        only: ['historiesPaginated']
+    })
+};
+
 
 const handleDownloadReceipt = (filePath: string) => {
     window.open(filePath, '_blank');
 };
-
-const getStatusOpByDes = (des: string) => {
-    return Object.values(assetStatusOptions).find(opt => opt.label.trim().toLowerCase() === des.trim().toLowerCase());
-};
-
-const getReturnReasonByDes = (des: string) => {
-    return Object.values(returnReasonOptions).find(opt => opt.label.trim().toLowerCase() === des.trim().toLowerCase());
-};
-
 
 
 </script>

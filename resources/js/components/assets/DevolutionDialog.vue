@@ -11,10 +11,10 @@
                 <div class="flex items-start gap-3">
                     <div
                         class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
-                        <Undo2 class="size-6 text-primary" />
+                        <component :is="assetTypeOp(asset?.type?.name).icon" class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
-                        <DialogTitle class="text-xl font-semibold">Devolver Equipo</DialogTitle>
+                        <DialogTitle class="text-xl font-semibold">Devolver {{ asset?.type?.name }}</DialogTitle>
                         <p class="text-sm text-muted-foreground">Registra la devolución del activo y opcionalmente
                             adjunta los accesorios.</p>
                         <p v-if="asset"
@@ -190,6 +190,7 @@
 
 
             <DialogFooter class="gap-2 pt-2 border-t">
+                {{ values }}
                 <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0
@@ -248,11 +249,12 @@ import { type Asset } from '@/interfaces/asset.interface';
 import { ReturnReason, returnReasonOp, returnReasonOptions, type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { type User } from '@/interfaces/user.interface';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
-import { CalendarDateTime, DateValue, getLocalTimeZone, today } from '@internationalized/date';
+import { CalendarDateTime, DateValue, getLocalTimeZone, today, toLocalTimeZone } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
 import { Check, ChevronDownIcon, Info, RefreshCcw, Undo2 } from 'lucide-vue-next';
 import { useAsset } from '@/composables/useAsset';
+import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { type Alert } from '@/interfaces/alert.interface';
 
 
@@ -267,6 +269,8 @@ const time = reactive({
     minutes: new Date().getMinutes(),
     seconds: new Date().getSeconds(),
 });
+
+import { toZonedDate } from '@/lib/utils';
 
 const formatTime = computed(() => {
     return `${time.hours.toString().padStart(2, '0')}:${time.minutes.toString().padStart(2, '0')}:${time.seconds.toString().padStart(2, '0')}`;
@@ -313,7 +317,7 @@ const formSchema = toTypedSchema(
     })
 );
 
-const { handleSubmit, errors } = useForm({
+const { handleSubmit, errors, values } = useForm({
     initialValues: {
         responsible_id: undefined,
         returned_date: new CalendarDateTime(today(getLocalTimeZone()).year, today(getLocalTimeZone()).month, today(getLocalTimeZone()).day, time.hours, time.minutes, time.seconds),
@@ -332,7 +336,7 @@ const onSubmit = async (values: Record<string, any>) => {
 
     router.post(`/assets/devolve/${assign.value?.id}`, {
         responsible_id: values.responsible_id,
-        return_date: values.returned_date,
+        return_date: toZonedDate(values.returned_date),
         return_comment: values.return_comment,
         return_reason: values.return_reason,
         // accessories: values.accessories,

@@ -55,7 +55,7 @@
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
-                                    class="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                                    class="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
                                     <FileText class="size-5 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div class="flex-1">
@@ -68,7 +68,7 @@
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
-                                    class="size-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                                    class="size-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
                                     <User class="size-5 text-purple-600 dark:text-purple-400" />
                                 </div>
                                 <div class="flex-1">
@@ -82,7 +82,7 @@
                             <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition"
                                 v-if="asset?.current_assignment">
                                 <div
-                                    class="size-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                                    class="size-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
                                     <Monitor class="size-5 text-green-600 dark:text-green-400" />
                                 </div>
                                 <div class="flex-1">
@@ -98,7 +98,7 @@
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
-                                    class="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                                    class="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
                                     <Calendar class="size-5 text-amber-600 dark:text-amber-400" />
                                 </div>
                                 <div class="flex-1">
@@ -112,7 +112,7 @@
 
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
-                                <div class="size-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                                <div class="size-10 rounded-lg flex items-center justify-center shrink-0"
                                     :class="isWarrantyValid(asset?.warranty_expiration || '') ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'">
                                     <Shield
                                         :class="isWarrantyValid(asset?.warranty_expiration || '') ? 'size-5 text-emerald-600 dark:text-emerald-400' : 'size-5 text-rose-600 dark:text-rose-400'" />
@@ -138,7 +138,7 @@
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
-                                    class="size-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                                    class="size-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
                                     <Shield class="size-5 text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 <div class="flex-1">
@@ -192,7 +192,7 @@
                                             {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
                                         </p>
                                         <span v-if="assignment.returned_at" class="text-xs text-muted-foreground">
-                                            → {{ format(assignment.returned_at, 'dd/MM/yyyy') }}
+                                            → {{ format(assignment.returned_at, 'dd/MM/yyyy HH:mm') }}
                                         </span>
                                         <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente asignado
                                         </Badge>

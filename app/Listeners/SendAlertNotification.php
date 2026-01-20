@@ -22,11 +22,9 @@ class SendAlertNotification implements ShouldQueue
      */
     public function handle(AlertTriggered $event): void
     {
-        ds("Sending alert notification for alert ID", $event->alert->type === AlertType::ACCESSORY_OUT_OF_STOCK->value);
         if ($event->alert->type === AlertType::ACCESSORY_OUT_OF_STOCK->value) {
             // Send notification to purchases department
             $email = config('mail.purchases_email');
-            ds($email);
             Mail::to($email)->send(new AccessoryOutOfStockMail());
         }
     }

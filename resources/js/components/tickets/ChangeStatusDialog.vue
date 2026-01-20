@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import {
     Dialog,
@@ -74,10 +74,11 @@ import {
 import { TicketStatus, type Ticket } from '@/interfaces/ticket.interface';
 import { ticketStatusOptions } from '../../interfaces/ticket.interface';
 import { Spinner } from '@/components/ui/spinner';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { Form, Field as VeeField } from 'vee-validate';
 import z from 'zod';
 import { Button } from '@/components/ui/button';
+import type { Asset } from '@/interfaces/asset.interface';
 
 
 const { ticket } = defineProps<{
@@ -85,6 +86,7 @@ const { ticket } = defineProps<{
 }>();
 
 const open = defineModel<boolean>('open');
+
 
 // const open = ref(false);
 const isSubmitting = ref(false);
@@ -97,8 +99,11 @@ const formSchema = z.object({
     })
 });
 
+
 const handleFormSubmit = (values: { status: TicketStatus }, handleReset: () => void) => {
     isSubmitting.value = true;
+
+
 
     router.post(
         `/tickets/${ticket?.id}/change-status`,

@@ -12,7 +12,6 @@ class AssetAssignmentObserver
 
     public function created(AssetAssignment $assignment)
     {
-        ds('AssetAssignment created observer triggered');
         app(AccessoryOutOfStockAlertService::class)->check();
 
     }
@@ -22,7 +21,6 @@ class AssetAssignmentObserver
      */
     public function updated(AssetAssignment $assetAssignment): void
     {
-        ds('AssetAssignment updated observer triggered');
         app(AccessoryOutOfStockAlertService::class)->check();
     }
 

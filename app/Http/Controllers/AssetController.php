@@ -84,7 +84,9 @@ class AssetController extends Controller
 
     public function storeAsset(StoreAssetRequest $request, AssetService $assetService)
     {
-        $validated = $request->validated();
+            
+    $validated = $request->validated();
+        
         $dto = StoreAssetDto::fromArray($validated);
         try {
             $asset = $assetService->storeAsset($dto);
@@ -177,6 +179,7 @@ class AssetController extends Controller
 
     public function assignAsset(AssignAssetRequest $request, AssetService $assetService)
     {
+
         $validated = $request->validated();
         $dto = AssignAssetDto::fromArray($validated);
         try {

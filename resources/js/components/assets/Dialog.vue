@@ -15,14 +15,17 @@
             <DialogHeader class="space-y-3 pb-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Laptop class="size-5 text-primary" />
+                        <!-- <Laptop class="size-5 text-primary" /> -->
+                         
+                        <component v-if="currentAsset?.type?.name" :is="assetTypeOp(currentAsset?.type?.name)?.icon" class="size-5 text-primary" />
+                        <Laptop v-else class="size-5 text-primary" />
                     </div>
                     <div class="flex flex-col gap-1">
                         <DialogTitle class="text-xl font-semibold">
-                            {{ currentAsset ? 'Editar Activo' : 'Crear Nuevo Activo' }}
+                            {{ currentAsset ? `Editar ${currentAsset?.type?.name}` : 'Crear Nuevo Activo' }}
                         </DialogTitle>
                         <p class="text-sm text-muted-foreground">
-                            {{ currentAsset ? 'Actualiza la información del activo' : 'Completa los datos del nuevo activo tecnológico' }}
+                            {{ currentAsset ? `Actualiza la información de ${currentAsset?.type?.name}` : 'Completa los datos del nuevo activo tecnológico' }}
                         </p>
                     </div>
                 </div>
@@ -32,7 +35,7 @@
                 handleSubmit(onSubmit)()
                 " class="space-y-5 py-4 max-h-96 overflow-y-auto">
                 
-                <Accordion type="multiple" :default-value="['info', 'specs', 'dates']" class="w-full space-y-3">
+                <Accordion :unmountOnHide="false" type="multiple" :default-value="['info', 'specs', 'dates']" class="w-full space-y-3">
                     <!-- Sección: Información Básica -->
                     <AccordionItem value="info" class="border rounded-lg px-4">
                         <AccordionTrigger class="hover:no-underline">
@@ -43,10 +46,11 @@
                                 <span class="font-semibold">Información Básica</span>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent force-mount class="space-y-4 pt-4">
+                        <AccordionContent class="space-y-4 pt-4">
                             <!-- NOMBRE -->
                             <FieldGroup>
                                 <VeeField name="name" v-slot="{ componentField, errors }">
+                                  
                                     <Field :data-invalid="!!errors.length">
                                         <FieldLabel for="name">Nombre del Activo</FieldLabel>
                                         <Input id="name" placeholder="EJ: Laptop de Desarrollo" v-bind="componentField" />
@@ -157,7 +161,7 @@
                                 <span class="font-semibold">Especificaciones Técnicas</span>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent force-mount class="space-y-4 pt-4">
+                        <AccordionContent  class="space-y-4 pt-4">
                             <div class="grid gap-4 items-center md:grid-cols-2">
                                 <FieldGroup>
                                     <VeeField name="serial_number" v-slot="{ componentField, errors }">
@@ -240,7 +244,7 @@
                                 <span class="font-semibold">Fechas y Garantía</span>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent force-mount class="space-y-4 pt-4">
+                        <AccordionContent  class="space-y-4 pt-4">
                             <div class="grid gap-4 items-center md:grid-cols-2">
 
                                 <FieldGroup>

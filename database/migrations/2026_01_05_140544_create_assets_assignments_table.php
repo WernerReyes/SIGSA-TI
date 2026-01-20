@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->id();
 
             $table->date('assigned_at');
-            $table->dateTime('returned_at')->nullable();
+            $table->timestamp('returned_at')->nullable();
 
 
             $table->text('comment')->nullable();

@@ -11,7 +11,7 @@
                 <h2 id="radix-:r88:" class="text-lg font-semibold leading-none tracking-tight">Cambiar Estado
                     AST-{{ asset?.id }}</h2>
             </DialogHeader>
-            
+
             <div class="space-y-4 py-4">
                 <VeeField name="status" v-slot="{ componentField, errors }">
                     <Field>
@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import {
     Dialog,
@@ -77,17 +77,23 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Asset, AssetStatus, assetStatusOptions } from '@/interfaces/asset.interface';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { useForm, Field as VeeField } from 'vee-validate';
 import { watch } from 'vue';
 import z from 'zod';
 import { toTypedSchema } from '@vee-validate/zod';
+import { TypeName } from '@/interfaces/assetType.interface';
 
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
+const page = usePage();
+
 const isSubmitting = ref(false);
+
+const accessories = computed<Asset[]>(() => (page.props?.accessories || []) as Asset[]);
+
 
 const formSchema = toTypedSchema(z.object({
     status: z.nativeEnum(AssetStatus, {
@@ -113,8 +119,15 @@ watch(() => asset.value, (newAsset) => {
     }
 });
 
+
+
 const handleFormSubmit = (values: { status: AssetStatus }) => {
     isSubmitting.value = true;
+
+    const only = ['assetsPaginated', 'stats'];
+    if (accessories.value.some(acc => acc.id === asset?.value?.id) || asset?.value?.type?.name === TypeName.ACCESSORY) {
+        only.push('accessories');
+    }
 
     router.put(
         `/assets/status/${asset?.value?.id}`,
@@ -125,7 +138,7 @@ const handleFormSubmit = (values: { status: AssetStatus }) => {
             preserveScroll: true,
             preserveState: true,
             preserveUrl: true,
-            only: ['assetsPaginated', 'stats'],
+            only,
             onSuccess: () => {
                 handleReset();
                 open.value = false;

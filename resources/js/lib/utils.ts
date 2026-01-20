@@ -3,6 +3,7 @@ import type { Updater } from '@tanstack/vue-table';
 import type { ClassValue } from 'clsx';
 
 import { clsx } from 'clsx';
+import { format, formatInTimeZone } from 'date-fns-tz';
 import { twMerge } from 'tailwind-merge';
 import type { Ref } from 'vue';
 
@@ -29,4 +30,9 @@ export function valueUpdater<T extends Updater<any>>(
         typeof updaterOrValue === 'function'
             ? updaterOrValue(ref.value)
             : updaterOrValue;
+}
+
+
+export function toZonedDate(date: Date | string, timeZone: string = 'America/Lima'): string {
+    return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX", { timeZone });
 }

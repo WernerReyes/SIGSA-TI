@@ -7,8 +7,8 @@
                     <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Activos</p>
                     <div class="flex items-center gap-2">
                         <Input class="w-full" placeholder="Buscar activos..." v-model="form.search" />
-                        <Button variant="ghost" size="icon" :disabled="isLoading || !hasFilters"
-                            class="rounded-full" @click="resetFilters">
+                        <Button variant="ghost" size="icon" :disabled="isLoading || !hasFilters" class="rounded-full"
+                            @click="resetFilters">
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
                         </Button>
                     </div>
@@ -17,7 +17,8 @@
                         <Badge variant="outline" class="rounded-full">{{ filterCount }} filtros activos</Badge>
                         <Badge v-if="form.search" variant="secondary" class="rounded-full">Texto</Badge>
                         <Badge v-if="form.assigned_to.length" variant="secondary" class="rounded-full">Empleados</Badge>
-                        <Badge v-if="form.department_id.length" variant="secondary" class="rounded-full">Departamentos</Badge>
+                        <Badge v-if="form.department_id.length" variant="secondary" class="rounded-full">Departamentos
+                        </Badge>
                         <Badge v-if="form.types.length" variant="secondary" class="rounded-full">Tipos</Badge>
                         <Badge v-if="form.status.length" variant="secondary" class="rounded-full">Estados</Badge>
                     </div>
@@ -77,7 +78,8 @@
                                                     }
                                                 }">
                                                 {{ user.full_name }}
-                                                <Check v-if="form.assigned_to.includes(user.staff_id)" class="ml-auto size-4" />
+                                                <Check v-if="form.assigned_to.includes(user.staff_id)"
+                                                    class="ml-auto size-4" />
                                             </CommandItem>
                                         </CommandGroup>
                                     </WhenVisible>
@@ -145,7 +147,8 @@
                                                 }">
 
                                                 {{ department.name }}
-                                                <Check v-if="form.department_id.includes(department.id)" class="ml-auto size" />
+                                                <Check v-if="form.department_id.includes(department.id)"
+                                                    class="ml-auto size" />
                                             </CommandItem>
                                         </CommandGroup>
 
@@ -199,8 +202,8 @@
 
                                         <CommandEmpty>Tipo no encontrado</CommandEmpty>
                                         <CommandGroup>
-                                            <CommandItem v-for="assetType in types" :key="assetType.id" :value="assetType.id"
-                                                @select="() => {
+                                            <CommandItem v-for="assetType in types" :key="assetType.id"
+                                                :value="assetType.id" @select="() => {
 
                                                     if (form.types.includes(assetType.id)) {
                                                         form.types = [...form.types.filter(id => id !== assetType.id)];
@@ -210,7 +213,8 @@
                                                 }">
                                                 <component :is="assetTypeOp(assetType.name)?.icon" class="size-4" />
                                                 {{ assetType.name }}
-                                                <Check v-if="form.types.includes(assetType.id)" class="ml-auto h-4 w-4" />
+                                                <Check v-if="form.types.includes(assetType.id)"
+                                                    class="ml-auto h-4 w-4" />
                                             </CommandItem>
                                         </CommandGroup>
                                     </WhenVisible>
@@ -249,8 +253,8 @@
                                     <CommandEmpty>Estado no encontrado</CommandEmpty>
                                     <CommandGroup>
 
-                                        <CommandItem v-for="status in Object.values(assetStatusOptions)" :key="status.value"
-                                            :value="status.value" @select="() => {
+                                        <CommandItem v-for="status in Object.values(assetStatusOptions)"
+                                            :key="status.value" :value="status.value" @select="() => {
                                                 if (form.status.includes(status.value)) {
                                                     form.status = [...form.status.filter(id => id !== status.value)];
                                                 } else {
@@ -279,8 +283,8 @@
                         <DropdownMenuContent align="end">
 
                             <DropdownMenuCheckboxItem :disabled="isLoading"
-                                v-for="column in table.getAllColumns().filter((column) => column.getCanHide())" :key="column.id"
-                                class="capitalize" :model-value="column.getIsVisible()"
+                                v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
+                                :key="column.id" class="capitalize" :model-value="column.getIsVisible()"
                                 @update:model-value="column.toggleVisibility()">
                                 {{ column.columnDef.header }}
                             </DropdownMenuCheckboxItem>
@@ -297,9 +301,10 @@
                 <Table class="min-w-full">
                     <TableHeader class="bg-muted/70 backdrop-blur sticky top-0 z-10">
                         <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                            <TableHead class="pl-5 uppercase text-[11px] tracking-wide text-muted-foreground" v-for="header in headerGroup.headers" :key="header.id" :style="{
-                                width: header.getSize() + 'px'
-                            }">
+                            <TableHead class="pl-5 uppercase text-[11px] tracking-wide text-muted-foreground"
+                                v-for="header in headerGroup.headers" :key="header.id" :style="{
+                                    width: header.getSize() + 'px'
+                                }">
                                 <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                                     :props="header.getContext()" />
                             </TableHead>
@@ -315,9 +320,10 @@
                                     }" :key="row.id" v-for="row in table.getRowModel().rows"
                                         :data-state="row.getIsSelected() ? 'selected' : undefined"
                                         class="cursor-context-menu transition hover:bg-muted/60 odd:bg-muted/30">
-                                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="pl-5 align-middle"
-                                            :style="{ width: cell.column.getSize() + 'px' }">
-                                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
+                                            class="pl-5 align-middle" :style="{ width: cell.column.getSize() + 'px' }">
+                                            <FlexRender :render="cell.column.columnDef.cell"
+                                                :props="cell.getContext()" />
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -351,7 +357,8 @@
                                     <MonitorSmartphone />
                                     Asignar
                                 </ContextMenuItem>
-                                <ContextMenuItem :disabled="!activeRow?.current_assignment" @click="openDevolution = true">
+                                <ContextMenuItem :disabled="!activeRow?.current_assignment"
+                                    @click="openDevolution = true">
                                     <MonitorSmartphone />
                                     Devolver
                                 </ContextMenuItem>
@@ -415,20 +422,20 @@
                                 })">
                                 {{ item.label }}
                             </PaginationItem>
-                    </template>
+                        </template>
 
-                    <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="!isLoading && router.visit(assets.next_page_url || '', {
-                        preserveScroll: true,
-                    })">
-                        Siguiente
-                        <ChevronRightIcon />
-                    </PaginationNext>
+                        <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="!isLoading && router.visit(assets.next_page_url || '', {
+                            preserveScroll: true,
+                        })">
+                            Siguiente
+                            <ChevronRightIcon />
+                        </PaginationNext>
 
-                </PaginationContent>
-            </Pagination>
+                    </PaginationContent>
+                </Pagination>
+            </div>
         </div>
     </div>
-</div>
 
     <DialogDetails v-if="openDetails" v-model:open="openDetails" v-model:asset="activeRow" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
@@ -452,18 +459,7 @@
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction @click="
-                    router.delete(`
-                     /assets/${activeRow?.id}
-                    `, {
-                        only: ['assetsPaginated', 'stats'],
-                        preserveScroll: true,
-                        onSuccess: () => {
-                            activeRow = null;
-                            openDelete = false;
-                        }
-                    });
-                ">Continuar</AlertDialogAction>
+                <AlertDialogAction @click="handleDeleteAsset">Continuar</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
@@ -524,7 +520,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from '@/components/ui/alert-dialog';
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from '@/components/ui/command';
 
@@ -541,7 +537,7 @@ import type { Department } from '@/interfaces/department.interace';
 import type { BasicUserInfo } from '@/interfaces/user.interface';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { format, isAfter, isEqual, isSameDay, parseISO, startOfDay } from 'date-fns';
+import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
 import { Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, ChevronsUpDown, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
 
@@ -558,7 +554,7 @@ import StatusDialog from './StatusDialog.vue';
 
 const { assets } = defineProps<{ assets: Paginated<Asset> }>()
 
-
+const page = usePage();
 const { isLoading } = useApp();
 
 
@@ -594,14 +590,16 @@ const users = computed<(Omit<BasicUserInfo, 'staff_id'> & {
 });
 
 const departments = computed(() => {
-    return (usePage().props?.departments || []) as Department[];
+    return (page.props?.departments || []) as Department[];
 });
 
 const types = computed(() => {
-    return (usePage().props?.types || []) as AssetType[];
+    return (page.props?.types || []) as AssetType[];
 });
 
-const filters = computed(() => usePage().props.filters as Record<string, any>);
+const filters = computed(() => page.props.filters as Record<string, any>);
+
+const accesories = computed(() => page.props.accesories as Asset[]);
 
 const assetId = computed(() => activeRow.value?.id || null);
 
@@ -674,7 +672,10 @@ const handleOpenDetails = () => {
         data: { asset_id: assetId.value },
         preserveUrl: true,
         onSuccess: (page) => {
-            activeRow.value = page.props.details as Asset;
+            activeRow.value = {
+                ...activeRow.value!,
+                ...page.props.details as Asset,
+            }
             openDetails.value = true;
         }
     });
@@ -687,7 +688,10 @@ const handleOpenHistories = () => {
         data: { asset_id: assetId.value },
         preserveUrl: true,
         onSuccess: (page) => {
-            activeRow.value = page.props.histories as Asset;
+            activeRow.value = {
+                ...activeRow.value!,
+                histories: page.props.histories as Asset['histories'],
+            }
             openHistory.value = true;
         }
     });
@@ -714,6 +718,25 @@ const resetFilters = () => {
     form.department_id = [];
     applyFilters();
 };
+
+const handleDeleteAsset = () => {
+    if (!activeRow.value) return;
+    const only = ['assetsPaginated', 'stats'];
+    if (accesories.value.some(acc => acc.id === activeRow.value!.id)) {
+        only.push('accesories');
+    }
+
+    router.delete(`
+                     /assets/${activeRow.value.id}
+                    `, {
+        only,
+        preserveScroll: true,
+        onSuccess: () => {
+            activeRow.value = null;
+            openDelete.value = false;
+        }
+    });
+}
 
 const columns: ColumnDef<Asset>[] = [
     {
@@ -874,9 +897,9 @@ const columns: ColumnDef<Asset>[] = [
 ]
 
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
-  const endDate = startOfDay(new Date(warrantyEndDate));
-  const today = startOfDay(new Date());
-  return isAfter(endDate, today) || isSameDay(endDate, today);
+    const endDate = startOfDay(new Date(warrantyEndDate));
+    const today = startOfDay(new Date());
+    return isAfter(endDate, today) || isSameDay(endDate, today);
 };
 
 const expanded = ref<ExpandedState>({})
