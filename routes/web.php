@@ -30,8 +30,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/tickets', [TicketController::class, 'renderView'])->name('tickets');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
-    Route::post('/tickets/{ticketId}/reassign', [TicketController::class, 'reassign'])->name('tickets.reassign');
-    Route::post('/tickets/{ticketId}/change-status', [TicketController::class, 'changeStatus'])->name('tickets.changeStatus');
+    Route::post('/tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
+    Route::post('/tickets/{ticket}/change-status', [TicketController::class, 'changeStatus'])->name('tickets.changeStatus');
 
     Route::prefix('asset-types')->group(function () {
         Route::get('/', [AssetTypeController::class, 'renderTypes'])->name('assetTypes');

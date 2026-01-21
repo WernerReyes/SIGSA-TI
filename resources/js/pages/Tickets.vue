@@ -6,13 +6,13 @@ import Table from '@/components/tickets/Table.vue';
 import { Department } from '@/interfaces/department.interace';
 import { Ticket } from '@/interfaces/ticket.interface';
 import { type User } from '@/interfaces/user.interface';
-import { type BreadcrumbItem } from '@/types';
+import { Paginated, type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 defineProps<{
     departments: Department[];
-    tickets: Ticket[];
+    tickets: Paginated<Ticket>;
     TIUsers: User[];
 
 }>();
@@ -52,8 +52,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
                 </div>
             </div> -->
-            <div
-                class="relative min-h-screen flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
+            <div class="relative min-h-screen flex-1 rounded-xl md:min-h-min">
                 <!-- <PlaceholderPattern /> -->
                 <Table :tickets="tickets" />
 

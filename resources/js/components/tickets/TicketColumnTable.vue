@@ -6,7 +6,7 @@
             class="font-medium text-sm mt-1">{{
                 ticket.title
             }}</span><span class="text-xs text-muted-foreground mt-1">{{
-                format(new Date(ticket.opened_at || ''), 'PPP', {
+                format(new Date(ticket.created_at || ''), 'PPP', {
                     locale: es
                 })
             }}</span>

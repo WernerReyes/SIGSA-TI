@@ -120,6 +120,7 @@ export interface Paginated<T> {
     total: number;
     path: string;
     to: number;
+    from: number;
     last_page: number;
     links: {
         url: string;

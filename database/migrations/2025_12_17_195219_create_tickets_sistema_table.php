@@ -19,18 +19,22 @@ return new class extends Migration {
             $table->string('title', 255);
             $table->enum('type', TicketType::values());
             $table->text('description');
-            $table->timestamp('opened_at')->useCurrent();
+            // $table->timestamp('opened_at')->useCurrent();
             $table->timestamp('closed_at')->nullable();
+
+
             $table->enum('status', TicketStatus::values())->default('OPEN');
             $table->enum('priority', TicketPriority::values())->default('MEDIUM');
             $table->enum('request_type', TicketRequestType::values())->nullable()->default(null);
-            
+
             //* Foreign key to users table
             $table->unsignedInteger('requester_id');
             $table->foreign('requester_id')->references('staff_id')->on('ost_staff');
-            
-            $table->unsignedInteger('technician_id')->nullable();
-            $table->foreign('technician_id')->references('staff_id')->on('ost_staff');
+
+            $table->unsignedInteger('responsible_id')->nullable();
+            $table->foreign('responsible_id')->references('staff_id')->on('ost_staff');
+
+            $table->timestamps();
         });
     }
 

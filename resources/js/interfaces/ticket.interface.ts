@@ -1,5 +1,7 @@
+import { Component } from 'vue';
 import type { TicketHistory } from './ticketHistory.interface';
 import type { User } from './user.interface';
+import { Archive, ArrowDown, ArrowUp, Bug, CheckCircle, Code2, Flame, FolderOpen, Key, LifeBuoy, LoaderCircle, Minus, MonitorSmartphone } from 'lucide-vue-next';
 
 export enum TicketStatus {
     OPEN = 'OPEN',
@@ -34,42 +36,51 @@ export interface Ticket {
     priority: TicketPriority;
     type: TicketType;
     requester: User;
-    technician?: User;
+    // technician?: User;
     request_type: TicketRequestType;
     // created_at: Date;
     // updated_at: Date;
-    opened_at?: Date;
+    // opened_at?: Date;
     histories?: TicketHistory[];
     closed_at?: Date;
     requester_id: number;
-    technician_id?: number;
+    responsible_id?: number;
+    responsible?: User;
+
+    created_at: Date;
+    updated_at: Date;
 }
 
 type TicketStatusOption = {
     label: string;
     value: TicketStatus;
     bg: string;
+    icon: Component;
 };
 export const ticketStatusOptions: Record<TicketStatus, TicketStatusOption> = {
     [TicketStatus.OPEN]: {
         label: 'Abierto',
         value: TicketStatus.OPEN,
         bg: 'bg-blue-500',
+        icon: FolderOpen,
     },
     [TicketStatus.IN_PROGRESS]: {
         label: 'En Progreso',
         value: TicketStatus.IN_PROGRESS,
         bg: 'bg-yellow-500',
+        icon: LoaderCircle
     },
     [TicketStatus.RESOLVED]: {
         label: 'Resuelto',
         value: TicketStatus.RESOLVED,
         bg: 'bg-green-500',
+        icon: CheckCircle
     },
     [TicketStatus.CLOSED]: {
         label: 'Cerrado',
         value: TicketStatus.CLOSED,
         bg: 'bg-gray-500',
+        icon: Archive
     },
 };
 
@@ -84,6 +95,7 @@ type TicketTypeOption = {
     label: string;
     value: TicketType;
     bg: string;
+    icon: Component;
 };
 
 export const ticketTypeOptions: Record<TicketType, TicketTypeOption> = {
@@ -91,11 +103,13 @@ export const ticketTypeOptions: Record<TicketType, TicketTypeOption> = {
         label: 'Incidente',
         value: TicketType.INCIDENT,
         bg: 'bg-blue-500',
+        icon: Bug,
     },
     [TicketType.SERVICE_REQUEST]: {
         label: 'Solicitud de Servicio',
         value: TicketType.SERVICE_REQUEST,
         bg: 'bg-green-500',
+        icon: LifeBuoy,
     },
 };
 
@@ -109,6 +123,7 @@ type TicketPriorityOption = {
     value: TicketPriority;
     bg: string;
     search: string;
+    icon: Component;
 };
 
 export const ticketPriorityOptions: Record<
@@ -120,24 +135,28 @@ export const ticketPriorityOptions: Record<
         value: TicketPriority.LOW,
         bg: 'bg-green-500',
         search: 'baja',
+        icon: ArrowDown,
     },
     [TicketPriority.MEDIUM]: {
         label: 'Media',
         value: TicketPriority.MEDIUM,
         bg: 'bg-yellow-500',
         search: 'media',
+        icon: Minus
     },
     [TicketPriority.HIGH]: {
         label: 'Alta',
         value: TicketPriority.HIGH,
         bg: 'bg-orange-500',
         search: 'alta',
+        icon: ArrowUp
     },
     [TicketPriority.URGENT]: {
         label: 'Crítica',
         value: TicketPriority.URGENT,
         bg: 'bg-red-500',
         search: 'critica',
+        icon: Flame
     },
 };
 
@@ -152,6 +171,7 @@ type TicketRequestTypeOption = {
     label: string;
     value: TicketRequestType;
     bg: string;
+    icon: Component;
 };
 
 export const ticketRequestTypeOptions: Record<
@@ -162,16 +182,19 @@ export const ticketRequestTypeOptions: Record<
         label: 'Equipo',
         value: TicketRequestType.EQUIPMENT,
         bg: 'bg-blue-500',
+        icon: MonitorSmartphone
     },
     [TicketRequestType.SOFTWARE]: {
         label: 'Software',
         value: TicketRequestType.SOFTWARE,
         bg: 'bg-green-500',
+        icon: Code2
     },
     [TicketRequestType.ACCESS]: {
         label: 'Acceso',
         value: TicketRequestType.ACCESS,
         bg: 'bg-yellow-500',
+        icon: Key
     },
 };
 

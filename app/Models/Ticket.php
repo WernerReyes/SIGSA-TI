@@ -15,29 +15,29 @@ class Ticket extends Model
     protected $table = 'tickets_sistema';
 
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'type',
         'title',
         'description',
-        'opened_at',
+        // 'opened_at',
         'closed_at',
         'status',
         'priority',
         'request_type',
         'requester_id',
-        'technician_id',
+        'responsible_id',
         // 'updated_at',
     ];
 
     protected $casts = [
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
-        'status' => TicketStatus::class,
-        'priority' => TicketPriority::class,
-        'type' => TicketType::class,
-        'request_type' => TicketRequestType::class,
+        // 'status' => TicketStatus::class,
+        // 'priority' => TicketPriority::class,
+        // 'type' => TicketType::class,
+        // 'request_type' => TicketRequestType::class,
     ];
 
     public function requester()
@@ -45,9 +45,9 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'requester_id');
     }
 
-    public function technician()
+    public function responsible()
     {
-        return $this->belongsTo(User::class, 'technician_id');
+        return $this->belongsTo(User::class, 'responsible_id');
     }
 
     public function histories()
