@@ -5,6 +5,8 @@ import { initializeTheme } from './composables/useAppearance';
 import { router } from '@inertiajs/vue3';
 import { toast } from 'vue-sonner';
 
+import '../css/app.css';
+
 router.on('error', (event) => {
     const errors = event.detail?.errors;
     if (!errors) return;
