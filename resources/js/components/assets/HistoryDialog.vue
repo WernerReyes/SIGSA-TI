@@ -354,8 +354,6 @@
                 </div>
             </div>
 
-
-            {{parsedReturnWithMainParent("Accesorio devuelto junto al equipo principal (Laptop HP - Lenovo A06) por Servicio Técnico")}}
         </DialogContent>
     </Dialog>
 

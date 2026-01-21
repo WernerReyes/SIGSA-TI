@@ -10,7 +10,6 @@ use App\Services\TicketService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
 class TicketController extends Controller
