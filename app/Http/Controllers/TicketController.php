@@ -7,7 +7,6 @@ use App\DTOs\Ticket\StoreTicketDto;
 use App\DTOs\Ticket\TicketFiltersDto;
 use App\Http\Requests\Ticket\StoreTicketRequest;
 use App\Models\Ticket;
-use App\Services\DepartmentService;
 use App\Services\TicketService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
@@ -17,13 +16,14 @@ use Inertia\Inertia;
 class TicketController extends Controller
 {
     //
-    function renderView(Request $request, DepartmentService $departmentService, TicketService $ticketService, UserService $userService)
+    function renderView(Request $request, TicketService $ticketService, UserService $userService)
     {
         $filters = TicketFiltersDto::fromArray($request->all());
 
         return Inertia::render('Tickets', [
             // 'departments' => $departmentsWithUsers,
             'filters' => $filters,
+            'users' => Inertia::optional(fn() => $userService->getAllBasicInfo()),
             'tickets' => Inertia::once(fn() => $ticketService->getAllOrderedByPriority($filters)),
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers()),
         ]);
@@ -60,6 +60,35 @@ class TicketController extends Controller
         } catch (\Exception $e) {
 
             Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
+
+
+    function update(Ticket $ticket, StoreTicketRequest $request, TicketService $ticketService)
+    {
+        $validated = $request->validated();
+        $dto = StoreTicketDto::fromArray($validated);
+        try {
+            $ticket = $ticketService->updateTicket($ticket, $dto);
+            Inertia::flash([
+                'ticket' => $ticket,
+                'success' => 'El ticket ha sido actualizado exitosamente.',
+                'error' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+
+
+            // return back()->with('success', 'El ticket ha sido actualizado exitosamente.');
+        } catch (\Exception $e) {
+            // return back()->withErrors(['error' => 'Ocurrió un error al actualizar el ticket. Por favor, inténtelo de nuevo.']);
+            Inertia::flash([
+                'ticket' => null,
                 'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
@@ -118,7 +147,7 @@ class TicketController extends Controller
         }
 
         try {
-            $action = $ticketService->changeTicketStatus($ticket->id, $newStatus);
+            $action = $ticketService->changeTicketStatus($ticket, $newStatus);
             // return back()->with('success', $action);
 
             Inertia::flash([

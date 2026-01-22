@@ -6,7 +6,7 @@ use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::middleware('auth')->group(function () {
+// Route::middleware('auth')->group(function () {
     
     // Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     // Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -25,4 +25,4 @@ Route::middleware('auth')->group(function () {
     Route::redirect('settings', '/settings/appearance')->name('settings');
     // Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
     //     ->name('two-factor.show');
-});
+// });

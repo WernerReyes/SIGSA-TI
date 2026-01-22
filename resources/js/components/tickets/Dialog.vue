@@ -1,47 +1,46 @@
 <template>
 
-    <Form :initial-values="{
-        type: TicketType.SERVICE_REQUEST
-    }" v-slot="{ getValues, handleSubmit, errors }" as="" keep-values :validation-schema="formSchema">
 
-        <Dialog v-model:open="open">
-            <DialogTrigger as-child>
-                <Button class="w-fit ml-auto shadow-md hover:shadow-lg transition-all gap-2">
-                    <Tag class="size-4" />
-                    Nuevo Ticket
-                </Button>
-            </DialogTrigger>
-            <DialogContent class="sm:max-w-5/12 max-h-screen overflow-y-auto">
-                <DialogHeader class="space-y-3 pb-4 border-b">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-primary/10">
-                            <Tag class="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <DialogTitle class="text-xl">Nuevo Ticket</DialogTitle>
-                            <p class="text-sm text-muted-foreground mt-1">Completa los detalles para crear un ticket de soporte</p>
-                        </div>
+    <Dialog v-model:open="open" @update:open="(val) => {
+        if (!val) handleReset()
+    }">
+        <DialogTrigger as-child v-if="includeButton">
+            <Button class="w-fit ml-auto shadow-md hover:shadow-lg transition-all gap-2">
+                <Tag class="size-4" />
+
+                Nuevo Ticket
+            </Button>
+        </DialogTrigger>
+        <DialogContent class="sm:max-w-5/12 overflow-y-auto">
+            <DialogHeader class="space-y-3 pb-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-primary/10">
+                        <Tag class="h-5 w-5 text-primary" />
                     </div>
-                </DialogHeader>
+                    <div>
+                        <DialogTitle class="text-xl">{{
+                            ticket ? 'Editar Ticket' : 'Crear Nuevo Ticket'
+                            }}</DialogTitle>
+                        <p class="text-sm text-muted-foreground mt-1">Completa los detalles para crear un ticket de
+                            soporte</p>
+                    </div>
+                </div>
+            </DialogHeader>
 
-                <form id="dialogForm" @submit.prevent=" 
-                    //   router.post('/tickets', getValues())
-                    handleSubmit(onSubmit)
-                    " class="space-y-5 py-4">
-                    <!-- TÍTULO -->
 
-                    <div class="flex max-sm:flex-col gap-5">
+            <form id="dialogForm" @submit.prevent="handleSubmit(onSubmit)()"
+                class="space-y-5 py-4 max-h-96 overflow-y-auto">
+                <!-- TÍTULO -->
+
+                <div class="flex max-sm:flex-col gap-5">
                     <FieldGroup>
                         <VeeField name="title" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="title" class="text-sm font-semibold">
                                     Título
                                 </FieldLabel>
-                                <Input 
-                                    id="title" 
-                                    placeholder="Ej: No puedo acceder al sistema de nómina"
-                                    class="h-11 mt-2"
-                                    v-bind="componentField" />
+                                <Input id="title" placeholder="Ej: No puedo acceder al sistema de nómina"
+                                    class="h-11 mt-2" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -54,123 +53,116 @@
                                 <FieldLabel for="description" class="text-sm font-semibold">
                                     Descripción
                                 </FieldLabel>
-                                <Textarea 
-                                    id="description" 
-                                    rows="4"
+                                <Textarea id="description" rows="4"
                                     placeholder="Describe el problema en detalle: ¿Qué ocurrió? ¿Cuándo empezó? ¿Qué intentaste hacer?"
-                                    class="mt-2 resize-none"
-                                    v-bind="componentField" />
+                                    class="mt-2 resize-none" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
                     </FieldGroup>
-                    </div>
+                </div>
 
-                    <FieldGroup>
-                        <VeeField name="type" v-slot="{ componentField, errors }">
+                <FieldGroup>
+                    <VeeField name="type" v-slot="{ componentField, errors }">
+                        <Field :data-invalid="!!errors.length">
+                            <FieldLabel class="text-sm font-semibold mb-3">
+                                Tipo de Ticket
+                            </FieldLabel>
+                            <Tabs v-bind="componentField" :default-value="TicketType.SERVICE_REQUEST" class="w-full">
+                                <TabsList class="grid w-full grid-cols-2">
+                                    <TabsTrigger v-for="type in Object.values(ticketTypeOptions)" :key="type.value"
+                                        :value="type.value">
+                                        {{ type.label }}
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </Field>
+                    </VeeField>
+                </FieldGroup>
+
+
+                <div class="grid gap-5"
+                    :class="values.type === TicketType.SERVICE_REQUEST ? 'md:grid-cols-2' : 'md:grid-cols-1'">
+                    <!-- CATEGORÍA -->
+                    <FieldGroup v-if="values.type === TicketType.SERVICE_REQUEST">
+                        <VeeField name="request_type" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
-                                <FieldLabel class="text-sm font-semibold mb-3">
-                                    Tipo de Ticket
+                                <FieldLabel class="text-sm font-semibold">
+                                    Categoría
                                 </FieldLabel>
-                                <Tabs v-bind="componentField" :default-value="TicketType.SERVICE_REQUEST" class="w-full">
-                                    <TabsList class="grid w-full grid-cols-2">
-                                        <TabsTrigger v-for="type in Object.values(ticketTypeOptions)" :key="type.value"
-                                            :value="type.value">
-                                            {{ type.label }}
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </Tabs>
+                                <Select v-bind="componentField">
+                                    <SelectTrigger class="h-11 mt-2">
+                                        <SelectValue placeholder="Selecciona una categoría" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+
+                                        <SelectItem v-for="requestType in Object.values(ticketRequestTypeOptions)"
+                                            :key="requestType.value" :value="requestType.value">
+                                            {{ requestType.label }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
                     </FieldGroup>
 
-
-                    <div class="grid gap-5"
-                        :class="getValues().type === TicketType.SERVICE_REQUEST ? 'md:grid-cols-2' : 'md:grid-cols-1'">
-                        <!-- CATEGORÍA -->
-                        <FieldGroup v-if="getValues().type === TicketType.SERVICE_REQUEST">
-                            <VeeField name="request_type" v-slot="{ componentField, errors }">
-                                <Field :data-invalid="!!errors.length">
-                                    <FieldLabel class="text-sm font-semibold">
-                                     Categoría
-                                    </FieldLabel>
-                                    <Select v-bind="componentField">
-                                        <SelectTrigger class="h-11 mt-2">
-                                            <SelectValue placeholder="Selecciona una categoría" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-
-                                            <SelectItem v-for="requestType in Object.values(ticketRequestTypeOptions)"
-                                                :key="requestType.value" :value="requestType.value">
-                                                {{ requestType.label }}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError v-if="errors.length" :errors="errors" />
-                                </Field>
-                            </VeeField>
-                        </FieldGroup>
-
-                        <!-- PRIORIDAD -->
-                        <FieldGroup>
-                            <VeeField name="priority" v-slot="{ componentField, errors }">
-                                <Field :data-invalid="!!errors.length">
-                                    <FieldLabel class="text-sm font-semibold">
+                    <!-- PRIORIDAD -->
+                    <FieldGroup>
+                        <VeeField name="priority" v-slot="{ componentField, errors }">
+                            <Field :data-invalid="!!errors.length">
+                                <FieldLabel class="text-sm font-semibold">
                                     Prioridad
-                                    </FieldLabel>
-                                    <Select v-bind="componentField">
-                                        <SelectTrigger class="h-11 mt-2">
-                                            <SelectValue placeholder="Selecciona la prioridad" />
-                                        </SelectTrigger>
+                                </FieldLabel>
+                                <Select v-bind="componentField">
+                                    <SelectTrigger class="h-11 mt-2">
+                                        <SelectValue placeholder="Selecciona la prioridad" />
+                                    </SelectTrigger>
 
-                                        <SelectContent>
-                                            <SelectItem v-for="priority in Object.values(ticketPriorityOptions)"
-                                                :key="priority.value" :value="priority.value">
+                                    <SelectContent>
+                                        <SelectItem v-for="priority in Object.values(ticketPriorityOptions)"
+                                            :key="priority.value" :value="priority.value">
 
-                                                <Badge :class="priority.bg">
-                                                    {{ priority.label }}
-                                                </Badge>
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError v-if="errors.length" :errors="errors" />
-                                </Field>
-                            </VeeField>
-                        </FieldGroup>
-                    </div>
+                                            <Badge :class="priority.bg">
+                                                <component :is="priority.icon" class="size-4" />
+                                                {{ priority.label }}
+                                            </Badge>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </Field>
+                        </VeeField>
+                    </FieldGroup>
+                </div>
 
 
-                </form>
+            </form>
 
-                <DialogFooter class="pt-6 border-t gap-3">
-                    <Button 
-                        variant="outline" 
-                        type="button" 
-                        @click="open = false"
-                        :disabled="isSubmitting"
-                        class="flex-1 sm:flex-none">
-                        Cancelar
-                    </Button>
-                    <Button 
-                        :disabled="isSubmitting || Object.keys(errors).length > 0" 
-                        type="submit" 
-                        form="dialogForm"
-                        class="flex-1 sm:flex-none shadow-md hover:shadow-lg transition-all gap-2">
-                        <Spinner v-if="isSubmitting" class="size-4" />
-                        <!-- <span v-if="!isSubmitting">✅</span> -->
-                         <Check v-if="!isSubmitting" class="size-4" />
-                        {{ isSubmitting ? 'Creando...' : 'Crear Ticket' }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    </Form>
+            <DialogFooter class="pt-6 border-t gap-3">
+                <Button variant="outline" type="button" @click="open = false" :disabled="isSubmitting"
+                    class="flex-1 sm:flex-none">
+                    Cancelar
+                </Button>
+                <Button :disabled="isSubmitting || Object.keys(errors).length > 0" type="submit" form="dialogForm"
+                    class="flex-1 sm:flex-none shadow-md hover:shadow-lg transition-all gap-2">
+                    <Spinner v-if="isSubmitting" class="size-4" />
+                    <!-- <span v-if="!isSubmitting">✅</span> -->
+                    <Check v-if="!isSubmitting" class="size-4" />
+                    <template v-if="!ticket">{{ isSubmitting ? 'Creando...' : 'Crear Ticket' }}</template>
+                    <template v-else>{{ isSubmitting ? 'Actualizando...' : 'Actualizar Ticket' }}</template>
+
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    <!-- </Form> -->
 </template>
 
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod'
-import { Form, Field as VeeField } from 'vee-validate'
-import { ref } from 'vue'
+import { useForm, Field as VeeField } from 'vee-validate'
+import { nextTick, ref, watch } from 'vue'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -199,19 +191,29 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { type Department } from '@/interfaces/department.interace'
-import { TicketPriority, ticketPriorityOptions, TicketRequestType, ticketRequestTypeOptions, TicketType, ticketTypeOptions } from '@/interfaces/ticket.interface'
+import { Ticket, TicketPriority, ticketPriorityOptions, TicketRequestType, ticketRequestTypeOptions, TicketType, ticketTypeOptions } from '@/interfaces/ticket.interface'
 import { router } from '@inertiajs/vue3'
 import { Check, Tag } from 'lucide-vue-next'
 import * as z from 'zod'
 
+const ticket = defineModel<Ticket | null>('ticket', {
+    type: Object as () => Ticket | null,
+    required: false
+})
 
-defineProps<{
-    departments: Array<Department>,
+defineProps({
+    includeButton: {
+        type: Boolean,
+        default: true,
+    }
+});
 
-}>();
-
-const open = ref(false);
+// const open = ref(false);
+const open = defineModel<boolean>('open', {
+    type: Boolean,
+    required: false,
+    default: false,
+});
 const isSubmitting = ref(false);
 
 
@@ -236,18 +238,97 @@ const formSchema = toTypedSchema(z.object({
     request_type: z.nativeEnum(TicketRequestType, {
         errorMap: () => ({ message: 'Selecciona un tipo de solicitud válido' }),
         message: 'El tipo de solicitud es obligatorio',
-    }).optional(),
+    }).optional().nullable(),
 
 
 }));
 
-function onSubmit(values: any, { resetForm }: { resetForm: () => void }) {
+const initialValues = {
+    type: TicketType.SERVICE_REQUEST,
+};
+
+const { handleSubmit, errors, setValues, values } = useForm({
+    validationSchema: formSchema,
+    initialValues
+});
+
+watch(() => ticket?.value, (newTicket) => {
+    if (newTicket) {
+        open.value = true;
+        setValues({
+            title: newTicket.title,
+            description: newTicket.description,
+            type: newTicket.type,
+            priority: newTicket.priority,
+            request_type: newTicket.request_type,
+        });
+    } else {
+        open.value = false;
+        setValues(initialValues);
+    }
+}, { immediate: true });
+
+
+const handleReset = () => {
+    setValues(initialValues);
+    ticket.value = null;
+};
+
+
+
+
+function onSubmit(values: any) {
     isSubmitting.value = true;
+    if (ticket?.value) {
+        const only: string[] = [];
+        if (ticket?.value?.priority !== values.priority) {
+            only.push('tickets');
+        }
+        router.put(`/tickets/${ticket.value.id}`, values, {
+            only,
+            onFlash: (flash) => {
+                const updatedTicket = flash.ticket as Ticket | null;
+                if (updatedTicket && !only.includes('tickets')) {
+                    nextTick(() => {
+                        router.replaceProp('tickets.data', (tickets: Ticket[]) => {
+                          
+                            const newTickets = tickets.map(t => {
+                                if (t.id === updatedTicket.id) {
+                                    return {
+
+                                        ...updatedTicket,
+                                        requester: t.requester,
+                                        responsible: t.responsible,
+                                        histories: t.histories,
+
+
+                                    }
+                                }
+                                return t;
+                            });
+
+                            return newTickets;
+                        });
+                    })
+
+                }
+            },
+            onSuccess: () => {
+                open.value = false;
+                handleReset();
+
+            },
+            onFinish: () => {
+                isSubmitting.value = false;
+            }
+        });
+        return;
+    }
     router.post('/tickets', values, {
         only: ['tickets'],
         onSuccess: () => {
             open.value = false;
-            resetForm();
+            handleReset();
         },
         onFinish: () => {
             isSubmitting.value = false;

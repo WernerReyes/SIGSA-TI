@@ -7,6 +7,7 @@ use App\DTOs\Ticket\TicketFiltersDto;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
 use App\Models\User;
+use Auth;
 use DB;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
@@ -18,17 +19,50 @@ class TicketService
 
     public function getAllOrderedByPriority(TicketFiltersDto $filters)
     {
+
+        ds($filters);
         return Ticket::
             query()
+            ->select([
+                'id',
+                'title',
+                'description',
+                'status',
+                'priority',
+                'type',
+                'request_type',
+                'requester_id',
+                'responsible_id',
+                'created_at',
+                'updated_at',
+            ])
             ->with([
-                'requester:staff_id,firstname,lastname',
+                'requester:staff_id,firstname,lastname,dept_id',
+                'requester.department:id,name',
                 'responsible:staff_id,firstname,lastname',
-                // 'technician:staff_id,firstname,lastname',
-                'histories.performer:staff_id,firstname,lastname'
             ])->
             when($filters->searchTerm, function ($query) use ($filters) {
                 $query->where('title', 'LIKE', '%' . $filters->searchTerm . '%')
                     ->orWhere('description', 'LIKE', '%' . $filters->searchTerm . '%');
+            })->when($filters->requesters, function ($query) use ($filters) {
+                $query->whereIn('requester_id', $filters->requesters);
+            })->when($filters->responsibles, function ($query) use ($filters) {
+                if (in_array(null, $filters->responsibles, true)) {
+                    ds('includes null');
+                    $query->where(function ($subQuery) use ($filters) {
+                        $subQuery->whereNull('responsible_id')
+                            ->orWhereIn('responsible_id', array_filter($filters->responsibles));
+                    });
+                } else {
+                    $query->whereIn('responsible_id', $filters->responsibles);
+                }
+
+            })->when($filters->statuses, function ($query) use ($filters) {
+                $query->whereIn('status', $filters->statuses);
+            })->when($filters->types, function ($query) use ($filters) {
+                $query->whereIn('type', $filters->types);
+            })->when($filters->priorities, function ($query) use ($filters) {
+                $query->whereIn('priority', $filters->priorities);
             })
             ->orderedByPriority()
             ->paginate(10)
@@ -43,7 +77,7 @@ class TicketService
                     'title' => $dto->title,
                     'status' => $dto->status->value,
                     'description' => $dto->description,
-                    'technician_id' => $dto->technicianId,
+
                     'requester_id' => $dto->requesterId,
                     'type' => $dto->type->value,
                     'priority' => $dto->priority->value,
@@ -65,6 +99,51 @@ class TicketService
         }
 
 
+    }
+
+    public function updateTicket(Ticket $ticket, StoreTicketDto $dto)
+    {
+
+        $user = Auth::user();
+        if ($ticket->requester_id !== $user->staff_id) {
+            throw new BadRequestException("No tienes permiso para actualizar este ticket.");
+        }
+
+        if ($ticket->status !== TicketStatus::OPEN->value) {
+            throw new BadRequestException("Solo se pueden actualizar los tickets en estado 'Abierto'.");
+        }
+
+
+        if ($ticket->responsible_id !== null) {
+            throw new BadRequestException("No se puede actualizar un ticket que ya ha sido asignado.");
+        }
+
+        try {
+            return DB::transaction(function () use ($ticket, $dto) {
+                $ticket->update([
+                    'title' => $dto->title,
+                    'status' => $dto->status->value,
+                    'description' => $dto->description,
+                    // 'technician_id' => $dto->technicianId,
+                    'type' => $dto->type->value,
+                    'priority' => $dto->priority->value,
+                    'request_type' => $dto->requestType?->value,
+                ]);
+
+                TicketHistory::create([
+                    'action' => 'Ticket Actualizado',
+                    'ticket_id' => $ticket->id,
+                    'performed_by' => auth()->id(),
+                    'performed_at' => now(),
+                ]);
+
+                return $ticket;
+            });
+
+
+        } catch (\Exception $e) {
+            throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
+        }
     }
 
     public function assignTicket(Ticket $ticket, int $responsible_id)
@@ -114,10 +193,12 @@ class TicketService
     }
 
 
+
+
     public function changeTicketStatus(Ticket $ticket, string $newStatus)
     {
         try {
-            $oldStatus = $ticket->status->value;
+            $oldStatus = $ticket->status;
 
             if ($oldStatus === $newStatus) {
                 throw new BadRequestException("El ticket ya tiene el estado seleccionado.");
@@ -162,6 +243,9 @@ class TicketService
             default => 'Desconocido',
         };
     }
+
+
+
 
 
 

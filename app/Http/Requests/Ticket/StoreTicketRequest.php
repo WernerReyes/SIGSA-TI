@@ -42,7 +42,7 @@ class StoreTicketRequest extends FormRequest
             'priority' => ['required', $inTicketPriority],
             'request_type' => [
                 'required_if:type,' . TicketType::SERVICE_REQUEST->value,
-                $inTicketRequestType
+                // $inTicketRequestType
             ]
         ];
     }

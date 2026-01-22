@@ -11,17 +11,15 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 // import { dashboard } from '@/routes';
-import { DepartmentAllowed } from '@/interfaces/department.interace';
-import { type User } from '@/interfaces/user.interface';
+import { useApp } from '@/composables/useApp';
 import { type NavItem } from '@/types';
-import { usePage } from '@inertiajs/vue3';
 import { Laptop, LayoutGrid, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
 
-const user = computed<User>(() => usePage()?.props?.auth?.user as User);
 
+const { isFromTI } = useApp();
 
 
 const mainNavItems = computed<NavItem[]>(() => {
@@ -38,7 +36,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         },
     ];
 
-    if (user.value?.dept_id === DepartmentAllowed.SYSTEM_TI) { // SYSTEM_TI
+    if (isFromTI.value) { // SYSTEM_TI
         items.push({
             title: 'Activos TI',
             href: "/assets",
@@ -72,7 +70,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         </SidebarContent>
 
         <SidebarFooter>
-          
+
             <NavUser />
         </SidebarFooter>
     </Sidebar>

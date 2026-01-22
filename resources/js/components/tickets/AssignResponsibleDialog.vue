@@ -1,6 +1,6 @@
 <template>
 
-    <Dialog v-model:open="open" @update:open="(v) => !v && handleReset()">
+    <Dialog v-model:open="open" @update:open="(v) => !v && handleFormReset()">
 
         <DialogContent class="max-h-screen sm:max-w-lg overflow-y-auto">
             <DialogHeader class="space-y-3 pb-4 border-b">
@@ -24,7 +24,7 @@
             <div class="space-y-5 py-6">
                 <!-- Información del ticket actual -->
                 <div v-if="ticket?.responsible" class="p-4 rounded-lg bg-muted/50 border border-border">
-                    <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-2">👤
+                    <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-2 flex items-center gap-2"><UserCheck class="size-4" />
                         Responsable Actual</p>
                     <p class="text-sm font-medium">{{ ticket.responsible.full_name }}</p>
                 </div>
@@ -62,6 +62,23 @@
 
                             </SelectContent>
                         </Select>
+                        <!-- TODO: Missing complete this -->
+                        {{ componentField.modelValue }}
+                        <SelectFilters
+                            data-key="TIUsers"
+                            :items="TIUsers"
+                            :show-selected-focus="false"
+                            :show-refresh="false"
+                            :label="placeholder"
+                            item-label="full_name"
+                            item-value="staff_id"
+                            selected-as-label
+                            :default-selecteds="[componentField.modelValue]"
+                            :selected="[componentField.modelValue]"
+                            @select="(value) => setFieldValue('responsible_id', +value)"
+                            
+                            
+                         ></SelectFilters>
                         <FieldError v-if="errors.length" :errors="errors" />
                     </Field>
                 </VeeField>
@@ -114,17 +131,17 @@ import { type Ticket } from '@/interfaces/ticket.interface';
 import { type User } from '@/interfaces/user.interface';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
-import { Save } from 'lucide-vue-next';
+import { Save, UserCheck } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
 import z from 'zod';
+import SelectFilters from '../SelectFilters.vue';
+import { useApp } from '@/composables/useApp';
 
-
-const { ticket } = defineProps<{
-    ticket: Ticket | null,
-}>();
+const ticket = defineModel<Ticket | null>('ticket');
 const open = defineModel<boolean>('open');
 
 const page = usePage();
+const { TIUsers } = useApp()
 
 const formSchema = toTypedSchema(z.object({
     responsible_id: z.number({
@@ -134,21 +151,21 @@ const formSchema = toTypedSchema(z.object({
 
 const { handleReset, handleSubmit, errors, setFieldValue } = useForm({
     initialValues: {
-        responsible_id: ticket?.responsible_id,
+        responsible_id: ticket?.value?.responsible_id,
     },
     validationSchema: formSchema,
 });
 
 
-const TIUsers = computed<User[]>(() => {
-    const users = (page.props.TIUsers || []) as User[];
-    return users;
-});
+// const TIUsers = computed<User[]>(() => {
+//     const users = (page.props.TIUsers || []) as User[];
+//     return users;
+// });
 
 const placeholder = computed(() => {
     let placeholderText = 'Selecciona un responsable';
-    if (ticket?.responsible) {
-        placeholderText = ticket.responsible.full_name;
+    if (ticket?.value?.responsible) {
+        placeholderText = ticket.value.responsible.full_name;
     }
     return placeholderText;
 
@@ -160,16 +177,20 @@ const isSubmitting = ref(false);
 
 
 
-watch(() => ticket?.responsible_id, (newVal) => {
-   // TODO: Check why this watcher sometimes doesn't trigger
-    console.log('Responsable ID changed:', newVal);
+watch(() => ticket?.value?.responsible_id, (newVal) => {
     setFieldValue('responsible_id', newVal);
 });
+
+const handleFormReset = () => {
+    handleReset();
+    ticket.value = null;
+   
+};
 
 const handleFormSubmit = async (values: { responsible_id: number }) => {
     isSubmitting.value = true;
 
-    router.post(`/tickets/${ticket?.id}/assign`, {
+    router.post(`/tickets/${ticket?.value?.id}/assign`, {
 
         responsible_id: values.responsible_id,
     }, {
@@ -179,7 +200,7 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
             if (!responsible) return;
             router.replaceProp('tickets.data', (tickets: Ticket[]) => {
                 return tickets.map(t => {
-                    if (t.id === ticket?.id) {
+                    if (t.id === ticket?.value?.id) {
                         return {
                             ...t,
                             responsible,
@@ -191,7 +212,7 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
             });
         },
         onSuccess: () => {
-            handleReset();
+            handleFormReset();
             open.value = false;
         },
         onFinish: () => {

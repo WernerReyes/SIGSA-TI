@@ -1,38 +1,85 @@
 <template>
-  <div class="flex items-center gap-4 p-6 bg-background/50 backdrop-blur-sm border-b">
-    <div class="flex-1 max-w-sm">
+  <div class="flex max-md:flex-col items-center gap-4 p-6 bg-background/50 backdrop-blur-sm border-b">
+    <div class="flex-1 w-full md:max-w-sm">
       <InputGroup>
-        <InputGroupInput class="h-10 shadow-sm" placeholder="Buscar tickets..." v-model="form.searchTerm" />
+        <InputGroupInput class="h-10 w-full shadow-sm" placeholder="Buscar tickets..." v-model="form.searchTerm" />
         <InputGroupAddon>
           <Search />
         </InputGroupAddon>
       </InputGroup>
 
     </div>
-    <DropdownMenu>
-      <DropdownMenuTrigger as-child>
-        <Button variant="outline" class="ml-auto shadow-sm hover:shadow-md transition-shadow">
-          <Columns4 />
-          Columnas
-          <ChevronDown class="ml-2 size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" class="w-48">
-        <DropdownMenuCheckboxItem v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
-          :key="column.id" class="capitalize" :model-value="column.getIsVisible()"
-          @update:model-value="column.toggleVisibility()">
-          {{ column.columnDef.id }}
-        </DropdownMenuCheckboxItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div class="max-sm:w-full ml-auto md:max-w-2/3 flex gap-2 flex-wrap  justify-end">
+
+      <SelectFilters label="Solicitantes" v-model:selecteds="form.requesters" :items="users" data-key="users"
+        :icon="Users" show-refresh show-selected-focus item-value="staff_id" item-label="full_name" multiple />
+
+
+      <SelectFilters label="Responsables" v-model:selecteds="form.responsibles" :items="TIUsers" data-key="TIUsers"
+        :icon="Users" allow-null show-refresh show-selected-focus item-value="staff_id" item-label="full_name"
+        multiple />
+
+      <SelectFilters label="Tipos" v-model:selecteds="form.types" show-refresh show-selected-focus
+        :items="Object.values(ticketTypeOptions)" item-value="value" item-label="label" :icon="TicketPlus" multiple>
+        <template #item="{ item }">
+          <Badge :class="item.bg" class="flex items-center gap-2">
+            <component :is="item.icon" />
+            {{ item.label }}
+          </Badge>
+        </template>
+      </SelectFilters>
+
+      <SelectFilters label="Estados" show-refresh show-selected-focus v-model:selecteds="form.statuses"
+        :items="Object.values(ticketStatusOptions)" item-value="value" item-label="label" :icon="ArrowUpDown" multiple>
+        <template #item="{ item }">
+          <Badge :class="item.bg" class="flex items-center gap-2">
+            <component :is="item.icon" />
+            {{ item.label }}
+          </Badge>
+        </template>
+      </SelectFilters>
+
+      <SelectFilters label="Prioridades" show-refresh show-selected-focus v-model:selecteds="form.priorities"
+        :items="Object.values(ticketPriorityOptions)" item-value="value" item-label="label" :icon="ArrowUpDown"
+        multiple>
+        <template #item="{ item }">
+          <Badge :class="item.bg" class="flex items-center gap-2">
+            <component :is="item.icon" />
+            {{ item.label }}
+          </Badge>
+        </template>
+      </SelectFilters>
+
+      
+
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="outline" class="ml-auto shadow-sm hover:shadow-md transition-shadow">
+            <Columns4 />
+            Columnas
+            <ChevronDown class="ml-2 size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-48">
+          <DropdownMenuCheckboxItem v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
+            :key="column.id" class="capitalize" :model-value="column.getIsVisible()"
+            @update:model-value="column.toggleVisibility()">
+            {{ column.columnDef.id }}
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+
+
   </div>
   <div class="rounded-lg border shadow-md bg-card overflow-hidden">
     <div class="overflow-x-auto">
+      <!-- <pre>{{ tickets.data }}</pre> -->
       <Table>
-        <TableHeader>
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id" class="bg-muted/50">
-            <TableHead class="px-6 py-4 font-semibold text-sm" v-for="header in headerGroup.headers" :key="header.id"
-              :style="{
+        <TableHeader class="bg-muted/70 backdrop-blur sticky top-0 z-10">
+          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+            <TableHead class="pl-5 uppercase text-[11px] tracking-wide text-muted-foreground"
+              v-for="header in headerGroup.headers" :key="header.id" :style="{
                 width: header.getSize() + 'px'
               }">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
@@ -62,17 +109,26 @@
                 <Eye />
                 Ver detalle
               </ContextMenuItem>
-              <ContextMenuItem @click="openReassign = true">
+              <ContextMenuItem @click="openReassign = true" v-if="isFromTI">
                 <TicketPlus />
-                Asignar
+                {{ activeRow?.responsible ? 'Reasignar' : 'Asignar' }}
               </ContextMenuItem>
-              <ContextMenuItem @click="changeStatus = true">
+              <ContextMenuItem @click="changeStatus = true" v-if="isFromTI">
                 <Pencil />
                 Cambiar estado
+              </ContextMenuItem>
+              <ContextMenuItem :disabled="disabledEdit" @click="openEdit = true">
+                <Pencil />
+                Editar
+              </ContextMenuItem>
+              <ContextMenuItem :disabled="disabledEdit">
+                <Trash />
+                Eliminar
               </ContextMenuItem>
 
             </ContextMenuContent>
           </ContextMenu>
+
 
 
         </template>
@@ -104,7 +160,7 @@
       <div class="text-sm text-muted-foreground">
         Mostrando <span class="font-medium">{{ tickets.from }}</span> a <span class="font-medium">{{ tickets.to ||
           0
-        }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
+          }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
       </div>
       <Pagination class="mx-0 w-fit" :items-per-page="tickets.per_page" :total="tickets.total"
         :default-page="tickets.current_page">
@@ -144,15 +200,16 @@
 
 
   <!-- :ticket="activeRow" -->
-  <DetailsDialog v-model:open="openDetails" :ticket="activeRow" />
-  <AssignResponsibleDialog v-model:open="openReassign" :ticket="activeRow" />
-  <ChangeStatusDialog v-model:open="changeStatus" :ticket="activeRow" />
+  <DetailsDialog v-if="openDetails" v-model:open="openDetails" :ticket="activeRow" />
+  <AssignResponsibleDialog v-if="openReassign" v-model:open="openReassign" v-model:ticket="activeRow" />
+  <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
+  <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" />
 
 </template>
 
 
 <script setup lang="ts">
-import type { ColumnDef, SortingState } from '@tanstack/vue-table';
+import type { Column, ColumnDef, SortingState } from '@tanstack/vue-table';
 import {
   FlexRender,
   getCoreRowModel,
@@ -197,43 +254,70 @@ import { valueUpdater } from '@/lib/utils';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { useApp } from '@/composables/useApp';
-import { priorityOp, requestTypeOp, statusOp, type Ticket, typeOp } from '@/interfaces/ticket.interface';
+import {
+  priorityOp, requestTypeOp, statusOp, type Ticket,
+  TicketPriority,
+  ticketPriorityOptions,
+  TicketStatus,
+  ticketStatusOptions,
+  TicketType,
+  ticketTypeOptions,
+  typeOp
+} from '@/interfaces/ticket.interface';
+import { type User as IUser } from '@/interfaces/user.interface';
 import type { Paginated } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
-import { ArrowUpDown, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Columns4, Eye, Pencil, Search, TicketPlus, TicketX, User } from 'lucide-vue-next';
+import { useDebounceFn } from '@vueuse/core';
+import { format } from 'date-fns';
+import { ArrowUpDown, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Columns4, Eye, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
+import SelectFilters from '../SelectFilters.vue';
+import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
 import ChangeStatusDialog from './ChangeStatusDialog.vue';
 import DetailsDialog from './DetailsDialog.vue';
-import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
+import Dialog from './Dialog.vue';
 import TicketColumnTable from './TicketColumnTable.vue';
-import { useDebounceFn } from '@vueuse/core';
-import { type User as IUser } from '@/interfaces/user.interface';
-import { format } from 'date-fns';
 
 const { tickets } = defineProps<{ tickets: Paginated<Ticket> }>()
 
 
 const page = usePage();
-const { isLoading } = useApp();
+const { isLoading, isFromTI, userAuth, isSameUser, users, TIUsers } = useApp();
 
 const activeRow = ref<Ticket | null>(null)
 
 const openDetails = ref(false);
 const openReassign = ref(false);
 const changeStatus = ref(false);
+const openEdit = ref(false);
 
 const sorting = ref<SortingState>([])
 
 type Filters = {
   searchTerm?: string;
+  requesters?: (number | null)[];
+  responsibles?: (number | null)[];
+  types?: TicketType[];
+  statuses?: TicketStatus[];
+  priorities?: TicketPriority[];
 }
-const userAuth = computed(() => page.props.auth.user as IUser);
 
 const filters = computed(() => page.props.filters as Filters || {});
 
+const disabledEdit = computed(() => {
+  const ticket = activeRow.value;
+  return !isSameUser(ticket?.requester_id) || isLoading.value || ticket?.status !== TicketStatus.OPEN || ticket?.responsible_id !== null;
+})
+
 const form = reactive<Filters>({
-  searchTerm: filters.value.searchTerm || '',
+  searchTerm: filters.value?.searchTerm || '',
+  requesters: filters.value?.requesters?.map(Number) || [],
+  responsibles: filters.value?.responsibles?.map((v) => {
+    return Number(v) || null;
+  }) || [],
 });
+
+
 
 watch(
   () => form.searchTerm,
@@ -241,6 +325,43 @@ watch(
     applyFilters()
   }, 400)
 )
+
+watch(
+  () => form.requesters,
+  () => {
+    applyFilters()
+  }
+)
+
+watch(
+  () => form.responsibles,
+  () => {
+    applyFilters()
+  }
+)
+
+watch(
+  () => form.types,
+  () => {
+    applyFilters()
+  }
+)
+
+watch(
+  () => form.statuses,
+  () => {
+    applyFilters()
+  }
+)
+
+watch(
+  () => form.priorities,
+  () => {
+    applyFilters()
+  }
+)
+
+
 function applyFilters() {
 
   router.get(
@@ -273,14 +394,8 @@ const columns: ColumnDef<Ticket>[] = [
     id: 'Tipo',
     accessorFn: row =>
       typeOp(row.type)?.label.toLowerCase() ?? '',
-    // header: 'Tipo',
-    header: ({ column }) => {
-      return h(Button, {
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Tipo', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    },
-    // cell: ({ row }) => h('div', { class: 'lowercase' }, row.getValue('email')),
+
+    header: ({ column }) => header('Tipo', column),
     enableGlobalFilter: true,
     cell: info => {
       const op = typeOp(info.row.original.type);
@@ -300,13 +415,7 @@ const columns: ColumnDef<Ticket>[] = [
   {
     accessorKey: 'priority',
     id: 'Prioridad',
-    // header: 'Prioridad',
-    header: ({ column }) => {
-      return h(Button, {
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Prioridad', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    },
+    header: ({ column }) => header('Prioridad', column),
     size: 80,
     accessorFn: row =>
       priorityOp(row.priority)?.label.toLowerCase() ?? '',
@@ -329,14 +438,7 @@ const columns: ColumnDef<Ticket>[] = [
   {
     accessorKey: 'status',
     id: 'Estado',
-    // header: 'Estado',
-    header: ({ column }) => {
-      return h(Button, {
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Estado', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    },
-    enableGlobalFilter: true,
+    header: ({ column }) => header('Estado', column),
     accessorFn: row =>
       statusOp(row.status)?.label.toLowerCase() ?? '',
 
@@ -358,23 +460,21 @@ const columns: ColumnDef<Ticket>[] = [
   {
     accessorKey: 'request_type',
     id: 'Categoría',
-    // header: 'Categoría',
-    header: ({ column }) => {
-      return h(Button, {
-        variant: 'ghost',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
-      }, () => ['Categoría', h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })])
-    },
-    enableGlobalFilter: true,
+    header: ({ column }) => header('Categoría', column),
     accessorFn: row =>
       requestTypeOp(row.request_type)?.label.toLowerCase() ?? 'sin categoria',
     cell: info => {
       const requestType = info.row.original.request_type;
       if (!requestType) {
         return h(
-          "small",
-          { class: 'text-muted-foreground' },
-          'Sin categoría'
+          Badge,
+          {
+            variant: 'outline'
+          },
+          [
+            h(X),
+            'Sin categoría'
+          ]
         );
       }
       const op = requestTypeOp(requestType);
@@ -392,32 +492,42 @@ const columns: ColumnDef<Ticket>[] = [
   }, {
     accessorKey: 'requester',
     id: 'Solicitante',
-    header: 'Solicitante',
-    enableGlobalFilter: true,
+    header: ({ column }) => header('Solicitante', column),
     cell: info => {
       const user = info.getValue() as IUser;
-      let fullName = user.full_name;
-      if (user.staff_id === userAuth.value.staff_id) {
-        fullName += ' (Tú)';
+      if (user) {
+        return h(Badge, { variant: 'default', class: 'flex items-center gap-2' }, () => [
+          h(User, { class: '!size-5' }),
+          h('div', { class: 'flex flex-col' }, [
+            user.full_name,
+            h('small', { class: 'text-[10px] text-gray-400 dark:text-gray-700 italic' }, user.department ? user.department.name : 'Sin departamento')
+          ])
+        ]);
+      } else {
+        return h(Badge, { variant: 'secondary' }, () => [
+          h(X),
+          'Sin asignar'
+        ]);
       }
-      return h(Badge, {}, [
-        h(User),
-        fullName
-      ])
-    }
+    },
   },
   {
     accessorKey: 'responsible',
     id: 'Responsable',
-    header: 'Responsable',
-    enableGlobalFilter: true,
+    // header: 'Responsable',
+    header: ({ column }) => header('Responsable', column),
     cell: info => {
       const user = info.getValue() as IUser;
       if (!user) {
         return h(
-          "small",
-          { class: 'text-muted-foreground' },
-          'No asignado'
+          Badge,
+          {
+            variant: 'outline'
+          },
+          [
+            h(X),
+            'Sin asignar'
+          ]
         );
       }
       let fullName = user.full_name;
@@ -435,17 +545,17 @@ const columns: ColumnDef<Ticket>[] = [
   {
     accessorKey: 'created_at',
     id: 'Abierto el',
-    header: 'Abierto el',
-    enableGlobalFilter: false,
+    header: ({ column }) => header('Abierto el', column),
     cell: info => {
+      if (!info.getValue()) return '';
       return format(new Date(info.getValue() as string), 'dd/MM/yyyy HH:mm');
     }
   }, {
     accessorKey: 'updated_at',
     id: 'Última actualización',
-    header: 'Última actualización',
-    enableGlobalFilter: false,
+    header: ({ column }) => header('Última actualización', column),
     cell: info => {
+      if (!info.getValue()) return '';
       return format(new Date(info.getValue() as string), 'dd/MM/yyyy HH:mm');
     }
   }
@@ -453,6 +563,16 @@ const columns: ColumnDef<Ticket>[] = [
 ]
 
 
+const header = (label: string, column: Column<Ticket, unknown>) => {
+  return h(Button, {
+    variant: 'ghost',
+    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+  }, () => [
+    h('span', {
+      class: 'uppercase text-[11px] tracking-wide text-muted-foreground'
+    }, label)
+    , h(ArrowUpDown, { class: 'ml-2 size-4' })])
+}
 
 const table = useVueTable({
   get data() { return tickets.data },

@@ -13,7 +13,7 @@ class StoreTicketDto
     private function __construct(
         public readonly string $title,
         public readonly string $description,
-        public readonly ?int $technicianId,
+        // public readonly ?int $technicianId,
         public readonly int $requesterId,
         public readonly TicketType $type,
         public readonly TicketPriority $priority,
@@ -26,14 +26,14 @@ class StoreTicketDto
     public static function fromArray(array $data): self
     {
         if ($data['type'] !== TicketType::SERVICE_REQUEST->value) {
-            $data['technician_id'] = null;
+            // $data['technician_id'] = null;
             $data['request_type'] = null;
         }
 
         return new self(
             title: $data['title'],
             description: $data['description'],
-            technicianId: isset($data['technician_id']) ? $data['technician_id'] : null,
+            // technicianId: isset($data['technician_id']) ? $data['technician_id'] : null,
             requesterId: Auth::id(),
             type: TicketType::from($data['type']),
             priority: TicketPriority::from($data['priority']),

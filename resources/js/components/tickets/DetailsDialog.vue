@@ -89,8 +89,8 @@
                             <User class="size-4 text-muted-foreground" />
                             <div>
                                 <p class="text-xs text-muted-foreground">Asignado a</p>
-                                <p v-if="ticket?.technician" class="text-sm font-medium">{{
-                                    ticket?.technician?.full_name }}</p>
+                                <p v-if="ticket?.responsible" class="text-sm font-medium">{{
+                                    ticket?.responsible?.full_name }}</p>
                                 <p v-else class="text-sm font-medium">No asignado</p>
                             </div>
 
@@ -101,7 +101,7 @@
                             <Clock class="size-4 text-muted-foreground" />
                             <div>
                                 <p class="text-xs text-muted-foreground">Creado</p>
-                                <p class="text-sm font-medium">{{ format(ticket?.opened_at ?? '', 'yyyy-MM-dd HH:mm')
+                                <p class="text-sm font-medium">{{ format(ticket?.created_at ?? '', 'yyyy-MM-dd HH:mm')
                                     }}</p>
                             </div>
                         </div>
@@ -150,47 +150,13 @@
                             </div>
 
 
-                            <!-- <div class="flex gap-3 text-xs">
-                                <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"></div>
-                                <div>
-                                    <p class="font-medium">Ticket creado</p>
-                                    <p class="text-muted-foreground">Sistema • 2024-01-15 10:30</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-3 text-xs">
-                                <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"></div>
-                                <div>
-                                    <p class="font-medium">Asignado a María López</p>
-                                    <p class="text-muted-foreground">Admin • 2024-01-15 10:35</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-3 text-xs">
-                                <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"></div>
-                                <div>
-                                    <p class="font-medium">Estado cambiado a En progreso</p>
-                                    <p class="text-muted-foreground">María López • 2024-01-15 11:00</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-3 text-xs">
-                                <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"></div>
-                                <div>
-                                    <p class="font-medium">Comentario agregado</p>
-                                    <p class="text-muted-foreground">María López • 2024-01-15 11:30</p>
-                                </div>
-                            </div> -->
+                          
                         </div>
                     </div>
                 </div>
             </div>
 
-            <DialogFooter>
-                <!-- <Button :disabled="isSubmitting
-                        || Object.keys(errors).length > 0
-                        " type="submit" form="dialogForm">
-                        <Spinner v-if="isSubmitting" />
-                        Crear Ticket
-                    </Button> -->
-            </DialogFooter>
+           
         </DialogContent>
     </Dialog>
 
@@ -207,7 +173,6 @@ import { computed, ref } from 'vue';
 import {
     Dialog,
     DialogContent,
-    DialogFooter,
     DialogHeader
 } from '@/components/ui/dialog';
 
