@@ -11,7 +11,7 @@ use App\DTOs\Asset\UpdateAssetDto;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Asset\AssetStatus;
 use App\Http\Requests\Asset\AssignAssetRequest;
-use App\Http\Requests\asset\DevolveAssetRequest;
+use App\Http\Requests\Asset\DevolveAssetRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
 use App\Http\Requests\asset\UploadDeliveryRecordRequest;
