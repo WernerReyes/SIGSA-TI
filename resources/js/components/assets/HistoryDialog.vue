@@ -277,9 +277,15 @@
                                 </template>
 
 
-                                <span v-else class="text-xs text-muted-foreground mt-2">
-
-                                </span>
+                                 <template v-else
+                                    v-for="(part, index) in parsedReturnChange(history.description)">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else :variant="part.variant" class="mx-1">
+                                        <component :is="part.icon" class="size-4" />
+                                        {{ part.content }}
+                                    </Badge>
+                                    </template>
                             </template>
 
 
@@ -625,6 +631,36 @@ const parsedReturnWithMainParent = (description: string): Array<{
         return [{ type: 'text' as const, content: description }];
     }
     return parsedMainParent;
+};
+
+// TODO: Missing the topic
+const parsedReturnChange = (description: string): Array<{
+    type: 'badge' | 'text';
+    content?: string;
+    label?: string;
+    variant?: Variant;
+    icon?: Component;
+}> => {
+    const separator = ' por ';
+    const [basePart, returnByPart] = description.split(separator);
+    const baseParsed = parsedAssignmentChange(basePart, 'Equipo');
+
+    const parsedReturnBy = [
+        ...baseParsed,
+        { type: 'text' as const, content: separator },
+        {
+            type: 'badge' as const,
+            content: returnByPart,
+            icon: User,
+        }
+    ];
+
+    if (parsedReturnBy.length !== 3) {
+        return [{ type: 'text' as const, content: description }];
+    }
+
+    return parsedReturnBy;
+
 };
 
 
