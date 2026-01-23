@@ -2,24 +2,28 @@
 namespace App\Services;
 
 use App\Models\User;
+use Cache;
 
 
-class UserService {
+class UserService
+{
 
-    function getTIDepartmentUsers() {
-        return User::active()->where('dept_id', 11)->get();
+    function getTIDepartmentUsers()
+    {
+        $ti = Cache::remember('ti_department_users', 60 * 60, function () {
+            return User::active()->where('dept_id', 11)->get();
+        });
+        return $ti;
     }
 
-    function getTechnicians() {
-        return User::active()->whereIn('dept_id', [9,10])->get();
+
+    function getAllBasicInfo()
+    {
+        $users = Cache::remember('users_basic_info', 60 * 60, function () {
+            return User::active()->select('staff_id', 'firstname', 'lastname')->get();
+        });
+        return $users;
     }
 
 
-    function getAllBasicInfo() {
-        return User::active()->select('staff_id', 'firstname', 'lastname')->get();
-    }
-
-    function getAllUsers() {
-        return User::active()->select('staff_id', 'firstname', 'lastname')->get();
-    }
 }

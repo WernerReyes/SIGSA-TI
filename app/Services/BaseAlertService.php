@@ -58,7 +58,7 @@ abstract class BaseAlertService
 
         $alert->update([
             'status' => AlertStatus::ACTIVE->value,
-            'last_notified_at' => now(),
+            // 'last_notified_at' => now(),
             'message' => $this->messages[AlertStatus::ACTIVE->value] ?? '',
         ]);
 

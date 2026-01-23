@@ -6,6 +6,7 @@ use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketStatus;
 use App\Enums\Ticket\TicketType;
+use DB;
 use Illuminate\Database\Eloquent\Model;
 
 
@@ -32,13 +33,24 @@ class Ticket extends Model
     ];
 
     protected $casts = [
-        'opened_at' => 'datetime',
+        // 'opened_at' => 'datetime',
         'closed_at' => 'datetime',
         // 'status' => TicketStatus::class,
         // 'priority' => TicketPriority::class,
         // 'type' => TicketType::class,
         // 'request_type' => TicketRequestType::class,
     ];
+
+    protected static function booted()
+    {
+        static::deleting(function ($ticket) {
+
+            DB::transaction(function () use ($ticket, &$filesToDelete) {
+                $ticket->histories()->delete();
+            });
+        });
+    }
+
 
     public function requester()
     {

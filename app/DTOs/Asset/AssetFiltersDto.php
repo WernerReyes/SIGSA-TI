@@ -8,6 +8,8 @@ class AssetFiltersDto
         public ?array $types = null,
         public ?array $assigned_to = null,
         public ?array $department_id = null,
+        public readonly ?string $startDate = null,
+        public readonly ?string $endDate = null,
     ) {
     }
 
@@ -19,6 +21,9 @@ class AssetFiltersDto
             types: $data['types'] ?? null,
             assigned_to: $data['assigned_to'] ?? null,
             department_id: $data['department_id'] ?? null,
+            startDate: $data['startDate'] ?? null,
+            endDate: $data['endDate'] ?? null,
+
         );
     }
 }

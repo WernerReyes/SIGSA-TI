@@ -51,7 +51,7 @@ class AssetController extends Controller
             'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
-            'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),
+            // 'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),
             'historiesPaginated' => Inertia::optional(function () use ($assetService, $assetId, $request) {
                 if (!$assetId) {
                     return null;
@@ -141,6 +141,7 @@ class AssetController extends Controller
 
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);

@@ -80,54 +80,14 @@
                         <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
-
-                                <Popover v-model:open="openUserSelect">
-                                    <PopoverTrigger as-child>
-                                        <Button :disabled="!canEdit" variant="outline" role="combobox"
-                                            :aria-expanded="openUserSelect" class="w-full justify-between">
-                                            {{
-                                                componentField.modelValue
-                                                    ? !users.length ? asset?.current_assignment?.assigned_to?.full_name
-                                                        :
-                                                        users.find(user => user.staff_id ===
-                                                            componentField.modelValue)?.full_name
-                                                    : 'Seleccionar empleado'
-                                            }}
-                                            <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent class="w-full p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Buscar empleado..." />
-                                            <CommandList>
-                                                <WhenVisible data="users">
-                                                    <template #fallback>
-                                                        <CommandGroup>
-                                                            <CommandItem v-for="n in 5" :key="n" value="loading">
-                                                                <Skeleton class="h-4 w-full" />
-                                                            </CommandItem>
-                                                        </CommandGroup>
-                                                    </template>
-
-                                                    <CommandEmpty>Empleado no encontrado</CommandEmpty>
-                                                    <CommandGroup>
-                                                        <CommandItem v-for="user in users" :key="user.staff_id"
-                                                            :value="user.staff_id" @select="() => {
-                                                                componentField.onChange(user.staff_id)
-                                                            }">
-
-                                                            {{ user.full_name }}
-                                                            <CheckIcon
-                                                                v-if="componentField.modelValue === user.staff_id"
-                                                                class="ml-auto h-4 w-4" />
-
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </WhenVisible>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <SelectFilters data-key="users" :items="users" :show-selected-focus="false"
+                                    :show-refresh="false"
+                                    :label="asset?.current_assignment?.assigned_to?.full_name || 'Seleccionar empleado'"
+                                    item-label="full_name" item-value="staff_id" selected-as-label
+                                    :default-value="componentField.modelValue"
+                                    @select="(value) => setFieldValue('assigned_to_id', +value)"
+                                    filter-placeholder="Buscar empleado..." empty-text="No se encontraron empleados">
+                                </SelectFilters>
 
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
@@ -174,7 +134,7 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                <Popover v-model:open="openAccessorySelect">
+                                <!-- <Popover v-model:open="openAccessorySelect">
                                     <PopoverTrigger as-child>
                                         <Button :disabled="!canEdit" variant="outline" role="combobox"
                                             :aria-expanded="openAccessorySelect" class="w-full justify-between">
@@ -224,7 +184,15 @@
                                             </CommandList>
                                         </Command>
                                     </PopoverContent>
-                                </Popover>
+                                </Popover> -->
+
+                                <SelectFilters :items="assetAccessories" data-key="accessories"
+                                    :show-selected-focus="false" :show-refresh="false"
+                                    :label="selectLabels(componentField.modelValue)" item-label="name" item-value="id"
+                                    :multiple="true" selected-as-label :default-value="componentField.modelValue"
+                                    @select="(values) => setFieldValue('accessories', values)"
+                                    filter-placeholder="Buscar accesorio..." empty-text="No se encontraron accesorios">
+                                </SelectFilters>
 
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
@@ -284,45 +252,37 @@ import {
 } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from '@/components/ui/command';
 
 import { Textarea } from '@/components/ui/textarea';
 
+import { useAsset } from '@/composables/useAsset';
 import { type Asset } from '@/interfaces/asset.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { TypeName } from '@/interfaces/assetType.interface';
-import { type User } from '@/interfaces/user.interface';
-import { useAsset } from '@/composables/useAsset';
-import { router, usePage, WhenVisible } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { CheckIcon, ChevronDownIcon, Laptop, LockKeyhole } from 'lucide-vue-next';
+import { ChevronDownIcon, LockKeyhole } from 'lucide-vue-next';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useApp } from '@/composables/useApp';
+import type { Alert as IAlert } from '@/interfaces/alert.interface';
+import { assetTypeOp } from '@/interfaces/assetType.interface';
+import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { addMinutes } from 'date-fns';
 import { toast } from 'vue-sonner';
 import Countdown from '../Countdown.vue';
 import FileUpload from '../FileUpload.vue';
-import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
-import { assetTypeOp } from '@/interfaces/assetType.interface';
-import type { Alert as IAlert } from '@/interfaces/alert.interface';
+import SelectFilters from '../SelectFilters.vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
 
 const page = usePage();
+const { users, assetAccessories: accessories } = useApp();
 const { downloadAssignmentDocument } = useAsset();
 
-const openUserSelect = ref(false);
-const openAccessorySelect = ref(false);
 const isSubmitting = ref(false);
 const resetUpload = ref(false);
 const loadingAssignDocument = ref(false);
@@ -345,9 +305,6 @@ const url = computed<string>({
     }
 });
 
-const users = computed<User[]>(() => {
-    return (page.props?.users || []) as User[];
-});
 
 const canEdit = computed({
     get: () => {
@@ -367,11 +324,11 @@ const assignmentId = computed<number>(() => {
 });
 
 const assetAccessories = computed<Asset[]>(() => {
-    const accessories = (page.props?.accessories || []) as Asset[];
-    if (!accessories.length) {
+    // const accessorie
+    if (!accessories.value.length) {
         return [...childrenAssets.value];
     }
-    return accessories;
+    return [...childrenAssets.value, ...accessories.value];
 });
 
 const assign = computed<AssetAssignment | null>(() => {
@@ -399,7 +356,7 @@ const formSchema = toTypedSchema(
     })
 );
 
-const { handleSubmit, errors, setValues } = useForm({
+const { handleSubmit, errors, setValues, setFieldValue } = useForm({
     initialValues: {
         assigned_to_id: undefined,
         assign_date: today(getLocalTimeZone()),

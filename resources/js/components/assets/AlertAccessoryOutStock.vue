@@ -3,16 +3,13 @@
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger as-child>
-                    <Button
-                        size="icon"
-                        variant="default"
+                    <Button size="icon" variant="default"
                         class="relative h-12 w-12 rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg"
-                        @click="showAlertPanel = !showAlertPanel"
-                        :aria-expanded="showAlertPanel"
-                        aria-label="Ver alerta de accesorios"
-                    >
+                        @click="showAlertPanel = !showAlertPanel" :aria-expanded="showAlertPanel"
+                        aria-label="Ver alerta de accesorios">
                         <Bell class="size-5" />
-                        <span class="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-white text-slate-800 text-[10px] font-semibold px-1.5 py-0.5 shadow">!</span>
+                        <span
+                            class="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-white text-slate-800 text-[10px] font-semibold px-1.5 py-0.5 shadow">!</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left" align="center" class="text-xs">Ver alerta de accesorios</TooltipContent>
@@ -20,13 +17,12 @@
         </TooltipProvider>
 
         <Transition name="fade-slide">
-            <Card
-                v-if="showAlertPanel"
-                class="w-80 border border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/95 shadow-2xl"
-            >
+            <Card v-if="showAlertPanel"
+                class="w-80 border border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/95 shadow-2xl">
                 <CardHeader class="pb-2">
                     <div class="flex items-start gap-3">
-                        <div class="size-11 rounded-xl bg-slate-100 dark:bg-slate-800 grid place-content-center ring-1 ring-slate-200/70 dark:ring-slate-700/80">
+                        <div
+                            class="size-11 rounded-xl bg-slate-100 dark:bg-slate-800 grid place-content-center ring-1 ring-slate-200/70 dark:ring-slate-700/80">
                             <AlertCircle class="size-5 text-slate-700 dark:text-slate-200" />
                         </div>
                         <div class="flex-1 min-w-0 space-y-1">
@@ -35,7 +31,8 @@
                                 <Badge variant="secondary" class="text-[11px] px-2 py-0.5">Stock</Badge>
                             </div>
                             <p class="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">
-                                {{ generalAlert?.message || 'Correo enviado a Ventas indicando faltante de accesorios.' }}
+                                {{ generalAlert?.message || 'Correo enviado a Ventas indicando faltante de accesorios.'
+                                }}
                             </p>
                         </div>
                     </div>
@@ -47,13 +44,8 @@
                         <span>Última notificación: {{ lastNotifiedDisplay }}</span>
                     </div>
                     <div class="flex items-center justify-end gap-2">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            class="text-xs"
-                            :disabled="isSending"
-                            @click="handleResendAlert"
-                        >
+                        <Button size="sm" variant="outline" class="text-xs" :disabled="isSending"
+                            @click="handleResendAlert">
                             <LoaderCircle v-if="isSending" class="size-4 animate-spin" />
                             <span v-else>Reenviar a Ventas</span>
                             <span v-if="isSending">Enviando...</span>
@@ -90,8 +82,8 @@ const updatedDate = ref<string | null>(null);
 
 const lastNotifiedDisplay = computed(() => {
     if (updatedDate.value) return updatedDate.value;
-    if (generalAlert.value?.last_notified_at) {
-        return format(new Date(generalAlert.value.last_notified_at), 'dd/MM/yyyy HH:mm');
+    if (generalAlert.value?.updated_at) {
+        return format(new Date(generalAlert.value.updated_at), 'dd/MM/yyyy HH:mm');
     }
     return 'N/A';
 });
@@ -126,6 +118,7 @@ const handleResendAlert = () => {
 .fade-slide-leave-active {
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
+
 .fade-slide-enter-from,
 .fade-slide-leave-to {
     opacity: 0;

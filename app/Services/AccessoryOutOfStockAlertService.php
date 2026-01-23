@@ -37,7 +37,7 @@ class AccessoryOutOfStockAlertService extends BaseAlertService
             ],
             [
                 'status' => AlertStatus::RESOLVED->value,
-                'last_notified_at' => now(),
+                // 'last_notified_at' => now(),
             ]
         );
 

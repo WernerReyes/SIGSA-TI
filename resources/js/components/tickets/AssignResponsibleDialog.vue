@@ -24,8 +24,11 @@
             <div class="space-y-5 py-6">
                 <!-- Información del ticket actual -->
                 <div v-if="ticket?.responsible" class="p-4 rounded-lg bg-muted/50 border border-border">
-                    <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-2 flex items-center gap-2"><UserCheck class="size-4" />
-                        Responsable Actual</p>
+                    <p
+                        class="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-2 flex items-center gap-2">
+                        <UserCheck class="size-4" />
+                        Responsable Actual
+                    </p>
                     <p class="text-sm font-medium">{{ ticket.responsible.full_name }}</p>
                 </div>
 
@@ -35,67 +38,29 @@
                         <FieldLabel for="responsible_id" class="text-sm font-semibold">
                             Nuevo Responsable
                         </FieldLabel>
-                        <Select v-bind="componentField">
-                            <SelectTrigger class="h-11 mt-2">
-                                <SelectValue :placeholder="placeholder" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectLabel class="text-muted-foreground">Disponibles</SelectLabel>
-                                <WhenVisible data="TIUsers">
-                                    <template #fallback>
-                                        <Skeleton v-for="n in 4" :key="n" class="h-4 mb-2 rounded-md" />
-                                    </template>
-
-                                    <SelectGroup>
-                                        <SelectItem v-for="user in TIUsers" :key="user.staff_id" :value="user.staff_id">
-                                            <div class="flex items-center gap-2">
-                                                <span>{{ user.full_name }}</span>
-                                            </div>
-                                        </SelectItem>
-                                    </SelectGroup>
-                                    <SelectItem disabled value="empty" v-if="!TIUsers.length">
-                                        <div class="flex items-center gap-2">
-                                            <span>No hay usuarios disponibles</span>
-                                        </div>
-                                    </SelectItem>
-                                </WhenVisible>
-
-                            </SelectContent>
-                        </Select>
-                        <!-- TODO: Missing complete this -->
-                        {{ componentField.modelValue }}
-                        <SelectFilters
-                            data-key="TIUsers"
-                            :items="TIUsers"
-                            :show-selected-focus="false"
-                            :show-refresh="false"
-                            :label="placeholder"
-                            item-label="full_name"
-                            item-value="staff_id"
-                            selected-as-label
-                            :default-selecteds="[componentField.modelValue]"
-                            :selected="[componentField.modelValue]"
+                        <SelectFilters data-key="TIUsers" :items="TIUsers" :show-selected-focus="false"
+                            :show-refresh="false" :label="placeholder" item-label="full_name" item-value="staff_id"
+                            selected-as-label :default-value="componentField.modelValue"
                             @select="(value) => setFieldValue('responsible_id', +value)"
-                            
-                            
-                         ></SelectFilters>
+                            filter-placeholder="Buscar responsable..." empty-text="No se encontraron responsables">
+                        </SelectFilters>
                         <FieldError v-if="errors.length" :errors="errors" />
                     </Field>
                 </VeeField>
             </div>
 
             <DialogFooter class="pt-6 border-t gap-3">
-                <Button variant="outline" type="button" @click="open = false" :disabled="isSubmitting"
+                <Button variant="outline" type="button" @click="open = false" :disabled="isLoading"
                     class="flex-1 sm:flex-none">
                     Cancelar
                 </Button>
-                <Button :disabled="isSubmitting || Object.keys(errors).length > 0" type="submit"
+                <Button :disabled="isLoading || Object.keys(errors).length > 0" type="submit"
                     @click="handleSubmit(handleFormSubmit)()"
                     class="flex-1 sm:flex-none shadow-md hover:shadow-lg transition-all gap-2">
-                    <Spinner v-if="isSubmitting" class="h-4 w-4" />
+                    <Spinner v-if="isLoading" class="h-4 w-4" />
 
-                    <Save class="size-4" v-if="!isSubmitting" />
-                    {{ isSubmitting ? 'Asignando...' : 'Asignar Ticket' }}
+                    <Save class="size-4" v-if="!isLoading" />
+                    {{ isLoading ? 'Asignando...' : 'Asignar Ticket' }}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -105,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 
 import {
     Dialog,
@@ -116,32 +81,21 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
+import { useApp } from '@/composables/useApp';
 import { type Ticket } from '@/interfaces/ticket.interface';
 import { type User } from '@/interfaces/user.interface';
-import { router, usePage, WhenVisible } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Save, UserCheck } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
 import z from 'zod';
 import SelectFilters from '../SelectFilters.vue';
-import { useApp } from '@/composables/useApp';
 
 const ticket = defineModel<Ticket | null>('ticket');
 const open = defineModel<boolean>('open');
 
-const page = usePage();
-const { TIUsers } = useApp()
+const { TIUsers, isLoading } = useApp()
 
 const formSchema = toTypedSchema(z.object({
     responsible_id: z.number({
@@ -157,10 +111,6 @@ const { handleReset, handleSubmit, errors, setFieldValue } = useForm({
 });
 
 
-// const TIUsers = computed<User[]>(() => {
-//     const users = (page.props.TIUsers || []) as User[];
-//     return users;
-// });
 
 const placeholder = computed(() => {
     let placeholderText = 'Selecciona un responsable';
@@ -171,11 +121,6 @@ const placeholder = computed(() => {
 
 });
 
-const isSubmitting = ref(false);
-
-
-
-
 
 watch(() => ticket?.value?.responsible_id, (newVal) => {
     setFieldValue('responsible_id', newVal);
@@ -184,17 +129,18 @@ watch(() => ticket?.value?.responsible_id, (newVal) => {
 const handleFormReset = () => {
     handleReset();
     ticket.value = null;
-   
+
 };
 
 const handleFormSubmit = async (values: { responsible_id: number }) => {
-    isSubmitting.value = true;
 
     router.post(`/tickets/${ticket?.value?.id}/assign`, {
 
         responsible_id: values.responsible_id,
     }, {
         preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
         onFlash: (flash) => {
             const responsible = flash.responsible as User | null;
             if (!responsible) return;
@@ -215,10 +161,7 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
             handleFormReset();
             open.value = false;
         },
-        onFinish: () => {
-            isSubmitting.value = false;
 
-        }
     });
 
 };

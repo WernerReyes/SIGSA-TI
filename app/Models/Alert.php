@@ -14,12 +14,12 @@ class Alert extends Model
         'type',
         'message',
         'status',
-        'last_notified_at',
+        // 'last_notified_at',
         'metadata',
     ];
 
     protected $casts = [
         'metadata' => 'array',
-        'last_notified_at' => 'datetime',
+        // 'last_notified_at' => 'datetime',
     ];
 }

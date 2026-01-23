@@ -173,4 +173,8 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    .disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
 }

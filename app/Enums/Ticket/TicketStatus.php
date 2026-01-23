@@ -11,4 +11,19 @@ enum TicketStatus: string
     {
         return array_map(fn(self $priority) => $priority->value, self::cases());
     }
+
+    public static function label(string $value): string
+    {
+        return self::labels()[$value] ?? 'Desconocido';
+    }
+
+    public static function labels(): array
+    {
+        return [
+            self::OPEN->value => 'Abierto',
+            self::IN_PROGRESS->value => 'En Progreso',
+            self::RESOLVED->value => 'Resuelto',
+            self::CLOSED->value => 'Cerrado',
+        ];
+    }
 }

@@ -72,6 +72,7 @@
                                 <TabsList class="grid w-full grid-cols-2">
                                     <TabsTrigger v-for="type in Object.values(ticketTypeOptions)" :key="type.value"
                                         :value="type.value">
+                                        <component :is="type.icon" />
                                         {{ type.label }}
                                     </TabsTrigger>
                                 </TabsList>
@@ -90,18 +91,23 @@
                                 <FieldLabel class="text-sm font-semibold">
                                     Categoría
                                 </FieldLabel>
-                                <Select v-bind="componentField">
-                                    <SelectTrigger class="h-11 mt-2">
-                                        <SelectValue placeholder="Selecciona una categoría" />
-                                    </SelectTrigger>
-                                    <SelectContent>
 
-                                        <SelectItem v-for="requestType in Object.values(ticketRequestTypeOptions)"
-                                            :key="requestType.value" :value="requestType.value">
-                                            {{ requestType.label }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+
+                                <SelectFilters :items="Object.values(ticketRequestTypeOptions)"
+                                    :show-selected-focus="false" :show-refresh="false"
+                                    :label="'Selecciona un nuevo estado'" item-label="label" item-value="value"
+                                    selected-as-label :default-value="componentField.modelValue"
+                                    @select="(value) => setFieldValue('request_type', value)"
+                                    filter-placeholder="Buscar estado..." empty-text="No se encontraron estados">
+                                    <template #item="{ item }">
+                                        <Badge :class="item.bg" class="px-3 py-1">
+                                            <component :is="item.icon" class="mr-1" />
+                                            {{ item.label }}
+                                        </Badge>
+                                    </template>
+                                </SelectFilters>
+
+
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -114,22 +120,20 @@
                                 <FieldLabel class="text-sm font-semibold">
                                     Prioridad
                                 </FieldLabel>
-                                <Select v-bind="componentField">
-                                    <SelectTrigger class="h-11 mt-2">
-                                        <SelectValue placeholder="Selecciona la prioridad" />
-                                    </SelectTrigger>
 
-                                    <SelectContent>
-                                        <SelectItem v-for="priority in Object.values(ticketPriorityOptions)"
-                                            :key="priority.value" :value="priority.value">
-
-                                            <Badge :class="priority.bg">
-                                                <component :is="priority.icon" class="size-4" />
-                                                {{ priority.label }}
-                                            </Badge>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <SelectFilters :items="Object.values(ticketPriorityOptions)"
+                                    :show-selected-focus="false" :show-refresh="false"
+                                    :label="'Selecciona una prioridad'" item-label="label" item-value="value"
+                                    selected-as-label :default-value="componentField.modelValue"
+                                    @select="(value) => setFieldValue('priority', value)"
+                                    filter-placeholder="Buscar prioridad..." empty-text="No se encontraron prioridades">
+                                    <template #item="{ item }">
+                                        <Badge :class="item.bg" class="px-3 py-1">
+                                            <component :is="item.icon" class="mr-1" />
+                                            {{ item.label }}
+                                        </Badge>
+                                    </template>
+                                </SelectFilters>
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -195,6 +199,7 @@ import { Ticket, TicketPriority, ticketPriorityOptions, TicketRequestType, ticke
 import { router } from '@inertiajs/vue3'
 import { Check, Tag } from 'lucide-vue-next'
 import * as z from 'zod'
+import SelectFilters from '../SelectFilters.vue'
 
 const ticket = defineModel<Ticket | null>('ticket', {
     type: Object as () => Ticket | null,
@@ -247,7 +252,7 @@ const initialValues = {
     type: TicketType.SERVICE_REQUEST,
 };
 
-const { handleSubmit, errors, setValues, values } = useForm({
+const { handleSubmit, errors, setValues, values, setFieldValue } = useForm({
     validationSchema: formSchema,
     initialValues
 });
@@ -291,7 +296,7 @@ function onSubmit(values: any) {
                 if (updatedTicket && !only.includes('tickets')) {
                     nextTick(() => {
                         router.replaceProp('tickets.data', (tickets: Ticket[]) => {
-                          
+
                             const newTickets = tickets.map(t => {
                                 if (t.id === updatedTicket.id) {
                                     return {

@@ -20,12 +20,16 @@ class TicketController extends Controller
     {
         $filters = TicketFiltersDto::fromArray($request->all());
 
+        $ticketId = $request->input('ticket_id');
+
         return Inertia::render('Tickets', [
             // 'departments' => $departmentsWithUsers,
             'filters' => $filters,
             'users' => Inertia::optional(fn() => $userService->getAllBasicInfo()),
             'tickets' => Inertia::once(fn() => $ticketService->getAllOrderedByPriority($filters)),
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers()),
+
+            'historiesPaginated' => Inertia::optional(fn() => $ticketId ? $ticketService->getHistoriesPaginated(Ticket::find($ticketId)) : null),
         ]);
     }
 
@@ -58,7 +62,6 @@ class TicketController extends Controller
             ]);
 
         } catch (\Exception $e) {
-
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
@@ -69,6 +72,27 @@ class TicketController extends Controller
         return back();
     }
 
+    public function delete(Ticket $ticket, TicketService $ticketService)
+    {
+        try {
+            $ticketService->deleteTicket($ticket);
+
+            Inertia::flash([
+                'success' => 'El ticket ha sido eliminado exitosamente.',
+                'error' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
 
     function update(Ticket $ticket, StoreTicketRequest $request, TicketService $ticketService)
     {
@@ -83,10 +107,8 @@ class TicketController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
 
-
-            // return back()->with('success', 'El ticket ha sido actualizado exitosamente.');
         } catch (\Exception $e) {
-            // return back()->withErrors(['error' => 'Ocurrió un error al actualizar el ticket. Por favor, inténtelo de nuevo.']);
+       
             Inertia::flash([
                 'ticket' => null,
                 'success' => null,
@@ -111,12 +133,12 @@ class TicketController extends Controller
         }
 
         try {
-            ['action' => $action, 'responsible' => $responsible] = $ticketService->assignTicket($ticket, $responsibleId);
+            ['description' => $description, 'responsible' => $responsible] = $ticketService->assignTicket($ticket, $responsibleId);
 
 
             Inertia::flash([
                 'responsible' => $responsible,
-                'success' => $action,
+                'success' => $description,
                 'error' => null,
                 'timestamp' => now()->timestamp,
             ]);
@@ -147,19 +169,16 @@ class TicketController extends Controller
         }
 
         try {
-            $action = $ticketService->changeTicketStatus($ticket, $newStatus);
-            // return back()->with('success', $action);
-
+            $description = $ticketService->changeTicketStatus($ticket, $newStatus);
+            
             Inertia::flash([
-                'success' => $action,
+                'success' => $description,
                 'error' => null,
                 'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
-            // if ($e->getCode() === 500) {
-            //     return back()->withErrors(['error' => 'Ocurrió un error al cambiar el estado del ticket. Por favor, inténtelo de nuevo.']);
-            // }
+            
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),

@@ -49,41 +49,42 @@ class Asset extends Model
     ];
 
     protected static function booted()
-{
-    static::deleting(function ($asset) {
+    {
+        static::deleting(function ($asset) {
 
-        $filesToDelete = [];
+            $filesToDelete = [];
 
-        DB::transaction(function () use ($asset, &$filesToDelete) {
+            DB::transaction(function () use ($asset, &$filesToDelete) {
 
-            // Guardar factura
-            if ($asset->invoice_path && Storage::disk('public')->exists($asset->invoice_path)) {
-                $filesToDelete[] = $asset->invoice_path;
-            }
-
-            foreach ($asset->assignments as $assignment) {
-
-                foreach ($assignment->deliveryRecords as $record) {
-                    if ($record->file_path && Storage::disk('public')->exists($record->file_path)) {
-                        $filesToDelete[] = $record->file_path;
-                    }
+                // Guardar factura
+                if ($asset->invoice_path && Storage::disk('public')->exists($asset->invoice_path)) {
+                    $filesToDelete[] = $asset->invoice_path;
                 }
 
                 $asset->histories()->delete();
 
-                $assignment->deliveryRecords()->delete();
+                foreach ($asset->assignments as $assignment) {
+
+                    foreach ($assignment->deliveryRecords as $record) {
+                        if ($record->file_path && Storage::disk('public')->exists($record->file_path)) {
+                            $filesToDelete[] = $record->file_path;
+                        }
+                    }
+
+
+                    $assignment->deliveryRecords()->delete();
+                }
+
+                $asset->assignments()->delete();
+
+            });
+
+            // 🔴 FUERA de la transacción
+            foreach ($filesToDelete as $file) {
+                Storage::disk('public')->delete($file);
             }
-
-            $asset->assignments()->delete();
-            
         });
-
-        // 🔴 FUERA de la transacción
-        foreach ($filesToDelete as $file) {
-            Storage::disk('public')->delete($file);
-        }
-    });
-}
+    }
 
 
 

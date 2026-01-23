@@ -4,7 +4,7 @@
         <div class="rounded-xl border bg-linear-to-br from-muted/40 via-background to-background shadow-sm">
             <div class="flex max-md:flex-col gap-4 items-start p-4">
                 <div class="flex flex-col gap-2 w-full max-w-xl">
-                    <p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">Activos</p>
+                   
                     <div class="flex items-center gap-2">
                         <Input class="w-full" placeholder="Buscar activos..." v-model="form.search" />
                         <Button variant="ghost" size="icon" :disabled="isLoading || !hasFilters" class="rounded-full"
@@ -14,270 +14,88 @@
                     </div>
                     <div v-if="hasFilters"
                         class="flex flex-wrap gap-2 text-xs text-muted-foreground items-center animate-in fade-in-50">
-                        <Badge variant="outline" class="rounded-full">{{ filterCount }} filtros activos</Badge>
-                        <Badge v-if="form.search" variant="secondary" class="rounded-full">Texto</Badge>
-                        <Badge v-if="form.assigned_to.length" variant="secondary" class="rounded-full">Empleados</Badge>
-                        <Badge v-if="form.department_id.length" variant="secondary" class="rounded-full">Departamentos
-                        </Badge>
-                        <Badge v-if="form.types.length" variant="secondary" class="rounded-full">Tipos</Badge>
-                        <Badge v-if="form.status.length" variant="secondary" class="rounded-full">Estados</Badge>
+                        <Badge variant="outline" class="rounded-full">{{ filterCount }} {{
+                            filterCount === 1 ? 'filtro aplicado' : 'filtros aplicados'
+                        }}</Badge>
+
+                        <template v-for="filter in filterstersRenders" :key="filter.label">
+                            <Badge v-if="filter.value" variant="secondary" class="cursor-pointer" :class="{
+                                'disabled': isLoading
+                            }" @click="filter.click">
+                                <Badge v-if="typeof filter.value === 'number' && filter.label !== 'Fechas'"
+                                    class="h-4 min-w-4 rounded-full px-1 font-mono tabular-nums">
+                                    {{ filter.value }}
+                                </Badge>
+                                {{ filter.label }}
+                                <XCircle class="size-4 ml-1" />
+                            </Badge>
+                        </template>
                     </div>
                 </div>
 
-                <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap justify-end">
-                    <Popover v-model:open="openUserSelect">
+                <!-- max-sm:w-full ml-auto md:max-w-2/3 flex gap-2 flex-wrap justify-end items-end -->
+
+                <div class="max-sm:w-full ml-auto flex gap-2 flex-wrap justify-end items-end">
+
+
+                    <SelectFilters label="Asignados" :items="users" data-key="users" :icon="Users" :allow-null="true"
+                        show-refresh show-selected-focus item-value="staff_id" item-label="full_name" :multiple="true"
+                        :default-value="form.assigned_to" @select="(selects) => form.assigned_to = selects" />
+
+
+                    <SelectFilters label="Departamentos" :items="departments" data-key="departments" :icon="Building"
+                        show-refresh show-selected-focus item-value="id" item-label="name" :multiple="true"
+                        :default-value="form.department_id" @select="(selects) => form.department_id = selects" />
+
+                    <!-- {{ Compu }} -->
+
+                    <SelectFilters label="Tipos" :items="assetTypes" data-key="types" :icon="MonitorSmartphone"
+                        show-refresh show-selected-focus item-value="id" item-label="name" :multiple="true"
+                        :default-value="form.types" @select="(selects) => form.types = selects">
+
+                        <template #item="{ item }">
+                            <div class="flex items-center gap-2">
+                                <component :is="assetTypeOp(item.name)?.icon" class="size-4" />
+                                {{ item.name }}
+                            </div>
+                        </template>
+
+                    </SelectFilters>
+
+
+                    <SelectFilters label="Estados" :items="Object.values(assetStatusOptions)" data-key="status"
+                        :icon="ChartArea" show-refresh show-selected-focus item-value="value" item-label="label"
+                        :multiple="true" :default-value="form.status" @select="(selects) => form.status = selects">
+
+                        <template #item="{ item }">
+                            <Badge :class="item.bg">
+                                <component :is="item.icon" class="size-4" />
+                                {{ item.label }}
+                            </Badge>
+                        </template>
+                    </SelectFilters>
+
+                    <Popover>
                         <PopoverTrigger as-child>
-                            <Button variant="outline" role="combobox" :aria-expanded="openUserSelect"
-                                class="w-fit justify-between">
+                            <Button id="date" variant="outline" class="w-48 justify-between font-normal">
+                                <CalendarSearch />
 
-                                <span class="relative flex size-2" v-if="form.assigned_to.length > 0">
-                                    <span
-                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                                </span>
-
-                                Empleados
-                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                {{ formattedDate }}
+                                <ChevronDownIcon />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent class="w-full p-0">
-                            <Command>
-
-                                <CommandInput placeholder="Buscar empleado..." class="w-full" />
-
-                                <CommandShortcut :disable="isLoading || !form.assigned_to?.length" @click="() => {
-                                    if (!form.assigned_to?.length) return;
-                                    form.assigned_to = []
-
-                                }" class="w-full justify-center gap-2  flex items-center p-2"
-                                    :class="isLoading || !form.assigned_to?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                                    Refrescar lista
-                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                                </CommandShortcut>
-
-                                <CommandList>
-                                    <WhenVisible data="users">
-                                        <template #fallback>
-                                            <CommandGroup>
-                                                <CommandItem v-for="n in 5" :key="n" value="loading">
-                                                    <Skeleton class="h-4 w-full" />
-                                                </CommandItem>
-                                            </CommandGroup>
-                                        </template>
-
-                                        <CommandEmpty>Empleado no encontrado</CommandEmpty>
-
-                                        <CommandGroup>
-                                            <CommandItem v-for="user in users" :key="user.staff_id || 'user-none'"
-                                                :value="user.staff_id" @select="() => {
-                                                    if (form.assigned_to.includes(user.staff_id)) {
-                                                        form.assigned_to = form.assigned_to.filter(id => id !== user.staff_id)
-                                                    } else {
-                                                        form.assigned_to = [...form.assigned_to, user.staff_id]
-                                                    }
-                                                }">
-                                                {{ user.full_name }}
-                                                <Check v-if="form.assigned_to.includes(user.staff_id)"
-                                                    class="ml-auto size-4" />
-                                            </CommandItem>
-                                        </CommandGroup>
-                                    </WhenVisible>
-                                </CommandList>
-
-                            </Command>
+                        <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+                            <RangeCalendar locale="es" v-model="form.dateRange as any" layout="month-and-year" />
                         </PopoverContent>
                     </Popover>
 
-                    <Popover v-model:open="openDepartmentSelect">
-                        <PopoverTrigger as-child>
-                            <Button variant="outline" role="combobox" :aria-expanded="openDepartmentSelect"
-                                class="w-fit justify-between">
 
-                                <span class="relative flex size-2" v-if="form.department_id.length > 0">
-                                    <span
-                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                                </span>
-
-                                Departamentos
-                                <ChevronsUpDown class="ml-2 size shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-full p-0">
-                            <Command>
-
-                                <CommandInput placeholder="Buscar departamento..." class="w-full" />
-
-
-
-                                <CommandShortcut :disable="isLoading || !form.department_id?.length" @click="() => {
-                                    if (isLoading || !form.department_id?.length) return;
-                                    form.department_id = []
-                                }" class="w-full justify-center gap-2  flex items-center p-2"
-                                    :class="isLoading || !form.department_id?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                                    Refrescar lista
-                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                                </CommandShortcut>
-
-                                <CommandList>
-                                    <WhenVisible data="departments">
-
-                                        <template #fallback>
-                                            <CommandGroup>
-                                                <CommandItem v-for="n in 5" :key="n" value="loading">
-                                                    <Skeleton class="h-4 w-full" />
-                                                </CommandItem>
-                                            </CommandGroup>
-                                        </template>
-
-
-
-                                        <CommandEmpty>Departamento no encontrado</CommandEmpty>
-                                        <CommandGroup>
-
-                                            <CommandItem v-for="department in departments" :key="department.id"
-                                                :value="department.id" @select="() => {
-                                                    if (form.department_id.includes(department.id)) {
-                                                        form.department_id = [...form.department_id.filter(id => id !== department.id)];
-                                                    } else {
-                                                        form.department_id = [...form.department_id, department.id];
-                                                    }
-                                                }">
-
-                                                {{ department.name }}
-                                                <Check v-if="form.department_id.includes(department.id)"
-                                                    class="ml-auto size" />
-                                            </CommandItem>
-                                        </CommandGroup>
-
-
-                                    </WhenVisible>
-                                </CommandList>
-
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-
-                    <Popover v-model:open="openAssetTypeSelect">
-                        <PopoverTrigger as-child>
-                            <Button variant="outline" role="combobox" :aria-expanded="openAssetTypeSelect"
-                                class="w-fit justify-between">
-
-                                <span class="relative flex size-2" v-if="form.types.length > 0">
-                                    <span
-                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                                </span>
-
-                                Tipos
-                                <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-full p-0">
-                            <Command>
-
-                                <CommandShortcut :disable="isLoading || !form.types?.length" @click="() => {
-                                    if (isLoading || !form.types?.length) return;
-                                    form.types = []
-
-                                }" class="w-full justify-center gap-2  flex items-center p-2"
-                                    :class="isLoading || !form.types?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                                    Refrescar lista
-                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                                </CommandShortcut>
-
-                                <CommandList>
-
-                                    <WhenVisible data="types">
-                                        <template #fallback>
-                                            <CommandGroup>
-                                                <CommandItem v-for="n in 5" :key="n" value="loading">
-                                                    <Skeleton class="h-4 w-full" />
-                                                </CommandItem>
-                                            </CommandGroup>
-                                        </template>
-
-                                        <CommandEmpty>Tipo no encontrado</CommandEmpty>
-                                        <CommandGroup>
-                                            <CommandItem v-for="assetType in types" :key="assetType.id"
-                                                :value="assetType.id" @select="() => {
-
-                                                    if (form.types.includes(assetType.id)) {
-                                                        form.types = [...form.types.filter(id => id !== assetType.id)];
-                                                    } else {
-                                                        form.types = [...form.types, assetType.id];
-                                                    }
-                                                }">
-                                                <component :is="assetTypeOp(assetType.name)?.icon" class="size-4" />
-                                                {{ assetType.name }}
-                                                <Check v-if="form.types.includes(assetType.id)"
-                                                    class="ml-auto h-4 w-4" />
-                                            </CommandItem>
-                                        </CommandGroup>
-                                    </WhenVisible>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-
-                    <Popover v-model:open="openStatusSelect">
-                        <PopoverTrigger as-child>
-                            <Button variant="outline" role="combobox" :aria-expanded="openStatusSelect"
-                                class="w-fit justify-between">
-
-                                <span class="relative flex size-2" v-if="form.status.length > 0">
-                                    <span
-                                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
-                                    <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
-                                </span>
-
-                                Estados
-                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-full p-0">
-                            <Command>
-                                <CommandShortcut :disable="isLoading || !form.status?.length" @click="() => {
-                                    if (isLoading || !form.status?.length) return;
-                                    form.status = []
-                                }" class="w-full justify-center gap-2  flex items-center p-2"
-                                    :class="isLoading || !form.status?.length ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
-                                    Refrescar lista
-                                    <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
-
-                                </CommandShortcut>
-                                <CommandList>
-                                    <CommandEmpty>Estado no encontrado</CommandEmpty>
-                                    <CommandGroup>
-
-                                        <CommandItem v-for="status in Object.values(assetStatusOptions)"
-                                            :key="status.value" :value="status.value" @select="() => {
-                                                if (form.status.includes(status.value)) {
-                                                    form.status = [...form.status.filter(id => id !== status.value)];
-                                                } else {
-                                                    form.status = [...form.status, status.value];
-                                                }
-                                            }">
-                                            <Badge :class="status.bg">
-                                                <component :is="status.icon" class="size-4" />
-                                                {{ status.label }}
-                                            </Badge>
-                                            <Check v-if="form.status.includes(status.value)" class="ml-auto h-4 w-4" />
-
-                                        </CommandItem>
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
                     <DropdownMenu>
                         <DropdownMenuTrigger as-child>
-                            <Button variant="outline" class="ml-auto">
+                            <Button variant="outline">
+                                <Columns4 class="size-4" />
                                 Columnas
-                                <ChevronDown class="ml-2 h-4 w-4" />
+                                <ChevronDown class="ml-2 size-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -445,24 +263,9 @@
     <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" v-model:asset="activeRow" />
     <HistoryDialog v-if="openHistory" v-model:open="openHistory" v-model:asset="activeRow" />
 
-    <AlertDialog v-if="openDelete" v-model:open="openDelete">
-
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro de que deseas eliminar este equipo?</AlertDialogTitle>
-                <AlertDialogDescription>
-
-                    Esta acción no se puede deshacer. El equipo será eliminado permanentemente del sistema, incluyendo
-                    todos
-                    sus registros asociados ( asignaciones, historial de cambios de estado, etc. ).
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction @click="handleDeleteAsset">Continuar</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+    <AlertDialog v-model:open="openDelete" title="¿Estás seguro de que deseas eliminar este equipo?"
+        description="Esta acción no se puede deshacer. El equipo será eliminado permanentemente del sistema, incluyendo todos sus registros asociados ( asignaciones, historial de cambios de estado, etc. )."
+        actionText="Eliminar" @confirm="handleDeleteAsset" />
 
 </template>
 
@@ -511,38 +314,22 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from '@/components/ui/command';
-
-import { valueUpdater } from '@/lib/utils';
+import {  valueUpdater } from '@/lib/utils';
 
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { type Asset, AssetStatus, assetStatusOptions, statusOp } from '@/interfaces/asset.interface';
-import { AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
+import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 
-import { Skeleton } from '@/components/ui/skeleton';
-import type { Department } from '@/interfaces/department.interace';
-import type { BasicUserInfo } from '@/interfaces/user.interface';
-import { router, usePage, WhenVisible } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
-import { Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, ChevronsUpDown, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, X } from 'lucide-vue-next';
+import { Building, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, Users, X, XCircle, CalendarSearch } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
 
 import { useApp } from '@/composables/useApp';
 import type { Paginated } from '@/types';
+import SelectFilters from '../SelectFilters.vue';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
 import Dialog from './Dialog.vue';
@@ -550,12 +337,17 @@ import DialogDetails from './DialogDetails.vue';
 import HistoryDialog from './HistoryDialog.vue';
 import InvoiceDialog from './InvoiceDialog.vue';
 import StatusDialog from './StatusDialog.vue';
+import AlertDialog from '../AlertDialog.vue';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { RangeCalendar } from '@/components/ui/range-calendar';
+import { CalendarDate, getLocalTimeZone, parseDate } from '@internationalized/date';
+import { type DateRange } from 'reka-ui';
 
 
 const { assets } = defineProps<{ assets: Paginated<Asset> }>()
 
 const page = usePage();
-const { isLoading } = useApp();
+const { isLoading, users, departments, assetTypes, assetAccessories } = useApp();
 
 
 const activeRow = ref<Asset | null>(null)
@@ -572,34 +364,8 @@ const openDelete = ref(false);
 const sorting = ref<SortingState>([])
 
 
-const openUserSelect = ref(false);
-const openDepartmentSelect = ref(false);
-const openAssetTypeSelect = ref(false);
-const openStatusSelect = ref(false);
-
-const users = computed<(Omit<BasicUserInfo, 'staff_id'> & {
-    staff_id: number | null
-})[]>(() => {
-    const users = usePage().props.users as BasicUserInfo[];
-    return [{
-        staff_id: null,
-        full_name: 'Sin asignar',
-        firstname: '',
-        lastname: ''
-    }, ...users];
-});
-
-const departments = computed(() => {
-    return (page.props?.departments || []) as Department[];
-});
-
-const types = computed(() => {
-    return (page.props?.types || []) as AssetType[];
-});
 
 const filters = computed(() => page.props.filters as Record<string, any>);
-
-const accesories = computed(() => page.props.accesories as Asset[]);
 
 const assetId = computed(() => activeRow.value?.id || null);
 
@@ -609,22 +375,72 @@ const form = reactive<{
     types: number[];
     assigned_to: (number | null)[];
     department_id: number[];
+    dateRange?: DateRange | null;
 }>({
     search: filters.value.search || '',
     status: filters.value.status || [],
     types: filters.value.types?.map((id: string) => +id) || [],
     assigned_to: filters.value.assigned_to?.map((id: string | null) => id ? +id : null) || [],
     department_id: filters.value.department_id || [],
+    dateRange: filters.value?.startDate || filters.value?.endDate ? {
+        start: filters.value?.startDate ? parseDate(filters.value.startDate) : undefined,
+        end: filters.value?.endDate ? parseDate(filters.value.endDate) : undefined
+    } : undefined
 })
 
 const filterCount = computed(() => {
     const base = form.search ? 1 : 0;
-    const buckets = [form.status.length, form.types.length, form.assigned_to.length, form.department_id.length];
+    const buckets = [form.status.length, form.types.length, form.assigned_to.length, form.department_id.length, form.dateRange ? 1 : 0];
     return base + buckets.filter(Boolean).length;
 });
 
 const hasFilters = computed(() => filterCount.value > 0);
 
+const formattedDate = computed(() => {
+    if (!form.dateRange || (!form.dateRange?.start && !form.dateRange?.end)) {
+        return 'Fecha creado';
+    }
+    const start = form.dateRange.start?.toDate(getLocalTimeZone()).toLocaleDateString();
+    if (!form.dateRange.end) {
+        return start;
+    }
+    const end = form.dateRange.end?.toDate(getLocalTimeZone()).toLocaleDateString();
+    return `${start} - ${end}`;
+});
+
+
+const filterstersRenders = computed(() => [{
+    label: 'Texto',
+    value: form.search,
+    click: (): void => { form.search = '' }
+
+}, {
+    label: 'Estados',
+    value: form.status.length,
+    click: (): void => { form.status = [] }
+
+}, {
+    label: 'Tipos',
+    value: form.types.length,
+    click: (): void => { form.types = [] }
+
+}, {
+    label: 'Asignados',
+    value: form.assigned_to.length,
+    click: (): void => { form.assigned_to = [] }
+
+}, {
+    label: 'Departamentos',
+    value: form.department_id.length,
+    click: (): void => { form.department_id = [] }
+}, {
+    label: 'Fechas',
+    value: form.dateRange ? 1 : 0,
+    click: (): void => { form.dateRange = undefined }
+
+
+}]
+);
 
 watch(
     () => form.search,
@@ -665,6 +481,14 @@ watch(
     { deep: true }
 )
 
+watch(
+    () => form.dateRange,
+    () => {
+        applyFilters()
+    },
+    { deep: true }
+)
+
 
 const handleOpenDetails = () => {
     router.reload({
@@ -684,14 +508,15 @@ const handleOpenDetails = () => {
 
 const handleOpenHistories = () => {
     router.reload({
-        only: ['histories', 'historiesPaginated'],
+        only: ['historiesPaginated'],
         data: { asset_id: assetId.value },
         preserveUrl: true,
         onSuccess: (page) => {
-            activeRow.value = {
-                ...activeRow.value!,
-                histories: page.props.histories as Asset['histories'],
-            }
+            // console.log(page.props.historiesPaginated)
+            // activeRow.value = {
+            //     ...activeRow.value!,
+            //     histories: page.props.historiesPaginated as Asset['histories'],
+            // }
             openHistory.value = true;
         }
     });
@@ -699,9 +524,19 @@ const handleOpenHistories = () => {
 
 
 const applyFilters = () => {
+    const startDate = form.dateRange?.start ? format(form.dateRange.start.toDate(getLocalTimeZone()), 'yyyy-MM-dd') : null;
+    const endDate = form.dateRange?.end ? format(form.dateRange.end.toDate(getLocalTimeZone()), 'yyyy-MM-dd') : null;
     router.get(
         assets.path,
-        form,
+        {
+            search: form.search || undefined,
+            status: form.status.length ? form.status : undefined,
+            types: form.types.length ? form.types : undefined,
+            assigned_to: form.assigned_to.length ? form.assigned_to : undefined,
+            department_id: form.department_id.length ? form.department_id : undefined,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+        },
         {
             only: ['assetsPaginated', 'filters'],
             preserveState: true,
@@ -720,17 +555,22 @@ const resetFilters = () => {
 };
 
 const handleDeleteAsset = () => {
-    if (!activeRow.value) return;
+
+    if (!assetId.value) return;
+
     const only = ['assetsPaginated', 'stats'];
-    if (accesories.value.some(acc => acc.id === activeRow.value!.id)) {
-        only.push('accesories');
+    if (assetAccessories.value.some(acc => acc.id === assetId.value)) {
+        only.push('accessories');
     }
 
+
     router.delete(`
-                     /assets/${activeRow.value.id}
+                     /assets/${assetId.value}
                     `, {
         only,
         preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
         onSuccess: () => {
             activeRow.value = null;
             openDelete.value = false;

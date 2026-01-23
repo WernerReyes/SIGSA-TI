@@ -8,19 +8,43 @@
         </InputGroupAddon>
       </InputGroup>
 
+
+      <div v-if="hasFilters"
+        class="flex flex-wrap gap-2 text-xs mt-5 text-muted-foreground items-center animate-in fade-in-50">
+        <Badge variant="outline" class="rounded-full">{{ filterCount }} {{ filterCount === 1 ? 'filtro activo' :
+          'filtros activos' }}</Badge>
+
+        <template v-for="filter in filterstersRenders" :key="filter.label">
+          <Badge v-if="filter.value" @click="() => {
+            if (isLoading) return;
+            filter.click();
+          }" variant="secondary" class="cursor-pointer" :class="{
+            'disabled': isLoading
+          }">
+            <Badge v-if="typeof filter.value === 'number'" class="h-4 min-w-4 rounded-full px-1 font-mono tabular-nums">
+              {{ filter.value }}
+            </Badge>
+            {{ filter.label }}
+            <XCircle class="size-4" />
+          </Badge>
+        </template>
+
+      </div>
     </div>
-    <div class="max-sm:w-full ml-auto md:max-w-2/3 flex gap-2 flex-wrap  justify-end">
-
-      <SelectFilters label="Solicitantes" v-model:selecteds="form.requesters" :items="users" data-key="users"
-        :icon="Users" show-refresh show-selected-focus item-value="staff_id" item-label="full_name" multiple />
 
 
-      <SelectFilters label="Responsables" v-model:selecteds="form.responsibles" :items="TIUsers" data-key="TIUsers"
-        :icon="Users" allow-null show-refresh show-selected-focus item-value="staff_id" item-label="full_name"
-        multiple />
+    <div class="max-sm:w-full  md:max-w-2/3 flex gap-2 flex-wrap justify-end">
+      <SelectFilters label="Solicitantes" :items="users" data-key="users" :icon="Users" show-refresh show-selected-focus
+        item-value="staff_id" item-label="full_name" :multiple="true" :default-value="form.requesters"
+        @select="(selects) => form.requesters = selects" />
 
-      <SelectFilters label="Tipos" v-model:selecteds="form.types" show-refresh show-selected-focus
-        :items="Object.values(ticketTypeOptions)" item-value="value" item-label="label" :icon="TicketPlus" multiple>
+
+      <SelectFilters label="Responsables" :items="TIUsers" data-key="TIUsers" :icon="Users" :allow-null="true"
+        show-refresh show-selected-focus item-value="staff_id" item-label="full_name" :multiple="true"
+        :default-value="form.responsibles" @select="(selects) => form.responsibles = selects" />
+
+      <SelectFilters label="Tipos" :items="Object.values(ticketTypeOptions)" item-value="value" item-label="label"
+        :icon="TicketPlus" :multiple="true" :default-value="form.types" @select="(selects) => form.types = selects">
         <template #item="{ item }">
           <Badge :class="item.bg" class="flex items-center gap-2">
             <component :is="item.icon" />
@@ -29,8 +53,9 @@
         </template>
       </SelectFilters>
 
-      <SelectFilters label="Estados" show-refresh show-selected-focus v-model:selecteds="form.statuses"
-        :items="Object.values(ticketStatusOptions)" item-value="value" item-label="label" :icon="ArrowUpDown" multiple>
+      <SelectFilters label="Estados" show-refresh show-selected-focus :items="Object.values(ticketStatusOptions)"
+        item-value="value" item-label="label" :icon="ArrowUpDown" :default-value="form.statuses"
+        @select="(selects) => form.statuses = selects" :multiple="true">
         <template #item="{ item }">
           <Badge :class="item.bg" class="flex items-center gap-2">
             <component :is="item.icon" />
@@ -39,9 +64,9 @@
         </template>
       </SelectFilters>
 
-      <SelectFilters label="Prioridades" show-refresh show-selected-focus v-model:selecteds="form.priorities"
-        :items="Object.values(ticketPriorityOptions)" item-value="value" item-label="label" :icon="ArrowUpDown"
-        multiple>
+      <SelectFilters label="Prioridades" show-refresh show-selected-focus :items="Object.values(ticketPriorityOptions)"
+        item-value="value" item-label="label" :icon="ArrowUpDown" :default-value="form.priorities"
+        @select="(selects) => form.priorities = selects" :multiple="true">
         <template #item="{ item }">
           <Badge :class="item.bg" class="flex items-center gap-2">
             <component :is="item.icon" />
@@ -50,11 +75,24 @@
         </template>
       </SelectFilters>
 
-      
+
+      <Popover>
+        <PopoverTrigger as-child>
+          <Button id="date" variant="outline" class="w-48 justify-between font-normal">
+            <CalendarSearch />
+
+            {{ formattedDate }}
+            <ChevronDownIcon />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+          <RangeCalendar locale="es" v-model="form.dateRange as any" layout="month-and-year" />
+        </PopoverContent>
+      </Popover>
 
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <Button variant="outline" class="ml-auto shadow-sm hover:shadow-md transition-shadow">
+          <Button variant="outline" class="shadow-sm hover:shadow-md transition-shadow">
             <Columns4 />
             Columnas
             <ChevronDown class="ml-2 size-4" />
@@ -68,6 +106,8 @@
           </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+
     </div>
 
 
@@ -121,7 +161,12 @@
                 <Pencil />
                 Editar
               </ContextMenuItem>
-              <ContextMenuItem :disabled="disabledEdit">
+              <ContextMenuItem :disabled="!isSameUser(activeRow?.requester_id) || !isFromTI"
+                @click="handleOpenHistories">
+                <History />
+                Ver historial
+              </ContextMenuItem>
+              <ContextMenuItem :disabled="disabledEdit" @click="openDelete = true">
                 <Trash />
                 Eliminar
               </ContextMenuItem>
@@ -198,12 +243,15 @@
     </div>
   </div>
 
-
-  <!-- :ticket="activeRow" -->
   <DetailsDialog v-if="openDetails" v-model:open="openDetails" :ticket="activeRow" />
   <AssignResponsibleDialog v-if="openReassign" v-model:open="openReassign" v-model:ticket="activeRow" />
   <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
   <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" />
+  <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
+
+  <AlertDialog v-model:open="openDelete" title="Eliminar ticket"
+    description="¿Estás seguro de que deseas eliminar este ticket? Esta acción no se puede deshacer."
+    actionText="Eliminar" @confirm="handleDeleteTicket" />
 
 </template>
 
@@ -251,8 +299,12 @@ import {
 
 import { valueUpdater } from '@/lib/utils';
 
+import AlertDialog from '@/components/AlertDialog.vue';
+import SelectFilters from '@/components/SelectFilters.vue';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RangeCalendar } from '@/components/ui/range-calendar';
 import { useApp } from '@/composables/useApp';
 import {
   priorityOp, requestTypeOp, statusOp, type Ticket,
@@ -267,16 +319,18 @@ import {
 import { type User as IUser } from '@/interfaces/user.interface';
 import type { Paginated } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
+import { getLocalTimeZone, parseDate } from '@internationalized/date';
 import { useDebounceFn } from '@vueuse/core';
 import { format } from 'date-fns';
-import { ArrowUpDown, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Columns4, Eye, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X } from 'lucide-vue-next';
+import { ArrowUpDown, CalendarSearch, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X, XCircle } from 'lucide-vue-next';
+import { type DateRange } from 'reka-ui';
 import { computed, h, reactive, ref, watch } from 'vue';
-import SelectFilters from '../SelectFilters.vue';
 import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
 import ChangeStatusDialog from './ChangeStatusDialog.vue';
 import DetailsDialog from './DetailsDialog.vue';
 import Dialog from './Dialog.vue';
 import TicketColumnTable from './TicketColumnTable.vue';
+import HistoryDialog from './HistoryDialog.vue';
 
 const { tickets } = defineProps<{ tickets: Paginated<Ticket> }>()
 
@@ -284,25 +338,85 @@ const { tickets } = defineProps<{ tickets: Paginated<Ticket> }>()
 const page = usePage();
 const { isLoading, isFromTI, userAuth, isSameUser, users, TIUsers } = useApp();
 
+
+
 const activeRow = ref<Ticket | null>(null)
 
 const openDetails = ref(false);
 const openReassign = ref(false);
 const changeStatus = ref(false);
 const openEdit = ref(false);
+const openHistory = ref(false);
+const openDelete = ref(false);
 
 const sorting = ref<SortingState>([])
 
 type Filters = {
   searchTerm?: string;
-  requesters?: (number | null)[];
+  requesters?: number[];
   responsibles?: (number | null)[];
   types?: TicketType[];
   statuses?: TicketStatus[];
   priorities?: TicketPriority[];
+  dateRange?: DateRange;
 }
 
-const filters = computed(() => page.props.filters as Filters || {});
+const filters = computed(() => page.props.filters as
+  Omit<Filters, 'dateRange'> & {
+    startDate?: string;
+    endDate?: string;
+  }
+  || {});
+
+const filterCount = computed(() => {
+  const base = form.searchTerm ? 1 : 0;
+  const buckets = [form.statuses?.length, form.types?.length, form.requesters?.length, form.responsibles?.length, form.priorities?.length, form.dateRange ? 1 : 0];
+  return base + buckets.filter(Boolean).length;
+});
+
+const hasFilters = computed(() => filterCount.value > 0);
+
+const formattedDate = computed(() => {
+  if (!form.dateRange || (!form.dateRange?.start && !form.dateRange?.end)) {
+    return 'Fecha creado';
+  }
+  const start = form.dateRange.start?.toDate(getLocalTimeZone()).toLocaleDateString();
+  if (!form.dateRange.end) {
+    return start;
+  }
+  const end = form.dateRange.end?.toDate(getLocalTimeZone()).toLocaleDateString();
+  return `${start} - ${end}`;
+});
+
+const filterstersRenders = computed(() => [{
+  label: 'Texto',
+  value: form.searchTerm,
+  click: (): void => { form.searchTerm = '' }
+}, {
+  label: 'Solicitantes',
+  value: form.requesters?.length,
+  click: (): void => { form.requesters = [] }
+}, {
+  label: 'Responsables',
+  value: form.responsibles?.length,
+  click: (): void => { form.responsibles = [] }
+}, {
+  label: 'Tipos',
+  value: form.types?.length,
+  click: (): void => { form.types = [] }
+}, {
+  label: 'Estados',
+  value: form.statuses?.length,
+  click: (): void => { form.statuses = [] }
+}, {
+  label: 'Prioridades',
+  value: form.priorities?.length,
+  click: (): void => { form.priorities = [] }
+}, {
+  label: 'Rango de fechas',
+  value: form.dateRange,
+  click: (): void => { form.dateRange = undefined }
+}]);
 
 const disabledEdit = computed(() => {
   const ticket = activeRow.value;
@@ -315,7 +429,15 @@ const form = reactive<Filters>({
   responsibles: filters.value?.responsibles?.map((v) => {
     return Number(v) || null;
   }) || [],
+  types: filters.value?.types || [],
+  statuses: filters.value?.statuses || [],
+  priorities: filters.value?.priorities || [],
+  dateRange: filters.value?.startDate || filters.value?.endDate ? {
+    start: filters.value?.startDate ? parseDate(filters.value.startDate) : undefined,
+    end: filters.value?.endDate ? parseDate(filters.value.endDate) : undefined
+  } : undefined
 });
+
 
 
 
@@ -361,12 +483,31 @@ watch(
   }
 )
 
+watch(
+  () => form.dateRange,
+  () => {
+    applyFilters()
+  }
+)
+
+
+
 
 function applyFilters() {
-
+  const startDate = form.dateRange?.start ? form.dateRange.start.toDate(getLocalTimeZone()) : null;
+  const endDate = form.dateRange?.end ? form.dateRange.end.toDate(getLocalTimeZone()) : null;
   router.get(
     tickets.path,
-    form,
+    {
+      searchTerm: form.searchTerm || undefined,
+      requesters: form.requesters?.length ? form.requesters : undefined,
+      responsibles: form.responsibles?.length ? form.responsibles : undefined,
+      types: form.types?.length ? form.types : undefined,
+      statuses: form.statuses?.length ? form.statuses : undefined,
+      priorities: form.priorities?.length ? form.priorities : undefined,
+      startDate: startDate ? startDate.toISOString().split('T')[0] : undefined,
+      endDate: endDate ? endDate.toISOString().split('T')[0] : undefined,
+    },
     {
       only: ['tickets', 'filters'],
       preserveState: true,
@@ -375,6 +516,36 @@ function applyFilters() {
   )
 
 }
+const handleOpenHistories = () => {
+  router.reload({
+    only: ['historiesPaginated'],
+    data: { ticket_id: activeRow.value?.id },
+    preserveUrl: true,
+    onSuccess: (page) => {
+      // console.log(page.props.historiesPaginated);
+      // activeRow.value = {
+      //   ...activeRow.value!,
+      //   histories: page.props.historiesPaginated as Ticket['histories'],
+      // }
+      openHistory.value = true;
+    }
+  });
+}
+
+
+const handleDeleteTicket = () => {
+  router.delete(`tickets/${activeRow.value?.id}`, {
+    only: ['tickets'],
+    preserveScroll: true,
+    replace: true,
+    preserveState: true,
+    onSuccess: () => {
+      openDelete.value = false;
+      activeRow.value = null;
+    }
+  });
+}
+
 const columns: ColumnDef<Ticket>[] = [
   {
     accessorFn: row => `tk-${row.id} ${row.title.toLowerCase()}`,
@@ -496,10 +667,14 @@ const columns: ColumnDef<Ticket>[] = [
     cell: info => {
       const user = info.getValue() as IUser;
       if (user) {
+        let fullName = user.full_name;
+        if (user.staff_id === userAuth.value.staff_id) {
+          fullName += ' (Tú)';
+        }
         return h(Badge, { variant: 'default', class: 'flex items-center gap-2' }, () => [
           h(User, { class: '!size-5' }),
           h('div', { class: 'flex flex-col' }, [
-            user.full_name,
+            fullName,
             h('small', { class: 'text-[10px] text-gray-400 dark:text-gray-700 italic' }, user.department ? user.department.name : 'Sin departamento')
           ])
         ]);

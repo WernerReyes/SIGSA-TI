@@ -64,7 +64,7 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel>Tipo</FieldLabel>
 
-                                <Select v-bind="componentField">
+                                <!-- <Select v-bind="componentField">
                                     <SelectTrigger>
                                         <SelectValue :placeholder="currentAsset?.type?.name ||
                                             'Seleccionar'" />
@@ -104,8 +104,20 @@
 
 
                                     </SelectContent>
-                                </Select>
+                                </Select> -->
 
+                                <SelectFilters label="Tipo de Activo" :items="assetTypes" data-key="types"
+                                    item-label="name" item-value="id" :default-value="componentField.modelValue"
+                                    :selected-as-label="true"
+                                    :show-refresh="false"
+                                    :show-selected-focus="false"
+                                    @select="(value) => setFieldValue('type_id', value)" filter-placeholder="Buscar tipo..."
+                                    empty-text="No se encontraron tipos de activos">
+                                    <template #item="{ item }">
+                                        <component :is="assetTypeOp(item.name)?.icon" class="inline size-4" />
+                                        {{ item.name }}
+                                    </template>
+                                </SelectFilters>
 
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
@@ -353,15 +365,15 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm, Field as VeeField } from 'vee-validate'
 import { computed, ref, watch } from 'vue'
 
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
     Dialog,
     DialogContent,
@@ -382,31 +394,25 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover'
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select'
 
 import { Spinner } from '@/components/ui/spinner'
 import { type Asset } from '@/interfaces/asset.interface'
-import { type AssetType, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
-import { router, usePage, WhenVisible } from '@inertiajs/vue3'
+import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
+import { router, usePage } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { ChevronDownIcon, Laptop } from 'lucide-vue-next'
 
-import { Skeleton } from '@/components/ui/skeleton'
-import * as z from 'zod'
+import { useApp } from '@/composables/useApp'
 import { isBefore, isEqual } from 'date-fns'
+import * as z from 'zod'
+import SelectFilters from '../SelectFilters.vue'
 
 
 defineProps<{
     includeButton?: boolean
 }>();
 
+const { assetTypes } = useApp();
 const page = usePage();
 
 const currentAsset = defineModel<Asset | null>('current-asset', {
@@ -417,11 +423,6 @@ const currentAsset = defineModel<Asset | null>('current-asset', {
 const openEditor = defineModel<boolean>('open-editor', {
     type: Boolean,
     required: true
-});
-
-const assetTypes = computed<AssetType[]>(() => {
-    const types = page.props?.types as AssetType[] | undefined;
-    return types || [];
 });
 
 const assetAccessories = computed<Asset[]>(() => {
@@ -515,7 +516,7 @@ const initialFormValues = {
     assigned_to: undefined,
 };
 
-const { handleSubmit, handleReset, errors, setValues, values } = useForm({
+const { handleSubmit, handleReset, errors, setValues, values, setFieldValue } = useForm({
     validationSchema: formSchema,
     initialValues: initialFormValues
 })

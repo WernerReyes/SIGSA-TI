@@ -2,8 +2,12 @@
 namespace App\Services;
 
 use App\DTOs\Ticket\StoreTicketDto;
+use App\Enums\Ticket\TicketHistoryAction;
+use App\Enums\Ticket\TicketPriority;
+use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketStatus;
 use App\DTOs\Ticket\TicketFiltersDto;
+use App\Enums\Ticket\TicketType;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
 use App\Models\User;
@@ -19,8 +23,6 @@ class TicketService
 
     public function getAllOrderedByPriority(TicketFiltersDto $filters)
     {
-
-        ds($filters);
         return Ticket::
             query()
             ->select([
@@ -48,7 +50,6 @@ class TicketService
                 $query->whereIn('requester_id', $filters->requesters);
             })->when($filters->responsibles, function ($query) use ($filters) {
                 if (in_array(null, $filters->responsibles, true)) {
-                    ds('includes null');
                     $query->where(function ($subQuery) use ($filters) {
                         $subQuery->whereNull('responsible_id')
                             ->orWhereIn('responsible_id', array_filter($filters->responsibles));
@@ -63,10 +64,22 @@ class TicketService
                 $query->whereIn('type', $filters->types);
             })->when($filters->priorities, function ($query) use ($filters) {
                 $query->whereIn('priority', $filters->priorities);
+            })->when($filters->startDate, function ($query) use ($filters) {
+                $query->whereDate('created_at', '>=', $filters->startDate);
+            })->when($filters->endDate, function ($query) use ($filters) {
+                $query->whereDate('created_at', '<=', $filters->endDate);
             })
             ->orderedByPriority()
             ->paginate(10)
             ->withQueryString();
+    }
+
+    public function getHistoriesPaginated(Ticket $ticket)
+    {
+        return $ticket->histories()
+            ->with('performedBy:staff_id,firstname,lastname')
+            ->orderBy('performed_at', 'desc')
+            ->paginate(10);
     }
 
     public function storeTicket(StoreTicketDto $dto)
@@ -75,22 +88,19 @@ class TicketService
             DB::transaction(function () use ($dto) {
                 $ticket = Ticket::create([
                     'title' => $dto->title,
-                    'status' => $dto->status->value,
+                    'status' => TicketStatus::OPEN->value,
                     'description' => $dto->description,
 
                     'requester_id' => $dto->requesterId,
                     'type' => $dto->type->value,
                     'priority' => $dto->priority->value,
                     'request_type' => $dto->requestType?->value,
-                    'opened_at' => now(),
+                    // 'opened_at' => now(),
                 ]);
 
-                TicketHistory::create([
-                    'action' => 'Ticket Creado',
-                    'ticket_id' => $ticket->id,
-                    'performed_by' => $dto->requesterId,
-                    'performed_at' => now(),
-                ]);
+
+
+                $this->logHistory($ticket, TicketHistoryAction::CREATED, 'Ticket creado');
 
 
             });
@@ -120,22 +130,61 @@ class TicketService
 
         try {
             return DB::transaction(function () use ($ticket, $dto) {
-                $ticket->update([
-                    'title' => $dto->title,
-                    'status' => $dto->status->value,
-                    'description' => $dto->description,
-                    // 'technician_id' => $dto->technicianId,
-                    'type' => $dto->type->value,
-                    'priority' => $dto->priority->value,
-                    'request_type' => $dto->requestType?->value,
-                ]);
 
-                TicketHistory::create([
-                    'action' => 'Ticket Actualizado',
-                    'ticket_id' => $ticket->id,
-                    'performed_by' => auth()->id(),
-                    'performed_at' => now(),
-                ]);
+                $original = $ticket->getOriginal();
+
+                $ticket->title = $dto->title;
+                // $ticket->status = $dto->status->value;
+                $ticket->description = $dto->description;
+                $ticket->type = $dto->type->value;
+                $ticket->priority = $dto->priority->value;
+                $ticket->request_type = $dto->requestType?->value;
+                $ticket->save();
+
+                $changes = $ticket->getChanges();
+                if (count($changes) > 0) {
+                    $changeDetails = [];
+                    foreach ($changes as $field => $newValue) {
+                        $oldValue = $original[$field] ?? null;
+
+                        if ($oldValue === $newValue || $field === 'updated_at') {
+                            continue;
+                        }
+
+                        if ($field === 'request_type') {
+                            if ($oldValue === null) {
+                                $changeDetails[] = "{$this->fieldsLabels($field)} establecido a '" . TicketRequestType::label($newValue) . "'";
+                            } elseif ($newValue === null) {
+                                $changeDetails[] = "{$this->fieldsLabels($field)} eliminado (antes '" . TicketRequestType::label($oldValue) . "')";
+                            }
+                            continue;
+
+                        }
+
+                        switch ($field) {
+
+                            case 'priority':
+                                $oldValue = TicketPriority::label($oldValue);
+                                $newValue = TicketPriority::label($newValue);
+                                break;
+                            case 'type':
+                                $oldValue = TicketType::label($oldValue);
+                                $newValue = TicketType::label($newValue);
+                                break;
+                            case 'request_type':
+                                $oldValue = TicketRequestType::label($oldValue);
+                                $newValue = TicketRequestType::label($newValue);
+                                break;
+                        }
+
+
+
+                        $changeDetails[] = "{$this->fieldsLabels($field)} cambiado de '{$oldValue}' a '{$newValue}'";
+                    }
+                    $changeDescription = implode('; ', $changeDetails);
+
+                    $this->logHistory($ticket, TicketHistoryAction::UPDATED, $changeDescription);
+                }
 
                 return $ticket;
             });
@@ -143,6 +192,55 @@ class TicketService
 
         } catch (\Exception $e) {
             throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
+        }
+    }
+
+
+    private function fieldsLabels(string $field): string
+    {
+        return match ($field) {
+            'title' => 'Título',
+            'status' => 'Estado',
+            'description' => 'Descripción',
+            'type' => 'Tipo',
+            'priority' => 'Prioridad',
+            'request_type' => 'Tipo de Solicitud',
+            default => $field,
+        };
+    }
+
+    private function logHistory(Ticket $ticket, TicketHistoryAction $action, ?string $description = null)
+    {
+        TicketHistory::create([
+            'action' => $action->value,
+            'ticket_id' => $ticket->id,
+            'performed_by' => auth()->id(),
+            'description' => $description,
+            'performed_at' => now(),
+        ]);
+    }
+
+    public function deleteTicket(Ticket $ticket)
+    {
+        $user = Auth::user();
+        if ($ticket->requester_id !== $user->staff_id) {
+            throw new BadRequestException("No tienes permiso para eliminar este ticket.");
+        }
+
+        if ($ticket->status !== TicketStatus::OPEN->value) {
+            throw new BadRequestException("Solo se pueden eliminar los tickets en estado 'Abierto'.");
+        }
+
+        if ($ticket->responsible_id !== null) {
+            throw new BadRequestException("No se puede eliminar un ticket que ya ha sido asignado.");
+        }
+
+        try {
+
+            $ticket->delete();
+
+        } catch (\Exception $e) {
+            throw new InternalErrorException("Error al eliminar el ticket: " . $e->getMessage());
         }
     }
 
@@ -168,21 +266,19 @@ class TicketService
                     throw new BadRequestException("El ticket ya está asignado a este usuario de TI.");
                 }
 
-                $ticket->responsible_id = $responsible_id;
-                $ticket->save();
+                $ticket->update([
+                    'responsible_id' => $responsible_id,
+                ]);
 
-                $action = $oldResponsible
+                $description = $oldResponsible
                     ? "Reasignado de responsable {$oldResponsible->full_name} a {$responsible->full_name}"
                     : "Asignado responsable {$responsible->full_name}";
 
-                TicketHistory::create([
-                    'action' => $action,
-                    'ticket_id' => $ticket->id,
-                    'performed_by' => auth()->id(),
-                    'performed_at' => now(),
-                ]);
 
-                return ['action' => $action, 'responsible' => $responsible];
+
+                $this->logHistory($ticket, TicketHistoryAction::ASSIGNED, $description);
+
+                return ['description' => $description, 'responsible' => $responsible];
             });
         } catch (\Exception $e) {
             if ($e instanceof NotFoundHttpException || $e instanceof BadRequestException) {
@@ -211,18 +307,13 @@ class TicketService
                 }
                 $ticket->save();
 
-                $action = $newStatus === TicketStatus::CLOSED->value
+                $description = $newStatus === TicketStatus::CLOSED->value
                     ? "Cerrado el ticket"
-                    : "Cambio de estado de {$this->getStatusLabel($oldStatus)} a {$this->getStatusLabel($newStatus)}";
+                    : "Cambio de estado de {TicketStatus::label($oldStatus)} a {TicketStatus::label($newStatus)}";
 
-                TicketHistory::create([
-                    'action' => $action,
-                    'ticket_id' => $ticket->id,
-                    'performed_by' => auth()->id(),
-                    'performed_at' => now(),
-                ]);
+                $this->logHistory($ticket, TicketHistoryAction::STATUS_CHANGED, $description);
 
-                return $action;
+                return $description;
             });
         } catch (\Exception $e) {
             if ($e instanceof BadRequestException) {
@@ -233,16 +324,7 @@ class TicketService
     }
 
 
-    private function getStatusLabel(string $status): string
-    {
-        return match ($status) {
-            TicketStatus::OPEN->value => 'Abierto',
-            TicketStatus::IN_PROGRESS->value => 'En Progreso',
-            TicketStatus::RESOLVED->value => 'Resuelto',
-            TicketStatus::CLOSED->value => 'Cerrado',
-            default => 'Desconocido',
-        };
-    }
+
 
 
 

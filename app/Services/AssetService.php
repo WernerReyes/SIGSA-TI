@@ -211,6 +211,16 @@ class AssetService
                     );
                 })
 
+
+                /* -------------------------------------------------------------------------
+                | RANGO DE FECHAS DE CREACIÓN
+                ------------------------------------------------------------------------- 
+                */
+                ->when($filtersDto->startDate, function ($query) use ($filtersDto) {
+                    $query->whereDate('created_at', '>=', $filtersDto->startDate);
+                })->when($filtersDto->endDate, function ($query) use ($filtersDto) {
+                    $query->whereDate('created_at', '<=', $filtersDto->endDate);
+                })
                 ->latest()
                 ->paginate(10)
                 ->withQueryString();
@@ -255,20 +265,20 @@ class AssetService
             // 'currentAssignment.returnDocument',
         );
 
-        
+
     }
 
-    public function getHistories(Asset $asset)
-    {
-        try {
-            return $asset->load(
-                'histories.performer:staff_id,firstname,lastname',
-                'histories.deliveryRecord:id,file_path',
-            );
-        } catch (\Exception $e) {
-            throw new InternalErrorException('Error al obtener el historial del activo');
-        }
-    }
+    // public function getHistories(Asset $asset)
+    // {
+    //     try {
+    //         return $asset->load(
+    //             'histories.performer:staff_id,firstname,lastname',
+    //             'histories.deliveryRecord:id,file_path',
+    //         );
+    //     } catch (\Exception $e) {
+    //         throw new InternalErrorException('Error al obtener el historial del activo');
+    //     }
+    // }
 
     public function getHistoriesPaginated(Asset $asset, AssetHistoryFiltersDto $filtersDto)
     {
@@ -545,7 +555,7 @@ class AssetService
         try {
             $asset->delete();
         } catch (\Exception $e) {
-            throw new InternalErrorException('Error al eliminar el activo');
+            throw new InternalErrorException('Error al eliminar el activo: ' . $e->getMessage());
         }
     }
 
@@ -870,7 +880,7 @@ class AssetService
                         })->implode(', ');
 
 
-                        
+
 
                         AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
                             // 'parent_assignment_id' => null,

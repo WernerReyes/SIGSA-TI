@@ -17,7 +17,7 @@ class StoreTicketDto
         public readonly int $requesterId,
         public readonly TicketType $type,
         public readonly TicketPriority $priority,
-        public readonly TicketStatus $status = TicketStatus::OPEN,
+        // public readonly TicketStatus $status = TicketStatus::OPEN,
         public readonly ?TicketRequestType $requestType = null
     ) {
     }

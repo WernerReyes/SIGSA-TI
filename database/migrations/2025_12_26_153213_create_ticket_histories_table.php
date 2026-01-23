@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Ticket\TicketHistoryAction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,7 +13,8 @@ return new class extends Migration {
     {
         Schema::create('ticket_histories', function (Blueprint $table) {
             $table->id();
-            $table->string('action', 255);
+            $table->enum('action', TicketHistoryAction::values());
+            $table->text('description');
             $table->unsignedBigInteger('ticket_id');
             $table->foreign('ticket_id')->references('id')->on('tickets_sistema');
             $table->unsignedInteger('performed_by');

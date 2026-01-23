@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('type');
             $table->text('message')->nullable();
             $table->enum('status', AlertStatus::values())->default(AlertStatus::ACTIVE->value);
-            $table->timestamp('last_notified_at')->nullable();
+            // $table->timestamp('last_notified_at')->nullable();
             $table->json('metadata')->nullable();
             // $table->boolean('is_read')->default(false);
 

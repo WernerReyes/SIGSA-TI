@@ -40,24 +40,20 @@
                             <span v-if="dateRange" class="text-foreground">Rango aplicado</span>
                         </div>
                         <div class="flex flex-wrap gap-3 md:ml-auto items-center">
-                            <Select multiple v-model="actions" class="sm:w-52">
-                                <SelectTrigger class="sm:w-52 w-full">
-                                    <SelectValue placeholder="Seleccione una acción" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectLabel>Acciones</SelectLabel>
 
-                                        <SelectItem v-for="action in Object.values(assetHistoryActionOptions)"
-                                            :key="action.value" :value="action.value">
-                                            <Badge :class="action.bg">
-                                                <component :is="action.icon" class="size-4" />
-                                                {{ action.label }}
-                                            </Badge>
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+
+                            <SelectFilters :items="Object.values(assetHistoryActionOptions)"
+                                :show-selected-focus="false" :show-refresh="false" :label="'Seleccione una acción'"
+                                item-label="label" item-value="value" selected-as-label :default-value="actions"
+                                @select="(value) => actions = value" :multiple="true"
+                                filter-placeholder="Buscar empleado..." empty-text="No se encontraron empleados">
+                                <template #item="{ item }">
+                                    <Badge :class="item.bg">
+                                        <component :is="item.icon" class="size-4" />
+                                        {{ item.label }}
+                                    </Badge>
+                                </template>
+                            </SelectFilters>
 
                             <Popover>
                                 <PopoverTrigger as-child>
@@ -271,8 +267,7 @@
 
                                 </template>
                                 <template v-else-if="includes(history.description, ['junto al equipo principal'])"
-                                    v-for="(part, index) in parsedReturnWithMainParent(history.description)"
-                                    >
+                                    v-for="(part, index) in parsedReturnWithMainParent(history.description)">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
                                     <Badge v-else :variant="part.variant" class="mx-1">
@@ -280,11 +275,11 @@
                                         {{ part.content }}
                                     </Badge>
                                 </template>
-                                
+
 
                                 <span v-else class="text-xs text-muted-foreground mt-2">
-                                    
-                                    </span>
+
+                                </span>
                             </template>
 
 
@@ -380,15 +375,7 @@ import {
 } from '@/components/ui/pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RangeCalendar } from '@/components/ui/range-calendar';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+
 import {
     Tooltip,
     TooltipContent,
@@ -407,6 +394,7 @@ import type { DateRange } from 'reka-ui';
 import { type Component, computed, ref, watch } from 'vue';
 import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { returnReasonOptions } from '@/interfaces/assetAssignment.interface';
+import SelectFilters from '@/components/SelectFilters.vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -550,7 +538,7 @@ const parsedAssignmentWithMainParent = (description: string): Array<{
         }
     ];
 
-   
+
 
     if (parsedMainParent.length !== 4) {
         return [{ type: 'text' as const, content: description }];

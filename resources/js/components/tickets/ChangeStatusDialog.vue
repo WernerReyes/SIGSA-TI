@@ -1,56 +1,86 @@
 <template>
-    <!-- <Form :key="`${ticket?.id}-${ticket?.status}`" :initial-values="{
-        status: ticket?.status || null
-    }" v-slot="{ getValues, handleSubmit, errors, handleReset }" as="" keep-values :validation-schema="formSchema"> -->
     <Dialog v-model:open="open">
-        <DialogContent class=" max-h-screen sm:max-w-106.25  overflow-y-auto">
-            <DialogHeader>
-                <h2 id="radix-:r88:" class="text-lg font-semibold leading-none tracking-tight">Cambiar Estado
-                    TK-{{ ticket?.id }}</h2>
-
+        <DialogContent class="max-h-screen sm:max-w-2xl overflow-y-auto">
+            <DialogHeader class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600 dark:text-purple-400"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                            Cambiar Estado de Ticket
+                        </h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            TK-{{ ticket?.id }}
+                        </p>
+                    </div>
+                </div>
             </DialogHeader>
 
-            <div class="space-y-4 py-4">
+            <div class="space-y-6 py-6">
+                <!-- Información del ticket actual -->
+                <div v-if="ticket"
+                    class="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4 border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Estado Actual</p>
+                            <div class="mt-2">
+                                <Badge :class="ticketStatusOptions[ticket.status]?.bg || 'bg-gray-100'">
+                                    <component v-if="ticketStatusOptions[ticket.status]?.icon"
+                                        :is="ticketStatusOptions[ticket.status].icon" class="mr-1" />
+                                    {{ ticketStatusOptions[ticket.status]?.label || ticket.status }}
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selector de nuevo estado -->
                 <VeeField name="status" v-slot="{ componentField, errors }">
                     <Field>
-                        <FieldLabel for="title">Nuevo Estado</FieldLabel>
-                        <Select v-bind="componentField">
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Selecciona un nuevo estado" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectLabel>Estados</SelectLabel>
+                        <FieldLabel for="title" class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            Seleccionar Nuevo Estado
+                        </FieldLabel>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                            Elige el estado al que deseas cambiar este ticket
+                        </p>
 
-                                    <SelectItem v-for="{ value, label, bg, icon } in Object.values(ticketStatusOptions)"
-                                        :key="value" :value="value">
-
-                                        <Badge :class="bg">
-                                            <component :is="icon" />
-                                            {{ label }}
-                                        </Badge>
-                                    </SelectItem>
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
+                        <SelectFilters :items="Object.values(ticketStatusOptions)" :show-selected-focus="false"
+                            :show-refresh="false" :label="'Selecciona un nuevo estado'" item-label="label"
+                            item-value="value" selected-as-label :default-value="componentField.modelValue"
+                            @select="(value) => setFieldValue('status', value)" filter-placeholder="Buscar estado..."
+                            empty-text="No se encontraron estados">
+                            <template #item="{ item }">
+                                <Badge :class="item.bg" class="px-3 py-1">
+                                    <component :is="item.icon" class="mr-1" />
+                                    {{ item.label }}
+                                </Badge>
+                            </template>
+                        </SelectFilters>
+                        <FieldError v-if="errors.length" :errors="errors" class="mt-2" />
                     </Field>
-                    <FieldError v-if="errors.length" :errors="errors" />
                 </VeeField>
-
             </div>
 
-            <DialogFooter>
-                <Button :disabled="isSubmitting
-                    || Object.keys(errors).length > 0
-                    " type="submit" form="dialogForm" @click="handleSubmit(handleFormSubmit)()">
+            <DialogFooter class="gap-3 sm:gap-3">
+                <Button type="button" variant="outline" @click="open = false" :disabled="isSubmitting"
+                    class="flex-1 sm:flex-initial">
+                    Cancelar
+                </Button>
+                <Button :disabled="disabled" type="submit" form="dialogForm" @click="handleSubmit(handleFormSubmit)()">
+
                     <Spinner v-if="isSubmitting" />
+                    <Check v-else />
                     {{ isSubmitting ? 'Cambiando estado...' : 'Cambiar Estado' }}
                 </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
-    <!-- </Form> -->
-
 </template>
 
 <script setup lang="ts">
@@ -66,21 +96,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { TicketStatus, ticketStatusOptions, type Ticket } from '@/interfaces/ticket.interface';
 import { router } from '@inertiajs/vue3';
+import { toTypedSchema } from '@vee-validate/zod';
 import { useForm, Field as VeeField } from 'vee-validate';
 import z from 'zod';
-import { toTypedSchema } from '@vee-validate/zod';
+import SelectFilters from '../SelectFilters.vue';
+import { Check } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 
 const { ticket } = defineProps<{
@@ -91,6 +115,10 @@ const open = defineModel<boolean>('open');
 
 const isSubmitting = ref(false);
 
+const disabled = computed(() => {
+    return isSubmitting.value || Object.keys(errors.value).length > 0 || ticket?.status === values.status;
+});
+
 const formSchema = toTypedSchema(z.object({
     status: z.nativeEnum(TicketStatus, {
         required_error: 'El estado es obligatorio',
@@ -99,7 +127,7 @@ const formSchema = toTypedSchema(z.object({
     })
 }));
 
-const { errors, handleSubmit, handleReset } = useForm({
+const { errors, handleSubmit, handleReset, setFieldValue, values } = useForm({
     validationSchema: formSchema,
     initialValues: {
         status: ticket?.status
@@ -118,23 +146,22 @@ const handleFormSubmit = (values: { status?: TicketStatus }) => {
         {
 
             onSuccess: () => {
-
                 nextTick(() => {
 
-                router.replaceProp('tickets.data', (tickets: Ticket[]) => {
-                    return tickets.map((t: Ticket) => {
-                        if (t.id === ticket?.id) {
+                    router.replaceProp('tickets.data', (tickets: Ticket[]) => {
+                        return tickets.map((t: Ticket) => {
+                            if (t.id === ticket?.id) {
 
-                            return {
-                                ...t,
-                                status: values.status
-                            };
-                        }
-                        return t;
+                                return {
+                                    ...t,
+                                    status: values.status
+                                };
+                            }
+                            return t;
+                        });
+
+
                     });
-
-
-                });
                 });
 
 

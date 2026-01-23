@@ -1,174 +1,113 @@
 <template>
-
     <Dialog v-model:open="open">
-        <DialogContent class=" max-h-screen md:min-w-11/12  overflow-y-auto">
-            <DialogHeader>
-                <div class="flex items-start justify-between">
-                    <div>
-                        <p class="font-mono text-sm text-primary">TK-{{ ticket?.id }}</p>
-                        <h2 id="radix-:r1i:" class="font-semibold tracking-tight text-xl mt-1">{{ ticket?.title }}</h2>
+        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto">
+            <DialogHeader class="space-y-3 pb-4">
+                <div class="flex items-start gap-4 p-4 rounded-xl bg-linear-to-br from-muted/40 via-background to-background border">
+                    <div class="size-16 rounded-xl bg-linear-to-br from-cyan-100/40 to-blue-100/40 dark:from-cyan-900/30 dark:to-blue-900/30 flex items-center justify-center ring-2 ring-blue-200/50 dark:ring-blue-800/50 shadow-sm">
+                        <TicketIcon class="size-8 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div class="flex gap-2">
-
-                        <Badge :class="priorityOp(ticket?.priority)?.bg">
-                            {{ priorityOp(ticket?.priority)?.label }}
-                        </Badge>
-                        <Badge :class="statusOp(ticket?.status)?.bg">
-                            {{ statusOp(ticket?.status)?.label }}
-                        </Badge>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <p class="font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">TK-{{ ticket?.id }}</p>
+                            <Badge  class="text-xs" :class="typeOp(ticket?.type)?.bg">
+                                <component :is="typeOp(ticket?.type)?.icon" />
+                                {{ typeOp(ticket?.type)?.label }}
+                            </Badge>
+                        </div>
+                        <h2 class="font-bold tracking-tight text-2xl">{{ ticket?.title }}</h2>
+                        <p class="text-sm text-muted-foreground mt-1">{{ ticket?.description }}</p>
                     </div>
                 </div>
             </DialogHeader>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 border-t mt-4">
-                <div class="lg:col-span-2 border-r">
-                    <div dir="ltr" class="relative overflow-hidden h-125"
-                        style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;">
-                        <div data-radix-scroll-area-viewport="" class="h-full w-full rounded-[inherit]"
-                            style="overflow: hidden scroll;">
-                            <div style="min-width: 100%; display: table;">
-                                <div class="p-6 space-y-6">
-                                    <div>
-                                        <h4 class="text-sm font-medium text-muted-foreground mb-2">Descripción</h4>
-                                        <p class="text-sm">{{ ticket?.description }}</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-sm font-medium text-muted-foreground mb-4">Comentarios</h4>
-                                        <div class="space-y-4">
-                                            <div class="bg-muted/30 rounded-lg p-4">
-                                                <div class="flex items-center justify-between mb-2"><span
-                                                        class="font-medium text-sm">María López</span><span
-                                                        class="text-xs text-muted-foreground">2024-01-15 11:30</span>
-                                                </div>
-                                                <p class="text-sm">Estoy revisando el problema. Parece ser un issue de
-                                                    configuración.</p>
-                                            </div>
-                                            <div class="bg-muted/30 rounded-lg p-4">
-                                                <div class="flex items-center justify-between mb-2"><span
-                                                        class="font-medium text-sm">Pedro Sánchez</span><span
-                                                        class="text-xs text-muted-foreground">2024-01-15 12:00</span>
-                                                </div>
-                                                <p class="text-sm">Gracias por la actualización. ¿Necesitas acceso
-                                                    adicional?</p>
-                                            </div>
-                                        </div>
-                                        <div class="mt-4 flex gap-2"><textarea
-                                                class="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
-                                                placeholder="Escribir un comentario..." rows="2"
-                                                spellcheck="false"></textarea><button
-                                                class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 w-10 h-auto"><svg
-                                                    xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                    class="lucide lucide-send w-4 h-4">
-                                                    <path
-                                                        d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z">
-                                                    </path>
-                                                    <path d="m21.854 2.147-10.94 10.939"></path>
-                                                </svg></button></div>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="grid md:grid-cols-2 gap-4">
+                <!-- Columna Izquierda -->
+                <div class="space-y-3">
+                    <!-- Solicitante -->
+                    <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                        <div class="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                            <User class="size-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Solicitante</p>
+                            <p class="text-sm font-semibold mt-1">{{ ticket?.requester?.full_name }}</p>
+                            <p v-if="ticket?.requester?.department" class="text-xs text-muted-foreground mt-0.5">{{ ticket?.requester?.department?.name }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Asignado a -->
+                    <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                        <div class="size-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                            <Zap class="size-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Asignado a</p>
+                            <p v-if="ticket?.responsible" class="text-sm font-semibold mt-1">{{ ticket?.responsible?.full_name }}</p>
+                            <Badge v-else variant="secondary" class="mt-1">Sin asignar</Badge>
+                        </div>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div v-if="ticket?.request_type" class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                        <div class="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+                            <Tag class="size-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoría</p>
+                            <Badge :class="requestTypeOp(ticket?.request_type)?.bg" class="mt-1">
+                                {{ requestTypeOp(ticket?.request_type)?.label }}
+                            </Badge>
                         </div>
                     </div>
                 </div>
-                <div class="p-6 space-y-6 grid sm:grid-cols-3 lg:grid-cols-1">
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-3">
 
-
-                            <User class="size-4 text-muted-foreground" />
-                            <div>
-
-                                <p class="text-xs text-muted-foreground">Solicitante</p>
-                                <p class="text-sm font-medium">{{ ticket?.requester.full_name }}</p>
-                            </div>
+                <!-- Columna Derecha -->
+                <div class="space-y-3">
+                    <!-- Prioridad -->
+                    <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                        <div class="size-10 rounded-lg flex items-center justify-center shrink-0"
+                            :class="priorityOp(ticket?.priority)?.bg?.includes('red') ? 'bg-red-100 dark:bg-red-900/30' : 'bg-yellow-100 dark:bg-yellow-900/30'">
+                            <AlertTriangle :class="priorityOp(ticket?.priority)?.bg?.includes('red') ? 'size-5 text-red-600 dark:text-red-400' : 'size-5 text-yellow-600 dark:text-yellow-400'" />
                         </div>
-                        <div class="flex items-center gap-3">
-
-                            <User class="size-4 text-muted-foreground" />
-                            <div>
-                                <p class="text-xs text-muted-foreground">Asignado a</p>
-                                <p v-if="ticket?.responsible" class="text-sm font-medium">{{
-                                    ticket?.responsible?.full_name }}</p>
-                                <p v-else class="text-sm font-medium">No asignado</p>
-                            </div>
-
-                        </div>
-                        <div class="flex items-center gap-3">
-
-
-                            <Clock class="size-4 text-muted-foreground" />
-                            <div>
-                                <p class="text-xs text-muted-foreground">Creado</p>
-                                <p class="text-sm font-medium">{{ format(ticket?.created_at ?? '', 'yyyy-MM-dd HH:mm')
-                                    }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-
-                            <Monitor class="size-4 text-muted-foreground" />
-                            <div v-if="ticket?.request_type">
-
-                                <p class="text-xs text-muted-foreground">Categoría</p>
-                                <!-- <p class="text-sm font-medium">Infraestructura</p> -->
-                                <Badge :class="requestTypeOp(ticket?.request_type)?.bg">
-                                    {{ requestTypeOp(ticket?.request_type)?.label }}
-                                </Badge>
-                            </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prioridad</p>
+                            <Badge :class="priorityOp(ticket?.priority)?.bg" class="mt-1">
+                                {{ priorityOp(ticket?.priority)?.label }}
+                            </Badge>
                         </div>
                     </div>
-                    <div class="col-span-2">
-                        <div class="flex items-center justify-between">
-                            <h4 class="text-sm font-medium text-muted-foreground mb-3">Historial</h4>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger as-child>
-                                        <Button :disabled="ticket?.histories?.length === 0" variant="outline" size="sm"
-                                            @click="openFullHistory = true">
-                                            <History class="size-4" />
-                                        </Button>
 
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Ver todo el historial</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                    <!-- Estado -->
+                    <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                        <div class="size-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                            <CheckCircle2 class="size-5 text-green-600 dark:text-green-400" />
                         </div>
-                        <div class="space-y-3">
-                            <div v-if="ticket?.histories?.length === 0" class="text-xs text-muted-foreground">
-                                No hay historial disponible.
-                            </div>
-                            <div v-else v-for="history in slicedHistories" :key="history.id" class="flex gap-3 text-xs">
-                                <div class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"></div>
-                                <div>
-                                    <p class="font-medium">{{ history.action }}</p>
-                                    <p class="text-muted-foreground">{{ history.performer?.full_name }} • {{
-                                        format(new Date(history.performed_at), 'yyyy-MM-dd HH:mm') }}</p>
-                                </div>
-                            </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</p>
+                            <Badge :class="statusOp(ticket?.status)?.bg" class="mt-1">
+                                {{ statusOp(ticket?.status)?.label }}
+                            </Badge>
+                        </div>
+                    </div>
 
-
-                          
+                    <!-- Fecha de Creación -->
+                    <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                        <div class="size-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                            <Calendar class="size-5 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Creado</p>
+                            <p class="text-sm font-semibold mt-1">{{ format(new Date(ticket?.created_at ?? ''), 'dd/MM/yyyy HH:mm') }}</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-           
         </DialogContent>
     </Dialog>
-
-
-    <FullTicketHistoryDialog v-model:open="openFullHistory" :histories="ticket?.histories || []" />
-
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-
-
+import { ref } from 'vue';
 
 import {
     Dialog,
@@ -177,27 +116,14 @@ import {
 } from '@/components/ui/dialog';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { priorityOp, requestTypeOp, statusOp, type Ticket } from '@/interfaces/ticket.interface';
-import { type TicketHistory } from '@/interfaces/ticketHistory.interface';
+import { priorityOp, requestTypeOp, statusOp, typeOp, type Ticket } from '@/interfaces/ticket.interface';
 import { format } from 'date-fns';
-import { Clock, History, Monitor, User } from 'lucide-vue-next';
-import FullTicketHistoryDialog from './FullTicketHistoryDialog.vue';
+import { AlertTriangle, Calendar, CheckCircle2, Tag, Ticket as TicketIcon, User, Zap } from 'lucide-vue-next';
 
 const open = defineModel<boolean>('open');
-const openFullHistory = ref(false);
 
 const { ticket } = defineProps<{
     ticket: Ticket | null,
-
 }>();
-
-const slicedHistories = computed<TicketHistory[]>(() => {
-    if (!ticket?.histories) return [];
-    return ticket.histories.slice(0, 5);
-});
-
-
 
 </script>
