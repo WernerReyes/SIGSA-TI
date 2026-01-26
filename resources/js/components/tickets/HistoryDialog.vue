@@ -36,9 +36,21 @@
                 <div class="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border/80 pt-4 pb-3">
                     <div class="flex flex-col md:flex-row md:items-center gap-3">
                         <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="secondary" class="rounded-full">Filtros</Badge>
-                            <span v-if="actions.length" class="text-foreground">{{ actions.length }} acción(es)</span>
-                            <span v-if="dateRange" class="text-foreground">Rango aplicado</span>
+                            <Badge variant="outline" class="">Filtros</Badge>
+                           
+                             <Badge v-if="actions.length" class="cursor-pointer" variant="secondary"
+                              @click="actions = []"
+                             >
+                                {{ actions.length }} acción(es)
+                                <XCircle />
+                            </Badge>
+                          
+                            <Badge v-if="dateRange" class="cursor-pointer" variant="secondary"
+                             @click="dateRange = undefined"
+                            >
+                                Rango aplicado
+                                <XCircle />
+                            </Badge>
                         </div>
                         <div class="flex flex-wrap gap-3 md:ml-auto items-center">
 
@@ -187,10 +199,20 @@
                             </template>
 
                             <template v-else-if="history.action === TicketHistoryAction.ASSIGNED">
-                                
-
+                                    
+                                    <template v-if="history.description.includes('Reasignado de responsable')"
+                                        v-for="(part) in parsedReassignmentChange(history.description)"
+                                    >
+                                 
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1" variant="secondary">
+                                            <User />
+                                            {{ part.content }}
+                                        </Badge>
+                                    </template>
             
-                                <template  v-for="(part) in parsedAssignmentChange(history.description)">
+                                <template v-else  v-for="(part) in parsedAssignmentChange(history.description)">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
                                     <Badge v-else class="mx-1" variant="secondary">
@@ -286,7 +308,7 @@ import type { Paginated } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
-import { History, Pen, RefreshCcw, Ticket, User } from 'lucide-vue-next';
+import { History, Pen, RefreshCcw, Ticket, User, XCircle } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
 
@@ -422,9 +444,25 @@ const parsedAssignmentChange = (description: string): any => {
 
 };
 
-const handleDownloadReceipt = (filePath: string) => {
-    window.open(filePath, '_blank');
+const parsedReassignmentChange = (description: string): any => {
+    const separatorFrom = `Reasignado de responsable `;
+    const separatorTo = ` a `;
+    const partsFrom = description.split(separatorFrom);
+    if (partsFrom.length !== 2) {
+        return [{ type: 'text', content: description }];
+    }
+    const partsTo = partsFrom[1].split(separatorTo);
+
+    if (partsTo.length !== 2) {
+        return [{ type: 'text', content: description }];
+    }
+
+    return [
+        { type: 'text', content: separatorFrom },
+        { type: 'badge', content: partsTo[0], icon: User },
+        { type: 'text', content: separatorTo },
+        { type: 'badge', content: partsTo[1], icon: User },
+    ];
+
 };
-
-
 </script>

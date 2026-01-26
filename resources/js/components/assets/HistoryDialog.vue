@@ -35,9 +35,18 @@
                 <div class="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border/80 pt-4 pb-3">
                     <div class="flex flex-col md:flex-row md:items-center gap-3">
                         <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="secondary" class="rounded-full">Filtros</Badge>
-                            <span v-if="actions.length" class="text-foreground">{{ actions.length }} acción(es)</span>
-                            <span v-if="dateRange" class="text-foreground">Rango aplicado</span>
+                            <Badge variant="outline">Filtros</Badge>
+                            <Badge v-if="actions.length" class="cursor-pointer" variant="secondary"
+                                @click="actions = []">
+                                {{ actions.length }} acción(es)
+                                <XCircle />
+                            </Badge>
+
+                            <Badge v-if="dateRange" class="cursor-pointer" variant="secondary"
+                                @click="dateRange = undefined">
+                                Rango aplicado
+                                <XCircle />
+                            </Badge>
                         </div>
                         <div class="flex flex-wrap gap-3 md:ml-auto items-center">
 
@@ -287,28 +296,27 @@
                                 </template>
 
 
-                                 <template v-else
-                                    v-for="(part, index) in parsedReturnChange(history.description)">
+                                <template v-else v-for="(part, index) in parsedReturnChange(history.description)">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
                                     <Badge v-else :variant="part.variant" class="mx-1">
                                         <component :is="part.icon" class="size-4" />
                                         {{ part.content }}
                                     </Badge>
-                                    </template>
+                                </template>
                             </template>
 
                             <template v-else-if="history.action === AssetHistoryAction.DELIVERY_RECORD_UPLOADED">
-                                    <template v-for="(part, index) in parsedDeliveryRecordUpload(history.description)"
-                                        :key="index">
-                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                            part.content }}</span>
-                                        <Badge v-else class="mx-1">
-                                            <User />
-                                            {{ part.content }}
-                                        </Badge>
-                                    </template>
-                                </template> 
+                                <template v-for="(part, index) in parsedDeliveryRecordUpload(history.description)"
+                                    :key="index">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1">
+                                        <User />
+                                        {{ part.content }}
+                                    </Badge>
+                                </template>
+                            </template>
 
 
                             <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
@@ -417,7 +425,7 @@ import type { Paginated, Variant } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
-import { DownloadIcon, History, MonitorSmartphone, RefreshCcw, User, Pencil } from 'lucide-vue-next';
+import { DownloadIcon, History, MonitorSmartphone, RefreshCcw, User, Pencil, XCircle } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
 import { type Component, computed, ref, watch } from 'vue';
 import { assetTypeOp } from '@/interfaces/assetType.interface';
