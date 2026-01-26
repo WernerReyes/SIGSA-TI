@@ -125,21 +125,19 @@
 import Dialog from '@/components/assets/Dialog.vue';
 import DialogDetails from '@/components/assets/DialogDetails.vue';
 import Table from '@/components/assets/Table.vue';
+import type { Alert } from '@/interfaces/alert.interface';
 import type { AssetStats, AssetStatusOption } from '@/interfaces/asset.interface';
 import { AssetStatus, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
-import type { Alert } from '@/interfaces/alert.interface';
-import { AlertStatus } from '@/interfaces/alert.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem, Paginated } from '@/types';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
+import AlertAccessoryOutStock from '@/components/assets/AlertAccessoryOutStock.vue';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX, AlertCircle, Bell } from 'lucide-vue-next';
-import { format } from 'date-fns';
-import AlertAccessoryOutStock from '@/components/assets/AlertAccessoryOutStock.vue';
+import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
 
 const { assetsPaginated, stats } = defineProps<{ assetsPaginated: Paginated<Asset>, stats: AssetStats }>();
 
@@ -147,7 +145,6 @@ const currentAsset = ref<Asset | null>(null);
 const openDetails = ref(false);
 const openEditor = ref(false);
 const statusOp = ref<AssetStatusOption>(assetStatusOptions[AssetStatus.ASSIGNED]);
-const showAlertPanel = ref(false);
 
 // Alerta general a partir de props
 
@@ -163,28 +160,6 @@ const generalAlert = computed(() => {
     return (p.accessoriesOutOfStockAlert || null) as Alert | null;
 });
 
-const isAlertActive = computed(() => generalAlert.value?.status === AlertStatus.ACTIVE);
-
-const handleResendAlert = () => {
-    if (!generalAlert.value) return;
-    router.post('/alerts/resend', { alert_id: generalAlert.value.id }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            router.reload({ only: ['accessoriesOutOfStockAlert'] });
-        }
-    });
-};
-
-const handleResolveAlert = () => {
-    if (!generalAlert.value) return;
-    router.post('/alerts/resolve', { alert_id: generalAlert.value.id }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showAlertPanel.value = false;
-            router.reload({ only: ['accessoriesOutOfStockAlert', 'stats'] });
-        }
-    });
-};
 
 const statsView = computed(() => [
     {

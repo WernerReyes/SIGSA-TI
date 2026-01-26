@@ -13,7 +13,7 @@ import {
 // import { dashboard } from '@/routes';
 import { useApp } from '@/composables/useApp';
 import { type NavItem } from '@/types';
-import { Laptop, LayoutGrid, Tag } from 'lucide-vue-next';
+import { Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -41,6 +41,10 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Activos TI',
             href: "/assets",
             icon: Laptop,
+        }, {
+            title: 'Accesos',
+            href: "/access",
+            icon: MonitorCog,
         });
     }
 

@@ -520,11 +520,6 @@ const handleOpenHistories = () => {
         data: { asset_id: assetId.value },
         preserveUrl: true,
         onSuccess: (page) => {
-            // console.log(page.props.historiesPaginated)
-            // activeRow.value = {
-            //     ...activeRow.value!,
-            //     histories: page.props.historiesPaginated as Asset['histories'],
-            // }
             openHistory.value = true;
         }
     });
