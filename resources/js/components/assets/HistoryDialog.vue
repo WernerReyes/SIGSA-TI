@@ -232,6 +232,16 @@
                                     </ul>
                                 </template>
 
+                                <template v-else-if="includes(history.description, [','])">
+                                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                                        <li v-for="(part) in history.description.split(',')"
+                                            class="text-xs text-muted-foreground">
+                                            {{ part }}
+                                        </li>
+                                    </ul>
+                                </template>
+
+
                                 <template v-else v-for="(part) in parsedAssignmentChange(history.description)">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
