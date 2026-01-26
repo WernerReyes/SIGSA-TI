@@ -31,11 +31,14 @@
                      
                     <WhenVisible v-if="dataKey" :data="dataKey">
                         <template #fallback>
-                            <CommandGroup>
-                                <CommandItem v-for="n in skeletonCount" :key="n" :value="`skeleton-${n}`">
-                                    <Skeleton class="h-4 w-full" />
-                                </CommandItem>
-                            </CommandGroup>
+                            <!-- <CommandGroup> -->
+                                <!-- <CommandItem v-for="n in skeletonCount" :key="n" :value="`skeleton-${n}`">  -->
+                                    <div class="w-full space-y-2 py-2 px-3">
+
+                                        <Skeleton class="h-4 w-full" v-for="n in skeletonCount" :key="n" />
+                                    </div>
+                                <!-- </CommandItem>                          -->
+                            <!-- </CommandGroup> -->
                         </template>
 
                         <CommandEmpty >{{ emptyText }}</CommandEmpty>

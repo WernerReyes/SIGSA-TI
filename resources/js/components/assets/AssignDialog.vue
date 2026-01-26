@@ -6,7 +6,7 @@
 
         }
     }">
-        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto space-y-4">
+        <DialogContent class="sm:max-w-4xl  space-y-4">
             <DialogHeader class="space-y-2 pb-3 border-b">
                 <div class="flex items-start gap-3">
                     <div
@@ -27,9 +27,10 @@
                     </div>
                 </div>
             </DialogHeader>
+                <div class="max-h-96 overflow-y-auto">
 
-            <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
-                toast.error('El tiempo para editar esta asignación ha expirado.');
+                    <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
+                        toast.error('El tiempo para editar esta asignación ha expirado.');
                 canEdit = false;
             }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
                 target-label="Tiempo restante para poder editar la información" :duration="15" />
@@ -42,7 +43,7 @@
                 </AlertDescription>
 
             </Alert>
-
+            
             <div class="space-y-5 py-2">
                 <div v-if="!canEdit" @vue:mounted="() => {
                     loadingAssignDocument = true;
@@ -214,7 +215,8 @@
                 </form>
             </div>
 
-
+        </div>
+            
             <DialogFooter class="gap-2 pt-2 border-t">
                 <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
                 <Button :disabled="isSubmitting

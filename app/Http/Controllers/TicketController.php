@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\DTOs\Ticket\StoreTicketDto;
 use App\DTOs\Ticket\TicketFiltersDto;
+use App\DTOs\Ticket\TicketHistoryFiltersDto;
 use App\Http\Requests\Ticket\StoreTicketRequest;
 use App\Models\Ticket;
 use App\Services\TicketService;
@@ -29,7 +30,13 @@ class TicketController extends Controller
             'tickets' => Inertia::once(fn() => $ticketService->getAllOrderedByPriority($filters)),
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers()),
 
-            'historiesPaginated' => Inertia::optional(fn() => $ticketId ? $ticketService->getHistoriesPaginated(Ticket::find($ticketId)) : null),
+            'historiesPaginated' => Inertia::optional(function() use ($ticketService, $ticketId, $request) {
+                if ($ticketId) {
+                    $filters = TicketHistoryFiltersDto::fromArray($request->all());
+                    return $ticketService->getHistoriesPaginated(Ticket::findOrFail($ticketId), $filters);
+                }
+                return null;
+            }),
         ]);
     }
 

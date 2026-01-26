@@ -356,7 +356,7 @@ import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { router } from '@inertiajs/vue3';
-import { format, isAfter, parseISO } from 'date-fns';
+import { format, isAfter, isSameDay, parseISO, startOfDay } from 'date-fns';
 import {
     Calendar, Download, Eye, FileText,
     History,
@@ -391,14 +391,10 @@ const assignments = computed({
 });
 
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
-
-    const endDate = parseISO(warrantyEndDate.split('T')[0])
-    const today = new Date()
-    const todayDateOnly = parseISO(today.toISOString().split('T')[0])
-
-    return isAfter(endDate, todayDateOnly)
-}
-
+    const endDate = startOfDay(new Date(warrantyEndDate));
+    const today = startOfDay(new Date());
+    return isAfter(endDate, today) || isSameDay(endDate, today);
+};
 
 const viewDocument = (url?: string) => {
     window.open(url || '', '_blank');

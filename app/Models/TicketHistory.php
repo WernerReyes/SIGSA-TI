@@ -19,7 +19,7 @@ class TicketHistory extends Model
         'performed_at',
     ];
 
-    public function performedBy()
+    public function performer()
     {
         return $this->belongsTo(User::class, 'performed_by', 'staff_id');
     }

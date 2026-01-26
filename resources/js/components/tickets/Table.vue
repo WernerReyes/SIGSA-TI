@@ -2,11 +2,13 @@
   <div class="flex max-md:flex-col items-center gap-4 p-6 bg-background/50 backdrop-blur-sm border-b">
     <div class="flex-1 w-full md:max-w-sm">
       <InputGroup>
-        <InputGroupInput class="h-10 w-full shadow-sm" placeholder="Buscar tickets..." v-model="form.searchTerm" />
+        <InputGroupInput class="w-full" placeholder="Buscar tickets..." v-model="form.searchTerm" />
         <InputGroupAddon>
           <Search />
         </InputGroupAddon>
       </InputGroup>
+
+     
 
 
       <div v-if="hasFilters"
@@ -522,11 +524,7 @@ const handleOpenHistories = () => {
     data: { ticket_id: activeRow.value?.id },
     preserveUrl: true,
     onSuccess: (page) => {
-      // console.log(page.props.historiesPaginated);
-      // activeRow.value = {
-      //   ...activeRow.value!,
-      //   histories: page.props.historiesPaginated as Ticket['histories'],
-      // }
+    
       openHistory.value = true;
     }
   });

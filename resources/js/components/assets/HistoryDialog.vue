@@ -185,7 +185,7 @@
                                 </Badge>
                             </template>
 
-
+                            <!-- TODO: Some cases haven't been parsed yet -->
                             <template v-else-if="history.action === AssetHistoryAction.ASSIGNED">
                                 <template v-if="includes(history.description, ['junto con los accesorios'])"
                                     v-for="(part, index) in parsedAssignmentWithAccessories(history.description)"
@@ -287,6 +287,18 @@
                                     </Badge>
                                     </template>
                             </template>
+
+                            <template v-else-if="history.action === AssetHistoryAction.DELIVERY_RECORD_UPLOADED">
+                                    <template v-for="(part, index) in parsedDeliveryRecordUpload(history.description)"
+                                        :key="index">
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1">
+                                            <User />
+                                            {{ part.content }}
+                                        </Badge>
+                                    </template>
+                                </template> 
 
 
                             <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
@@ -660,6 +672,29 @@ const parsedReturnChange = (description: string): Array<{
     }
 
     return parsedReturnBy;
+
+};
+
+const parsedDeliveryRecordUpload = (description: string): Array<{
+    type: 'badge' | 'text';
+    content?: string;
+}> => {
+    const parts = description.split(`'`);
+    const parsed = parts.map((part, index) => {
+        if (index % 2 === 0) {
+            return { type: 'text', content: part };
+        } else {
+            return { type: 'badge', content: part, };
+        }
+    });
+    if (parsed.length !== 3) {
+        return [{ type: 'text', content: description }];
+    }
+
+    return parsed as Array<{
+        type: 'badge' | 'text';
+        content?: string;
+    }>;
 
 };
 

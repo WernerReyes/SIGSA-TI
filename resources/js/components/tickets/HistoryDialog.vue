@@ -14,7 +14,7 @@
                         <!-- <History class="size-6 text-primary" /> -->
 
                         <!-- <component :is="assetTypeOp(asset?.type?.name).icon" class="size-6 text-primary" /> -->
-                         <Ticket class="size-6 text-primary" />
+                        <Ticket class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
                         <h2 class="text-xl font-semibold leading-tight">Historial de {{ ticket?.title }}</h2>
@@ -43,7 +43,7 @@
                         <div class="flex flex-wrap gap-3 md:ml-auto items-center">
 
 
-                            <SelectFilters :items="Object.values(assetHistoryActionOptions)"
+                            <SelectFilters :items="Object.values(ticketHistoryActionOptions)"
                                 :show-selected-focus="false" :show-refresh="false" :label="'Seleccione una acción'"
                                 item-label="label" item-value="value" selected-as-label :default-value="actions"
                                 @select="(value) => actions = value" :multiple="true"
@@ -148,39 +148,71 @@
                                     'dd/MM/yyyy HH:mm') }}</span>
                             </div>
 
-                           
+                       
+                            <template v-if="history.action === TicketHistoryAction.UPDATED">
+                                <ul v-if="history.description.split(';').length > 1"
+                                    class="list-disc pl-5 mt-2 space-y-1">
+                                    <li class="text-xs text-muted-foreground"
+                                        v-for="desc in history.description.split(';')" :key="desc">
+                                        <template v-for="(part, index) in parsedUpdateAction(desc)" :key="index">
+                                            <span v-if="part.type === 'text'"
+                                                class="text-xs text-muted-foreground mt-2">{{
+                                                    part.content }}</span>
+                                            <Badge v-else class="mx-1" variant="outline">
+                                                <Pen class="size-4" />
+                                                {{ part.content }}
+                                            </Badge>
+                                        </template>
+                                    </li>
+                                </ul>
+                                <template v-else v-for="(part, index) in parsedUpdateAction(history.description)"
+                                    :key="index">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1" variant="outline">
+                                        <Pen class="size-4" />
+                                        {{ part.content }}
+                                    </Badge>
+                                </template>
+                            </template>
 
-                              
+                            <template v-else-if="history.action === TicketHistoryAction.STATUS_CHANGED"
+                                v-for="(part, index) in parsedStatusChange(history.description)">
+                                <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                    part.content }}</span>
+                                <Badge v-else :class="part.bg" class="mx-1">
+                                    <component :is="part.icon" class="size-4" />
+                                    {{ part.label }}
+                                </Badge>
+                            </template>
+
+                            <template v-else-if="history.action === TicketHistoryAction.ASSIGNED">
+                                
+
+            
+                                <template  v-for="(part) in parsedAssignmentChange(history.description)">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1" variant="secondary">
+                                        <User />
+                                        {{ part.content }}
+                                    </Badge>
+
+                                </template>
 
 
-                            <p  class="text-xs text-muted-foreground mt-2">{{ history.description }}
+                            </template>
+
+
+
+
+                            <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
                             </p>
-                            <!-- </template> -->
-
-                            <div class="flex items-center mt-3 gap-2"
-                                v-if="[AssetHistoryAction.DELIVERY_RECORD_UPLOADED, AssetHistoryAction.INVOICE_UPLOADED].includes(history.action)">
-
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger as-child>
-
-                                            <Button class="ml-auto" size="sm" variant="outline" @click="() => {
-                                                handleDownloadReceipt(history?.delivery_record?.file_url || history.invoice_url || '')
-                                            }">
-
-                                                <DownloadIcon class="size-4" />
-                                                Descargar
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Descargar Comprobante</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </div>
+                           
+                            
 
                             <p class="text-xs text-muted-foreground mt-3">Por:
-
+                                 
                                 <Badge variant="outline">{{ history.performer?.full_name }}</Badge>
                             </p>
                         </div>
@@ -246,26 +278,17 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RangeCalendar } from '@/components/ui/range-calendar';
 
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import SelectFilters from '@/components/SelectFilters.vue';
 import { useApp } from '@/composables/useApp';
-import { AssetStatusOption, assetStatusOptions, type Asset } from '@/interfaces/asset.interface';
-import { actionOp, AssetHistory, AssetHistoryAction, assetHistoryActionOptions } from '@/interfaces/assetHistory.interface';
-import type { Paginated, Variant } from '@/types';
+import { ticketStatusOptions, type Ticket as ITicket, type TicketStatusOption } from '@/interfaces/ticket.interface';
+import { actionOp, TicketHistory, TicketHistoryAction, ticketHistoryActionOptions } from '@/interfaces/ticketHistory.interface';
+import type { Paginated } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
-import { DownloadIcon, History, MonitorSmartphone, RefreshCcw, User, Ticket } from 'lucide-vue-next';
+import { History, Pen, RefreshCcw, Ticket, User } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
-import { type Component, computed, ref, watch } from 'vue';
-import { assetTypeOp } from '@/interfaces/assetType.interface';
-import { returnReasonOptions } from '@/interfaces/assetAssignment.interface';
-import SelectFilters from '@/components/SelectFilters.vue';
-import { type Ticket as ITicket } from '@/interfaces/ticket.interface';
+import { computed, ref, watch } from 'vue';
 
 const ticket = defineModel<ITicket | null>('ticket');
 const open = defineModel<boolean>('open');
@@ -273,12 +296,11 @@ const open = defineModel<boolean>('open');
 const page = usePage();
 const { isLoading } = useApp();
 
-const actions = ref<Array<AssetHistoryAction>>([]);
+const actions = ref<Array<TicketHistoryAction>>([]);
 
 const dateRange = ref<DateRange | undefined>(undefined);
 
-const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
-
+const historiesPaginated = computed<Paginated<TicketHistory>>(() => {
     return (page.props?.historiesPaginated || {
         data: [],
         current_page: 1,
@@ -286,7 +308,7 @@ const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
         per_page: 10,
         total: 0,
         links: [],
-    }) as Paginated<AssetHistory>;
+    }) as Paginated<TicketHistory>;
 });
 
 
@@ -340,6 +362,65 @@ const changePage = (url?: string | null) => {
     })
 };
 
+
+const parsedUpdateAction = (description: string) => {
+    const parts = description.split(`'`);
+    const parsed = parts.map((part, index) => {
+        if (index % 2 === 0) {
+            return { type: 'text', content: part };
+        } else {
+            return { type: 'badge', content: part, };
+        }
+    });
+    if (parsed.length !== 5) {
+        return [{ type: 'text', content: description }];
+    }
+    return parsed;
+
+};
+
+const parsedStatusChange = (description: string): Array<(Partial<TicketStatusOption> & {
+    type: 'badge' | 'text';
+    content?: string;
+})> => {
+    const parts = description.split(`'`);
+    const parsed = parts.map((part) => {
+        const statusOpt = Object.values(ticketStatusOptions).find(opt => opt.label.trim().toLowerCase() === part.trim().toLowerCase());
+        if (statusOpt) {
+            return { type: 'badge' as const, ...statusOpt };
+        } else {
+            return { type: 'text' as const, content: part };
+        }
+    });
+
+    if (parsed.length !== 5) {
+        return [{ type: 'text' as const, content: description }];
+    }
+
+    return parsed as Array<(Partial<TicketStatusOption> & {
+        type: 'badge' | 'text';
+        content?: string;
+    })>;
+
+};
+
+const parsedAssignmentChange = (description: string): any => {
+    const separator = `Asignado responsable `;
+    const parts = description.split(separator);
+    const parsed = parts.map((part, index) => {
+        if (index % 2 === 0) {
+            return { type: 'text', content: separator };
+        } else {
+            return { type: 'badge', content: part, icon: User };
+        }
+    });
+    if (parsed.length !== 2) {
+        return [{ type: 'text', content: description }];
+    }
+
+    return parsed;
+
+};
 
 const handleDownloadReceipt = (filePath: string) => {
     window.open(filePath, '_blank');

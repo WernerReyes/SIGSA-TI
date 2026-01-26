@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\DTOs\Ticket\StoreTicketDto;
+use App\DTOs\Ticket\TicketHistoryFiltersDto;
 use App\Enums\Ticket\TicketHistoryAction;
 use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
@@ -74,10 +75,17 @@ class TicketService
             ->withQueryString();
     }
 
-    public function getHistoriesPaginated(Ticket $ticket)
+    public function getHistoriesPaginated(Ticket $ticket, TicketHistoryFiltersDto $filters)
     {
         return $ticket->histories()
-            ->with('performedBy:staff_id,firstname,lastname')
+            ->with('performer:staff_id,firstname,lastname')
+            ->when($filters->actions, function ($query) use ($filters) {
+                $query->whereIn('action', $filters->actions);
+            })->when($filters->start_date, function ($query) use ($filters) {
+                $query->whereDate('performed_at', '>=', $filters->start_date);
+            })->when($filters->end_date, function ($query) use ($filters) {
+                $query->whereDate('performed_at', '<=', $filters->end_date);
+            })
             ->orderBy('performed_at', 'desc')
             ->paginate(10);
     }
@@ -307,9 +315,12 @@ class TicketService
                 }
                 $ticket->save();
 
+            
+
                 $description = $newStatus === TicketStatus::CLOSED->value
                     ? "Cerrado el ticket"
-                    : "Cambio de estado de {TicketStatus::label($oldStatus)} a {TicketStatus::label($newStatus)}";
+                    : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'". TicketStatus::label($newStatus) . "'";
+                    // : "Cambio de estado de {TicketStatus::label($oldStatus)} a {TicketStatus::label($newStatus)}";
 
                 $this->logHistory($ticket, TicketHistoryAction::STATUS_CHANGED, $description);
 

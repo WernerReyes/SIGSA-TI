@@ -50,12 +50,13 @@
             </div>
 
             <DialogFooter class="pt-6 border-t gap-3">
+
                 <Button variant="outline" type="button" @click="open = false" :disabled="isLoading"
                     class="flex-1 sm:flex-none">
                     Cancelar
                 </Button>
-                <Button :disabled="isLoading || Object.keys(errors).length > 0" type="submit"
-                    @click="handleSubmit(handleFormSubmit)()"
+
+                <Button :disabled="disabled" type="submit" @click="handleSubmit(handleFormSubmit)()"
                     class="flex-1 sm:flex-none shadow-md hover:shadow-lg transition-all gap-2">
                     <Spinner v-if="isLoading" class="h-4 w-4" />
 
@@ -103,7 +104,7 @@ const formSchema = toTypedSchema(z.object({
     })
 }));
 
-const { handleReset, handleSubmit, errors, setFieldValue } = useForm({
+const { handleReset, handleSubmit, errors, setFieldValue, values } = useForm({
     initialValues: {
         responsible_id: ticket?.value?.responsible_id,
     },
@@ -119,6 +120,11 @@ const placeholder = computed(() => {
     }
     return placeholderText;
 
+});
+
+const disabled = computed(() => {
+
+    return isLoading.value || Object.keys(errors.value).length > 0 || ticket.value?.responsible_id === values.responsible_id;
 });
 
 
@@ -140,6 +146,7 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
     }, {
         preserveScroll: true,
         preserveState: true,
+        only: ['filters'],
         preserveUrl: true,
         onFlash: (flash) => {
             const responsible = flash.responsible as User | null;
@@ -159,6 +166,7 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
         },
         onSuccess: () => {
             handleFormReset();
+
             open.value = false;
         },
 

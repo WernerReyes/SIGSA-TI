@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col w-56 rounded-xl  shadow-sm gap-2">
+    <div class="flex flex-col w-56 rounded-xl  gap-2">
         <div class="flex items-center gap-2">
             <span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Ticket class="h-4 w-4" />

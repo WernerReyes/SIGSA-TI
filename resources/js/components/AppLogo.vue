@@ -49,7 +49,7 @@ import AppLogoIcon from './AppLogoIcon.vue';
 const { isDarkMode } = useAppearance();
 const { isMobile, state } = useSidebar();
 
-const fillColor = computed(() => isDarkMode.value ? '#FFFFFF' : '#26489e');
-
+// const fillColor = computed(() => isDarkMode.value ? '#FFFFFF' : '#26489e');
+const fillColor = computed(() => isDarkMode.value ? '#FFFFFF' : '#FFFFFF');
 
 </script>

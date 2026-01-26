@@ -51,7 +51,7 @@ export interface Ticket {
     updated_at: Date;
 }
 
-type TicketStatusOption = {
+export type TicketStatusOption = {
     label: string;
     value: TicketStatus;
     bg: string;

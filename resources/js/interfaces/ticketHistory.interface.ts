@@ -17,7 +17,7 @@ export enum TicketHistoryAction {
 
 export interface TicketHistory {
     id: number;
-    action: string;
+    action: TicketHistoryAction;
     description: string;
     ticket_id: number;
     performed_by: number;
