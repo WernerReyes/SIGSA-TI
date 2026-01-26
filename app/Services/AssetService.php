@@ -679,10 +679,10 @@ class AssetService
 
                         $changes[] =
                             (count($assetsToReleaseIds) > 0 ?
-                                implode(',', $assets->pluck('name')->map(fn($name) => "{$name} liberado")->toArray()) : 'No hay accesorios liberados')
+                                implode(',', $assets->pluck('full_name')->map(fn($name) => "{$name} liberado")->toArray()) : 'No hay accesorios liberados')
                             . "," .
                             (count($dto->accessories ?? []) > 0 ?
-                                implode(',', Asset::whereIn('id', $dto->accessories ?? [])->pluck('name')->map(fn($name) => "{$name} asignado")->toArray()) : 'No hay accesorios asignados');
+                                implode(',', Asset::whereIn('id', $dto->accessories ?? [])->pluck('full_name')->map(fn($name) => "{$name} asignado")->toArray()) : 'No hay accesorios asignados');
 
 
 
@@ -801,14 +801,14 @@ class AssetService
                         'status' => AssetStatus::ASSIGNED->value,
                     ]);
 
-                    $description = "Equipo asignado a {$assigned->assignedTo->full_name} junto con los accesorios: " . implode(',', $accesories->pluck('name')->map(fn($name) => "{$name}")->toArray());
+                    $description = "Equipo asignado a {$assigned->assignedTo->full_name} junto con los accesorios: " . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray());
 
                     AssetHistory::insert(
                         array_map(function ($accessoryId) use ($assigned) {
 
                             return [
                                 'action' => AssetHistoryAction::ASSIGNED->value,
-                                'description' => "Accesorio asignado a {$assigned->assignedTo->full_name} junto al equipo principal ({$assigned->asset->name} - {$assigned->asset->brand} {$assigned->asset->model})",
+                                'description' => "Accesorio asignado a {$assigned->assignedTo->full_name} junto al equipo principal ({$assigned->asset->full_name})",
                                 'asset_id' => $accessoryId,
                                 'performed_by' => auth()->user()->staff_id,
                                 // 'performed_at' => now()->utc(),
@@ -878,7 +878,7 @@ class AssetService
                         $asset = $assignment->asset;
                         $description .= " junto con los accesorios: " . $childAssignments->map(function ($childAssignment) {
                             $asset = $childAssignment->asset;
-                            return "{$asset->name} ({$asset->brand} {$asset->model})";
+                            return $asset->full_name;
                         })->implode(', ');
 
 
@@ -896,7 +896,7 @@ class AssetService
                             $childAssignments->map(function ($childAssignment) use ($dto, $asset) {
                                 return [
                                     'action' => AssetHistoryAction::RETURNED->value,
-                                    'description' => "Accesorio devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model}) por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
+                                    'description' => "Accesorio devuelto junto al equipo principal {$asset->full_name} por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
                                     'asset_id' => $childAssignment->asset_id,
                                     'performed_by' => auth()->user()->staff_id,
                                     // 'performed_at' => now()->utc(),
@@ -991,7 +991,7 @@ class AssetService
                 'accessory_list',
                 $assignment->childrenAssignments->map(function ($childAssignment) {
                     $asset = $childAssignment->asset;
-                    return '- ' . "{$asset->name} ({$asset->brand} {$asset->model})";
+                    return '- ' . $asset->full_name;
                 })->implode('</w:t><w:br/><w:t>')
             );
 
@@ -1114,7 +1114,7 @@ class AssetService
 
             $type = $asset->type->name;
             if ($type === 'Accesorio') {
-                $type = 'Accesorio de ' . $asset->name;
+                $type = 'Accesorio de ' . $asset->full_name;
             }
 
             $template->setValue('type', strtoupper($type));

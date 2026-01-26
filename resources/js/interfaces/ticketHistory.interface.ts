@@ -11,7 +11,7 @@ export enum TicketHistoryAction {
     CREATED = 'CREATED',
     UPDATED = 'UPDATED',
     STATUS_CHANGED = 'STATUS_CHANGED',
-    PRIORITY_CHANGED = 'PRIORITY_CHANGED',
+
     ASSIGNED = 'ASSIGNED',
 }
 
@@ -53,12 +53,7 @@ export const ticketHistoryActionOptions: Record<
         bg: 'bg-yellow-500',
         icon: RefreshCcw,
     },
-    [TicketHistoryAction.PRIORITY_CHANGED]: {
-        value: TicketHistoryAction.PRIORITY_CHANGED,
-        label: 'Cambio de Prioridad',
-        bg: 'bg-purple-500',
-        icon: RefreshCcw,
-    },
+    
     [TicketHistoryAction.ASSIGNED]: {
         value: TicketHistoryAction.ASSIGNED,
         label: 'Asignación',

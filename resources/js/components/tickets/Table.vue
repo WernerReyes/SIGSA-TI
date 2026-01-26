@@ -163,7 +163,7 @@
                 <Pencil />
                 Editar
               </ContextMenuItem>
-              <ContextMenuItem :disabled="!isSameUser(activeRow?.requester_id) || !isFromTI"
+              <ContextMenuItem :disabled="!isSameUser(activeRow?.requester_id) && !isFromTI"
                 @click="handleOpenHistories">
                 <History />
                 Ver historial
@@ -391,7 +391,7 @@ const formattedDate = computed(() => {
 });
 
 const filterstersRenders = computed(() => [{
-  label: 'Texto',
+  label: 'Búsqueda',
   value: form.searchTerm,
   click: (): void => { form.searchTerm = '' }
 }, {

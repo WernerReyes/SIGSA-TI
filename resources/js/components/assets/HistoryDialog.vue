@@ -156,8 +156,8 @@
                                             <span v-if="part.type === 'text'"
                                                 class="text-xs text-muted-foreground mt-2">{{
                                                     part.content }}</span>
-                                            <Badge v-else class="mx-1">
-                                                <History class="size-4" />
+                                            <Badge v-else class="mx-1" variant="outline">
+                                                <Pencil />
                                                 {{ part.content }}
                                             </Badge>
                                         </template>
@@ -167,8 +167,8 @@
                                     :key="index">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
-                                    <Badge v-else class="mx-1">
-                                        <History class="size-4" />
+                                    <Badge v-else class="mx-1" variant="outline">
+                                        <Pencil />
                                         {{ part.content }}
                                     </Badge>
                                 </template>
@@ -417,7 +417,7 @@ import type { Paginated, Variant } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
-import { DownloadIcon, History, MonitorSmartphone, RefreshCcw, User } from 'lucide-vue-next';
+import { DownloadIcon, History, MonitorSmartphone, RefreshCcw, User, Pencil } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
 import { type Component, computed, ref, watch } from 'vue';
 import { assetTypeOp } from '@/interfaces/assetType.interface';

@@ -95,7 +95,7 @@
 
                                 <SelectFilters :items="Object.values(ticketRequestTypeOptions)"
                                     :show-selected-focus="false" :show-refresh="false"
-                                    :label="'Selecciona un nuevo estado'" item-label="label" item-value="value"
+                                    label="Selecciona" item-label="label" item-value="value"
                                     selected-as-label :default-value="componentField.modelValue"
                                     @select="(value) => setFieldValue('request_type', value)"
                                     filter-placeholder="Buscar estado..." empty-text="No se encontraron estados">

@@ -4,9 +4,16 @@
         <div class="rounded-xl border bg-linear-to-br from-muted/40 via-background to-background shadow-sm">
             <div class="flex max-md:flex-col gap-4 items-start p-4">
                 <div class="flex flex-col gap-2 w-full max-w-xl">
-                   
+
                     <div class="flex items-center gap-2">
-                        <Input class="w-full" placeholder="Buscar activos..." v-model="form.search" />
+                        <!-- <Input class="w-full" placeholder="Buscar activos..." v-model="form.search" /> -->
+                        <InputGroup>
+                            <InputGroupInput class="w-full" placeholder="Buscar activos..." v-model="form.search" />
+                            <InputGroupAddon>
+                                <Search />
+                            </InputGroupAddon>
+                        </InputGroup>
+
                         <Button variant="ghost" size="icon" :disabled="isLoading || !hasFilters" class="rounded-full"
                             @click="resetFilters">
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
@@ -16,7 +23,7 @@
                         class="flex flex-wrap gap-2 text-xs text-muted-foreground items-center animate-in fade-in-50">
                         <Badge variant="outline" class="rounded-full">{{ filterCount }} {{
                             filterCount === 1 ? 'filtro aplicado' : 'filtros aplicados'
-                        }}</Badge>
+                            }}</Badge>
 
                         <template v-for="filter in filterstersRenders" :key="filter.label">
                             <Badge v-if="filter.value" variant="secondary" class="cursor-pointer" :class="{
@@ -314,7 +321,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-import {  valueUpdater } from '@/lib/utils';
+import { valueUpdater } from '@/lib/utils';
 
 
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
@@ -324,7 +331,7 @@ import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
-import { Building, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, Users, X, XCircle, CalendarSearch } from 'lucide-vue-next';
+import { Building, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, Users, X, XCircle, CalendarSearch, Search } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
 
 import { useApp } from '@/composables/useApp';
@@ -342,6 +349,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { RangeCalendar } from '@/components/ui/range-calendar';
 import { CalendarDate, getLocalTimeZone, parseDate } from '@internationalized/date';
 import { type DateRange } from 'reka-ui';
+import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
 
 
 const { assets } = defineProps<{ assets: Paginated<Asset> }>()
@@ -410,7 +418,7 @@ const formattedDate = computed(() => {
 
 
 const filterstersRenders = computed(() => [{
-    label: 'Texto',
+    label: 'Búsqueda',
     value: form.search,
     click: (): void => { form.search = '' }
 

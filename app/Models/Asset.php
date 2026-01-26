@@ -46,6 +46,7 @@ class Asset extends Model
 
     protected $appends = [
         'invoice_url',
+        'full_name',
     ];
 
 
