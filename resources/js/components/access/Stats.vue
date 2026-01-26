@@ -32,7 +32,7 @@ const activePercentage = computed(() => {
 <template>
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <!-- Servicios activos -->
-        <Card class="border border-emerald-100 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50/40 to-emerald-900/5 dark:from-emerald-950/20 dark:to-emerald-900/10">
+        <Card class="border border-emerald-100 dark:border-emerald-900/50 bg-linear-to-br from-emerald-50/40 to-emerald-900/5 dark:from-emerald-950/20 dark:to-emerald-900/10">
             <CardHeader class="pb-2">
                 <div class="flex items-center justify-between">
                     <CardTitle class="text-sm text-muted-foreground">Servicios activos</CardTitle>
@@ -52,7 +52,7 @@ const activePercentage = computed(() => {
         </Card>
 
         <!-- Servicios inactivos -->
-        <Card class="border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50/40 to-slate-900/5 dark:from-slate-950/20 dark:to-slate-900/10">
+        <Card class="border border-slate-200 dark:border-slate-800 bg-linear-to-br from-slate-50/40 to-slate-900/5 dark:from-slate-950/20 dark:to-slate-900/10">
             <CardHeader class="pb-2">
                 <div class="flex items-center justify-between">
                     <CardTitle class="text-sm text-muted-foreground">Servicios inactivos</CardTitle>
@@ -72,7 +72,7 @@ const activePercentage = computed(() => {
         </Card>
 
         <!-- Actualizaciones recientes -->
-        <Card class="border border-blue-100 dark:border-blue-900/50 bg-gradient-to-br from-blue-50/40 to-blue-900/5 dark:from-blue-950/20 dark:to-blue-900/10">
+        <Card class="border border-blue-100 dark:border-blue-900/50 bg-linear-to-br from-blue-50/40 to-blue-900/5 dark:from-blue-950/20 dark:to-blue-900/10">
             <CardHeader class="pb-2">
                 <div class="flex items-center justify-between">
                     <CardTitle class="text-sm text-muted-foreground">Actualizados últimos 7d</CardTitle>
@@ -92,7 +92,7 @@ const activePercentage = computed(() => {
         </Card>
 
         <!-- Total de servicios -->
-        <Card class="border border-purple-100 dark:border-purple-900/50 bg-gradient-to-br from-purple-50/40 to-purple-900/5 dark:from-purple-950/20 dark:to-purple-900/10">
+        <Card class="border border-purple-100 dark:border-purple-900/50 bg-linear-to-br from-purple-50/40 to-purple-900/5 dark:from-purple-950/20 dark:to-purple-900/10">
             <CardHeader class="pb-2">
                 <div class="flex items-center justify-between">
                     <CardTitle class="text-sm text-muted-foreground">Total de servicios</CardTitle>
