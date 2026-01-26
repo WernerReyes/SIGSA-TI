@@ -48,6 +48,7 @@ class Asset extends Model
         'invoice_url',
     ];
 
+
     protected static function booted()
     {
         static::deleting(function ($asset) {
@@ -86,7 +87,17 @@ class Asset extends Model
         });
     }
 
-
+    // TODO: Include model and serial number in full name
+    public function getFullNameAttribute()
+    {
+        if ($this->serial_number && $this->model) {
+            return "{$this->name} ({$this->brand} {$this->model} - S/N: {$this->serial_number})";
+        } elseif ($this->model) {
+            return "{$this->name} ({$this->brand} {$this->model})";
+        } else {
+            return "{$this->name} ({$this->brand})";
+        }
+    }
 
 
     public function assignedTo()

@@ -603,6 +603,8 @@ class AssetService
 
     }
 
+    
+
 
     public function assignAsset(AssignAssetDto $dto)
     {
