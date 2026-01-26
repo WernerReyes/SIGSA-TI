@@ -201,7 +201,7 @@ const columns = [
     }),
     columnHelper.accessor('password', {
         header: 'Contraseña',
-        cell: ({ row }) => h(CopyToChiptory, { label: row.original.password }),
+        cell: ({ row }) => h(CopyToChiptory, { label: row.original.password, isSecret: true }),
     }),
     columnHelper.accessor('is_active', {
         header: 'Estado',
