@@ -32,7 +32,6 @@
 
             <AccessTable :rows="services"
                 @update:service="currentService = $event">
-               
             </AccessTable>
 
            

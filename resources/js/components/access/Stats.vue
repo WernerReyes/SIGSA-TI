@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Service } from '@/interfaces/service.interface';
+import { differenceInDays } from 'date-fns';
 import { CheckCircle2, Circle, Clock, Zap } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { differenceInDays, isThisMonth } from 'date-fns';
-import type { Service } from '@/interfaces/service.interface';
 
 const props = defineProps<{ 
     services: Service[];

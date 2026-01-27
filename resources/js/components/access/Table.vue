@@ -247,6 +247,9 @@ const filterFns = {
 const handleDelete = () => {
     if (!activeRow.value) return;
     router.delete(`/access/${activeRow.value.id}`, {
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
         onSuccess: () => {
             router.replaceProp('services', (services: Service[]) => {
                 return services.filter(s => s.id !== activeRow.value?.id);

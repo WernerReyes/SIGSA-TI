@@ -4,7 +4,7 @@
     }">
         <DialogContent class="sm:max-w-xl">
             <form @submit.prevent="handleSubmit(handleSubmitForm)()">
-                <DialogHeader>
+               
                     <DialogHeader class="space-y-3 pb-4 border-b">
                         <div class="flex items-center gap-3">
                             <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -22,7 +22,7 @@
                             </div>
                         </div>
                     </DialogHeader>
-                </DialogHeader>
+              
                 <div class="max-h-96 overflow-y-auto space-y-4">
                     <div class="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
                         <VeeField name="name" v-slot="{ componentField, errors }">

@@ -1,7 +1,7 @@
 <template>
     <Popover v-model:open="open">
         <PopoverTrigger as-child>
-            <Button variant="outline" role="combobox" :aria-expanded="open" class="w-fit justify-between gap-2">
+            <Button variant="outline" role="combobox" :aria-expanded="open" class="justify-between gap-2" :class="fullWidth ? 'w-full' : 'w-fit'">
                 <span v-if="selecteds.length && showSelectedFocus" class="relative flex size-2">
                     <span
                         class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
@@ -126,6 +126,7 @@ const props = withDefaults(
         maxLabelLength?: number
         filterPlaceholder?: string
         emptyText?: string
+        fullWidth?: boolean
     }>(),
     {
         label: 'Seleccionar',
@@ -136,6 +137,7 @@ const props = withDefaults(
         showSelectedFocus: true,
         skeletonCount: 5,
         selectedAsLabel: false,
+        fullWidth: false,
         maxLabelLength: 3,
 
     }

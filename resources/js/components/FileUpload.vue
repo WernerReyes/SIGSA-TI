@@ -25,6 +25,7 @@
         <Dialog>
           <DialogTrigger asChild>
             <button
+              type="button"
               class="absolute top-3 right-3 bg-white/85 dark:bg-black/70 hover:bg-white rounded-full p-2 shadow-md border">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -73,7 +74,7 @@
           <p class="text-muted-foreground text-xs">{{ acceptLabel }} · {{ maxSizeMb }}MB máx.</p>
         </div>
 
-        <Button variant="outline" size="sm" class="mt-1">Seleccionar archivo</Button>
+        <Button type="button" variant="outline" size="sm" class="mt-1">Seleccionar archivo</Button>
       </div>
     </div>
 
@@ -82,13 +83,12 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { FileCheck, Upload } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 
@@ -140,7 +140,8 @@ const fileNameFromUrl = computed(() => {
 
 const acceptLabel = computed(() => {
   if (!props.accept) return 'Imágenes o PDF'
-  if (props.accept.includes('pdf')) return 'Imágenes o PDF'
+  if (props.accept.includes('image') && props.accept.includes('pdf')) return 'Imágenes o PDF'
+  if (props.accept.includes('pdf')) return 'PDF'
   return 'Imágenes'
 })
 
@@ -166,11 +167,24 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+
+
 function validateAndEmit(file: File) {
   const maxBytes = props.maxSizeMb * 1024 * 1024
 
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-    emit('error', 'Tipo de archivo no válido. Solo se permiten imágenes y PDFs.')
+  if (!props.accept.split(',').some(
+    (type) => {
+      type = type.trim()
+      if (type === '') return false
+      if (type === file.type) return true
+      if (type.endsWith('/*')) {
+        const mainType = type.split('/')[0]
+        return file.type.startsWith(mainType + '/')
+      }
+      return false
+    }
+  )) {
+    emit('error', `Tipo de archivo no válido. Solo se permiten: ${props.accept}`)
     return
   }
 

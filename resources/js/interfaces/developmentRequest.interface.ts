@@ -1,0 +1,148 @@
+import {
+    ArrowDown,
+    ArrowUp,
+    BadgeCheck,
+    CheckCircle2,
+    Code2,
+    FilePlus,
+    Flame,
+    FlaskConical,
+    Minus,
+    Search,
+    XCircle,
+} from 'lucide-vue-next';
+import { type Component } from 'vue';
+import { Area } from './area.interface';
+import { User } from './user.interface';
+
+export interface DevelopmentRequest {
+    id: number;
+    title: string;
+    priority: DevelopmentRequestPriority;
+    status: DevelopmentRequestStatus;
+    description: string;
+    impact?: string;
+    estimated_hours?: number;
+    estimated_end_date?: string;
+    area_id: number;
+    requirement_url?: string;
+    requested_by_id: number;
+    area?: Area;
+    requested_by?: User;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export enum DevelopmentRequestPriority {
+    LOW = 'LOW',
+    MEDIUM = 'MEDIUM',
+    HIGH = 'HIGH',
+    URGENT = 'URGENT',
+}
+
+export enum DevelopmentRequestStatus {
+    REGISTERED = 'REGISTERED',
+    IN_ANALYSIS = 'IN_ANALYSIS',
+    APPROVED = 'APPROVED',
+    IN_DEVELOPMENT = 'IN_DEVELOPMENT',
+    IN_TESTING = 'IN_TESTING',
+    COMPLETED = 'COMPLETED',
+    REJECTED = 'REJECTED',
+}
+
+export type DevelopmentRequestPriorityOptions = {
+    label: string;
+    value: DevelopmentRequestPriority;
+    bg: string;
+    icon: Component;
+};
+
+export const developmentRequestPriorityOptions: Record<
+    DevelopmentRequestPriority,
+    DevelopmentRequestPriorityOptions
+> = {
+    [DevelopmentRequestPriority.LOW]: {
+        label: 'Baja',
+        value: DevelopmentRequestPriority.LOW,
+        bg: 'bg-green-500',
+        icon: ArrowDown,
+    },
+    [DevelopmentRequestPriority.MEDIUM]: {
+        label: 'Media',
+        value: DevelopmentRequestPriority.MEDIUM,
+        bg: 'bg-yellow-500',
+        icon: Minus,
+    },
+    [DevelopmentRequestPriority.HIGH]: {
+        label: 'Alta',
+        value: DevelopmentRequestPriority.HIGH,
+        bg: 'bg-orange-500',
+        icon: ArrowUp,
+    },
+    [DevelopmentRequestPriority.URGENT]: {
+        label: 'Urgente',
+        value: DevelopmentRequestPriority.URGENT,
+        bg: 'bg-red-500',
+        icon: Flame,
+    },
+};
+
+export const getPriorityOp = (priority: DevelopmentRequestPriority) => {
+    return developmentRequestPriorityOptions[priority];
+}
+
+
+export type DevelopmentRequestStatusOptions = {
+    label: string;
+    value: DevelopmentRequestStatus;
+    bg: string;
+    icon: Component;
+};
+
+export const DevelopmentRequestStatusOptions: Record<
+    DevelopmentRequestStatus,
+    DevelopmentRequestStatusOptions
+> = {
+    [DevelopmentRequestStatus.REGISTERED]: {
+        label: 'Registrado',
+        value: DevelopmentRequestStatus.REGISTERED,
+        bg: 'bg-gray-100',
+        icon: FilePlus,
+    },
+    [DevelopmentRequestStatus.IN_ANALYSIS]: {
+        label: 'En Análisis',
+        value: DevelopmentRequestStatus.IN_ANALYSIS,
+        bg: 'bg-blue-100',
+        icon: Search,
+    },
+    [DevelopmentRequestStatus.APPROVED]: {
+        label: 'Aprobado',
+        value: DevelopmentRequestStatus.APPROVED,
+        bg: 'bg-teal-100',
+        icon: CheckCircle2,
+    },
+    [DevelopmentRequestStatus.IN_DEVELOPMENT]: {
+        label: 'En Desarrollo',
+        value: DevelopmentRequestStatus.IN_DEVELOPMENT,
+        bg: 'bg-yellow-100',
+        icon: Code2,
+    },
+    [DevelopmentRequestStatus.IN_TESTING]: {
+        label: 'En Pruebas',
+        value: DevelopmentRequestStatus.IN_TESTING,
+        bg: 'bg-purple-100',
+        icon: FlaskConical,
+    },
+    [DevelopmentRequestStatus.COMPLETED]: {
+        label: 'Completado',
+        value: DevelopmentRequestStatus.COMPLETED,
+        bg: 'bg-green-100',
+        icon: BadgeCheck,
+    },
+    [DevelopmentRequestStatus.REJECTED]: {
+        label: 'Rechazado',
+        value: DevelopmentRequestStatus.REJECTED,
+        bg: 'bg-red-100',
+        icon: XCircle,
+    },
+};
