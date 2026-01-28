@@ -88,7 +88,7 @@ class Asset extends Model
         });
     }
 
-    // TODO: Include model and serial number in full name
+   
     public function getFullNameAttribute()
     {
         if ($this->serial_number && $this->model) {

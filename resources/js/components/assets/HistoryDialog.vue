@@ -663,7 +663,6 @@ const parsedReturnWithMainParent = (description: string): Array<{
     return parsedMainParent;
 };
 
-// TODO: Missing the topic
 const parsedReturnChange = (description: string): Array<{
     type: 'badge' | 'text';
     content?: string;
