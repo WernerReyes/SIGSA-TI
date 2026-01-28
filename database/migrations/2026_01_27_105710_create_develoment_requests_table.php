@@ -20,7 +20,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->text('impact')->nullable();
 
-
+            // $table->integer('devs_needed')->nullable();
             $table->integer('estimated_hours')->nullable();
             $table->date('estimated_end_date')->nullable();
 
@@ -41,6 +41,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('develoment_requests');
+        Schema::dropIfExists('development_requests');
     }
 };

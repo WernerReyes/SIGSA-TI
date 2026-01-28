@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model:open="open">
+    <Dialog v-model:open="open" @update:open="(val) => { if (!val) onReset(); }">
         <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl p-0">
             <form id="development-form" @submit.prevent="handleSubmit(onSubmit)()">
                 <DialogHeader class="border-b px-4 py-4 sm:px-6">
@@ -11,19 +11,20 @@
                             <div class="flex text-start flex-col gap-1 max-w-[72vw] sm:max-w-none">
                                 <DialogTitle class="text-lg sm:text-xl font-semibold leading-tight">
                                     {{ currentDevelopment
-                                        ? `Editar ${currentDevelopment?.name}`
+                                        ? `Editar ${currentDevelopment?.title}`
                                         : 'Crear Nuevo Requerimiento' }}
                                 </DialogTitle>
                                 <p class="text-sm text-muted-foreground leading-snug">
-                                    {{ currentDevelopment ? `Actualiza la información de ${currentDevelopment?.name}` :
-                                        'Completa el formulario para crear un nuevo requerimiento de desarrollo.' }}
+                                    {{ currentDevelopment ? "Actualiza la información de este requerimiento de desarrollo."
+                                        :
+                                    'Completa el formulario para crear un nuevo requerimiento de desarrollo.' }}
                                 </p>
                             </div>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <ScrollArea class="max-h-96 sm:max-h-[65vh]">
+                <ScrollArea class="max-h-96 sm:max-h-[65vh] overflow-y-auto">
                     <div class="space-y-8 px-4 pb-5 sm:px-6 sm:pb-6">
                         <section class="space-y-4 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -82,7 +83,7 @@
                                             <Label :for="componentField.name" class="flex items-center gap-2">
                                                 <MapPin class="h-3.5 w-3.5 text-muted-foreground" /> Área solicitante
                                             </Label>
-                                            <SelectFilters label="Áreas" dataKey="areas" :items="areas"
+                                            <SelectFilters :label="areaLabel" dataKey="areas" :items="areas"
                                                 :default-value="componentField.modelValue" item-icon="descripcion_area"
                                                 :show-refresh="false" item-label="descripcion_area" item-value="id_area"
                                                 :show-selected-focus="false" empty-text="No se encontraron áreas"
@@ -122,8 +123,10 @@
                                     </VeeField>
 
                                 </div>
-
-                                <FileUpload @error="(msg) => toast.error(msg)"
+                                        <!-- {{currentDevelopment}} -->
+                                <FileUpload
+                                 :currentUrl="currentDevelopment?.requirement_url"
+                                @error="(msg) => toast.error(msg)"
                                     @update:file="(file) => setFieldValue('requirement_file', file)"
                                     accept="application/pdf" label="Adjuntar archivo relacionado (opcional)" />
                             </div>
@@ -174,7 +177,7 @@
                     <Button form="development-form" :disabled="Object.keys(errors).length > 0 || isLoading"
                         type="submit" class="gap-1 w-full sm:w-auto">
                         <Rocket class="h-4 w-4" />
-                        Crear requerimiento
+                        {{ currentDevelopment ? 'Actualizar Requerimiento' : 'Crear Requerimiento' }}
                     </Button>
 
                 </DialogFooter>
@@ -192,7 +195,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { DevelopmentRequestPriority, developmentRequestPriorityOptions } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions } from '@/interfaces/developmentRequest.interface';
 import { toTypedSchema } from '@vee-validate/zod';
 import { AlignLeft, CodeXml, FileText, Flag, MapPin, Rocket, Sparkles, TrendingUp, Type } from 'lucide-vue-next';
 import { Field as VeeField } from 'vee-validate';
@@ -203,7 +206,7 @@ import SelectFilters from '../SelectFilters.vue';
 import FieldError from '@/components/ui/field/FieldError.vue';
 import { type Area } from '@/interfaces/area.interface';
 import { router, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, nextTick, watch } from 'vue';
 import z from 'zod';
 // import { DevelopmentRequestPriority } from '@/interfaces/developmentRequest.interface';
 import { useForm } from 'vee-validate';
@@ -211,13 +214,18 @@ import { useApp } from '@/composables/useApp';
 
 const open = defineModel<boolean>('open');
 
-const currentDevelopment = defineModel<any>('currentDevelopment');
+const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelopment');
 
 const page = usePage();
 const { isLoading } = useApp();
 
 const areas = computed<Area[]>(() => {
     return (page.props.areas || []) as Area[];
+});
+
+
+const areaLabel = computed(() => {
+    return currentDevelopment.value?.area?.descripcion_area || 'Áreas';
 });
 
 const formSchema = toTypedSchema(
@@ -244,37 +252,109 @@ const formSchema = toTypedSchema(
     })
 );
 
-const { setFieldValue, errors, handleSubmit, values } = useForm({
+const initialValues = {
+    title: '',
+    priority: undefined,
+    description: '',
+    impact: '',
+    area_id: undefined,
+    requirement_file: undefined,
+};
+
+const { setFieldValue, errors, handleSubmit, values, setValues, handleReset } = useForm({
     validationSchema: formSchema,
-    initialValues: {
-        title: '',
-        priority: undefined,
-        description: '',
-        impact: '',
-        area_id: undefined,
-        requirement_file: undefined,
-    },
+    initialValues
 });
 
+const onReset = () => {
+    handleReset();
+    open.value = false;
+    currentDevelopment.value = null;
+};
+
+
+watch(currentDevelopment, (newVal) => {
+
+    if (newVal) {
+        setValues({
+            title: newVal.title,
+            priority: newVal.priority,
+            description: newVal.description,
+            impact: newVal.impact,
+            area_id: newVal.area_id,
+            requirement_file: undefined,
+        });
+
+        // open.value = true;
+
+
+    } else {
+        onReset();
+    }
+}, { immediate: true });
 
 const onSubmit = (values: any) => {
+    if (currentDevelopment.value) {
+        console.log(values);
+        router.post(`/developments/${currentDevelopment.value.id}/update`, { ...values }, {
+            // only: [''],
+            
+            preserveScroll: true,
+            preserveState: true,
+            preserveUrl: true,
+            except: ['areas', 'developments'],
+            onFlash: (flash) => {
+                const devRequest = flash.devRequest as DevelopmentRequest | null;
+                if (devRequest) {
+                    // console.log('Dev Request updated:', devRequest);
+                    // nextTick(( ) => {
+
+                    router.replaceProp('developments', (oldDevelopments: DevelopmentRequest[]) => {
+                        return oldDevelopments.map((dev) =>
+                            dev.id === devRequest.id ? {
+                                ...dev,
+                                ...devRequest,
+                            } : dev
+                        );
+                    });
+                    // })
+                }
+            },
+            onSuccess: () => {
+
+                onReset();
+            },
+
+        });
+        return;
+    }
+
+
+
+
     router.post('/developments', { ...values }, {
+        // only: [''],
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+        except: ['areas', 'developments'],
+        onFlash: (flash) => {
+            const devRequest = flash.devRequest as DevelopmentRequest | null;
+            if (devRequest) {
+                // console.log('Dev Request created:', devRequest);
+                // nextTick(( ) => {
+
+                router.appendToProp('developments', devRequest);
+                // })
+            }
+        },
         onSuccess: () => {
 
-            open.value = false;
+            onReset();
         },
 
     });
     // Aquí puedes agregar la lógica para enviar los datos al servidor o procesarlos según sea necesario.
 };
-
-// <VeeField name="color" v-slot="{ componentField, errors }">
-//                             <Field :data-invalid="!!errors.length">
-//                                 <FieldLabel>Color</FieldLabel>
-//                                 <Input id="color" placeholder="Ingresa un color (EJ: Rojo, Azul)"
-//                                     v-bind="componentField" />
-//                                 <FieldError v-if="errors.length" :errors="errors" />
-//                             </Field>
-//                         </VeeField>
 
 </script>

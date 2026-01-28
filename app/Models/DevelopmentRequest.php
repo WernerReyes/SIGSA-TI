@@ -16,6 +16,7 @@ class DevelopmentRequest extends Model
         'status',
         'description',
         'impact',
+        // 'devs_needed',
         'estimated_hours',
         'estimated_end_date',
         'area_id',
@@ -47,9 +48,9 @@ class DevelopmentRequest extends Model
         return $this->belongsTo(User::class, 'requested_by_id', 'staff_id');
     }
 
-    // Public function approvals()
-    // {
-    //     return $this->hasMany(DevelomentApproval::class, 'develoment_request_id');
-    // }
+    public function approvals()
+    {
+        return $this->hasMany(DevelopmentApproval::class, 'development_request_id');
+    }
 
 }

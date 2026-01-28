@@ -9,7 +9,7 @@
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>{{ cancelText }}</AlertDialogCancel>
+                <AlertDialogCancel @click="emit('cancel')">{{ cancelText }}</AlertDialogCancel>
                 <AlertDialogAction @click="emit('confirm')">{{ actionText }}</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
@@ -44,6 +44,7 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
     (e: 'confirm'): void
+    (e: 'cancel'): void
 }>()
 
 </script>

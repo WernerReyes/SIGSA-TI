@@ -22,6 +22,7 @@ return new class extends Migration {
             $table->unsignedInteger('approved_by_id');
             $table->foreign('approved_by_id')->references('staff_id')->on('ost_staff');
             $table->timestamps();
+            $table->unique(['level', 'development_request_id']);
         });
     }
 

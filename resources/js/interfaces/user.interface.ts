@@ -55,3 +55,8 @@ export interface BasicUserInfo extends Pick<
     User,
     'staff_id' | 'firstname' | 'lastname' | 'full_name'
 > {}
+
+export enum UserCharge {
+    IT_MANAGER = 7,
+    IT_ASSISTANT_MANAGER = 9,
+}

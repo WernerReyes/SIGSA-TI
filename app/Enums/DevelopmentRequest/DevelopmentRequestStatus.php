@@ -20,7 +20,22 @@ enum DevelopmentRequestStatus: string
         return array_map(fn (self $status) => $status->value, self::cases());
     }
 
-    public static function implode(string $separator = ','): string
+    public static function labels(): array
+    {
+        return [
+            self::REGISTERED->value => 'Registrada',
+            self::IN_ANALYSIS->value => 'En Análisis',
+            self::APPROVED->value => 'Aprobada',
+            self::IN_DEVELOPMENT->value => 'En Desarrollo',
+            self::IN_TESTING->value => 'En Pruebas',
+            self::COMPLETED->value => 'Completada',
+            self::REJECTED->value => 'Rechazada',
+        ];
+    }
+
+
+
+    public static function implodeValues(string $separator = ','): string
     {
         return implode($separator, self::values());
     }

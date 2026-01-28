@@ -1,4 +1,3 @@
-import type { User } from '@/types';
 
 export interface Department {
     id: number;
@@ -17,7 +16,7 @@ export interface Department {
     ticket_auto_response: boolean;
     message_auto_response: boolean;
     path: string;
-    users: Array<User>;
+    // users: Array<User>;
     updated: Date;
     created: Date;
 }

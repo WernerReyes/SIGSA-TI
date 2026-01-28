@@ -1,7 +1,7 @@
 import { Asset } from '@/interfaces/asset.interface';
 import { type AssetType } from '@/interfaces/assetType.interface';
 import { type Department, DepartmentAllowed } from '@/interfaces/department.interace';
-import type { User } from '@/interfaces/user.interface';
+import { UserCharge, type User } from '@/interfaces/user.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
@@ -17,6 +17,14 @@ export const useApp = () => {
 
     const isFromTI = computed(() => {
         return userAuth.value?.dept_id === DepartmentAllowed.SYSTEM_TI;
+    });
+
+    const isTIAssistantManager = computed(() => {
+        return isFromTI.value && userAuth.value?.id_cargo === UserCharge.IT_ASSISTANT_MANAGER;
+    });
+
+    const isTIManager = computed(() => {
+        return isFromTI.value && userAuth.value?.id_cargo === UserCharge.IT_MANAGER;
     });
 
     const start = () => (isLoading.value = true);
@@ -41,5 +49,5 @@ export const useApp = () => {
         return userAuth.value?.staff_id === userId;
     };
 
-    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories, departments, assetTypes  };
+    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories, departments, assetTypes, isTIManager, isTIAssistantManager };
 };

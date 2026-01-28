@@ -9,6 +9,8 @@ Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () 
 
         Route::get('/', [DevelopmentController::class, 'renderView'])->name('developments');
         Route::post('/', [DevelopmentController::class, 'store'])->name('developments.store');
+        Route::post('/{developmentRequest}/update', [DevelopmentController::class, 'update'])->name('developments.update');
+        Route::patch('/{developmentRequest}/status', [DevelopmentController::class, 'updateStatus'])->name('developments.updateStatus');
     });
     
 });

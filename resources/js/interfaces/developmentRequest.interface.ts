@@ -22,6 +22,7 @@ export interface DevelopmentRequest {
     status: DevelopmentRequestStatus;
     description: string;
     impact?: string;
+    // devs_needed?: number;
     estimated_hours?: number;
     estimated_end_date?: string;
     area_id: number;
@@ -112,37 +113,41 @@ export const DevelopmentRequestStatusOptions: Record<
     [DevelopmentRequestStatus.IN_ANALYSIS]: {
         label: 'En Análisis',
         value: DevelopmentRequestStatus.IN_ANALYSIS,
-        bg: 'bg-blue-100',
+        bg: 'bg-blue-500',
         icon: Search,
     },
     [DevelopmentRequestStatus.APPROVED]: {
         label: 'Aprobado',
         value: DevelopmentRequestStatus.APPROVED,
-        bg: 'bg-teal-100',
+        bg: 'bg-teal-500',
         icon: CheckCircle2,
     },
     [DevelopmentRequestStatus.IN_DEVELOPMENT]: {
         label: 'En Desarrollo',
         value: DevelopmentRequestStatus.IN_DEVELOPMENT,
-        bg: 'bg-yellow-100',
+        bg: 'bg-yellow-500',
         icon: Code2,
     },
     [DevelopmentRequestStatus.IN_TESTING]: {
         label: 'En Pruebas',
         value: DevelopmentRequestStatus.IN_TESTING,
-        bg: 'bg-purple-100',
+        bg: 'bg-purple-500',
         icon: FlaskConical,
     },
     [DevelopmentRequestStatus.COMPLETED]: {
         label: 'Completado',
         value: DevelopmentRequestStatus.COMPLETED,
-        bg: 'bg-green-100',
+        bg: 'bg-green-500',
         icon: BadgeCheck,
     },
     [DevelopmentRequestStatus.REJECTED]: {
         label: 'Rechazado',
         value: DevelopmentRequestStatus.REJECTED,
-        bg: 'bg-red-100',
+        bg: 'bg-red-500',
         icon: XCircle,
     },
 };
+
+export const getStatusOp = (status: DevelopmentRequestStatus) => {
+    return DevelopmentRequestStatusOptions[status];
+}

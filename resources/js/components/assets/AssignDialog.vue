@@ -135,58 +135,6 @@
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                <!-- <Popover v-model:open="openAccessorySelect">
-                                    <PopoverTrigger as-child>
-                                        <Button :disabled="!canEdit" variant="outline" role="combobox"
-                                            :aria-expanded="openAccessorySelect" class="w-full justify-between">
-                                            {{ selectLabels(componentField.modelValue) }}
-                                            <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent class="m-w-full p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Buscar accesorio..." />
-                                            <CommandList>
-                                                <WhenVisible data="accessories">
-                                                    <template #fallback>
-                                                        <CommandGroup>
-                                                            <CommandItem v-for="n in 5" :key="n" value="loading">
-                                                                <Skeleton class="h-4 w-full" />
-                                                            </CommandItem>
-                                                        </CommandGroup>
-                                                    </template>
-
-                                                    <CommandEmpty>Accesorio no encontrado</CommandEmpty>
-                                                    <CommandGroup>
-                                                        <CommandItem v-for="accessory in assetAccessories"
-                                                            :key="accessory.id" :value="accessory.id" @select="() => {
-                                                                if (componentField.modelValue.includes(accessory.id)) {
-                                                                    const filtered = componentField.modelValue.filter((id: number) => id !== accessory.id)
-                                                                    componentField.onChange(filtered)
-                                                                    return
-                                                                }
-                                                                componentField.onChange([...componentField.modelValue, accessory.id])
-
-                                                            }">
-
-                                                            {{ accessory.name }} ({{ accessory.brand }} - {{
-                                                                accessory.model }})
-                                                            <CheckIcon
-                                                                v-if="componentField.modelValue.includes(accessory.id)"
-                                                                class="ml-auto size-4" />
-
-                                                        </CommandItem>
-
-                                                        <CommandItem v-if="assetAccessories.length === 0" value="empty">
-                                                            No hay accesorios disponibles
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </WhenVisible>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover> -->
-
                                 <SelectFilters :items="assetAccessories" data-key="accessories"
                                     :show-selected-focus="false" :show-refresh="false"
                                     :label="selectLabels(componentField.modelValue)" item-label="name" item-value="id"

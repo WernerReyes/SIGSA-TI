@@ -1,0 +1,208 @@
+<template>
+    <Dialog v-model:open="open">
+        <DialogContent class="max-w-[min(100vw-1.5rem,500px)] sm:max-w-md p-0">
+            <form id="estimate-form" @submit.prevent="handleSubmit(onSubmit)()">
+                <DialogHeader class="border-b px-4 py-4 sm:px-6">
+                    <div class="flex items-center gap-3">
+                        <div class="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                            <Lightbulb class="size-6 text-amber-500" />
+                        </div>
+                        <div class="flex text-start flex-col gap-1">
+                            <DialogTitle class="text-lg sm:text-xl font-semibold leading-tight">
+                                Estimar Requerimiento
+                            </DialogTitle>
+                            <p class="text-sm text-muted-foreground leading-snug">
+                                Completa los detalles de estimación para {{ currentDevelopment?.title }}
+                            </p>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <ScrollArea class="max-h-96 sm:max-h-[60vh]">
+                    <div class="space-y-6 px-4 pb-5 sm:px-6 sm:pb-6">
+                        <!-- Estimation Details Section -->
+                        <section class="space-y-4 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
+                            <div class="flex items-center gap-2">
+                                <Clock class="h-4 w-4 text-amber-500" />
+                                <div>
+                                    <p class="text-sm font-medium">Detalles de Estimación</p>
+                                    <p class="text-xs text-muted-foreground">Define el tiempo y recursos necesarios</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <!-- Estimated End Date -->
+                                <VeeField name="estimated_end_date" v-slot="{ componentField, errors: fieldErrors }">
+                                    <div class="space-y-2">
+                                        <Label :for="componentField.name" class="flex items-center gap-2">
+                                            <CalendarIcon class="h-3.5 w-3.5 text-muted-foreground" />
+                                            Fecha estimada de culminación *
+                                        </Label>
+                                        <Popover v-slot="{ close }">
+                                            <PopoverTrigger as-child>
+                                                <Button id="date" variant="outline"
+                                                    class="w-full justify-between font-normal">
+                                                    <!-- {{ componentField.modelValue }} -->
+                                                    {{ componentField.modelValue ?
+                                                    format(
+                                                        toDate(componentField.modelValue).getTime(),
+                                                        "dd 'de' MMMM 'de' yyyy",
+                                                        { locale: es }
+                                                    )
+                                                    :
+                                                    "Seleccionar fecha" }}
+                                                    <ChevronDownIcon />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+                                                <Calendar v-bind="componentField" layout="month-and-year" />
+                                                <!-- @update:model-value="(value) => {
+                                                        if (value) {
+                                                            date = value
+                                                            close()
+                                                        }
+                                                    }"  -->
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FieldError v-if="fieldErrors.length" :errors="fieldErrors" />
+                                    </div>
+                                </VeeField>
+
+                                <!-- Estimated Hours -->
+                                <VeeField name="estimated_hours" v-slot="{ componentField, errors: fieldErrors }">
+                                    <div class="space-y-2">
+                                        <Label :for="componentField.name" class="flex items-center gap-2">
+                                            <Timer class="h-3.5 w-3.5 text-muted-foreground" />
+                                            Horas/Hombre estimadas *
+                                        </Label>
+                                        <div class="flex items-center gap-2">
+                                            <Input id="estimated_hours" type="number" min="1" step="0.5"
+                                                placeholder="Ej: 40" v-bind="componentField" />
+                                            <span
+                                                class="text-xs text-muted-foreground whitespace-nowrap font-medium">horas</span>
+                                        </div>
+                                        <FieldError v-if="fieldErrors.length" :errors="fieldErrors" />
+                                    </div>
+                                </VeeField>
+
+                               
+                            </div>
+                        </section>
+
+                        <!-- Summary Section -->
+                        <section
+                            class="space-y-3 rounded-lg border border-blue-200/50 bg-blue-50/30 dark:border-blue-900/30 dark:bg-blue-950/20 p-3 sm:p-4">
+                            <div class="flex items-center gap-2">
+                                <Info class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <p class="text-sm font-medium text-blue-900 dark:text-blue-100">Resumen de estimación
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="rounded bg-white dark:bg-slate-950 p-2.5 text-center">
+                                    <p class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                                        Horas totales</p>
+                                    <p class="text-lg font-bold text-primary mt-1">{{ values.estimated_hours || '—' }}
+                                    </p>
+                                </div>
+                                
+                                <div class="rounded bg-white dark:bg-slate-950 p-2.5 text-center">
+                                    <p class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                                        Hasta</p>
+                                    <p class="text-sm font-bold text-emerald-600 mt-1">
+
+
+                                        {{ 
+
+                                            format(
+                                                toDate(values.estimated_end_date).getTime(),
+                                                "dd 'de' MMMM 'de' yyyy",
+                                                { locale: es }
+                                            )
+                                        }}
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </ScrollArea>
+
+                <Separator />
+
+                <DialogFooter class="px-4 py-4 sm:px-6 flex gap-2">
+                    <Button form="estimate-form" variant="outline" type="button" @click="open = false"
+                        class="w-full sm:w-auto">
+                        Cancelar
+                    </Button>
+                    <Button form="estimate-form" :disabled="Object.keys(errors).length > 0 || isLoading" type="submit"
+                        class="gap-1 w-full sm:w-auto">
+                        <CheckCircle class="h-4 w-4" />
+                        Confirmar estimación
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
+</template>
+
+<script setup lang="ts">
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import FieldError from '@/components/ui/field/FieldError.vue';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { useApp } from '@/composables/useApp';
+import { type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
+import { toTypedSchema } from '@vee-validate/zod';
+import { CalendarIcon, CheckCircle, Clock, Info, Lightbulb, Timer, Users, ChevronDownIcon } from 'lucide-vue-next';
+import { useForm, Field as VeeField } from 'vee-validate';
+import { toast } from 'vue-sonner';
+import z from 'zod';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { toDate } from 'reka-ui/date';
+
+const open = defineModel<boolean>('open');
+const currentDevelopment = defineModel<DevelopmentRequest>('currentDevelopment');
+
+const { isLoading } = useApp();
+
+const formSchema = toTypedSchema(
+    z.object({
+        estimated_end_date: z.instanceof(CalendarDate, {
+            message: 'Seleccione una fecha de entrega',
+        }),
+        // .transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+        estimated_hours: z.coerce.number({
+            message: 'Las horas estimadas son obligatorias',
+        }).min(1, 'Debe ser mínimo 1 hora'),
+     
+    })
+);
+
+const { errors, handleSubmit, values } = useForm({
+    validationSchema: formSchema,
+    initialValues: {
+        estimated_end_date: today(getLocalTimeZone()),
+        estimated_hours: 1,
+        
+    },
+    keepValuesOnUnmount: true
+});
+
+const onSubmit = async (submitValues: any) => {
+    try {
+        console.log('Estimación:', submitValues);
+        // TODO: Implement API call to save estimate
+        toast.success('Estimación confirmada correctamente');
+        open.value = false;
+    } catch (error) {
+        toast.error('Error al confirmar la estimación');
+        console.error(error);
+    }
+};
+</script>

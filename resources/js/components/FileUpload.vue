@@ -6,9 +6,9 @@
           <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <FileCheck class="size-4 text-primary" />
           </div>
-          <div>
+          <div >
             <p class="text-xs uppercase tracking-wide text-muted-foreground">Archivo actual</p>
-            <p class="text-foreground font-medium line-clamp-1 block">{{ fileNameFromUrl }}</p>
+            <p class="text-foreground font-medium line-clamp-1 leading-snug break-all whitespace-normal block">{{ fileNameFromUrl }}</p>
           </div>
         </div>
         <div class="flex gap-2 ml-auto">
