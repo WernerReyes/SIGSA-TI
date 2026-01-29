@@ -82,8 +82,13 @@
                                 Aprobación Estratégica
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator v-if="devRequest.status == DRStatus.REGISTERED" />
-                            <DropdownMenuItem v-if="devRequest.status == DRStatus.REGISTERED"
+                            <DropdownMenuSeparator v-if="devRequest.status !== DRStatus.REGISTERED" />
+                            <DropdownMenuItem 
+                             @click="() =>{
+                                console.log('Delete clicked');
+                                emit('error', 'Funcionalidad de eliminación no implementada aún.')
+                             }"
+                            v-if="devRequest.status !== DRStatus.REGISTERED"
                                 class="cursor-pointer text-destructive focus:text-destructive">
                                 <Trash2 />
                                 Eliminar
@@ -188,14 +193,13 @@ withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-    (e:'error', message: string): void;
-
     (e: 'moved', id: number, newStatus: DRStatus): void;
     (e: 'open-view', item: DevelopmentRequest): void;
     (e: 'open-update', item: DevelopmentRequest): void;
     (e: 'open-estimation', item: DevelopmentRequest): void;
     (e: 'open-technical-approval', item: DevelopmentRequest): void;
     (e: 'open-strategic-approval', item: DevelopmentRequest): void;
+    (e:'error', message: string): void;
 }>();
 
 const { isFromTI, isTIManager, isLoading, isTIAssistantManager, isSameUser } = useApp();
@@ -238,7 +242,10 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
             if (item.estimated_hours === null || item.estimated_end_date === null) {
                 console.log('No se puede aprobar sin estimación');
                
-                    emit('error', 'No se puede aprobar el requerimiento sin una estimación de tiempo y fecha de finalización.');                // }, 400);
+                    emit('error', 'No se puede aprobar el requerimiento sin una estimación de tiempo y fecha de finalización.');  
+                    console.log('Emitted error event'); 
+
+                    // }, 400);
                
                 return false;
             }

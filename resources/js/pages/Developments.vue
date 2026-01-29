@@ -51,12 +51,7 @@
             <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-7 overflow-x-auto">
                 <!-- // TODO: Check why it doesn't show the toast error message  -->
                 <KanbanColumn v-model:dev-requests="registeredRequests" title="Registrados" header-color="#64748b"
-                   @error="(message) => () => {
-                        console.log(message);
-                        // toast.error(message);
-                        showMessage(message);
-                        
-                    }"
+                  
                     @moved="(id, newStatus) => {
                         updateStatus = { requestId: id, newStatus };
                         showAlertDialog = true;
@@ -70,7 +65,7 @@
 
                 <KanbanColumn v-model:dev-requests="analysisRequests" title="En Análisis" header-color="#3b82f6"
                     @error="(message) => () => {
-                        console.log(message);
+                        // console.log(message);
                         // toast.error(message);
                         showMessage(message);
                         
@@ -85,7 +80,7 @@
                     }" :status="DevelopmentRequestStatus.IN_ANALYSIS" />
 
                 <KanbanColumn
-                @error="(message) => () => {
+               @error="(message) => () => {
                         console.log(message);
                         // toast.error(message);
                         showMessage(message);
@@ -94,7 +89,14 @@
                 v-model:dev-requests="approvedRequests" title="Aprobados" header-color="#6366f1"
                     :status="DevelopmentRequestStatus.APPROVED" />
 
-                <KanbanColumn v-model:dev-requests="inDevelopmentRequests" title="En Desarrollo" header-color="#8b5cf6"
+                <KanbanColumn
+                 @error="(message) => () => {
+                        console.log(message);
+                        // toast.error(message);
+                        showMessage(message);
+                        
+                    }"
+                v-model:dev-requests="inDevelopmentRequests" title="En Desarrollo" header-color="#8b5cf6"
                     :status="DevelopmentRequestStatus.IN_DEVELOPMENT" />
 
                 <KanbanColumn v-model:dev-requests="inQARequests" title="En QA" header-color="#f59e0b"
