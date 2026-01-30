@@ -293,6 +293,10 @@ const swapPositions = () => {
     router.patch('/developments/position', {
         devs_ids_in_order: devRequests.value.map(dev => dev.id),
         status,
+    }, {
+        onSuccess: () => {
+            hasPositionChanged.value = false;
+        },
     });
 }
 
