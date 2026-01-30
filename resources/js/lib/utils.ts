@@ -33,6 +33,12 @@ export function valueUpdater<T extends Updater<any>>(
 }
 
 
+export function parseDateOnly(date: string) {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+
 export function toZonedDate(date: Date | string, timeZone: string = 'America/Lima'): string {
     return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX", { timeZone });
 }

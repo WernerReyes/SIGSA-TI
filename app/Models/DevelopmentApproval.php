@@ -9,7 +9,7 @@ class DevelopmentApproval extends Model
     protected $table = 'development_approvals';
 
     protected $fillable = [
-        'develoment_request_id',
+        'development_request_id',
         'approved_by_id',
         'status',
         'comments',

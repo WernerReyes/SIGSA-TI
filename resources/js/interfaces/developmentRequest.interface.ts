@@ -12,8 +12,9 @@ import {
     XCircle,
 } from 'lucide-vue-next';
 import { type Component } from 'vue';
-import { Area } from './area.interface';
-import { User } from './user.interface';
+import { type Area } from './area.interface';
+import { type DevelopmentApproval } from './developmentApproval.interface';
+import { type User } from './user.interface';
 
 export interface DevelopmentRequest {
     id: number;
@@ -32,6 +33,13 @@ export interface DevelopmentRequest {
     requested_by?: User;
     created_at: Date;
     updated_at: Date;
+    technical_approval?: DevelopmentApproval;
+    strategic_approval?: DevelopmentApproval;
+    approvals?: DevelopmentApproval[];
+}
+
+export interface DevelopmentRequestSection {
+   [key: string]: DevelopmentRequest[];
 }
 
 export enum DevelopmentRequestPriority {
@@ -90,8 +98,7 @@ export const developmentRequestPriorityOptions: Record<
 
 export const getPriorityOp = (priority: DevelopmentRequestPriority) => {
     return developmentRequestPriorityOptions[priority];
-}
-
+};
 
 export type DevelopmentRequestStatusOptions = {
     label: string;
@@ -150,4 +157,4 @@ export const DevelopmentRequestStatusOptions: Record<
 
 export const getStatusOp = (status: DevelopmentRequestStatus) => {
     return DevelopmentRequestStatusOptions[status];
-}
+};

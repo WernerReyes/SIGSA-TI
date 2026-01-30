@@ -195,7 +195,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions, DevelopmentRequestSection } from '@/interfaces/developmentRequest.interface';
 import { toTypedSchema } from '@vee-validate/zod';
 import { AlignLeft, CodeXml, FileText, Flag, MapPin, Rocket, Sparkles, TrendingUp, Type } from 'lucide-vue-next';
 import { Field as VeeField } from 'vee-validate';
@@ -302,15 +302,15 @@ const onSubmit = (values: any) => {
             preserveScroll: true,
             preserveState: true,
             preserveUrl: true,
-            except: ['areas', 'developments'],
+            except: ['areas', 'developmentsByStatus'],
             onFlash: (flash) => {
                 const devRequest = flash.devRequest as DevelopmentRequest | null;
                 if (devRequest) {
                     // console.log('Dev Request updated:', devRequest);
                     // nextTick(( ) => {
 
-                    router.replaceProp('developments', (oldDevelopments: DevelopmentRequest[]) => {
-                        return oldDevelopments.map((dev) =>
+                    router.replaceProp('developmentsByStatus', (oldDevelopments: DevelopmentRequestSection) => {
+                        return oldDevelopments[devRequest.status].map((dev) =>
                             dev.id === devRequest.id ? {
                                 ...dev,
                                 ...devRequest,

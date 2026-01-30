@@ -13,8 +13,9 @@
                     </div>
                 </div>
 
-                <Button size="icon" variant="ghost" class="h-8 w-8 hover:bg-accent">
-                    <Plus class="h-4 w-4" />
+                <Button v-if="hasPositionChanged && isFromTI && !isLoading" size="icon" variant="ghost"
+                    @click="swapPositions" class="h-8 w-8 hover:bg-accent">
+                    <Save class="h-4 w-4" />
                 </Button>
             </div>
         </div>
@@ -23,9 +24,8 @@
 
         <draggable :scroll="true" :force-fallback="true" :scroll-sensitivity="200" :scroll-speed="20"
             :disabled="!isFromTI || isLoading" v-model="devRequests" tag="transition-group" :data-status="status"
-            :move="checkMove" :component-data="{
+            @change="hasPositionChanged = true" :move="checkMove" :component-data="{
                 tag: 'div',
-
                 type: 'transition',
                 name: 'fade'
             }" :group="{ name: 'dev-requests', pull: true, put: true }" item-key="id" animation="200">
@@ -65,30 +65,30 @@
                             <DropdownMenuItem class="cursor-pointer" v-if="devRequest.status == DRStatus.IN_ANALYSIS"
                                 @click="emit('open-estimation', devRequest)">
                                 <Pencil />
-                                Estimar requerimiento
+                                Estimar
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem class="cursor-pointer" :disabled="!isTIManager"
-                                v-if="devRequest.status == DRStatus.IN_ANALYSIS"
+                            <DropdownMenuItem class="cursor-pointer"
+                                :disabled="!!devRequest.technical_approval || !hasEstimation(devRequest)"
+                                v-if="devRequest.status == DRStatus.IN_ANALYSIS && isTIManager"
                                 @click="emit('open-technical-approval', devRequest)">
                                 <MonitorCheck />
-                                Aprobación Técnica
+                                Aprobar
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem class="cursor-pointer" :disabled="!isTIAssistantManager"
-                                v-if="devRequest.status == DRStatus.IN_ANALYSIS"
+                            <DropdownMenuItem class="cursor-pointer"
+                                :disabled="!!devRequest.strategic_approval || !hasEstimation(devRequest)"
+                                v-if="devRequest.status == DRStatus.IN_ANALYSIS && isTIAssistantManager"
                                 @click="emit('open-strategic-approval', devRequest)">
                                 <ClipboardCheck />
-                                Aprobación Estratégica
+                                Aprobar
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator v-if="devRequest.status !== DRStatus.REGISTERED" />
-                            <DropdownMenuItem 
-                             @click="() =>{
-                                console.log('Delete clicked');
+                            <DropdownMenuItem @click="() => {
+
                                 emit('error', 'Funcionalidad de eliminación no implementada aún.')
-                             }"
-                            v-if="devRequest.status !== DRStatus.REGISTERED"
+                            }" v-if="devRequest.status !== DRStatus.REGISTERED"
                                 class="cursor-pointer text-destructive focus:text-destructive">
                                 <Trash2 />
                                 Eliminar
@@ -171,11 +171,11 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useApp } from '@/composables/useApp';
 import { DevelopmentRequestStatus as DRStatus, getPriorityOp, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
-import { ClipboardCheck, Eye, Inbox, MonitorCheck, MoreVertical, Pencil, Plus, Trash2, User } from 'lucide-vue-next';
-import { onUnmounted } from 'vue';
+import { router } from '@inertiajs/core';
+import { ClipboardCheck, Eye, Inbox, MonitorCheck, MoreVertical, Pencil, Plus, Save, Trash2, User } from 'lucide-vue-next';
+import { computed, onUnmounted, ref } from 'vue';
 
 import { VueDraggableNext as draggable, type MoveEvent } from 'vue-draggable-next';
 
@@ -184,7 +184,7 @@ const devRequests = defineModel<Array<DevelopmentRequest>>('devRequests', {
     default: () => [],
 });
 
-withDefaults(defineProps<{
+const { status } = withDefaults(defineProps<{
     title: string;
     headerColor?: string;
     status: DRStatus;
@@ -194,17 +194,19 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
     (e: 'moved', id: number, newStatus: DRStatus): void;
+
     (e: 'open-view', item: DevelopmentRequest): void;
     (e: 'open-update', item: DevelopmentRequest): void;
     (e: 'open-estimation', item: DevelopmentRequest): void;
     (e: 'open-technical-approval', item: DevelopmentRequest): void;
     (e: 'open-strategic-approval', item: DevelopmentRequest): void;
-    (e:'error', message: string): void;
+    (e: 'error', message: string): void;
+
 }>();
 
 const { isFromTI, isTIManager, isLoading, isTIAssistantManager, isSameUser } = useApp();
 
-
+const hasPositionChanged = ref(false);
 
 const DR_STATUS_FLOW: DRStatus[] = [
     DRStatus.REGISTERED,
@@ -219,6 +221,7 @@ let timeoutId: number | null = null;
 
 // Prevent moving locked items
 const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
+    if (!isFromTI.value || isLoading.value) return false;
     const item = event.draggedContext?.element
     if (!item) return false
 
@@ -237,20 +240,26 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
 
     if (fromStatus === DRStatus.IN_ANALYSIS) {
         if (!isTIManager.value && !isTIAssistantManager.value) return false
-        if (toStatus === DRStatus.REJECTED)  return true;
+        if (toStatus === DRStatus.REJECTED) return true;
         if (toStatus === DRStatus.APPROVED) {
             if (item.estimated_hours === null || item.estimated_end_date === null) {
-                console.log('No se puede aprobar sin estimación');
-               
-                    emit('error', 'No se puede aprobar el requerimiento sin una estimación de tiempo y fecha de finalización.');  
-                    console.log('Emitted error event'); 
-
-                    // }, 400);
-               
+                emit('error', 'No se puede aprobar el requerimiento sin una estimación de tiempo y fecha de finalización.');
                 return false;
             }
+
+            if (!item.technical_approval && !item.strategic_approval) {
+                emit('error', 'No se puede aprobar el requerimiento sin la aprobación técnica y estratégica.');
+                return false;
+            } else if (!item.technical_approval) {
+                emit('error', 'No se puede aprobar el requerimiento sin la aprobación técnica.');
+                return false;
+            } else if (!item.strategic_approval) {
+                emit('error', 'No se puede aprobar el requerimiento sin la aprobación estratégica.');
+                return false;
+            }
+
         }
-        
+
 
     }
 
@@ -265,7 +274,7 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
         // Emitir evento para actualizar el estado en el backend
         timeoutId = setTimeout(() => {
             emit('moved', item.id, toStatus);
-        }, 800);
+        }, 600);
         // emit('moved', item.id, toStatus);
     }
 
@@ -280,7 +289,17 @@ onUnmounted(() => {
 });
 
 
+const swapPositions = () => {
+    router.patch('/developments/position', {
+        devs_ids_in_order: devRequests.value.map(dev => dev.id),
+        status,
+    });
+}
 
+
+const hasEstimation = (devRequest: DevelopmentRequest) => {
+    return devRequest.estimated_hours !== null && devRequest.estimated_end_date !== null;
+}
 function getCurrentStatus(element: HTMLElement): DRStatus | null {
     const sortableKey = Object.keys(element).find(key => key.startsWith('Sortable')) || '';
     const sortableInstance = element[sortableKey!];

@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests\DevelopmentRequest;
 
+use App\Enums\User\UserCharge;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Inertia\Inertia;
 
 class EstimateDevelopmentRequest extends FormRequest
 {
@@ -11,7 +15,15 @@ class EstimateDevelopmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return UserCharge::includes($this->user()->id_cargo);
+    }
+
+    protected function failedAuthorization()
+    {
+        Inertia::flash('error', 'No estás autorizado para realizar esta acción.');
+        throw new HttpResponseException(
+            back()
+        );
     }
 
     /**
@@ -23,8 +35,8 @@ class EstimateDevelopmentRequest extends FormRequest
     {
         return [
             'estimated_hours' => 'required|integer|min:1',
-            'estimated_end_date' => 'required|date|after:today',
-            'people_amount' => 'required|integer|min:1',
+            'estimated_end_date' => 'required|date|after_or_equal:today',
+            // 'people_amount' => 'required|integer|min:1',
         ];
     }
 
@@ -37,11 +49,11 @@ class EstimateDevelopmentRequest extends FormRequest
 
             'estimated_end_date.required' => 'La fecha estimada de finalización es obligatoria.',
             'estimated_end_date.date' => 'La fecha estimada de finalización debe ser una fecha válida.',
-            'estimated_end_date.after' => 'La fecha estimada de finalización debe ser una fecha futura.',
+            'estimated_end_date.after_or_equal' => 'La fecha estimada de finalización debe ser hoy o una fecha futura.',
 
-            'people_amount.required' => 'La cantidad de personas es obligatoria.',
-            'people_amount.integer' => 'La cantidad de personas debe ser un número entero.',
-            'people_amount.min' => 'La cantidad de personas debe ser al menos 1.',
+            // 'people_amount.required' => 'La cantidad de personas es obligatoria.',
+            // 'people_amount.integer' => 'La cantidad de personas debe ser un número entero.',
+            // 'people_amount.min' => 'La cantidad de personas debe ser al menos 1.',
         ];
     }
 }

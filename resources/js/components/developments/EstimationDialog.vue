@@ -1,5 +1,5 @@
 <template>
-    <Dialog v-model:open="open">
+    <Dialog v-model:open="open" @update:open="(val) => { if (!val) onReset() }">
         <DialogContent class="max-w-[min(100vw-1.5rem,500px)] sm:max-w-md p-0">
             <form id="estimate-form" @submit.prevent="handleSubmit(onSubmit)()">
                 <DialogHeader class="border-b px-4 py-4 sm:px-6">
@@ -44,18 +44,18 @@
                                                     class="w-full justify-between font-normal">
                                                     <!-- {{ componentField.modelValue }} -->
                                                     {{ componentField.modelValue ?
-                                                    format(
-                                                        toDate(componentField.modelValue).getTime(),
-                                                        "dd 'de' MMMM 'de' yyyy",
-                                                        { locale: es }
-                                                    )
-                                                    :
-                                                    "Seleccionar fecha" }}
+                                                        format(
+                                                            toDate(componentField.modelValue).getTime(),
+                                                            "dd 'de' MMMM 'de' yyyy",
+                                                            { locale: es }
+                                                        )
+                                                        :
+                                                        "Seleccionar fecha" }}
                                                     <ChevronDownIcon />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent class="w-auto overflow-hidden p-0" align="start">
-                                                <Calendar v-bind="componentField" layout="month-and-year" />
+                                                <Calendar v-bind="componentField" layout="month-and-year" locale="es" />
                                                 <!-- @update:model-value="(value) => {
                                                         if (value) {
                                                             date = value
@@ -85,7 +85,7 @@
                                     </div>
                                 </VeeField>
 
-                               
+
                             </div>
                         </section>
 
@@ -104,20 +104,21 @@
                                     <p class="text-lg font-bold text-primary mt-1">{{ values.estimated_hours || '—' }}
                                     </p>
                                 </div>
-                                
+
                                 <div class="rounded bg-white dark:bg-slate-950 p-2.5 text-center">
                                     <p class="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                                         Hasta</p>
                                     <p class="text-sm font-bold text-emerald-600 mt-1">
 
 
-                                        {{ 
+                                        {{
+                                            values.estimated_end_date ?
 
-                                            format(
-                                                toDate(values.estimated_end_date).getTime(),
-                                                "dd 'de' MMMM 'de' yyyy",
-                                                { locale: es }
-                                            )
+                                                format(
+                                                    toDate(values.estimated_end_date).getTime(),
+                                                    "dd 'de' MMMM 'de' yyyy",
+                                                    { locale: es }
+                                                ) : '—'
                                         }}
                                     </p>
                                 </div>
@@ -165,44 +166,97 @@ import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toDate } from 'reka-ui/date';
+import { router } from '@inertiajs/vue3';
+import { watch } from 'vue';
 
 const open = defineModel<boolean>('open');
-const currentDevelopment = defineModel<DevelopmentRequest>('currentDevelopment');
-
+const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelopment');
+    
 const { isLoading } = useApp();
 
 const formSchema = toTypedSchema(
     z.object({
         estimated_end_date: z.instanceof(CalendarDate, {
             message: 'Seleccione una fecha de entrega',
-        }),
-        // .transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+        })
+            .refine((date) => {
+                const todayDate = today(getLocalTimeZone()).toDate(getLocalTimeZone());
+                return date.toDate(getLocalTimeZone()) >= todayDate;
+            }, {
+                message: 'La fecha estimada debe ser hoy o una fecha futura',
+            }),
         estimated_hours: z.coerce.number({
             message: 'Las horas estimadas son obligatorias',
         }).min(1, 'Debe ser mínimo 1 hora'),
-     
+
     })
 );
 
-const { errors, handleSubmit, values } = useForm({
+const initialValues = {
+    estimated_end_date: undefined,
+    estimated_hours: undefined,
+};
+
+const { errors, handleSubmit, values, setValues, handleReset } = useForm({
     validationSchema: formSchema,
-    initialValues: {
-        estimated_end_date: today(getLocalTimeZone()),
-        estimated_hours: 1,
-        
-    },
+    initialValues,
     keepValuesOnUnmount: true
 });
 
-const onSubmit = async (submitValues: any) => {
-    try {
-        console.log('Estimación:', submitValues);
-        // TODO: Implement API call to save estimate
-        toast.success('Estimación confirmada correctamente');
-        open.value = false;
-    } catch (error) {
-        toast.error('Error al confirmar la estimación');
-        console.error(error);
+watch(open, (newVal) => {
+    const dev = currentDevelopment.value;
+    if (dev) {
+        const date = new Date(dev?.estimated_end_date || '');
+        setValues({
+            estimated_end_date: dev.estimated_end_date
+                ? new CalendarDate(
+                    date.getUTCFullYear(),
+                    date.getUTCMonth() + 1,
+                    date.getUTCDate()
+
+                )
+                : undefined,
+            estimated_hours: dev.estimated_hours || undefined,
+        });
+    } else {
+        setValues(initialValues);
     }
+});
+
+const onReset = () => {
+    handleReset();
+    open.value = false;
+};
+
+const onSubmit = async (submitValues: any) => {
+    if (!currentDevelopment.value) {
+        toast.error('No se encontró la solicitud de desarrollo actual.');
+        return;
+    }
+    const date = submitValues.estimated_end_date.toDate(getLocalTimeZone());
+
+    router.patch(
+        `/developments/${currentDevelopment.value?.id}/estimate`, {
+        estimated_end_date: date,
+        estimated_hours: submitValues.estimated_hours,
+    }, {
+        preserveScroll: true,
+        preserveState: true,
+        except: ['developments', 'areas'],
+
+        onSuccess: () => {
+            router.replaceProp('developments', (developments: DevelopmentRequest[]) => {
+                return developments.map((dev) =>
+                    dev.id === currentDevelopment.value?.id ? {
+                        ...dev,
+                        estimated_end_date: format(date, 'yyyy-MM-dd'),
+                        estimated_hours: submitValues.estimated_hours,
+                    } : dev
+                );
+            });
+            onReset();
+        },
+    });
+
 };
 </script>

@@ -17,8 +17,10 @@ return new class extends Migration {
             $table->string('title');
             $table->enum('priority', DevelopmentRequestPriority::values());
             $table->enum('status', DevelopmentRequestStatus::values());
+            $table->integer('position')->default(0);
             $table->text('description')->nullable();
             $table->text('impact')->nullable();
+            
 
             // $table->integer('devs_needed')->nullable();
             $table->integer('estimated_hours')->nullable();
@@ -33,6 +35,8 @@ return new class extends Migration {
             $table->foreign('requested_by_id')->references('staff_id')->on('ost_staff');
 
             $table->timestamps();
+
+            $table->index(['status', 'priority', 'position']);
         });
     }
 

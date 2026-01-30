@@ -6,7 +6,7 @@ class EstimateDevelopmentDto
     private function __construct(
         public readonly int $estimated_hours,
         public readonly string $estimated_end_date,
-        public readonly int $people_amount,
+        // public readonly int $people_amount,
     ) {
     }
 
@@ -15,7 +15,7 @@ class EstimateDevelopmentDto
         return new self(
             estimated_hours: $data['estimated_hours'],
             estimated_end_date: $data['estimated_end_date'],
-            people_amount: $data['people_amount'],
+            // people_amount: $data['people_amount'],
         );
     }
 }
