@@ -147,31 +147,31 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import FieldError from '@/components/ui/field/FieldError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/composables/useApp';
 import { type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
+import { router } from '@inertiajs/vue3';
+import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { CalendarIcon, CheckCircle, Clock, Info, Lightbulb, Timer, Users, ChevronDownIcon } from 'lucide-vue-next';
-import { useForm, Field as VeeField } from 'vee-validate';
-import { toast } from 'vue-sonner';
-import z from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Info, Lightbulb, Timer } from 'lucide-vue-next';
 import { toDate } from 'reka-ui/date';
-import { router } from '@inertiajs/vue3';
+import { useForm, Field as VeeField } from 'vee-validate';
 import { watch } from 'vue';
+import { toast } from 'vue-sonner';
+import z from 'zod';
 
 const open = defineModel<boolean>('open');
 const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelopment');
-    
+
 const { isLoading } = useApp();
 
 const formSchema = toTypedSchema(
@@ -242,18 +242,30 @@ const onSubmit = async (submitValues: any) => {
     }, {
         preserveScroll: true,
         preserveState: true,
-        except: ['developments', 'areas'],
+        preserveUrl: true,
+        // except: ['developments', 'areas'],
 
         onSuccess: () => {
-            router.replaceProp('developments', (developments: DevelopmentRequest[]) => {
-                return developments.map((dev) =>
-                    dev.id === currentDevelopment.value?.id ? {
-                        ...dev,
-                        estimated_end_date: format(date, 'yyyy-MM-dd'),
-                        estimated_hours: submitValues.estimated_hours,
-                    } : dev
-                );
-            });
+            // router.replaceProp('developmentsByStatus', (developments: DevelopmentRequestSection) => {
+            //     const status = DevelopmentRequestStatus.IN_ANALYSIS;
+            //     return {
+            //         ...developments,
+            //         [status]: developments[status].map((dev) => {
+            //             if (dev.id === currentDevelopment.value?.id) {
+            //                 return {
+            //                     ...dev,
+            //                     estimated_end_date: format(date, 'yyyy-MM-dd'),
+            //                     estimated_hours: submitValues.estimated_hours,
+            //                 };
+            //             }
+
+            //             return dev;
+            //         }
+
+            //         ),
+            //     }
+            // });
+            
             onReset();
         },
     });

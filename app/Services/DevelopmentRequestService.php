@@ -143,6 +143,7 @@ class DevelopmentRequestService
             throw new BadRequestException('El estado solo puede avanzar de uno en uno sin retroceder ni saltar.');
         }
 
+
         if ($fromStatus === DevelopmentRequestStatus::IN_ANALYSIS->value) {
             $approvals = $developmentRequest->approvals;
             $allApproved = $approvals->every(fn($approval) => $approval->status === DevelopmentApprovalStatus::APPROVED->value);
@@ -152,9 +153,6 @@ class DevelopmentRequestService
         }
 
         try {
-            // $developmentRequest->status = $newStatus;
-            // $developmentRequest->save();
-
             DB::transaction(function () use ($developmentRequest, $newStatus, $devsIdsInOrder) {
                 $developmentRequest->status = $newStatus;
                 $developmentRequest->save();
@@ -168,6 +166,20 @@ class DevelopmentRequestService
             throw new InternalErrorException('Error al actualizar el estado de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
+    }
+
+
+    public function delete(DevelopmentRequest $developmentRequest)
+    {
+        try {
+            $developmentRequest->delete();
+
+            if ($developmentRequest->requirement_path) {
+                Storage::disk('public')->delete($developmentRequest->requirement_path);
+            }
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al eliminar la solicitud de desarrollo: ' . $e->getMessage());
+        }
     }
 
     public function estimateDevelopment(DevelopmentRequest $developmentRequest, EstimateDevelopmentDto $dto)
@@ -199,13 +211,24 @@ class DevelopmentRequestService
         }
 
         try {
-            return DevelopmentApproval::create([
+             DevelopmentApproval::create([
                 'development_request_id' => $developmentRequest->id,
                 'approved_by_id' => $dto->approvedBy->staff_id,
                 'level' => DevelopmentApprovalLevel::TECHNICAL->value,
                 'status' => $dto->status,
                 'comments' => $dto->comments,
             ]);
+
+            if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
+                $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
+            }
+
+            if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
+                ds('here');
+                $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
+            }
+
+
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }
@@ -228,13 +251,21 @@ class DevelopmentRequestService
         }
 
         try {
-            return DevelopmentApproval::create([
+            DevelopmentApproval::create([
                 'development_request_id' => $developmentRequest->id,
                 'approved_by_id' => $dto->approvedBy->staff_id,
                 'level' => DevelopmentApprovalLevel::STRATEGIC->value,
                 'status' => $dto->status,
                 'comments' => $dto->comments,
             ]);
+            
+            if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->technicalApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
+                $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
+            }
+
+            if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
+                $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
+            }
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }

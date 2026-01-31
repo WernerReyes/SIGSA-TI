@@ -51,15 +51,20 @@
             <div class="grid gap-4 md:grid-cols-3 lg:grid-cols-7 overflow-x-auto">
                 <!-- // TODO: Check why it doesn't show the toast error message  -->
                 <KanbanColumn v-model:dev-requests="registeredRequests" title="Registrados" header-color="#64748b"
-                    @moved="(id, newStatus) => {
-                        updateStatus = { requestId: id, newStatus };
-                        
+                    v-model:developments-by-status="originalDevelopmentsByStatus" @deleted="(id: number) => {
+                        alertDialogInfo = {
+                            title: 'Eliminar Requerimiento',
+                            description: '¿Estás seguro de que deseas eliminar este requerimiento? Esta acción no se puede deshacer.',
+                            confirm: () => {
+                                deleteDevelopmentRequest(id);
+                            },
+                            cancel: () => { },
+                        };
                         showAlertDialog = true;
-                    }"
-
-    
-                    
-                    @open-update="(item) => {
+                    }" @moved="(id, newStatus) => {
+                        updateStatus = { requestId: id, newStatus };
+                        showAlertDialog = true;
+                    }" @open-update="(item) => {
                         showNewRequirementModal = true;
                         selectedRequirement = item;
                     }" @open-view="(item) => {
@@ -67,18 +72,22 @@
                         selectedRequirement = item;
                     }" :status="DevelopmentRequestStatus.REGISTERED" />
 
-                <KanbanColumn v-model:dev-requests="analysisRequests" title="En Análisis" header-color="#3b82f6" @error="(message) => {
-                    showMessage(message);
-                }" @open-estimation="(item) => {
-                    showEstimateModal = true;
-                    selectedRequirement = item;
-                }" @open-view="(item) => {
-                    showDetailModal = true;
-                    selectedRequirement = item;
-                }" @open-technical-approval="(item) => {
-                    showTechnicalApprovalModal = true;
-                    selectedRequirement = item;
-                }" :status="DevelopmentRequestStatus.IN_ANALYSIS" />
+                <KanbanColumn v-model:dev-requests="analysisRequests" title="En Análisis" header-color="#3b82f6"
+                    v-model:developments-by-status="originalDevelopmentsByStatus" @error="(message) => {
+                        showMessage(message);
+                    }" @open-estimation="(item) => {
+                        showEstimateModal = true;
+                        selectedRequirement = item;
+                    }" @open-view="(item) => {
+                        showDetailModal = true;
+                        selectedRequirement = item;
+                    }" @open-technical-approval="(item) => {
+                        showTechnicalApprovalModal = true;
+                        selectedRequirement = item;
+                    }" :status="DevelopmentRequestStatus.IN_ANALYSIS" @moved="(id, status) => {
+                        updateStatus = { requestId: id, newStatus: status };
+                        showAlertDialog = true;
+                    }" />
 
                 <KanbanColumn @error="() => {
                     console.log('test event received');
@@ -86,7 +95,8 @@
                     // showMessage(message);
 
                 }" v-model:dev-requests="approvedRequests" title="Aprobados" header-color="#6366f1"
-                    :status="DevelopmentRequestStatus.APPROVED" />
+                    :status="DevelopmentRequestStatus.APPROVED"
+                    v-model:developments-by-status="originalDevelopmentsByStatus" />
 
                 <KanbanColumn @error="(message) => {
                     console.log(message);
@@ -112,27 +122,11 @@
             <TechnicalApprovalDialog v-if="showTechnicalApprovalModal" v-model:open="showTechnicalApprovalModal"
                 v-model:current-development="selectedRequirement" />
 
-
-            <!-- @confirm="updateRequestStatus(selectedRequirement.id, selectedRequirement.status)" -->
             <AlertDialog v-model:open="showAlertDialog" :title="alertDialogInfo.title"
-                :description="alertDialogInfo.description" @cancel="() => {
-
-                    rollbackStatus();
-                    updateStatus = null;
-                }" @confirm="() => {
-                    if (updateStatus) {
-                        updateRequestStatus();
-                        updateStatus = null;
-                    }
-                }" />
+                :description="alertDialogInfo.description" @cancel="alertDialogInfo.cancel"
+                @confirm="alertDialogInfo.confirm" />
 
         </div>
-
-
-        <pre>
-    {{ developmentsByStatus[DevelopmentRequestStatus.IN_ANALYSIS] }}
-
-</pre>
 
 
     </AppLayout>
@@ -153,11 +147,11 @@ import {
     Plus
 } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
-import { ref, watch } from 'vue';
+import { computed, onBeforeMount, onMounted, ref, watch } from 'vue';
 // import { AlertDialog } from '@/components/ui/alert-dialog';
 import AlertDialog from '@/components/AlertDialog.vue';
 
-const { developments, developmentsByStatus } = defineProps<{ developments: DevelopmentRequest[], developmentsByStatus: DevelopmentRequestSection }>();
+const { developmentsByStatus } = defineProps<{ developmentsByStatus: DevelopmentRequestSection }>();
 
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -170,9 +164,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 const alertDialogInfo = ref<{
     title: string;
     description: string;
+    confirm: () => void;
+    cancel: () => void;
 }>({
     title: 'Cambiar Estado de Requerimiento',
     description: '¿Estás seguro de que deseas cambiar el estado de este requerimiento?',
+    confirm: () => {
+        if (updateStatus.value) {
+            updateRequestStatus();
+            updateStatus.value = null;
+        };
+    },
+    cancel: () => {
+        rollbackStatus();
+        updateStatus.value = null;
+    },
 });
 
 const updateStatus = ref<{
@@ -187,45 +193,60 @@ const showTechnicalApprovalModal = ref(false);
 const showAlertDialog = ref(false);
 
 
+// const developmentsByStatus<DevelopmentRequestSection>({});
+
+const originalDevelopmentsByStatus = ref<DevelopmentRequestSection>({ ...developmentsByStatus });
+
 const selectedRequirement = ref<DevelopmentRequest | null>(null);
 
-const registeredRequests = ref<DevelopmentRequest[]>([]);
-const analysisRequests = ref<DevelopmentRequest[]>([]);
-const approvedRequests = ref<DevelopmentRequest[]>([]);
-const inDevelopmentRequests = ref<DevelopmentRequest[]>([]);
-const inQARequests = ref<DevelopmentRequest[]>([]);
-const inProductionRequests = ref<DevelopmentRequest[]>([]);
-const rejectedRequests = ref<DevelopmentRequest[]>([]);
+const registeredRequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.REGISTERED] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.REGISTERED] = newValue;
+    },
+});
 
+const analysisRequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.IN_ANALYSIS] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.IN_ANALYSIS] = newValue;
+    },
+});
 
+const approvedRequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.APPROVED] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.APPROVED] = newValue;
+    },
+});
 
-watch(() => developmentsByStatus[DevelopmentRequestStatus.REGISTERED], (newDevelopments) => {
-    registeredRequests.value = newDevelopments || [];
-}, { immediate: true });
+const inDevelopmentRequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.IN_DEVELOPMENT] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.IN_DEVELOPMENT] = newValue;
+    },
+});
 
-watch(() => developmentsByStatus[DevelopmentRequestStatus.IN_ANALYSIS], (newDevelopments) => {
-    analysisRequests.value = newDevelopments || [];
-}, { immediate: true });
+const inQARequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.IN_TESTING] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.IN_TESTING] = newValue;
+    },
+});
 
-watch(() => developmentsByStatus[DevelopmentRequestStatus.APPROVED], (newDevelopments) => {
-    approvedRequests.value = newDevelopments || [];
-}, { immediate: true });
+const inProductionRequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.COMPLETED] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.COMPLETED] = newValue;
+    },
+});
 
-watch(() => developmentsByStatus[DevelopmentRequestStatus.IN_DEVELOPMENT], (newDevelopments) => {
-    inDevelopmentRequests.value = newDevelopments || [];
-}, { immediate: true });
-
-watch(() => developmentsByStatus[DevelopmentRequestStatus.IN_TESTING], (newDevelopments) => {
-    inQARequests.value = newDevelopments || [];
-}, { immediate: true });
-
-watch(() => developmentsByStatus[DevelopmentRequestStatus.COMPLETED], (newDevelopments) => {
-    inProductionRequests.value = newDevelopments || [];
-}, { immediate: true });
-
-watch(() => developmentsByStatus[DevelopmentRequestStatus.REJECTED], (newDevelopments) => {
-    rejectedRequests.value = newDevelopments || [];
-}, { immediate: true });
+const rejectedRequests = computed({
+    get: () => developmentsByStatus[DevelopmentRequestStatus.REJECTED] || [],
+    set: (newValue: DevelopmentRequest[]) => {
+        developmentsByStatus[DevelopmentRequestStatus.REJECTED] = newValue;
+    },
+});
 
 
 const updateRequestStatus = () => {
@@ -238,14 +259,6 @@ const updateRequestStatus = () => {
         preserveScroll: true,
         preserveUrl: true,
         onSuccess: () => {
-            router.replaceProp('developments', (oldDevelopments: DevelopmentRequestSection) => {
-                return oldDevelopments[newStatus].map((dev) => {
-                    if (dev.id === requestId) {
-                        return { ...dev, status: newStatus };
-                    }
-                    return dev;
-                });
-            });
             showAlertDialog.value = false;
         },
         onError: () => {
@@ -254,7 +267,17 @@ const updateRequestStatus = () => {
     });
 }
 
-const swapPositions = () => {
+const deleteDevelopmentRequest = (requestId: number) => {
+    router.delete(`/developments/${requestId}`, {
+        preserveState: true,
+        preserveScroll: true,
+        preserveUrl: true,
+        onSuccess: () => {
+            registeredRequests.value = registeredRequests.value.filter(dev => dev.id !== requestId);
+
+        },
+
+    });
 }
 
 
@@ -274,13 +297,8 @@ const rollbackStatus = () => {
     if (!updateStatus.value) return;
     const { newStatus } = updateStatus.value;
     if (newStatus === DevelopmentRequestStatus.IN_ANALYSIS) {
-        registeredRequests.value = developments.filter(
-            (req) => req.status === DevelopmentRequestStatus.REGISTERED
-        );
-
-        analysisRequests.value = developments.filter(
-            (req) => req.status === DevelopmentRequestStatus.IN_ANALYSIS
-        );
+        registeredRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.REGISTERED] || [];
+        analysisRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.IN_ANALYSIS] || [];
     }
 }
 

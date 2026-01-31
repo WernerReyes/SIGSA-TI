@@ -11,6 +11,7 @@ Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () 
         Route::post('/', [DevelopmentController::class, 'store'])->name('developments.store');
         Route::patch('/position', [DevelopmentController::class, 'swapPositions'])->name('developments.updatePosition');
         Route::post('/{developmentRequest}/update', [DevelopmentController::class, 'update'])->name('developments.update');
+        Route::delete('/{developmentRequest}', [DevelopmentController::class, 'delete'])->name('developments.delete');
         Route::patch('/{developmentRequest}/status', [DevelopmentController::class, 'updateStatus'])->name('developments.updateStatus');
 
         Route::patch('/{developmentRequest}/estimate', [DevelopmentController::class, 'estimate'])->name('developments.estimate');

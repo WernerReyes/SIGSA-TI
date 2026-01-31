@@ -145,15 +145,20 @@ const handleApprove = (status: DevelopmentApprovalStatus) => {
         status,
         comment: comment.value,
     }, {
+        only: ['developmentsByStatus'],
         // onStart: () => {
         //     isLoading.value = true;
         // },
         // onFinish: () => {
         //     isLoading.value = false;
         // },
+
         onSuccess: () => {
             open.value = false;
             comment.value = '';
+
+            // router.replaceProp
+            // router.
         },
     });
 };

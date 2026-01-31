@@ -21,14 +21,15 @@
         </div>
         <!-- <ScrollArea class="max-h-full overflow-y-auto flex-1 p-3"> -->
 
-
+        <!-- {{ isLoading }} -->
         <draggable :scroll="true" :force-fallback="true" :scroll-sensitivity="200" :scroll-speed="20"
-            :disabled="!isFromTI || isLoading" v-model="devRequests" tag="transition-group" :data-status="status"
-            @change="hasPositionChanged = true" :move="checkMove" :component-data="{
+            :disabled="!isFromTI" v-model="devRequests" tag="transition-group" :data-status="status" :move="checkMove"
+            :component-data="{
                 tag: 'div',
                 type: 'transition',
                 name: 'fade'
-            }" :group="{ name: 'dev-requests', pull: true, put: true }" item-key="id" animation="200">
+            }" @end="moveDevelopment" :group="{ name: 'dev-requests', pull: true, put: true }" item-key="id"
+            animation="200">
             <!-- Professional Empty State -->
             <div v-if="devRequests.length === 0" :key="`empty-${title}`"
                 class="flex flex-col items-center justify-center h-60 text-center rounded-lg border-2 border-dashed bg-muted/20">
@@ -84,11 +85,9 @@
                                 Aprobar
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator v-if="devRequest.status !== DRStatus.REGISTERED" />
-                            <DropdownMenuItem @click="() => {
-
-                                emit('error', 'Funcionalidad de eliminación no implementada aún.')
-                            }" v-if="devRequest.status !== DRStatus.REGISTERED"
+                            <DropdownMenuSeparator v-if="devRequest.status === DRStatus.REGISTERED" />
+                            <DropdownMenuItem @click="emit('deleted', devRequest.id)"
+                                v-if="devRequest.status === DRStatus.REGISTERED"
                                 class="cursor-pointer text-destructive focus:text-destructive">
                                 <Trash2 />
                                 Eliminar
@@ -172,28 +171,31 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/composables/useApp';
-import { DevelopmentRequestStatus as DRStatus, getPriorityOp, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequestSection, DevelopmentRequestStatus as DRStatus, getPriorityOp, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
 import { router } from '@inertiajs/core';
 import { ClipboardCheck, Eye, Inbox, MonitorCheck, MoreVertical, Pencil, Plus, Save, Trash2, User } from 'lucide-vue-next';
 import { computed, onUnmounted, ref } from 'vue';
 
-import { VueDraggableNext as draggable, type MoveEvent } from 'vue-draggable-next';
+import { VueDraggableNext as draggable, SortableEvent, type MoveEvent } from 'vue-draggable-next';
 
 
 const devRequests = defineModel<Array<DevelopmentRequest>>('devRequests', {
     default: () => [],
 });
 
-const { status } = withDefaults(defineProps<{
+const developmentsByStatus = defineModel<DevelopmentRequestSection>('developmentsByStatus', {
+    default: () => ({}),
+});
+
+const { status } = defineProps<{
     title: string;
     headerColor?: string;
     status: DRStatus;
-}>(), {
-    headerColor: '#6366f1'
-});
+}>();
 
 const emit = defineEmits<{
     (e: 'moved', id: number, newStatus: DRStatus): void;
+    (e: 'deleted', id: number): void;
 
     (e: 'open-view', item: DevelopmentRequest): void;
     (e: 'open-update', item: DevelopmentRequest): void;
@@ -206,7 +208,28 @@ const emit = defineEmits<{
 
 const { isFromTI, isTIManager, isLoading, isTIAssistantManager, isSameUser } = useApp();
 
-const hasPositionChanged = ref(false);
+const hasMovedInAnotherColumn = ref<boolean>(false);
+
+const originalDevRequests = computed<Array<DevelopmentRequest>>({
+    get: () => {
+        return developmentsByStatus.value[status] ? [...developmentsByStatus.value[status]] : [];
+    },
+    set: (value: Array<DevelopmentRequest>) => {
+        developmentsByStatus.value[status] = value;
+    }
+});
+
+const hasPositionChanged = computed<boolean>(() => {
+    if (hasMovedInAnotherColumn.value) return false;
+    if (devRequests.value.length !== originalDevRequests.value.length) return true;
+
+    for (let i = 0; i < devRequests.value.length; i++) {
+        if (devRequests.value[i].id !== originalDevRequests.value[i].id) {
+            return true;
+        }
+    }
+    return false;
+});
 
 const DR_STATUS_FLOW: DRStatus[] = [
     DRStatus.REGISTERED,
@@ -234,34 +257,11 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
     if (fromStatus === toStatus) return true
 
     // ⛔ Estados terminales no se mueven
-    if (fromStatus === DRStatus.REJECTED || fromStatus === DRStatus.COMPLETED) {
+    if (fromStatus === DRStatus.IN_ANALYSIS || fromStatus === DRStatus.REJECTED || fromStatus === DRStatus.COMPLETED) {
         return false
     }
 
-    if (fromStatus === DRStatus.IN_ANALYSIS) {
-        if (!isTIManager.value && !isTIAssistantManager.value) return false
-        if (toStatus === DRStatus.REJECTED) return true;
-        if (toStatus === DRStatus.APPROVED) {
-            if (item.estimated_hours === null || item.estimated_end_date === null) {
-                emit('error', 'No se puede aprobar el requerimiento sin una estimación de tiempo y fecha de finalización.');
-                return false;
-            }
 
-            if (!item.technical_approval && !item.strategic_approval) {
-                emit('error', 'No se puede aprobar el requerimiento sin la aprobación técnica y estratégica.');
-                return false;
-            } else if (!item.technical_approval) {
-                emit('error', 'No se puede aprobar el requerimiento sin la aprobación técnica.');
-                return false;
-            } else if (!item.strategic_approval) {
-                emit('error', 'No se puede aprobar el requerimiento sin la aprobación estratégica.');
-                return false;
-            }
-
-        }
-
-
-    }
 
     const fromIndex = DR_STATUS_FLOW.indexOf(fromStatus)
     const toIndex = DR_STATUS_FLOW.indexOf(toStatus)
@@ -270,23 +270,49 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
 
     const returnValue = toIndex === fromIndex + 1;
 
-    if (returnValue) {
-        // Emitir evento para actualizar el estado en el backend
-        timeoutId = setTimeout(() => {
-            emit('moved', item.id, toStatus);
-        }, 600);
-        // emit('moved', item.id, toStatus);
-    }
+
 
 
     return returnValue;
 }
+
+
 
 onUnmounted(() => {
     if (timeoutId) {
         clearTimeout(timeoutId); // Manual cleanup is crucial
     }
 });
+
+
+const moveDevelopment = (e: SortableEvent) => {
+    const fromStatus = getCurrentStatus(e.from);
+    const toStatus = getCurrentStatus(e.to)
+  
+    if (!fromStatus || !toStatus) return;
+
+    const item = e.item._underlying_vm_;
+
+    const fromIndex = DR_STATUS_FLOW.indexOf(fromStatus)
+    const toIndex = DR_STATUS_FLOW.indexOf(toStatus)
+
+    if (fromStatus === DRStatus.IN_ANALYSIS) {
+        return;
+    }
+
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const returnValue = toIndex === fromIndex + 1;
+
+    if (fromStatus !== toStatus) {
+        hasMovedInAnotherColumn.value = true;
+    }
+
+    if (returnValue) {
+        emit('moved', item.id, toStatus);
+    }
+}
+
 
 
 const swapPositions = () => {
@@ -296,6 +322,7 @@ const swapPositions = () => {
     }, {
         onSuccess: () => {
             hasPositionChanged.value = false;
+            originalDevRequests.value = [...devRequests.value];
         },
     });
 }

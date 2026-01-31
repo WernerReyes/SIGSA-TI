@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\DTOs\DevelopmentRequest\ApproveDevelopmentDto;
 use App\DTOs\DevelopmentRequest\EstimateDevelopmentDto;
 use App\DTOs\DevelopmentRequest\StoreDevelopmentRequestDto;
+use App\Enums\DevelopmentRequest\DevelopmentApprovalStatus;
 use App\Enums\DevelopmentRequest\DevelopmentRequestStatus;
 use App\Http\Requests\DevelopmentRequest\ApproveDevelopmentRequest;
 use App\Http\Requests\DevelopmentRequest\EstimateDevelopmentRequest;
@@ -21,9 +22,8 @@ class DevelopmentController extends Controller
     public function renderView(DevelopmentRequestService $service, AreaService $areaService)
     {
         return Inertia::render('Developments', [
-            'developments' => Inertia::once(fn() => $service->getAll()),
             'developmentsByStatus' => Inertia::once(fn() => $service->getSectionsByStatus()),
-            'areas' => Inertia::optional(fn() => $areaService->getAll())
+            'areas' => Inertia::optional(fn() => $areaService->getAll())->once()
         ]);
     }
 
@@ -72,6 +72,28 @@ class DevelopmentController extends Controller
             Inertia::flash([
                 'success' => null,
                 'devRequest' => null,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return back();
+    }
+
+
+    public function delete(DevelopmentRequest $developmentRequest, DevelopmentRequestService $service)
+    {
+        try {
+
+            $service->delete($developmentRequest);
+
+            Inertia::flash([
+                'success' => 'Solicitud de desarrollo eliminada exitosamente.',
+                'error' => null,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -170,22 +192,26 @@ class DevelopmentController extends Controller
         ds($dto);
 
         try {
-            $approval = $service->approveTechnicalDevelopment($developmentRequest, $dto);
+            $service->approveTechnicalDevelopment($developmentRequest, $dto);
+
+            $message = $dto->status === DevelopmentApprovalStatus::APPROVED
+                ? 'Solicitud de desarrollo aprobada técnicamente exitosamente.'
+                : 'Solicitud de desarrollo rechazada técnicamente exitosamente.';
 
             Inertia::flash([
-                'success' => 'Aprobación técnica de la solicitud de desarrollo guardada exitosamente.',
+                'success' => $message,
                 'error' => null,
-                'approval' => $approval,
+                // 'approval' => $approval,
             ]);
 
-            ds('approved');
+            
 
         } catch (\Exception $e) {
             ds($e->getMessage());
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
-                'approval' => null,
+                // 'approval' => null,
             ]);
         }
 
