@@ -10,6 +10,7 @@ export const useApp = () => {
     const page = usePage();
     const userAuth = computed(() => (page.props as unknown as { auth: { user: User } })?.auth?.user);
     const users = computed(() => (page.props as unknown as { users: User[] })?.users || []);
+    const availableAssets = computed(() => (page.props as unknown as { availableAssets: Asset[] })?.availableAssets || []);
     const TIUsers = computed(() => (page.props as unknown as { TIUsers: User[] })?.TIUsers || []);
     const departments = computed(() => (page.props as unknown as { departments: Department[] })?.departments || []);
     const assetTypes = computed(() => (page.props as unknown as { types: AssetType[] })?.types || []);
@@ -49,5 +50,7 @@ export const useApp = () => {
         return userAuth.value?.staff_id === userId;
     };
 
-    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories, departments, assetTypes, isTIManager, isTIAssistantManager };
+    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories,
+        availableAssets,
+        departments, assetTypes, isTIManager, isTIAssistantManager };
 };

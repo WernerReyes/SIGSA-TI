@@ -25,6 +25,7 @@ class AssignAssetRequest extends FormRequest
             'assign_date' => ['required', 'date', 'before_or_equal:today'],
             'comment' => ['nullable', 'string', 'max:1000'],
             'asset_id' => ['required', 'integer', 'exists:assets,id'],
+            'ticket_id' => ['nullable', 'integer', 'exists:tickets_sistema,id'],
             'assigned_to_id' => ['required', 'integer', 'exists:ost_staff,staff_id'],
             'accessories' => ['array'],
             'accessories.*' => ['integer', 'exists:assets,id'],
@@ -49,6 +50,8 @@ class AssignAssetRequest extends FormRequest
             'accessories.array' => 'Los accesorios deben ser un arreglo.',
             'accessories.*.integer' => 'Cada accesorio debe ser un número entero válido.',
             'accessories.*.exists' => 'Uno o más accesorios seleccionados no existen.',
+            'ticket_id.integer' => 'El ticket debe ser un número entero válido.',
+            'ticket_id.exists' => 'El ticket seleccionado no existe.',
         ];
     }
 }

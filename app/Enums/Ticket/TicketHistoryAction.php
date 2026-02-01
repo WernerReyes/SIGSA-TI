@@ -7,8 +7,8 @@ enum TicketHistoryAction: string
     case CREATED = 'CREATED';
     case UPDATED = 'UPDATED';
     case STATUS_CHANGED = 'STATUS_CHANGED';
-    case PRIORITY_CHANGED = 'PRIORITY_CHANGED';
-    case ASSIGNED = 'ASSIGNED';
+    // case PRIORITY_CHANGED = 'PRIORITY_CHANGED';
+    case ASSET_ASSIGNED = 'ASSET_ASSIGNED';
     // case COMMENTED = 'COMMENTED';
 
     public static function values(): array

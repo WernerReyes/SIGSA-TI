@@ -8,6 +8,7 @@ use App\DTOs\Ticket\TicketFiltersDto;
 use App\DTOs\Ticket\TicketHistoryFiltersDto;
 use App\Http\Requests\Ticket\StoreTicketRequest;
 use App\Models\Ticket;
+use App\Services\AssetService;
 use App\Services\TicketService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ use Inertia\Inertia;
 class TicketController extends Controller
 {
     //
-    function renderView(Request $request, TicketService $ticketService, UserService $userService)
+    function renderView(Request $request, TicketService $ticketService, AssetService $assetService, UserService $userService)
     {
         $filters = TicketFiltersDto::fromArray($request->all());
 
@@ -26,11 +27,13 @@ class TicketController extends Controller
         return Inertia::render('Tickets', [
             // 'departments' => $departmentsWithUsers,
             'filters' => $filters,
-            'users' => Inertia::optional(fn() => $userService->getAllBasicInfo()),
+            'users' => Inertia::optional(fn() => $userService->getAllBasicInfo())->once(),
             'tickets' => Inertia::once(fn() => $ticketService->getAllOrderedByPriority($filters)),
-            'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers()),
+            'availableAssets' => Inertia::optional(fn() => $assetService->getAvailableAssets())->once(),
+            'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
+            'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
 
-            'historiesPaginated' => Inertia::optional(function() use ($ticketService, $ticketId, $request) {
+            'historiesPaginated' => Inertia::optional(function () use ($ticketService, $ticketId, $request) {
                 if ($ticketId) {
                     $filters = TicketHistoryFiltersDto::fromArray($request->all());
                     return $ticketService->getHistoriesPaginated(Ticket::findOrFail($ticketId), $filters);
@@ -115,7 +118,7 @@ class TicketController extends Controller
             ]);
 
         } catch (\Exception $e) {
-       
+
             Inertia::flash([
                 'ticket' => null,
                 'success' => null,
@@ -177,7 +180,7 @@ class TicketController extends Controller
 
         try {
             $description = $ticketService->changeTicketStatus($ticket, $newStatus);
-            
+
             Inertia::flash([
                 'success' => $description,
                 'error' => null,
@@ -185,7 +188,7 @@ class TicketController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            
+
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),

@@ -21,6 +21,7 @@ export interface Asset {
     created_at: Date;
     updated_at: Date;
     name: string;
+    full_name: string;
     description: string;
     type?: AssetType;
     is_new: boolean;

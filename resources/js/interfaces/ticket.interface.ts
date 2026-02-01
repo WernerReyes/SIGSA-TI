@@ -2,6 +2,8 @@ import { Component } from 'vue';
 import type { TicketHistory } from './ticketHistory.interface';
 import type { User } from './user.interface';
 import { Archive, ArrowDown, ArrowUp, Bug, CheckCircle, Code2, Flame, FolderOpen, Key, LifeBuoy, LoaderCircle, Minus, MonitorSmartphone } from 'lucide-vue-next';
+import { TicketAsset } from './ticketAsset.interface';
+import { AssetAssignment } from './assetAssignment.interface';
 
 export enum TicketStatus {
     OPEN = 'OPEN',
@@ -28,6 +30,8 @@ export enum TicketRequestType {
     EQUIPMENT = 'EQUIPMENT',
 }
 
+
+
 export interface Ticket {
     id: number;
     title: string;
@@ -41,6 +45,8 @@ export interface Ticket {
     // created_at: Date;
     // updated_at: Date;
     // opened_at?: Date;
+    // asset_events?: TicketAsset[];
+    current_asset_assignment?: AssetAssignment;
     histories?: TicketHistory[];
     closed_at?: Date;
     requester_id: number;

@@ -6,52 +6,7 @@
 
         <!-- Botón flotante de alerta -->
         <Teleport to="body" v-if="generalAlert">
-            <!-- <div class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
-                <button
-                    class="relative flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-white shadow-lg transition hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                    @click="showAlertPanel = !showAlertPanel"
-                    :aria-expanded="showAlertPanel"
-                    aria-label="Ver alerta de accesorios"
-                >
-                    <Bell class="size-5" />
-                    <span
-                        class="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-white text-slate-700 text-[10px] font-semibold px-1.5 py-0.5 shadow"
-                    >!</span>
-                </button>
-
-                <div
-                    v-if="showAlertPanel"
-                    class="w-80 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 p-4 shadow-2xl"
-                >
-                    <div class="flex items-start gap-3">
-                        <div class="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 grid place-content-center">
-                            <AlertCircle class="size-5 text-slate-700 dark:text-slate-200" />
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Accesorios sin stock</p>
-                            <p class="text-sm text-slate-700 dark:text-slate-300 mt-1 line-clamp-2">
-                                {{ generalAlert?.message || 'Correo enviado a Ventas indicando faltante de accesorios.' }}
-                            </p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Se notificó a Ventas para reabastecer.</p>
-                            <div class="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
-                                <span>Última notificación: 
-                                        {{ format(new Date(generalAlert?.last_notified_at), 'dd/MM/yyyy HH:mm') }}
-
-                                </span>
-                            </div>
-                            <div class="mt-2">
-                                <Badge :class="isAlertActive ? 'bg-slate-800 text-white' : 'bg-emerald-600 text-white'">
-                                    {{ isAlertActive ? 'Activa' : 'Resuelta' }}
-                                </Badge>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 flex items-center justify-end gap-2">
-                        <button class="px-3 py-1.5 text-xs rounded-md border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" @click="handleResendAlert" :disabled="!isAlertActive">Reenviar a Ventas</button>
-                        <button class="px-3 py-1.5 text-xs rounded-md bg-slate-800 text-white hover:bg-slate-900" @click="handleResolveAlert" :disabled="!isAlertActive">Marcar como resuelta</button>
-                    </div>
-                </div>
-            </div> -->
+           
             <AlertAccessoryOutStock  />
         </Teleport>
 

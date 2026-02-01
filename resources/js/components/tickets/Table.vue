@@ -152,12 +152,20 @@
                 Ver detalle
               </ContextMenuItem>
               <ContextMenuItem @click="openReassign = true" v-if="isFromTI">
-                <TicketPlus />
-                {{ activeRow?.responsible ? 'Reasignar' : 'Asignar' }}
+                <!-- <TicketPlus /> -->
+                <component :is="activeRow?.responsible_id ? UserPen : UserPlus" />
+                Responsable
               </ContextMenuItem>
               <ContextMenuItem @click="changeStatus = true" v-if="isFromTI">
                 <Pencil />
                 Cambiar estado
+              </ContextMenuItem>
+              <ContextMenuItem 
+               v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI"
+              @click="openAssignEquipment = true" 
+              >
+                <MonitorSmartphone />
+                Asignar
               </ContextMenuItem>
               <ContextMenuItem :disabled="disabledEdit" @click="openEdit = true">
                 <Pencil />
@@ -250,6 +258,9 @@
   <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
   <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" />
   <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
+  <AssignDialog v-if="openAssignEquipment" 
+
+  v-model:open="openAssignEquipment" :ticket="activeRow" />
 
   <AlertDialog v-model:open="openDelete" title="Eliminar ticket"
     description="¿Estás seguro de que deseas eliminar este ticket? Esta acción no se puede deshacer."
@@ -316,6 +327,7 @@ import {
   ticketStatusOptions,
   TicketType,
   ticketTypeOptions,
+  TicketRequestType,
   typeOp
 } from '@/interfaces/ticket.interface';
 import { type User as IUser } from '@/interfaces/user.interface';
@@ -324,12 +336,14 @@ import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone, parseDate } from '@internationalized/date';
 import { useDebounceFn } from '@vueuse/core';
 import { format } from 'date-fns';
-import { ArrowUpDown, CalendarSearch, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X, XCircle } from 'lucide-vue-next';
+import { ArrowUpDown, CalendarSearch, ChevronDown, ChevronLeftIcon, UserPen, UserPlus, ChevronRightIcon, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X, XCircle, MonitorSmartphone } from 'lucide-vue-next';
 import { type DateRange } from 'reka-ui';
 import { computed, h, reactive, ref, watch } from 'vue';
 import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
 import ChangeStatusDialog from './ChangeStatusDialog.vue';
 import DetailsDialog from './DetailsDialog.vue';
+import AssignDialog from './AssignDialog.vue';
+import AssignEquipmentModal from './AssignEquipmentModal.vue';
 import Dialog from './Dialog.vue';
 import TicketColumnTable from './TicketColumnTable.vue';
 import HistoryDialog from './HistoryDialog.vue';
@@ -348,6 +362,7 @@ const openDetails = ref(false);
 const openReassign = ref(false);
 const changeStatus = ref(false);
 const openEdit = ref(false);
+const openAssignEquipment = ref(false);
 const openHistory = ref(false);
 const openDelete = ref(false);
 

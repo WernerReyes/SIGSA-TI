@@ -16,6 +16,7 @@ use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Enums\Company\EmployeeCompany;
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use App\Enums\Department\Allowed;
+use App\Enums\Ticket\TicketHistoryAction;
 use App\Models\Alert;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
@@ -23,6 +24,8 @@ use App\Models\AssetHistory;
 use App\Models\AssetType;
 
 use App\Models\DeliveryRecord;
+use App\Models\TicketAsset;
+use App\Models\TicketHistory;
 use App\Models\User;
 
 use DB;
@@ -231,6 +234,18 @@ class AssetService
     }
 
 
+    public function getAvailableAssets()
+    {
+        try {
+            return Asset::
+                select('id', 'name', 'model', 'brand', 'status', 'type_id')
+                ->with('type:id,name')
+                ->where('status', AssetStatus::AVAILABLE->value)->get();
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al obtener los equipos disponibles');
+        }
+    }
+
     public function getAccessories()
     {
         try {
@@ -261,24 +276,13 @@ class AssetService
 
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
-            // 'currentAssignment.deliveryDocument',
-            // 'currentAssignment.returnDocument',
+
         );
 
 
     }
 
-    // public function getHistories(Asset $asset)
-    // {
-    //     try {
-    //         return $asset->load(
-    //             'histories.performer:staff_id,firstname,lastname',
-    //             'histories.deliveryRecord:id,file_path',
-    //         );
-    //     } catch (\Exception $e) {
-    //         throw new InternalErrorException('Error al obtener el historial del activo');
-    //     }
-    // }
+
 
     public function getHistoriesPaginated(Asset $asset, AssetHistoryFiltersDto $filtersDto)
     {
@@ -362,10 +366,48 @@ class AssetService
     }
 
 
+    private function logTicketHistory(Asset $asset, TicketHistoryAction $action, string $description,
+      AssetAssignment $assignment,
+    ?int $ticketId = null)
+    {
+        if (!$ticketId) {
+            return;
+        }
+
+        TicketAsset::create([
+            'ticket_id' => $ticketId,
+            'asset_id' => $asset->id,
+            'status' => 'ASSIGN',
+            'asset_assignment_id' => $assignment->id,
+            'performed_by' => auth()->user()->staff_id,
+
+        ]);
+
+        TicketHistory::create([
+            'action' => $action->value,
+            'description' => $description,
+            'asset_id' => $asset->id,
+            'performed_by' => auth()->user()->staff_id,
+            'ticket_id' => $ticketId,
+            // 'performed_at' => now()->utc(),
+        ]);
+    }
+
+    private function logHistory(Asset $asset, AssetHistoryAction $action, string $description, ?int $deliveryRecordId = null)
+    {
+        AssetHistory::create([
+            'action' => $action->value,
+            'description' => $description,
+            'asset_id' => $asset->id,
+            'performed_by' => auth()->user()->staff_id,
+            'delivery_record_id' => $deliveryRecordId,
+            // 'performed_at' => now()->utc(),
+        ]);
+    }
+
+
     public function storeAsset(StoreAssetDto $dto)
     {
-
-
 
         try {
             $asset = DB::transaction(function () use ($dto) {
@@ -389,13 +431,9 @@ class AssetService
                     'is_new' => $dto->is_new,
                 ]);
 
-                AssetHistory::create([
-                    'action' => AssetHistoryAction::CREATED->value,
-                    'description' => 'Equipo registrado en el sistema',
-                    'asset_id' => $asset->id,
-                    'performed_by' => auth()->user()->staff_id,
-                    // 'performed_at' => now()->utc(),
-                ]);
+                $this->logHistory($asset, AssetHistoryAction::CREATED, 'Equipo registrado en el sistema');
+
+
 
                 return $asset;
             });
@@ -603,7 +641,7 @@ class AssetService
 
     }
 
-    
+
 
 
     public function assignAsset(AssignAssetDto $dto)
@@ -742,14 +780,29 @@ class AssetService
                     $description = implode(',', $changes);
 
                     // 5️⃣ Historial
-                    AssetHistory::create([
-                        'action' => AssetHistoryAction::ASSIGNED->value,
-                        'description' => $description,
-                        'asset_id' => $asset->id,
-                        'performed_by' => auth()->user()->staff_id,
-                        // 'performed_at' => now()->utc(),
-                        'related_assignment_id' => $assignment->id,
-                    ]);
+                    $this->logHistory(
+                        $asset,
+                        AssetHistoryAction::ASSIGNED,
+                        $description,
+                        null
+                    );
+
+                    $this->logTicketHistory(
+                        $asset,
+                        TicketHistoryAction::ASSET_ASSIGNED,
+                        $description,
+                        $assignment,
+                        $dto->ticket_id
+                    );
+
+                    // AssetHistory::create([
+                    //     'action' => AssetHistoryAction::ASSIGNED->value,
+                    //     'description' => $description,
+                    //     'asset_id' => $asset->id,
+                    //     'performed_by' => auth()->user()->staff_id,
+                    //     // 'performed_at' => now()->utc(),
+                    //     'related_assignment_id' => $assignment->id,
+                    // ]);
 
                     return $assignment;
                 }
@@ -774,6 +827,7 @@ class AssetService
                 );
 
                 $description = "Equipo asignado a {$assigned->assignedTo->full_name}";
+                $ticketDescription = "Equipo '{$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}'";
 
                 // Asignar accesorios si los hay
                 if ($dto->accessories && is_array($dto->accessories)) {
@@ -802,6 +856,8 @@ class AssetService
                     ]);
 
                     $description = "Equipo asignado a {$assigned->assignedTo->full_name} junto con los accesorios: " . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray());
+                    $ticketDescription = "Equipo '{$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}' junto con los accesorios: '" . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray()) . "'";
+
 
                     AssetHistory::insert(
                         array_map(function ($accessoryId) use ($assigned) {
@@ -821,15 +877,30 @@ class AssetService
                 }
 
 
-                AssetHistory::create([
+                // AssetHistory::create([
 
-                    'action' => AssetHistoryAction::ASSIGNED->value,
-                    'description' => $description,
-                    'asset_id' => $dto->asset_id,
-                    'performed_by' => auth()->user()->staff_id,
-                    // 'performed_at' => now()->utc(),
-                    // 'related_assignment_id' => $assigned->id,
-                ]);
+                //     'action' => AssetHistoryAction::ASSIGNED->value,
+                //     'description' => $description,
+                //     'asset_id' => $dto->asset_id,
+                //     'performed_by' => auth()->user()->staff_id,
+                //     // 'performed_at' => now()->utc(),
+                //     // 'related_assignment_id' => $assigned->id,
+                // ]);
+
+                $this->logHistory(
+                    $asset,
+                    AssetHistoryAction::ASSIGNED,
+                    $description,
+                    null
+                );
+
+                $this->logTicketHistory(
+                    $asset,
+                    TicketHistoryAction::ASSET_ASSIGNED,
+                    $ticketDescription,
+                    $assigned,
+                    $dto->ticket_id
+                );
 
                 return $assigned;
 
@@ -840,7 +911,7 @@ class AssetService
                 throw $e;
             }
 
-            throw new InternalErrorException('Error al asignar el activo');
+            throw new InternalErrorException('Error al asignar el activo ' . $e->getMessage());
         }
     }
 
