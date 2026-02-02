@@ -27,6 +27,7 @@ class AssignAssetRequest extends FormRequest
             'asset_id' => ['required', 'integer', 'exists:assets,id'],
             'ticket_id' => ['nullable', 'integer', 'exists:tickets_sistema,id'],
             'assigned_to_id' => ['required', 'integer', 'exists:ost_staff,staff_id'],
+            'responsible_id' => ['nullable', 'integer', 'exists:ost_staff,staff_id'],
             'accessories' => ['array'],
             'accessories.*' => ['integer', 'exists:assets,id'],
         ];
@@ -52,6 +53,8 @@ class AssignAssetRequest extends FormRequest
             'accessories.*.exists' => 'Uno o más accesorios seleccionados no existen.',
             'ticket_id.integer' => 'El ticket debe ser un número entero válido.',
             'ticket_id.exists' => 'El ticket seleccionado no existe.',
+            'responsible_id.integer' => 'El responsable debe ser un número entero válido.',
+            'responsible_id.exists' => 'El responsable seleccionado no existe.',
         ];
     }
 }

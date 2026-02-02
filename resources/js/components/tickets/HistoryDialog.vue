@@ -37,17 +37,15 @@
                     <div class="flex flex-col md:flex-row md:items-center gap-3">
                         <div class="flex items-center gap-2 text-xs text-muted-foreground">
                             <Badge variant="outline" class="">Filtros</Badge>
-                           
-                             <Badge v-if="actions.length" class="cursor-pointer" variant="secondary"
-                              @click="actions = []"
-                             >
+
+                            <Badge v-if="actions.length" class="cursor-pointer" variant="secondary"
+                                @click="actions = []">
                                 {{ actions.length }} acción(es)
                                 <XCircle />
                             </Badge>
-                          
+
                             <Badge v-if="dateRange" class="cursor-pointer" variant="secondary"
-                             @click="dateRange = undefined"
-                            >
+                                @click="dateRange = undefined">
                                 Rango aplicado
                                 <XCircle />
                             </Badge>
@@ -147,20 +145,21 @@
                         <div
                             class="absolute left-2 w-6 h-6 rounded-full bg-card border-2 flex items-center justify-center text-info shadow-sm">
 
-                            <component :is="actionOp(history.action).icon" class="size-3" />
+                            <component :is="actionOp(history.action)?.icon" class="size-3" />
 
 
                         </div>
                         <div class="flex-1 bg-muted/40 rounded-xl p-4 border">
                             <div class="flex items-start justify-between gap-3">
-                                <Badge :class="actionOp(history.action).bg">{{ actionOp(history.action).label }}</Badge>
+                                <Badge :class="actionOp(history.action)?.bg">{{ actionOp(history.action)?.label }}
+                                </Badge>
 
 
                                 <span class="text-xs text-muted-foreground">{{ format(new Date(history.performed_at),
                                     'dd/MM/yyyy HH:mm') }}</span>
                             </div>
 
-                       
+
                             <template v-if="history.action === TicketHistoryAction.UPDATED">
                                 <ul v-if="history.description.split(';').length > 1"
                                     class="list-disc pl-5 mt-2 space-y-1">
@@ -198,21 +197,34 @@
                                 </Badge>
                             </template>
 
-                            <template v-else-if="history.action === TicketHistoryAction.ASSIGNED">
-                                    
-                                    <template v-if="history.description.includes('Reasignado de responsable')"
-                                        v-for="(part) in parsedReassignmentChange(history.description)"
-                                    >
-                                 
-                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                            part.content }}</span>
-                                        <Badge v-else class="mx-1" variant="secondary">
-                                            <User />
-                                            {{ part.content }}
-                                        </Badge>
-                                    </template>
-            
-                                <template v-else  v-for="(part) in parsedAssignmentChange(history.description)">
+                            <template v-else-if="history.action === TicketHistoryAction.RESPONSIBLE_CHANGED">
+
+                                <template v-for="(part) in parsedResponsibleChange(history.description)">
+
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1" variant="secondary">
+                                        <User />
+                                        {{ part.content }}
+                                    </Badge>
+                                </template>
+
+                            </template>
+
+                            <template v-else-if="history.action === TicketHistoryAction.ASSET_ASSIGNED">
+
+                                <template v-if="history.description.includes('Reasignado de responsable')"
+                                    v-for="(part) in parsedReassignmentChange(history.description)">
+
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else class="mx-1" variant="secondary">
+                                        <User />
+                                        {{ part.content }}
+                                    </Badge>
+                                </template>
+
+                                <template v-else v-for="(part) in parsedAssignmentChange(history.description)">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
                                     <Badge v-else class="mx-1" variant="secondary">
@@ -230,11 +242,11 @@
 
                             <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
                             </p>
-                           
-                            
+
+
 
                             <p class="text-xs text-muted-foreground mt-3">Por:
-                                 
+
                                 <Badge variant="outline">{{ history.performer?.full_name }}</Badge>
                             </p>
                         </div>
@@ -423,6 +435,27 @@ const parsedStatusChange = (description: string): Array<(Partial<TicketStatusOpt
         type: 'badge' | 'text';
         content?: string;
     })>;
+
+};
+
+const parsedResponsibleChange = (description: string): any => {
+    const separatorFrom = `'`;
+    const partsFrom = description.split(separatorFrom).filter(part => part.trim() !== '');
+    if (partsFrom.length === 2) {
+        const [text, user] = partsFrom;
+        return [{ type: 'text', content: text }, { type: 'badge', content: user, icon: User }];
+    } else if (partsFrom.length === 4) {
+        const [text, userFrom, to, userTo] = partsFrom;
+        return [
+            { type: 'text', content: text },
+            { type: 'badge', content: userFrom, icon: User },
+            { type: 'text', content: to },
+            { type: 'badge', content: userTo, icon: User },
+        ];
+    }
+
+
+    return [{ type: 'text', content: description }];
 
 };
 

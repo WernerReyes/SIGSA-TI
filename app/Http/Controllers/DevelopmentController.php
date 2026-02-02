@@ -54,7 +54,7 @@ class DevelopmentController extends Controller
 
     public function update(StoreDevelopmentRequest $request, DevelopmentRequest $developmentRequest, DevelopmentRequestService $service)
     {
-        ds($request->all());
+       
         $validated = $request->validated();
         $dto = StoreDevelopmentRequestDto::fromArray($validated);
 
@@ -189,7 +189,7 @@ class DevelopmentController extends Controller
         $validated = $request->validated();
         $dto = ApproveDevelopmentDto::fromArray($validated);
 
-        ds($dto);
+      
 
         try {
             $service->approveTechnicalDevelopment($developmentRequest, $dto);
@@ -207,7 +207,7 @@ class DevelopmentController extends Controller
             
 
         } catch (\Exception $e) {
-            ds($e->getMessage());
+            
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),

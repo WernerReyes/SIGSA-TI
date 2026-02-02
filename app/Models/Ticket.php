@@ -51,15 +51,7 @@ class Ticket extends Model
         });
     }
 
-    public function currentAsset()
-    {
-        return AssetAssignment::with('asset')
-            ->where('assigned_to_id', $this->requester_id)
-            ->whereNull('returned_at')
-            ->latest('assigned_at')
-            ->first();
-    }
-
+    
     public function assetEvents()
     {
         return $this->hasMany(TicketAsset::class, 'ticket_id', 'id');

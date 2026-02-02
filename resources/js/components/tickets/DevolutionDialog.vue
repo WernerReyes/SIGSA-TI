@@ -1,7 +1,7 @@
 <template>
     <Dialog v-model:open="open" @update:open="(val) => {
         if (!val) {
-            asset = null;
+            ticket = null;
             open = false;
 
         }
@@ -11,62 +11,44 @@
                 <div class="flex items-start gap-3">
                     <div
                         class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
-                        <component
-                         v-if="asset?.type"
-                        :is="assetTypeOp(asset?.type.name).icon" class="size-6 text-primary" />
+                        <component 
+                            :is="assetTypeOp(currAssetAssignment?.asset?.type.name)?.icon || MonitorSmartphone" class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
-                        <DialogTitle class="text-xl font-semibold">Devolver {{ asset?.type?.name }}</DialogTitle>
+                        <DialogTitle class="text-xl font-semibold">Devolver {{ currAssetAssignment?.asset?.type?.name }}
+                        </DialogTitle>
                         <p class="text-sm text-muted-foreground">Registra la devolución del activo y opcionalmente
                             adjunta los accesorios.</p>
-                        <p v-if="asset"
+                        <p v-if="ticket"
                             class="text-xs text-muted-foreground mt-1 inline-flex gap-2 items-center bg-muted px-2 py-1 rounded-md">
-                            <span class="font-mono">AST-{{ asset?.id }}</span>
+                            <span class="font-mono">TK-{{ ticket?.id }}</span>
                             <span class="text-foreground">·</span>
-                            <span class="font-medium line-clamp-1">{{ asset?.name }}</span>
+                            <span class="font-medium line-clamp-1">{{ ticket?.title }}</span>
                         </p>
                     </div>
                 </div>
             </DialogHeader>
 
 
-            <div class="space-y-5 py-2">
+            <Empty v-if="!currAssetAssignment" class="border border-dashed">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <Info class="size-6 text-muted-foreground" />
+                    </EmptyMedia>
+                    <EmptyTitle>
+                        No hay una asignación de activo seleccionada
+                    </EmptyTitle>
+                    <EmptyDescription>
+                        Selecciona un ticket con una asignación de activo para proceder con la devolución.
+                    </EmptyDescription>
+                </EmptyHeader>
 
+            </Empty>
+
+            <div class="space-y-5 py-2" v-else>
 
                 <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
                     class="space-y-4 p-4 rounded-xl border bg-card/70">
-                    <!-- <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm" class="space-y-3"> -->
-
-                    <!-- <FieldGroup>
-                        <VeeField name="responsible_id" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="responsible_id">Responsable</FieldLabel>
-                                <Select v-bind="componentField">
-                                    <SelectTrigger id="responsible_id" class="w-full">
-                                        <SelectValue placeholder="Seleccionar responsable" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectLabel>Responsable (TI)</SelectLabel>
-                                        <WhenVisible data="TIUsers">
-                                            <template #fallback>
-                                                <div class="flex flex-col gap-2 p-3">
-                                                    <Skeleton v-for="n in 4" :key="n" class="h-6 w-full" />
-                                                </div>
-                                            </template>
-                                            <SelectGroup>
-                                                <SelectItem v-for="user in TIUsers" :key="user.staff_id"
-                                                    :value="user.staff_id">
-                                                    {{ user.full_name }}
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </WhenVisible>
-
-                                    </SelectContent>
-                                </Select>
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup> -->
 
 
                     <FieldGroup>
@@ -77,9 +59,14 @@
                                     <Popover v-slot="{ close }">
                                         <PopoverTrigger as-child>
                                             <Button variant="outline" class="sm:w-8/12 justify-between font-normal">
+                                                <!-- {{ componentField.modelValue }} -->
                                                 {{ componentField.modelValue
                                                     ?
-                                                    componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
+                                                    format(
+
+                                                        componentField.modelValue.toDate(getLocalTimeZone()),
+                                                        'dd/MM/yyyy',
+                                                    )
                                                     : 'Seleccionar fecha' }}
 
                                                 <ChevronDownIcon />
@@ -151,29 +138,7 @@
                     </FieldGroup>
 
 
-                    <!-- <FieldGroup v-if="accessoriesToReturn.length > 0">
-                        <VeeField name="accessories" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="accessories">Accesorios a Devolver</FieldLabel>
-                                <Select v-bind="componentField" multiple>
-                                    <SelectTrigger id="accessories">
-                                        <SelectValue placeholder="Seleccionar accesorio" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>Accesorios</SelectLabel>
 
-                                            <SelectItem v-for="accessory in accessoriesToReturn" :key="accessory.id"
-                                                :value="accessory.id">
-                                                {{ accessory.name }} ({{ accessory.brand }} - {{ accessory.model }})
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup> -->
 
 
                     <FieldGroup>
@@ -192,10 +157,10 @@
 
 
             <DialogFooter class="gap-2 pt-2 border-t">
-                {{ values }}
+
                 <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
                 <Button :disabled="isSubmitting
-                    || Object.keys(errors).length > 0
+                    || Object.keys(errors).length > 0 || !currAssetAssignment
                     " type="submit" form="dialogForm" class="min-w-36">
                     <Spinner v-if="isSubmitting" />
                     {{ isSubmitting ? 'Devolviendo...' : 'Devolver Equipo' }}
@@ -236,15 +201,7 @@ import {
 } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, Empty } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { type Asset } from '@/interfaces/asset.interface';
@@ -253,14 +210,16 @@ import { type User } from '@/interfaces/user.interface';
 import { router, usePage, WhenVisible } from '@inertiajs/vue3';
 import { CalendarDateTime, DateValue, getLocalTimeZone, today, toLocalTimeZone } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { isBefore, parseISO } from 'date-fns';
-import { Check, ChevronDownIcon, Info, RefreshCcw, Undo2 } from 'lucide-vue-next';
+import { isBefore, parseISO, format } from 'date-fns';
+import { Check, ChevronDownIcon, Info, RefreshCcw, Undo2, MonitorSmartphone } from 'lucide-vue-next';
 import { useAsset } from '@/composables/useAsset';
 import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { type Alert } from '@/interfaces/alert.interface';
+import { toZonedDate } from '@/lib/utils';
+import { Ticket } from '@/interfaces/ticket.interface';
 
 
-const asset = defineModel<Asset | null>('asset');
+const ticket = defineModel<Ticket | null>('ticket');
 const open = defineModel<boolean>('open');
 
 const page = usePage();
@@ -272,23 +231,24 @@ const time = reactive({
     seconds: new Date().getSeconds(),
 });
 
-import { toZonedDate } from '@/lib/utils';
+
+const currAssetAssignment = computed<AssetAssignment | null>(() => {
+    return page.props.currentAssignment || null;
+});
 
 const formatTime = computed(() => {
     return `${time.hours.toString().padStart(2, '0')}:${time.minutes.toString().padStart(2, '0')}:${time.seconds.toString().padStart(2, '0')}`;
 });
 
-    // const TIUsers = computed<User[]>(() => {
-    //     return (usePage().props.TIUsers || []) as User[];
-    // });
+// const TIUsers = computed<User[]>(() => {
+//     return (usePage().props.TIUsers || []) as User[];
+// });
 
-const assign = computed<AssetAssignment | null>(() => {
-    return asset.value?.current_assignment || null;
-});
-const accessoriesToReturn = computed<Asset[]>(() => {
-    if (!assign.value) return [];
-    return assign.value.children_assignments?.flatMap(child => child.asset!) || [];
-});
+
+// const accessoriesToReturn = computed<Asset[]>(() => {
+//     if (!assign.value) return [];
+//     return assign.value.children_assignments?.flatMap(child => child.asset!) || [];
+// });
 
 const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
     const alerts = (page.props?.accessoriesOutOfStockAlert || []) as Alert[];
@@ -304,7 +264,7 @@ const formSchema = toTypedSchema(
             message: 'Seleccione una fecha de entrega',
         }).refine((calendarDate) => {
             const date = calendarDate.toDate(getLocalTimeZone());
-            const assignedAtDate = assign.value ? parseISO(assign.value.assigned_at.split('T')[0]) : null;
+            const assignedAtDate = currAssetAssignment.value ? parseISO(currAssetAssignment.value.assigned_at.split('T')[0]) : null;
 
             return isBefore(assignedAtDate!, date);
         }, {
@@ -338,15 +298,16 @@ const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
     const returnDate = values.returned_date.toDate(getLocalTimeZone());
-
-    router.post(`/assets/devolve/${assign.value?.id}`, {
-        // responsible_id: values.responsible_id,
+    console.log('Submitting devolution with values:', values, 'and returnDate:', returnDate);
+    router.post(`/assets/devolve/${currAssetAssignment.value?.id}`, {
+        responsible_id: ticket?.value?.responsible_id,
         return_date: toZonedDate(returnDate),
         return_comment: values.return_comment,
         return_reason: values.return_reason,
+        ticket_id: ticket?.value?.id,
         // accessories: values.accessories,
     }, {
-        only: ['assetsPaginated', 'stats', 'accessories'],
+        // only: ['assetsPaginated', 'stats', 'accessories'],
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
@@ -365,10 +326,11 @@ const onSubmit = async (values: Record<string, any>) => {
             isSubmitting.value = false;
         },
         onSuccess: () => {
+            console.log('Devolution successful');
             open.value = false;
-            asset.value = null;
+            ticket.value = null;
 
-            downloadReturnAssignmentDocument(assign.value!.id);
+            // downloadReturnAssignmentDocument(currAssetAssignment.value!.id);
         }
     });
 };

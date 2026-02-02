@@ -10,6 +10,7 @@ class TicketFiltersDto
         public readonly ?array $statuses = null,
         public readonly ?array $types = null,
         public readonly ?array $priorities = null,
+        public readonly ?array $categories = null,
         public readonly ?string $startDate = null,
         public readonly ?string $endDate = null,
     ) {
@@ -24,6 +25,7 @@ class TicketFiltersDto
             statuses: $data['statuses'] ?? null,
             types: $data['types'] ?? null,
             priorities: $data['priorities'] ?? null,
+            categories: $data['categories'] ?? null,
             startDate: $data['startDate'] ?? null,
             endDate: $data['endDate'] ?? null,
         );

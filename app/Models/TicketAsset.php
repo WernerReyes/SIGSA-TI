@@ -16,7 +16,7 @@ class TicketAsset extends Model
         'asset_assignment_id',
         'action',
         'performed_by',
-        // 'notes',
+        'notes',
     ];
 
 
@@ -28,5 +28,10 @@ class TicketAsset extends Model
     public function asset()
     {
         return $this->belongsTo(Asset::class);
+    }
+
+    public function assetAssignment()
+    {
+        return $this->belongsTo(AssetAssignment::class, 'asset_assignment_id');
     }
 }

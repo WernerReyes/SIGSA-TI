@@ -83,6 +83,7 @@
                                 <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
                                 <SelectFilters data-key="users" :items="users" :show-selected-focus="false"
                                     :show-refresh="false"
+                                    :disabled="!!asset?.current_assignment?.parent_assignment_id || !canEdit"
                                     :label="asset?.current_assignment?.assigned_to?.full_name || 'Seleccionar empleado'"
                                     item-label="full_name" item-value="staff_id" selected-as-label
                                     :default-value="componentField.modelValue"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TicketAsset\TicketAssetAction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -33,7 +34,7 @@ return new class extends Migration {
                 ->on('assets_assignments');
 
             // Tipo de acción
-            $table->enum('action', ['ASSIGN', 'RETURN', 'CHANGE']);
+            $table->enum('action', TicketAssetAction::values());
 
             // Técnico que ejecutó
             $table->unsignedInteger('performed_by');
@@ -47,7 +48,7 @@ return new class extends Migration {
             $table->timestamp('created_at')->useCurrent();
 
             // Evita duplicar el mismo evento
-            $table->unique(['ticket_id', 'asset_assignment_id']);
+            $table->unique(['ticket_id', 'asset_assignment_id', 'action'], 'unique_ticket_asset_action');
         });
 
     }

@@ -12,7 +12,10 @@
                     <div
                         class="size-12 rounded-xl bg-primary/10 flex items-center justify-center ring-2 ring-primary/15">
                         <!-- <Laptop class="size-6 text-primary" /> -->
-                        <!-- <component :is="assetTypeOp(asset?.type?.name)?.icon" class="size-6 text-primary" /> -->
+                        <!-- <MonitorSmartphone class="size-6 text-primary" /> -->
+                        <component
+                            :is="assetTypeOp(currentAssetAssignment?.asset?.type?.name)?.icon || MonitorSmartphone"
+                            class="size-6 text-primary" />
                     </div>
                     <div class="flex-1">
                         <DialogTitle class="text-xl font-semibold">Asignar Equipo</DialogTitle>
@@ -29,50 +32,50 @@
             </DialogHeader>
             <div class="max-h-96 overflow-y-auto">
 
-                <!-- <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
-                        toast.error('El tiempo para editar esta asignación ha expirado.');
-                canEdit = false;
-            }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
-                target-label="Tiempo restante para poder editar la información" :duration="15" />
+                <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
+                    toast.error('El tiempo para editar esta asignación ha expirado.');
+                    canEdit = false;
+                }" v-if="canEdit && currentAssetAssignment" :target-date="currentAssetAssignment?.created_at"
+                    target-label="Tiempo restante para poder editar la información" :duration="15" />
 
-            <Alert v-else-if="asset?.current_assignment">
-                <LockKeyhole class="size-4" />
-                <AlertTitle>No es posible editar esta asignación</AlertTitle>
-                <AlertDescription>
-                    Han pasado más de 15 minutos desde que se asignó este equipo.
-                </AlertDescription>
+                <Alert v-else-if="currentAssetAssignment">
+                    <LockKeyhole class="size-4" />
+                    <AlertTitle>No es posible editar esta asignación</AlertTitle>
+                    <AlertDescription>
+                        Han pasado más de 15 minutos desde que se asignó este equipo.
+                    </AlertDescription>
 
-            </Alert> -->
+                </Alert>
 
                 <div class="space-y-5 py-2">
-                    <!-- <div v-if="!canEdit" @vue:mounted="() => {
-                    loadingAssignDocument = true;
-                    router.reload({
-                        data: {
-                            assignment_id: asset?.current_assignment?.id || 0
-                        },
-                        only: ['assignDocument'],
+                    <div v-if="!canEdit" @vue:mounted="() => {
+                        loadingAssignDocument = true;
+                        router.reload({
+                            data: {
+                                assignment_id: currentAssetAssignment?.id || 0
+                            },
+                            only: ['assignDocument'],
 
-                        preserveUrl: true,
-                        onFinish: () => {
-                            loadingAssignDocument = false;
-                        }
-                    });
-                }" class="p-4 rounded-xl border bg-muted/40">
+                            preserveUrl: true,
+                            onFinish: () => {
+                                loadingAssignDocument = false;
+                            }
+                        });
+                    }" class="p-4 rounded-xl border bg-muted/40">
 
-                    <template v-if="loadingAssignDocument">
-                        <Skeleton class="h-4 w-3/4 mb-2" />
-                        <Skeleton class="h-4 w-1/2" />
-                    </template>
+                        <template v-if="loadingAssignDocument">
+                            <Skeleton class="h-4 w-3/4 mb-2" />
+                            <Skeleton class="h-4 w-1/2" />
+                        </template>
 
-<template v-else>
-                        <p class="mb-2 text-sm font-medium">Subir documento de entrega firmado</p>
-                        <p class="text-xs text-muted-foreground mb-3">Solo PDF o imagen, máx. 2MB.</p>
-                        <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
-                            accept="application/pdf,image/*" v-model:reset="resetUpload"
-                            @update:file="handleUploadSignedDocument($event)" />
-                    </template>
-</div> -->
+                        <template v-else>
+                            <p class="mb-2 text-sm font-medium">Subir documento de entrega firmado</p>
+                            <p class="text-xs text-muted-foreground mb-3">Solo PDF o imagen, máx. 2MB.</p>
+                            <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
+                                accept="application/pdf,image/*" v-model:reset="resetUpload"
+                                @update:file="handleUploadSignedDocument($event)" />
+                        </template>
+                    </div>
 
                     <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
                         class="space-y-4 p-4 rounded-xl border bg-card/70">
@@ -83,7 +86,8 @@
                                     <FieldLabel for="asset_id">Equipo</FieldLabel>
                                     <SelectFilters data-key="availableAssets" :items="availableAssets"
                                         :show-selected-focus="false" :show-refresh="false"
-                                        :label="ticket?.current_asset_assignment?.asset?.name || 'Seleccionar equipo'"
+                                        :disabled="!!currentAssetAssignment?.parent_assignment_id || !canEdit"
+                                        :label="currentAssetAssignment?.asset?.name || 'Seleccionar equipo'"
                                         item-label="name" item-value="id" selected-as-label
                                         :default-value="componentField.modelValue"
                                         @select="(value) => setFieldValue('asset_id', +value)"
@@ -119,13 +123,13 @@
                                     <Popover v-slot="{ close }">
                                         <PopoverTrigger as-child>
 
-                                            <Button
-                                                :disabled="ticket?.current_asset_assignment?.parent_assignment_id || !canEdit"
+                                            <Button :disabled="currentAssetAssignment?.parent_assignment_id || !canEdit"
                                                 variant="outline" class="w-48 justify-between font-normal">
                                                 {{ componentField.modelValue
                                                     ?
-                                                    componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
-                                                    : 'Seleccionar fecha' }}
+                                                    format(componentField.modelValue.toDate(getLocalTimeZone()),
+                                                        'dd/MM/yyyy')
+                                                : 'Seleccionar fecha' }}
 
                                                 <ChevronDownIcon />
                                             </Button>
@@ -146,13 +150,15 @@
                             </VeeField>
                         </FieldGroup>
 
-
+                            {{ assetAccessories.length }}
                         <FieldGroup v-if="selectedAsset && selectedAsset?.type?.name !== TypeName.ACCESSORY">
                             <VeeField name="accessories" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                    <SelectFilters :items="assetAccessories" data-key="accessories"
+                                    <SelectFilters 
+                                     :disabled="!canEdit"
+                                    :items="assetAccessories" data-key="accessories"
                                         :show-selected-focus="false" :show-refresh="false"
                                         :label="selectLabels(componentField.modelValue)" item-label="name"
                                         item-value="id" :multiple="true" selected-as-label
@@ -173,7 +179,9 @@
                             <VeeField name="comment" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel for="comment">Observaciones</FieldLabel>
-                                    <Textarea id="comment" placeholder="Condiciones del equipo, accesorios incluidos..."
+                                    <Textarea 
+                                     :disabled="!canEdit"
+                                    id="comment" placeholder="Condiciones del equipo, accesorios incluidos..."
                                         rows="3" v-bind="componentField" />
                                     <FieldError v-if="errors.length" :errors="errors" />
                                 </Field>
@@ -220,7 +228,8 @@ import {
     FieldLabel
 } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
+import Countdown from '@/components/Countdown.vue';
+import { Alert } from '@/components/ui/alert';
 
 import { Textarea } from '@/components/ui/textarea';
 
@@ -231,7 +240,7 @@ import { TypeName } from '@/interfaces/assetType.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
-import { ChevronDownIcon } from 'lucide-vue-next';
+import { ChevronDownIcon, LockKeyhole, MonitorSmartphone } from 'lucide-vue-next';
 
 import { Badge } from '@/components/ui/badge';
 import { useApp } from '@/composables/useApp';
@@ -239,18 +248,25 @@ import type { Alert as IAlert } from '@/interfaces/alert.interface';
 import { assetTypeOp } from '@/interfaces/assetType.interface';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { type Ticket } from '@/interfaces/ticket.interface';
-import { addMinutes } from 'date-fns';
+import { addMinutes, format } from 'date-fns';
 import { toast } from 'vue-sonner';
 import SelectFilters from '../SelectFilters.vue';
+
+import { AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import FileUpload from '../FileUpload.vue';
 
 const ticket = defineModel<Ticket | null>('ticket');
 const open = defineModel<boolean>('open');
 
 const page = usePage();
-const { availableAssets, assetAccessories: accessories } = useApp();
+const { availableAssets: availables, assetAccessories: accessories } = useApp();
 const { downloadAssignmentDocument } = useAsset();
 
 
+const currentAssetAssignment = computed<AssetAssignment | null>(() => {
+    return page.props?.currentAssignment as AssetAssignment | null;
+});
 
 const isSubmitting = ref(false);
 const resetUpload = ref(false);
@@ -262,12 +278,12 @@ const url = computed<string>({
         const assignDocument = page.props?.assignDocument as
             | { delivery_document: { file_url: string } }
             | undefined;
-        return ticket.value?.current_asset_assignment?.delivery_document?.file_url || assignDocument?.delivery_document?.file_url || '';
+        return currentAssetAssignment.value?.delivery_document?.file_url || assignDocument?.delivery_document?.file_url || '';
     },
     set: (value: string) => {
-        if (ticket.value && ticket.value.current_asset_assignment) {
-            ticket.value.current_asset_assignment.delivery_document = {
-                ...ticket.value.current_asset_assignment.delivery_document!,
+        if (currentAssetAssignment.value) {
+            currentAssetAssignment.value.delivery_document = {
+                ...currentAssetAssignment.value.delivery_document!,
                 file_url: value
             }
         }
@@ -277,8 +293,9 @@ const url = computed<string>({
 
 const canEdit = computed({
     get: () => {
-        if (!ticket.value?.current_asset_assignment) return true;
-        const targetDate = ticket.value.current_asset_assignment.created_at;
+
+        if (!currentAssetAssignment.value) return true;
+        const targetDate = currentAssetAssignment.value.created_at;
 
 
         return new Date() <= addMinutes(targetDate, 15)
@@ -289,7 +306,19 @@ const canEdit = computed({
 });
 
 const assignmentId = computed<number>(() => {
-    return ticket.value?.current_asset_assignment?.id || 0;
+    return currentAssetAssignment.value?.id || 0;
+});
+
+
+const availableAssets = computed<Asset[]>(() => {
+    if (currentAssetAssignment.value) {
+       
+        return [
+            currentAssetAssignment.value.asset!,
+            ...availables.value,
+        ];
+    }
+    return availables.value;
 });
 
 const assetAccessories = computed<Asset[]>(() => {
@@ -300,13 +329,10 @@ const assetAccessories = computed<Asset[]>(() => {
     return [...childrenAssets.value, ...accessories.value];
 });
 
-const assign = computed<AssetAssignment | null>(() => {
-    return ticket.value?.current_asset_assignment || null;
-});
 
 const childrenAssets = computed<Asset[]>(() => {
-    if (!assign.value) return [];
-    return assign.value.children_assignments?.flatMap(ca => ca.asset).filter((asset): asset is Asset => !!asset) || [];
+    if (!currentAssetAssignment.value) return [];
+    return currentAssetAssignment.value?.children_assignments?.flatMap(ca => ca.asset).filter((asset): asset is Asset => !!asset) || [];
 });
 
 const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
@@ -323,7 +349,7 @@ const formSchema = toTypedSchema(
     z.object({
         asset_id: z.number({
             message: 'Seleccione un equipo',
-        }),    
+        }),
         // assigned_to_id: z.number({ invalid_type_error: 'Seleccione un empleado', required_error: 'Seleccione un empleado' }),
         assign_date: z.instanceof(CalendarDate, {
             message: 'Seleccione una fecha de entrega',
@@ -345,7 +371,7 @@ const { handleSubmit, errors, setValues, setFieldValue, values } = useForm({
 
 });
 
-watch(assign, (assignment) => {
+watch(currentAssetAssignment, (assignment) => {
     if (assignment) {
         setValues({
             asset_id: assignment.asset_id,
@@ -372,7 +398,9 @@ const onSubmit = async (values: Record<string, any>) => {
 
     const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
 
+    const only: string[] = [];
     if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type as TypeName)) {
+        // only.push('accessories');
         const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
         if (!includeCharger) {
             toast.error('Debe incluir el cargador en los accesorios del equipo.');
@@ -382,15 +410,18 @@ const onSubmit = async (values: Record<string, any>) => {
     }
 
 
+    
+
     router.post('/assets/assign', {
         asset_id: values.asset_id,
         ticket_id: ticket.value?.id,
+        responsible_id: ticket.value?.responsible_id,
         assigned_to_id: ticket.value?.requester_id,
         assign_date: values.assign_date.toDateString(),
         comment: type === TypeName.ACCESSORY ? null : values.comment,
         accessories: values.accessories,
     }, {
-        // only,
+        only: ['availableAssets', 'accessories'],
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
@@ -403,14 +434,22 @@ const onSubmit = async (values: Record<string, any>) => {
                 }
             }
 
+            if (flash.success) {
+                open.value = false;
+                ticket.value = null;
+                if (!only.length) {
+
+                    router.replaceProp('availableAssets', (availables: Asset[]) => {
+                        return availables.filter(a => a.id !== values.asset_id);
+                    });
+                }
+            }
+
             if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
                 toast.success('Se ha enviado una alerta de stock bajo para los accesorios seleccionados.');
             }
         },
-        onSuccess: () => {
-            open.value = false;
-            ticket.value = null;
-        },
+        
         onFinish: () => {
             isSubmitting.value = false;
 
@@ -423,7 +462,11 @@ const handleUploadSignedDocument = (file: File) => {
         file: file,
         type: DeliveryRecordType.ASSIGNMENT,
     }, {
-        only: [],
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+
+
         onFlash(flash) {
             const fileUrl = flash.file_url as string;
             url.value = fileUrl;
@@ -438,7 +481,7 @@ const handleUploadSignedDocument = (file: File) => {
 };
 
 const selectLabels = (modelValue: Array<number>) => {
-    if (!modelValue.length) return 'Seleccionar accesorio';
+    if (!modelValue?.length) return 'Seleccionar accesorio';
 
     let accesories = assetAccessories.value;
     if (!accesories.length) {

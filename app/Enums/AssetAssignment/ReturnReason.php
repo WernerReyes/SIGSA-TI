@@ -7,6 +7,8 @@ enum ReturnReason: string
     case TECHNICAL_ISSUES = 'TECHNICAL_ISSUES';
     case EQUIPMENT_RENOVATION = 'EQUIPMENT_RENOVATION';
 
+    case WRONG_ASSIGNMENT = 'WRONG_ASSIGNMENT';
+
     public static function values(): array
     {
         return array_map(fn(self $reason) => $reason->value, self::cases());

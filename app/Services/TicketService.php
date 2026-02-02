@@ -9,7 +9,11 @@ use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketStatus;
 use App\DTOs\Ticket\TicketFiltersDto;
 use App\Enums\Ticket\TicketType;
+use App\Enums\TicketAsset\TicketAssetAction;
+use App\Models\Asset;
+use App\Models\AssetAssignment;
 use App\Models\Ticket;
+use App\Models\TicketAsset;
 use App\Models\TicketHistory;
 use App\Models\User;
 use Auth;
@@ -43,6 +47,7 @@ class TicketService
                 'requester:staff_id,firstname,lastname,dept_id',
                 'requester.department:id,name',
                 'responsible:staff_id,firstname,lastname',
+
             ])->
             when($filters->searchTerm, function ($query) use ($filters) {
                 $query->where('title', 'LIKE', '%' . $filters->searchTerm . '%')
@@ -65,7 +70,17 @@ class TicketService
                 $query->whereIn('type', $filters->types);
             })->when($filters->priorities, function ($query) use ($filters) {
                 $query->whereIn('priority', $filters->priorities);
-            })->when($filters->startDate, function ($query) use ($filters) {
+            })->when($filters->categories, function ($query) use ($filters) {
+                if (in_array(null, $filters->categories, true)) {
+                    $query->where(function ($subQuery) use ($filters) {
+                        $subQuery->whereNull('request_type')
+                            ->orWhereIn('request_type', array_filter($filters->categories));
+                    });
+                } else {
+                    $query->whereIn('request_type', $filters->categories);
+                }
+            })
+            ->when($filters->startDate, function ($query) use ($filters) {
                 $query->whereDate('created_at', '>=', $filters->startDate);
             })->when($filters->endDate, function ($query) use ($filters) {
                 $query->whereDate('created_at', '<=', $filters->endDate);
@@ -90,6 +105,17 @@ class TicketService
             ->paginate(10);
     }
 
+
+    public function getCurrentAssignment(int $requester_id)
+    {
+        return AssetAssignment::with('asset', 'asset.type:id,name', 'childrenAssignments.asset.type:id,name',)
+            ->where('assigned_to_id', $requester_id)
+            ->whereNull('returned_at')
+            ->latest('created_at')
+            ->first();
+
+    }
+
     public function storeTicket(StoreTicketDto $dto)
     {
         try {
@@ -108,8 +134,7 @@ class TicketService
 
 
 
-                $this->logHistory($ticket, TicketHistoryAction::CREATED, 'Ticket creado');
-
+                $this->logHistory($ticket->id, TicketHistoryAction::CREATED, 'Ticket creado');
 
             });
         } catch (\Exception $e) {
@@ -191,7 +216,7 @@ class TicketService
                     }
                     $changeDescription = implode('; ', $changeDetails);
 
-                    $this->logHistory($ticket, TicketHistoryAction::UPDATED, $changeDescription);
+                    $this->logHistory($ticket->id, TicketHistoryAction::UPDATED, $changeDescription);
                 }
 
                 return $ticket;
@@ -217,11 +242,31 @@ class TicketService
         };
     }
 
-    private function logHistory(Ticket $ticket, TicketHistoryAction $action, ?string $description = null)
+    public function attachAssetToTicket(
+        int $ticketId,
+        int $assetId,
+        TicketAssetAction $action,
+        int $assignmentId
+    ) {
+
+
+        TicketAsset::create([
+            'ticket_id' => $ticketId,
+            'asset_id' => $assetId,
+            'action' => $action->value,
+            'asset_assignment_id' => $assignmentId,
+            'performed_by' => auth()->user()->staff_id,
+
+        ]);
+
+
+    }
+
+    function logHistory(int $ticketId, TicketHistoryAction $action, ?string $description = null)
     {
         TicketHistory::create([
             'action' => $action->value,
-            'ticket_id' => $ticket->id,
+            'ticket_id' => $ticketId,
             'performed_by' => auth()->id(),
             'description' => $description,
             'performed_at' => now(),
@@ -279,12 +324,12 @@ class TicketService
                 ]);
 
                 $description = $oldResponsible
-                    ? "Reasignado de responsable {$oldResponsible->full_name} a {$responsible->full_name}"
-                    : "Asignado responsable {$responsible->full_name}";
+                    ? "Cambio de responsable de '{$oldResponsible->full_name}' a '{$responsible->full_name}'"
+                    : "Responsable asignado '{$responsible->full_name}'";
 
 
 
-                $this->logHistory($ticket, TicketHistoryAction::ASSIGNED, $description);
+                $this->logHistory($ticket->id, TicketHistoryAction::RESPONSIBLE_CHANGED, $description);
 
                 return ['description' => $description, 'responsible' => $responsible];
             });
@@ -315,14 +360,14 @@ class TicketService
                 }
                 $ticket->save();
 
-            
+
 
                 $description = $newStatus === TicketStatus::CLOSED->value
                     ? "Cerrado el ticket"
-                    : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'". TicketStatus::label($newStatus) . "'";
-                    // : "Cambio de estado de {TicketStatus::label($oldStatus)} a {TicketStatus::label($newStatus)}";
+                    : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
+                // : "Cambio de estado de {TicketStatus::label($oldStatus)} a {TicketStatus::label($newStatus)}";
 
-                $this->logHistory($ticket, TicketHistoryAction::STATUS_CHANGED, $description);
+                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description);
 
                 return $description;
             });

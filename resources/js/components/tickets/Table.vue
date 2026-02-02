@@ -8,14 +8,13 @@
         </InputGroupAddon>
       </InputGroup>
 
-     
+
 
 
       <div v-if="hasFilters"
         class="flex flex-wrap gap-2 text-xs mt-5 text-muted-foreground items-center animate-in fade-in-50">
         <Badge variant="outline" class="rounded-full">{{ filterCount }} {{ filterCount === 1 ? 'filtro activo' :
           'filtros activos' }}</Badge>
-
         <template v-for="filter in filterstersRenders" :key="filter.label">
           <Badge v-if="filter.value" @click="() => {
             if (isLoading) return;
@@ -61,6 +60,18 @@
         <template #item="{ item }">
           <Badge :class="item.bg" class="flex items-center gap-2">
             <component :is="item.icon" />
+            {{ item.label }}
+          </Badge>
+        </template>
+      </SelectFilters>
+
+
+      <SelectFilters label="Categoria" :allowNull="true" show-refresh show-selected-focus
+        :items="Object.values(ticketRequestTypeOptions)" item-value="value" item-label="label" :icon="ArrowUpDown"
+        :default-value="form.categories" @select="(selects) => form.categories = selects" :multiple="true">
+        <template #item="{ item }">
+          <Badge :class="item.bg" variant='outline' class="flex items-center gap-2">
+            <component :is="item.icon || X" />
             {{ item.label }}
           </Badge>
         </template>
@@ -160,12 +171,36 @@
                 <Pencil />
                 Cambiar estado
               </ContextMenuItem>
-              <ContextMenuItem 
-               v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI"
-              @click="openAssignEquipment = true" 
-              >
+              <ContextMenuItem
+                :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
+                v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI" @click="() => {
+                  router.reload({
+                    only: ['currentAssignment'],
+                    data: { requester_id: activeRow?.requester_id },
+                    preserveUrl: true,
+                    onSuccess: () => {
+                      openAssignEquipment = true;
+
+                    }
+                  });
+                }">
                 <MonitorSmartphone />
                 Asignar
+              </ContextMenuItem>
+              <ContextMenuItem @click="() => {
+                router.reload({
+                  only: ['currentAssignment'],
+                  data: { requester_id: activeRow?.requester_id },
+                  preserveUrl: true,
+                  onSuccess: () => {
+                    openDevolution = true;
+                  }
+                });
+              }"
+                :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
+                v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI">
+                <MonitorSmartphone />
+                Devolver
               </ContextMenuItem>
               <ContextMenuItem :disabled="disabledEdit" @click="openEdit = true">
                 <Pencil />
@@ -215,7 +250,7 @@
       <div class="text-sm text-muted-foreground">
         Mostrando <span class="font-medium">{{ tickets.from }}</span> a <span class="font-medium">{{ tickets.to ||
           0
-          }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
+        }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
       </div>
       <Pagination class="mx-0 w-fit" :items-per-page="tickets.per_page" :total="tickets.total"
         :default-page="tickets.current_page">
@@ -258,9 +293,8 @@
   <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
   <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" />
   <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
-  <AssignDialog v-if="openAssignEquipment" 
-
-  v-model:open="openAssignEquipment" :ticket="activeRow" />
+  <AssignDialog v-if="openAssignEquipment" v-model:open="openAssignEquipment" :ticket="activeRow" />
+  <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" :ticket="activeRow" />
 
   <AlertDialog v-model:open="openDelete" title="Eliminar ticket"
     description="¿Estás seguro de que deseas eliminar este ticket? Esta acción no se puede deshacer."
@@ -328,6 +362,7 @@ import {
   TicketType,
   ticketTypeOptions,
   TicketRequestType,
+  ticketRequestTypeOptions,
   typeOp
 } from '@/interfaces/ticket.interface';
 import { type User as IUser } from '@/interfaces/user.interface';
@@ -347,6 +382,7 @@ import AssignEquipmentModal from './AssignEquipmentModal.vue';
 import Dialog from './Dialog.vue';
 import TicketColumnTable from './TicketColumnTable.vue';
 import HistoryDialog from './HistoryDialog.vue';
+import DevolutionDialog from './DevolutionDialog.vue';
 
 const { tickets } = defineProps<{ tickets: Paginated<Ticket> }>()
 
@@ -363,6 +399,7 @@ const openReassign = ref(false);
 const changeStatus = ref(false);
 const openEdit = ref(false);
 const openAssignEquipment = ref(false);
+const openDevolution = ref(false);
 const openHistory = ref(false);
 const openDelete = ref(false);
 
@@ -375,6 +412,7 @@ type Filters = {
   types?: TicketType[];
   statuses?: TicketStatus[];
   priorities?: TicketPriority[];
+  categories?: (TicketRequestType | null)[];
   dateRange?: DateRange;
 }
 
@@ -387,7 +425,9 @@ const filters = computed(() => page.props.filters as
 
 const filterCount = computed(() => {
   const base = form.searchTerm ? 1 : 0;
-  const buckets = [form.statuses?.length, form.types?.length, form.requesters?.length, form.responsibles?.length, form.priorities?.length, form.dateRange ? 1 : 0];
+  const buckets = [form.statuses?.length, form.types?.length, form.requesters?.length, form.responsibles?.length, form.priorities?.length,
+  form.categories?.length,
+  form.dateRange ? 1 : 0];
   return base + buckets.filter(Boolean).length;
 });
 
@@ -430,6 +470,10 @@ const filterstersRenders = computed(() => [{
   value: form.priorities?.length,
   click: (): void => { form.priorities = [] }
 }, {
+  label: 'Categorías',
+  value: form.categories?.length,
+  click: (): void => { form.categories = [] }
+}, {
   label: 'Rango de fechas',
   value: form.dateRange,
   click: (): void => { form.dateRange = undefined }
@@ -449,13 +493,12 @@ const form = reactive<Filters>({
   types: filters.value?.types || [],
   statuses: filters.value?.statuses || [],
   priorities: filters.value?.priorities || [],
+  categories: filters.value?.categories || [],
   dateRange: filters.value?.startDate || filters.value?.endDate ? {
     start: filters.value?.startDate ? parseDate(filters.value.startDate) : undefined,
     end: filters.value?.endDate ? parseDate(filters.value.endDate) : undefined
   } : undefined
 });
-
-
 
 
 watch(
@@ -501,6 +544,13 @@ watch(
 )
 
 watch(
+  () => form.categories,
+  () => {
+    applyFilters()
+  }
+)
+
+watch(
   () => form.dateRange,
   () => {
     applyFilters()
@@ -522,6 +572,7 @@ function applyFilters() {
       types: form.types?.length ? form.types : undefined,
       statuses: form.statuses?.length ? form.statuses : undefined,
       priorities: form.priorities?.length ? form.priorities : undefined,
+      categories: form.categories?.length ? form.categories : undefined,
       startDate: startDate ? startDate.toISOString().split('T')[0] : undefined,
       endDate: endDate ? endDate.toISOString().split('T')[0] : undefined,
     },
@@ -539,7 +590,7 @@ const handleOpenHistories = () => {
     data: { ticket_id: activeRow.value?.id },
     preserveUrl: true,
     onSuccess: (page) => {
-    
+
       openHistory.value = true;
     }
   });

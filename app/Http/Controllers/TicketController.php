@@ -7,6 +7,7 @@ use App\DTOs\Ticket\StoreTicketDto;
 use App\DTOs\Ticket\TicketFiltersDto;
 use App\DTOs\Ticket\TicketHistoryFiltersDto;
 use App\Http\Requests\Ticket\StoreTicketRequest;
+use App\Models\AssetAssignment;
 use App\Models\Ticket;
 use App\Services\AssetService;
 use App\Services\TicketService;
@@ -23,6 +24,7 @@ class TicketController extends Controller
         $filters = TicketFiltersDto::fromArray($request->all());
 
         $ticketId = $request->input('ticket_id');
+        $assignmentId = $request->input('assignment_id');
 
         return Inertia::render('Tickets', [
             // 'departments' => $departmentsWithUsers,
@@ -33,15 +35,60 @@ class TicketController extends Controller
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
 
+            'currentAssignment' => Inertia::optional(function () use ($ticketService, $request) {
+                $requesterId = $request->input('requester_id');
+                if ($requesterId) {
+                    return $ticketService->getCurrentAssignment($requesterId);
+                }
+                return null;
+            })->once(),
+
+             'assignDocument' => Inertia::optional(fn() => $assignmentId ? $assetService->getAssignDocument(AssetAssignment::find($assignmentId)) : null)->once(),
+
             'historiesPaginated' => Inertia::optional(function () use ($ticketService, $ticketId, $request) {
                 if ($ticketId) {
                     $filters = TicketHistoryFiltersDto::fromArray($request->all());
                     return $ticketService->getHistoriesPaginated(Ticket::findOrFail($ticketId), $filters);
                 }
                 return null;
-            }),
+            })->once()  ,
         ]);
     }
+
+
+    // function getCurrentAssignment(Request $request, TicketService $ticketService)
+    // {
+    //     $requesterId = $request->input('requester_id');
+    //     if (!$requesterId) {
+    //         Inertia::flash([
+    //             'success' => null,
+    //             'error' => 'El solicitante es obligatorio.',
+    //             'timestamp' => now()->timestamp,
+    //         ]);
+    //        return back();
+    //     }
+
+    //     try {
+    //         $assignment = $ticketService->getCurrentAssignment($requesterId);
+
+    //         Inertia::flash([
+    //             'assignment' => $assignment,
+    //             'success' => 'Asignación obtenida exitosamente.',
+    //             'error' => null,
+    //             'timestamp' => now()->timestamp,
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         Inertia::flash([
+    //             'assignment' => null,
+    //             'success' => null,
+    //             'error' => $e->getMessage(),
+    //             'timestamp' => now()->timestamp,
+    //         ]);
+    //     }
+
+    //     return back();
+    // }
 
     function storeAPI(StoreTicketRequest $request, TicketService $ticketService)
     {

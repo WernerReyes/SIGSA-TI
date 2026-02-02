@@ -1,7 +1,9 @@
 <template>
     <Popover v-model:open="open">
         <PopoverTrigger as-child>
-            <Button variant="outline" role="combobox" :aria-expanded="open" class="justify-between gap-2" :class="fullWidth ? 'w-full' : 'w-fit'">
+            <Button 
+             :disabled="disabled"
+            variant="outline" role="combobox" :aria-expanded="open" class="justify-between gap-2" :class="fullWidth ? 'w-full' : 'w-fit'">
                 <span v-if="selecteds.length && showSelectedFocus" class="relative flex size-2">
                     <span
                         class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
@@ -15,7 +17,7 @@
         </PopoverTrigger>
 
         <PopoverContent class="w-full p-0">
-            <Command>
+            <Command :disabled="disabled">
                 <CommandInput :placeholder="searchPlaceholder" />
 
                 <CommandShortcut v-if="showRefresh" @click="() => {
@@ -127,6 +129,7 @@ const props = withDefaults(
         filterPlaceholder?: string
         emptyText?: string
         fullWidth?: boolean
+        disabled?: boolean
     }>(),
     {
         label: 'Seleccionar',
@@ -139,6 +142,7 @@ const props = withDefaults(
         selectedAsLabel: false,
         fullWidth: false,
         maxLabelLength: 3,
+        disabled: false,
 
     }
 )

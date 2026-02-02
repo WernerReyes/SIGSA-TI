@@ -49,6 +49,8 @@ class Asset extends Model
         'full_name',
     ];
 
+    
+
 
     protected static function booted()
     {

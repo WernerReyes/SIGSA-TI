@@ -224,7 +224,7 @@ class DevelopmentRequestService
             }
 
             if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
-                ds('here');
+              
                 $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
             }
 

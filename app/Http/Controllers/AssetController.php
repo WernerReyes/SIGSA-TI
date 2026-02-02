@@ -215,15 +215,19 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
                 'error' => null,
             ]);
-
-        } catch (\Exception $e) {
+            
+            } catch (\Exception $e) {
+                // ds($e->getMessage());
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
 
-        }
-        return back();
+            return back()->withErrors(['devolution_error' => $e->getMessage()]);
+
+
+            }
+            return back();
     }
 
     public function generateLaptopAssignmentDocument(AssetAssignment $assignment, AssetService $assetService)
@@ -293,6 +297,7 @@ class AssetController extends Controller
     {
         $validated = $request->validated();
         $dto = UploadDeliveryRecordDto::fromArray($validated, $assignment);
+        // ds($dto);
         try {
             $file_url = $assetService->uploadDeliveryRecord($dto);
             Inertia::flash([

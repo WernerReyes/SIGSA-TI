@@ -17,6 +17,7 @@ use App\Enums\Company\EmployeeCompany;
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use App\Enums\Department\Allowed;
 use App\Enums\Ticket\TicketHistoryAction;
+use App\Enums\TicketAsset\TicketAssetAction;
 use App\Models\Alert;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
@@ -27,6 +28,7 @@ use App\Models\DeliveryRecord;
 use App\Models\TicketAsset;
 use App\Models\TicketHistory;
 use App\Models\User;
+use App\Models\Ticket;
 
 use DB;
 use Illuminate\Support\Carbon;
@@ -366,32 +368,36 @@ class AssetService
     }
 
 
-    private function logTicketHistory(Asset $asset, TicketHistoryAction $action, string $description,
-      AssetAssignment $assignment,
-    ?int $ticketId = null)
-    {
-        if (!$ticketId) {
-            return;
-        }
+    // private function logTicketHistory(
+    //     Asset $asset,
+    //     TicketHistoryAction $action,
+    //     string $description,
+    //     AssetAssignment $assignment,
+    //     TicketAssetAction $TAction,
+    //     ?int $ticketId = null
+    // ) {
+    //     if (!$ticketId) {
+    //         return;
+    //     }
 
-        TicketAsset::create([
-            'ticket_id' => $ticketId,
-            'asset_id' => $asset->id,
-            'status' => 'ASSIGN',
-            'asset_assignment_id' => $assignment->id,
-            'performed_by' => auth()->user()->staff_id,
+    //     TicketAsset::create([
+    //         'ticket_id' => $ticketId,
+    //         'asset_id' => $asset->id,
+    //         'action' => $TAction->value,
+    //         'asset_assignment_id' => $assignment->id,
+    //         'performed_by' => auth()->user()->staff_id,
 
-        ]);
+    //     ]);
 
-        TicketHistory::create([
-            'action' => $action->value,
-            'description' => $description,
-            'asset_id' => $asset->id,
-            'performed_by' => auth()->user()->staff_id,
-            'ticket_id' => $ticketId,
-            // 'performed_at' => now()->utc(),
-        ]);
-    }
+    //     TicketHistory::create([
+    //         'action' => $action->value,
+    //         'description' => $description,
+    //         'asset_id' => $asset->id,
+    //         'performed_by' => auth()->user()->staff_id,
+    //         'ticket_id' => $ticketId,
+    //         // 'performed_at' => now()->utc(),
+    //     ]);
+    // }
 
     private function logHistory(Asset $asset, AssetHistoryAction $action, string $description, ?int $deliveryRecordId = null)
     {
@@ -647,6 +653,17 @@ class AssetService
     public function assignAsset(AssignAssetDto $dto)
     {
 
+        if ($dto->ticket_id) {
+            $userAuthID = auth()->user()->staff_id;
+            $ticket = Ticket::select(
+                'id',
+                'responsible_id'
+            )->find($dto->ticket_id);
+            if ($ticket->responsible_id !== $userAuthID) {
+                throw new BadRequestException('Solo el responsable del ticket puede asignar activos al mismo.');
+            }
+        }
+
         try {
             $assignment = DB::transaction(function () use ($dto) {
 
@@ -661,6 +678,8 @@ class AssetService
                 }
 
                 $assignment = $asset->currentAssignment;
+
+                // ds($asset);
 
 
                 // 2️⃣ Si existe asignación activa → posible actualización
@@ -713,14 +732,22 @@ class AssetService
 
                     if ($accessoriesChanged) {
                         $assetsToReleaseIds = array_diff($assetsIds, $dto->accessories ?? []);
-                        $assets = Asset::whereIn('id', $assetsToReleaseIds)->get();
+                        $assets = Asset::whereIn('id', $assetsToReleaseIds)
+                            ->select('id', 'name', 'brand', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
+                            ->get();
+                        ds($assets);
 
                         $changes[] =
                             (count($assetsToReleaseIds) > 0 ?
                                 implode(',', $assets->pluck('full_name')->map(fn($name) => "{$name} liberado")->toArray()) : 'No hay accesorios liberados')
                             . "," .
                             (count($dto->accessories ?? []) > 0 ?
-                                implode(',', Asset::whereIn('id', $dto->accessories ?? [])->pluck('full_name')->map(fn($name) => "{$name} asignado")->toArray()) : 'No hay accesorios asignados');
+                                implode(',', Asset::whereIn('id', $dto->accessories ?? [])
+                                    ->select('id', 'name', 'brand', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
+                                    ->get()
+                                    ->pluck('full_name')
+                                    ->map(fn($name) => "{$name} asignado")
+                                    ->toArray()) : 'No hay accesorios asignados');
 
 
 
@@ -787,13 +814,44 @@ class AssetService
                         null
                     );
 
-                    $this->logTicketHistory(
-                        $asset,
-                        TicketHistoryAction::ASSET_ASSIGNED,
-                        $description,
-                        $assignment,
-                        $dto->ticket_id
-                    );
+
+                    // TODO: Ticket history log
+                    if ($dto->ticket_id) {
+                        app(abstract: TicketService::class)->logHistory(
+                            $dto->ticket_id,
+                            TicketHistoryAction::ASSET_ASSIGNED,
+                            $description . " para el equipo {$asset->full_name}",
+                        );
+
+                        // $existingTicketAsset = TicketAsset::where('ticket_id', $dto->ticket_id)
+                        //     ->where('action', TicketAssetAction::ASSIGNED->value)
+                        //     ->first();
+
+                        // ds($existingTicketAsset);
+
+                        // if ($existingTicketAsset) {
+                        //     app(abstract: TicketService::class)->attachAssetToTicket(
+                        //         $dto->ticket_id,
+                        //         $asset->id,
+                        //         TicketAssetAction::ASSIGNED,
+                        //         $assignment->id
+                        //     );
+                        // } else {
+                        //     $existingTicketAsset->update([
+                        //         'action' => TicketAssetAction::CHANGED->value,
+                        //         'notes' => 'Actualización de asignación de activo.',
+                        //     ]);
+                        // }
+                    }
+
+                    // $this->logTicketHistory(
+                    //     $asset,
+                    //     TicketHistoryAction::ASSET_ASSIGNED,
+                    //     $description,
+                    //     $assignment,
+                    //     TicketAssetAction::ASSIGNED,
+                    //     $dto->ticket_id
+                    // );
 
                     // AssetHistory::create([
                     //     'action' => AssetHistoryAction::ASSIGNED->value,
@@ -806,6 +864,8 @@ class AssetService
 
                     return $assignment;
                 }
+
+
 
 
                 $asset->update([
@@ -827,7 +887,7 @@ class AssetService
                 );
 
                 $description = "Equipo asignado a {$assigned->assignedTo->full_name}";
-                $ticketDescription = "Equipo '{$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}'";
+                $ticketDescription = "Equipo '{$asset->type->name} {$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}'";
 
                 // Asignar accesorios si los hay
                 if ($dto->accessories && is_array($dto->accessories)) {
@@ -856,7 +916,7 @@ class AssetService
                     ]);
 
                     $description = "Equipo asignado a {$assigned->assignedTo->full_name} junto con los accesorios: " . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray());
-                    $ticketDescription = "Equipo '{$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}' junto con los accesorios: '" . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray()) . "'";
+                    $ticketDescription = "Equipo '{$asset->type->name} {$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}' junto con los accesorios: '" . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray()) . "'";
 
 
                     AssetHistory::insert(
@@ -877,15 +937,6 @@ class AssetService
                 }
 
 
-                // AssetHistory::create([
-
-                //     'action' => AssetHistoryAction::ASSIGNED->value,
-                //     'description' => $description,
-                //     'asset_id' => $dto->asset_id,
-                //     'performed_by' => auth()->user()->staff_id,
-                //     // 'performed_at' => now()->utc(),
-                //     // 'related_assignment_id' => $assigned->id,
-                // ]);
 
                 $this->logHistory(
                     $asset,
@@ -894,19 +945,101 @@ class AssetService
                     null
                 );
 
-                $this->logTicketHistory(
-                    $asset,
-                    TicketHistoryAction::ASSET_ASSIGNED,
-                    $ticketDescription,
-                    $assigned,
-                    $dto->ticket_id
-                );
+                // TODO: Ticket history log
+                if ($dto->ticket_id) {
+
+
+                    $existingTicketAsset = TicketAsset::where('ticket_id', $dto->ticket_id)->whereNot('action', TicketAssetAction::RETURNED->value)
+                        ->first();
+
+                    $originalAsset = $existingTicketAsset?->asset;
+                    $originalAssignment = $existingTicketAsset?->assetAssignment;
+                    
+
+                    app(TicketService::class)->attachAssetToTicket(
+                            $dto->ticket_id,
+                            $asset->id,
+                            TicketAssetAction::ASSIGNED,
+                            $assigned->id
+                        );
+                    
+
+                    if ($existingTicketAsset) {
+                        
+                        $ticketDescription = "La asignación del activo '{$originalAsset->type->name} {$originalAsset->full_name}' ha sido actualizada. Nuevo activo asignado: '{$asset->type->name} {$asset->full_name}'";
+
+
+                        $existingTicketAsset->update([
+                            'action' => TicketAssetAction::CHANGED->value,
+                            'notes' => "El activo fue reasignado a {$asset->full_name}",
+                            'asset_assignment_id' => $assigned->id,
+                            'asset_id' => $asset->id,
+                        ]);
+
+                        if ($originalAssignment->childrenAssignments()->count() > 0) {
+                            // $originalAssignment->childrenAssignments->delete();
+
+                            AssetAssignment::whereIn('id', $originalAssignment->childrenAssignments->pluck('id'))->update([
+                                // 'parent_assignment_id' => null,
+                                'returned_at' => now()->toDateTimeString(),
+                                'return_comment' => "Liberado junto a la reasignación del equipo principal {$asset->full_name}",
+                                'responsible_id' => auth()->user()->staff_id,
+                                'return_reason' => ReturnReason::WRONG_ASSIGNMENT
+                            ]);
+
+                            Asset::whereIn('id', $originalAssignment->childrenAssignments->pluck('asset_id'))->update([
+                                'status' => AssetStatus::AVAILABLE->value,
+                            ]);
+                        }
+
+                        $originalAssignment->update([
+                            // 'parent_assignment_id' => null,
+                            'returned_at' => now()->toDateTimeString(),
+                            'return_comment' => "Reasignación del equipo a {$asset->full_name}",
+                            'responsible_id' => auth()->user()->staff_id,
+                            'return_reason' => ReturnReason::WRONG_ASSIGNMENT
+                        ]);
+
+                        $originalAsset->update([
+                            'status' => AssetStatus::AVAILABLE->value,
+                        ]);
+
+
+
+
+                        // $existingTicketAsset->assetAssignment->delete();
+
+                    }
+
+                    app(TicketService::class)->logHistory(
+                        $dto->ticket_id,
+                        TicketHistoryAction::ASSET_ASSIGNED,
+                        $ticketDescription,
+                    );
+
+                    // app(TicketService::class)->attachAssetToTicket(
+                    //     $dto->ticket_id,
+                    //     $asset->id,
+                    //     TicketAssetAction::ASSIGNED,
+                    //     $assigned->id
+                    // );
+                }
+
+                // $this->logTicketHistory(
+                //     $asset,
+                //     TicketHistoryAction::ASSET_ASSIGNED,
+                //     $ticketDescription,
+                //     $assigned,
+                //     TicketAssetAction::ASSIGNED,
+                //     $dto->ticket_id
+                // );
 
                 return $assigned;
 
             });
             return $assignment;
         } catch (\Exception $e) {
+            ds($e->getMessage());
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
@@ -917,22 +1050,30 @@ class AssetService
 
     public function devolveAsset(AssetAssignment $assignment, DevolveAssetDto $dto)
     {
+
+        $responsible = auth()->user();
+        if ($dto->ticket_id) {
+            $ticket = Ticket::select(
+                'id',
+                'responsible_id'
+            )->find($dto->ticket_id);
+            if ($ticket->responsible_id !== $responsible->staff_id) {
+                throw new BadRequestException('Solo el responsable del ticket puede asignar activos al mismo.');
+            }
+        }
         try {
             // DB::transaction(function () use ($assignment, $dto) {
             if ($assignment->returned_at) {
                 throw new BadRequestException('La asignación ya ha sido devuelta.');
             }
 
-            $responsible = User::select('dept_id')->find($dto->responsible_id);
-            if (!$responsible) {
-                throw new NotFoundHttpException('No se encontró el usuario responsable.');
-            }
+            // $responsible = auth()->user();
 
             if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
                 throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
             }
 
-            DB::transaction(function () use ($dto, $assignment) {
+            DB::transaction(function () use ($dto, $assignment, $responsible) {
                 Asset::where('id', $assignment->asset_id)->update([
                     'status' => AssetStatus::AVAILABLE->value,
                 ]);
@@ -959,17 +1100,17 @@ class AssetService
                             // 'parent_assignment_id' => null,
                             'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                             'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
-                            'responsible_id' => $dto->responsible_id,
+                            'responsible_id' => $responsible->staff_id,
                             'return_reason' => $dto->return_reason,
                         ]);
 
                         AssetHistory::insert(
-                            $childAssignments->map(function ($childAssignment) use ($dto, $asset) {
+                            $childAssignments->map(function ($childAssignment) use ($dto, $asset, $responsible) {
                                 return [
                                     'action' => AssetHistoryAction::RETURNED->value,
                                     'description' => "Accesorio devuelto junto al equipo principal {$asset->full_name} por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
                                     'asset_id' => $childAssignment->asset_id,
-                                    'performed_by' => auth()->user()->staff_id,
+                                    'performed_by' => $responsible->staff_id,
                                     // 'performed_at' => now()->utc(),
                                     // 'related_assignment_id' => $childAssignment->id,
                                 ];
@@ -986,29 +1127,45 @@ class AssetService
                     'parent_assignment_id' => null,
                     'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                     'return_comment' => $dto->return_comment,
-                    'responsible_id' => $dto->responsible_id,
+                    'responsible_id' => $responsible->staff_id,
                     'return_reason' => $dto->return_reason,
                 ]);
 
-                AssetHistory::create([
-                    'action' => AssetHistoryAction::RETURNED->value,
-                    'description' => $description,
-                    'asset_id' => $assignment->asset_id,
-                    'performed_by' => auth()->user()->staff_id,
-                    // 'performed_at' => now()->utc(),
-                    // 'related_assignment_id' => $assignment->id,
-                ]);
+                // AssetHistory::create([
+                //     'action' => AssetHistoryAction::RETURNED->value,
+                //     'description' => $description,
+                //     'asset_id' => $assignment->asset_id,
+                //     'performed_by' => $responsible->staff_id,
+                //     // 'performed_at' => now()->utc(),
+                //     // 'related_assignment_id' => $assignment->id,
+                // ]);
+
+                $this->logHistory(
+                    $assignment->asset,
+                    AssetHistoryAction::RETURNED,
+                    $description,
+
+                );
+
+                // $this->logTicketHistory(
+                //     $assignment->asset,
+                //     TicketHistoryAction::ASSET_RETURNED,
+                //     $description,
+                //     $assignment,
+                //     TicketAssetAction::RETURNED,
+                //     $dto->ticket_id
+                // );
+
 
             });
 
             // });
         } catch (\Exception $e) {
-
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
 
-            throw new InternalErrorException('Error al devolver el activo');
+            throw new InternalErrorException('Error al devolver el activo ' . $e->getMessage());
         }
     }
 
@@ -1262,11 +1419,12 @@ class AssetService
 
             return Storage::disk('public')->url($path);
         } catch (\Exception $e) {
+            ds($e->getMessage());
             if ($e instanceof NotFoundHttpException) {
                 throw $e;
             }
 
-            throw new InternalErrorException('Error al subir la constancia de entrega');
+            throw new InternalErrorException('Error al subir la constancia de entrega ' . $e->getMessage());
         }
     }
 

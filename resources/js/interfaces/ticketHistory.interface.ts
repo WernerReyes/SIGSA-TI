@@ -1,8 +1,12 @@
 import {
+    MonitorCheck,
+    MonitorX,
     RefreshCcw,
     SquarePen,
     SquarePlus,
     TicketCheck,
+    TicketMinus,
+    UserCheck,
 } from 'lucide-vue-next';
 import { type Component } from 'vue';
 import type { User } from './user.interface';
@@ -11,10 +15,22 @@ export enum TicketHistoryAction {
     CREATED = 'CREATED',
     UPDATED = 'UPDATED',
     STATUS_CHANGED = 'STATUS_CHANGED',
+    RESPONSIBLE_CHANGED = 'RESPONSIBLE_CHANGED',
+    // PRIORITY_CHANGED = 'PRIORITY_CHANGED',
 
-    ASSIGNED = 'ASSIGNED',
+
+    ASSET_ASSIGNED = 'ASSET_ASSIGNED',
+    ASSET_RETURNED = 'ASSET_RETURNED',
 }
 
+//  case CREATED = 'CREATED';
+//     case UPDATED = 'UPDATED';
+//     case STATUS_CHANGED = 'STATUS_CHANGED';
+
+//     case RESPONSIBLE_CHANGED = 'RESPONSIBLE_CHANGED';
+//     // case PRIORITY_CHANGED = 'PRIORITY_CHANGED';
+//     case ASSET_ASSIGNED = 'ASSET_ASSIGNED';
+//     case ASSET_RETURNED = 'ASSET_RETURNED';
 export interface TicketHistory {
     id: number;
     action: TicketHistoryAction;
@@ -49,17 +65,32 @@ export const ticketHistoryActionOptions: Record<
     },
     [TicketHistoryAction.STATUS_CHANGED]: {
         value: TicketHistoryAction.STATUS_CHANGED,
-        label: 'Cambio de Estado',
+        label: 'Estado',
         bg: 'bg-yellow-500',
         icon: RefreshCcw,
     },
+
+    [TicketHistoryAction.RESPONSIBLE_CHANGED]: {
+        value: TicketHistoryAction.RESPONSIBLE_CHANGED,
+        label: 'Responsable',
+        bg: 'bg-purple-500',
+        icon: UserCheck,
+    },
     
-    [TicketHistoryAction.ASSIGNED]: {
-        value: TicketHistoryAction.ASSIGNED,
+    [TicketHistoryAction.ASSET_ASSIGNED]: {
+        value: TicketHistoryAction.ASSET_ASSIGNED,
         label: 'Asignación',
         bg: 'bg-indigo-500',
-        icon: TicketCheck,
+        icon: MonitorCheck,
     },
+
+    [TicketHistoryAction.ASSET_RETURNED]: {
+        value: TicketHistoryAction.ASSET_RETURNED,
+        label: 'Devolución',
+        bg: 'bg-red-500',
+        icon: MonitorX,
+    },
+
 };
 
 export const actionOp = (action: TicketHistoryAction) =>
