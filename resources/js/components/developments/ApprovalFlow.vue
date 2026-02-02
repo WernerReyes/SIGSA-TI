@@ -102,7 +102,7 @@ import { Button } from '@/components/ui/button';
 import { ClipboardList, CheckCircle2, Shield, Zap, PlayCircle } from 'lucide-vue-next';
 import EstimationAnalysis from './EstimationAnalysis.vue';
 import TechnicalApproval from './TechnicalApprovalDialog.vue';
-import StrategicApproval from './StrategicApproval.vue';
+import StrategicApproval from './StrategicApprovalDialog.vue';
 
 interface Props {
     requirementId?: number | string;

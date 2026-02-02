@@ -12,6 +12,7 @@ class DevelopmentApproval extends Model
         'development_request_id',
         'approved_by_id',
         'status',
+        'level',
         'comments',
     ];
 

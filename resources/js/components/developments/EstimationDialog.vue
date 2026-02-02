@@ -156,7 +156,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/composables/useApp';
-import { type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequestSection, DevelopmentRequestStatus, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
 import { router } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
@@ -243,31 +243,29 @@ const onSubmit = async (submitValues: any) => {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
-        // except: ['developments', 'areas'],
+        onFlash: (flash) => {
+            if (flash.success) {
+                router.replaceProp('developmentsByStatus', (developments: DevelopmentRequestSection) => {
+                    const status = DevelopmentRequestStatus.IN_ANALYSIS;
+                    return {
+                        ...developments,
+                        [status]: developments[status].map((dev) => {
+                            if (dev.id === currentDevelopment.value?.id) {
+                                return {
+                                    ...dev,
+                                    estimated_end_date: format(date, 'yyyy-MM-dd'),
+                                    estimated_hours: submitValues.estimated_hours,
+                                };
+                            }
+                            return dev;
+                        }
 
-        onSuccess: () => {
-            // router.replaceProp('developmentsByStatus', (developments: DevelopmentRequestSection) => {
-            //     const status = DevelopmentRequestStatus.IN_ANALYSIS;
-            //     return {
-            //         ...developments,
-            //         [status]: developments[status].map((dev) => {
-            //             if (dev.id === currentDevelopment.value?.id) {
-            //                 return {
-            //                     ...dev,
-            //                     estimated_end_date: format(date, 'yyyy-MM-dd'),
-            //                     estimated_hours: submitValues.estimated_hours,
-            //                 };
-            //             }
-
-            //             return dev;
-            //         }
-
-            //         ),
-            //     }
-            // });
-            
-            onReset();
-        },
+                        ),
+                    }
+                });
+                onReset();
+            }
+        }
     });
 
 };

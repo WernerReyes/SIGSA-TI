@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\DTOs\DevelopmentRequest\ApproveDevelopmentDto;
 use App\DTOs\DevelopmentRequest\EstimateDevelopmentDto;
+use App\DTOs\DevelopmentRequest\StoreDevelopmentProgressDto;
 use App\DTOs\DevelopmentRequest\StoreDevelopmentRequestDto;
 use App\Enums\DevelopmentRequest\DevelopmentApprovalLevel;
 use App\Enums\DevelopmentRequest\DevelopmentApprovalStatus;
@@ -10,6 +11,7 @@ use App\Enums\DevelopmentRequest\DevelopmentRequestStatus;
 
 use App\Enums\User\UserCharge;
 use App\Models\DevelopmentApproval;
+use App\Models\DevelopmentProgress;
 use App\Models\DevelopmentRequest;
 // use Illuminate\Container\Attributes\Storage;
 use DB;
@@ -38,11 +40,23 @@ class DevelopmentRequestService
             'area',
             'requestedBy:staff_id,firstname,lastname',
             'technicalApproval.approvedBy:staff_id,firstname,lastname',
-            'strategicApproval.approvedBy:staff_id,firstname,lastname'
+            'strategicApproval.approvedBy:staff_id,firstname,lastname',
+            'latestProgress',
         ])->orderBy('position', 'ASC')->get();
 
         return $requests->groupBy('status');
     }
+
+
+    public function getProgressHistory(int $depReqId)
+    {
+        return DevelopmentProgress::with([
+            'performedBy:staff_id,firstname,lastname'
+        ])->where('development_request_id', $depReqId)
+            ->orderBy('created_at', 'ASC')
+            ->get();
+    }
+
     public function store(StoreDevelopmentRequestDto $dto)
     {
         $path = null;
@@ -124,8 +138,13 @@ class DevelopmentRequestService
     {
         $fromStatus = $developmentRequest->status;
         if ($fromStatus === $newStatus) {
-            return;
+            throw new BadRequestException('El nuevo estado es igual al estado actual.');
         }
+
+        if ($newStatus === DevelopmentRequestStatus::COMPLETED->value && $developmentRequest->latestProgress?->percentage < 100) {
+            throw new BadRequestException('No se puede mover a Producción si el progreso no es 100%.');
+        }
+
 
         if (
             in_array($fromStatus, [
@@ -153,13 +172,52 @@ class DevelopmentRequestService
         }
 
         try {
-            DB::transaction(function () use ($developmentRequest, $newStatus, $devsIdsInOrder) {
+            return DB::transaction(function () use ($developmentRequest, $newStatus, $devsIdsInOrder) {
                 $developmentRequest->status = $newStatus;
                 $developmentRequest->save();
+
+                $progress = null;
+
+                if ($newStatus === DevelopmentRequestStatus::IN_DEVELOPMENT->value) {
+                   $progress = DevelopmentProgress::create([
+                        'development_request_id' => $developmentRequest->id,
+                        'percentage' => 0,
+                        'notes' => 'Inicio de desarrollo',
+                        'performed_by' => auth()->user()->staff_id,
+                    ]);
+                }
+
+                if ($newStatus === DevelopmentRequestStatus::COMPLETED->value) {
+                    // $maxPosition = DevelopmentRequest::where('status', DevelopmentRequestStatus::REGISTERED->value)->max('position')
+                    //     ?? 0;
+                    // $developmentRequest->position = $maxPosition + 1;
+                    // $developmentRequest->save();
+                    // TODO: Save the real date and hours
+                    $totalHours = 0;
+
+                    $startProgress = $developmentRequest->firstProgress;
+                    $endProgress = $developmentRequest->latestProgress;
+
+                    if ($startProgress && $endProgress) {
+                        $startDate = Carbon::parse($startProgress->created_at);
+                        $endDate = Carbon::parse($endProgress->created_at);
+                        $totalHours = $startDate->diffInHours($endDate);
+                    }
+                    
+                    // TODO: Update the migration to add actual_hours and completed_at fields
+                    $developmentRequest->update([
+                        'completed_at' => Carbon::now(),
+                        'actual_hours' => $totalHours,
+                    ]);
+                }
+
+
 
                 if (!empty($devsIdsInOrder)) {
                     $this->swapPositions($devsIdsInOrder, $newStatus);
                 }
+
+                return $progress;
 
             });
         } catch (\Exception $e) {
@@ -184,6 +242,14 @@ class DevelopmentRequestService
 
     public function estimateDevelopment(DevelopmentRequest $developmentRequest, EstimateDevelopmentDto $dto)
     {
+        if ($developmentRequest->status !== DevelopmentRequestStatus::IN_ANALYSIS->value) {
+            throw new BadRequestException('Solo se pueden estimar solicitudes en estado "En Análisis".');
+        }
+
+        if ($developmentRequest->technicalApproval || $developmentRequest->strategicApproval) {
+            throw new BadRequestException('No se puede estimar una solicitud que ya tiene aprobaciones.');
+        }
+
         try {
             $developmentRequest->update([
                 'estimated_hours' => $dto->estimated_hours,
@@ -211,25 +277,30 @@ class DevelopmentRequestService
         }
 
         try {
-             DevelopmentApproval::create([
-                'development_request_id' => $developmentRequest->id,
-                'approved_by_id' => $dto->approvedBy->staff_id,
-                'level' => DevelopmentApprovalLevel::TECHNICAL->value,
-                'status' => $dto->status,
-                'comments' => $dto->comments,
-            ]);
+            DB::transaction(function () use ($developmentRequest, $dto) {
+                DevelopmentApproval::create([
+                    'development_request_id' => $developmentRequest->id,
+                    'approved_by_id' => $dto->approvedBy->staff_id,
+                    'level' => DevelopmentApprovalLevel::TECHNICAL->value,
+                    'status' => $dto->status,
+                    'comments' => $dto->comments,
+                ]);
 
-            if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
-                $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
-            }
+                ds($developmentRequest->strategicApproval && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value);
 
-            if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
-              
-                $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
-            }
+                if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->strategicApproval && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
+                    $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
+                }
+
+                if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
+
+                    $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
+                }
+            });
 
 
         } catch (\Exception $e) {
+            ds('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -258,8 +329,8 @@ class DevelopmentRequestService
                 'status' => $dto->status,
                 'comments' => $dto->comments,
             ]);
-            
-            if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->technicalApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
+
+            if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->technicalApproval && $developmentRequest->technicalApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
                 $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
             }
 
@@ -267,11 +338,27 @@ class DevelopmentRequestService
                 $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
             }
         } catch (\Exception $e) {
+            ds($e->getMessage());
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
     }
 
+    public function registerProgress(DevelopmentRequest $developmentRequest, StoreDevelopmentProgressDto $dto)
+    {
+        try {
+            $progress = DevelopmentProgress::create([
+                'development_request_id' => $developmentRequest->id,
+                'percentage' => $dto->percentage,
+                'notes' => $dto->notes ?? null,
+                'performed_by' => $dto->performedBy,
+            ]);
+
+            return $progress;
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al registrar el progreso: ' . $e->getMessage());
+        }
+    }
 
 
 }

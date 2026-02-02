@@ -1,7 +1,7 @@
 <template>
     <Dialog v-model:open="open" @update:open="(val) => { if (!val) onReset(); }">
         <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl p-0">
-            <form id="development-form" @submit.prevent="handleSubmit(onSubmit)()">
+            <form id="development-form" @submit.prevent="handleSubmit(onSubmit)()" class="overflow-hidden flex flex-col">
                 <DialogHeader class="border-b px-4 py-4 sm:px-6">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-3">
@@ -24,9 +24,9 @@
                     </div>
                 </DialogHeader>
 
-                <ScrollArea class="max-h-96 sm:max-h-[65vh] overflow-y-auto">
+                <ScrollArea class="max-h-96 sm:max-h-[65vh] py-4">
                     <div class="space-y-8 px-4 pb-5 sm:px-6 sm:pb-6">
-                        <section class="space-y-4 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
+                        <section class="space-y-4 rounded-lg border  border-border/80 bg-muted/20 p-3 sm:p-4">
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex items-center gap-2">
                                     <FileText class="h-4 w-4 text-primary" />
@@ -214,6 +214,11 @@ import { useApp } from '@/composables/useApp';
 
 const open = defineModel<boolean>('open');
 
+
+    const emit = defineEmits<{
+    (e: 'new-development'): void;
+}>();
+
 const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelopment');
 
 const page = usePage();
@@ -345,6 +350,7 @@ const onSubmit = (values: any) => {
                 // nextTick(( ) => {
 
                 router.appendToProp('developments', devRequest);
+                emit('new-development');
                 // })
             }
         },

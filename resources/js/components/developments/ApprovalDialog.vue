@@ -1,5 +1,7 @@
 <template>
-    <Dialog v-model:open="open">
+    <Dialog v-model:open="open" @update:open="(val) => {
+        if (!val) currDev = null;
+    }">
         <DialogContent class="max-w-[min(100vw-1.5rem,560px)] sm:max-w-lg p-0">
             <DialogHeader class="border-b px-4 py-4 sm:px-6">
                 <div class="flex items-start gap-3">
@@ -9,13 +11,13 @@
                     </div>
                     <div class="flex-1">
                         <DialogTitle class="text-lg sm:text-xl font-semibold leading-tight">
-                            Aprobación Técnica
+                            {{ title }}
                         </DialogTitle>
                         <DialogDescription>
-                            Revisa la disponibilidad de recursos y valida la estimación de tiempos.
+                            {{ description }}
                         </DialogDescription>
                     </div>
-                    <Badge variant="secondary" class="h-6">Gerente TI</Badge>
+                    <Badge variant="secondary" class="h-6">{{ role }}</Badge>
                 </div>
             </DialogHeader>
 
@@ -72,8 +74,8 @@
                         <div
                             class="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                             <User class="h-4 w-4" />
-                            Aprobando como: <strong class="text-foreground">{{ userAuth?.full_name }} (Gerente
-                                TI)</strong>
+                            Aprobando como: <strong class="text-foreground">{{ userAuth?.full_name }} ({{ role
+                                }})</strong>
                         </div>
                     </section>
 
@@ -125,6 +127,12 @@ import { ref } from 'vue';
 const open = defineModel<boolean>('open');
 const currDev = defineModel<DevelopmentRequest | null>('current-development');
 
+const { role } = defineProps<{
+    title: string;
+    description: string;
+    role: 'Gerente TI' | 'Sub-Gerente de TI';
+}>();
+
 const { isLoading, userAuth } = useApp();
 
 const comment = ref<string>('');
@@ -140,29 +148,29 @@ const strategicStatusOp = computed(() => {
 const handleApprove = (status: DevelopmentApprovalStatus) => {
     if (!currDev.value) return;
 
+    const url = role === 'Gerente TI' ?
+        `/developments/${currDev.value.id}/approve-technical` :
+        `/developments/${currDev.value.id}/approve-strategic`;
 
-    router.post(`/developments/${currDev.value.id}/approve-technical`, {
+
+    router.post(url, {
         status,
-        comment: comment.value,
+        comments: comment.value,
     }, {
         only: ['developmentsByStatus'],
-        // onStart: () => {
-        //     isLoading.value = true;
-        // },
-        // onFinish: () => {
-        //     isLoading.value = false;
-        // },
-
-        onSuccess: () => {
-            open.value = false;
-            comment.value = '';
-
-            // router.replaceProp
-            // router.
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            if (flash?.success) {
+                open.value = false;
+                currDev.value = null;
+                comment.value = '';
+            }
         },
+
     });
 };
-
 
 
 </script>

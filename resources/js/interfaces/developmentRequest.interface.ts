@@ -15,6 +15,7 @@ import { type Component } from 'vue';
 import { type Area } from './area.interface';
 import { type DevelopmentApproval } from './developmentApproval.interface';
 import { type User } from './user.interface';
+import { type DevelopmentProgress } from './developmentProgress.interface';
 
 export interface DevelopmentRequest {
     id: number;
@@ -36,6 +37,7 @@ export interface DevelopmentRequest {
     technical_approval?: DevelopmentApproval;
     strategic_approval?: DevelopmentApproval;
     approvals?: DevelopmentApproval[];
+    latest_progress?: DevelopmentProgress;
 }
 
 export interface DevelopmentRequestSection {

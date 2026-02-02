@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 
 use App\DTOs\DevelopmentRequest\ApproveDevelopmentDto;
 use App\DTOs\DevelopmentRequest\EstimateDevelopmentDto;
+use App\DTOs\DevelopmentRequest\StoreDevelopmentProgressDto;
 use App\DTOs\DevelopmentRequest\StoreDevelopmentRequestDto;
 use App\Enums\DevelopmentRequest\DevelopmentApprovalStatus;
 use App\Enums\DevelopmentRequest\DevelopmentRequestStatus;
 use App\Http\Requests\DevelopmentRequest\ApproveDevelopmentRequest;
 use App\Http\Requests\DevelopmentRequest\EstimateDevelopmentRequest;
+use App\Http\Requests\DevelopmentRequest\RegisterProgressRequest;
 use App\Http\Requests\DevelopmentRequest\StoreDevelopmentRequest;
 use App\Models\DevelopmentRequest;
 use App\Services\AreaService;
@@ -19,11 +21,15 @@ use Inertia\Inertia;
 
 class DevelopmentController extends Controller
 {
-    public function renderView(DevelopmentRequestService $service, AreaService $areaService)
+    public function renderView(Request $request, DevelopmentRequestService $service, AreaService $areaService)
     {
+        $depReqId = $request->input('development_request_id', null);
+
         return Inertia::render('Developments', [
             'developmentsByStatus' => Inertia::once(fn() => $service->getSectionsByStatus()),
-            'areas' => Inertia::optional(fn() => $areaService->getAll())->once()
+            'areas' => Inertia::optional(fn() => $areaService->getAll())->once(),
+
+            'progressHistory' => Inertia::optional(fn() => $depReqId ? $service->getProgressHistory($depReqId) : [])->once(),
         ]);
     }
 
@@ -39,6 +45,7 @@ class DevelopmentController extends Controller
                 'success' => 'Solicitud de desarrollo creada exitosamente.',
                 'devRequest' => $devRequest,
                 'error' => null,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
@@ -46,6 +53,7 @@ class DevelopmentController extends Controller
                 'success' => null,
                 'devRequest' => null,
                 'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
             ]);
         }
 
@@ -54,7 +62,7 @@ class DevelopmentController extends Controller
 
     public function update(StoreDevelopmentRequest $request, DevelopmentRequest $developmentRequest, DevelopmentRequestService $service)
     {
-       
+
         $validated = $request->validated();
         $dto = StoreDevelopmentRequestDto::fromArray($validated);
 
@@ -66,6 +74,7 @@ class DevelopmentController extends Controller
                 'success' => 'Solicitud de desarrollo actualizada exitosamente.',
                 'devRequest' => $devRequest,
                 'error' => null,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
@@ -73,6 +82,7 @@ class DevelopmentController extends Controller
                 'success' => null,
                 'devRequest' => null,
                 'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
             ]);
         }
 
@@ -89,12 +99,14 @@ class DevelopmentController extends Controller
             Inertia::flash([
                 'success' => 'Solicitud de desarrollo eliminada exitosamente.',
                 'error' => null,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
             ]);
         }
 
@@ -112,7 +124,7 @@ class DevelopmentController extends Controller
 
         $devsIdsInOrder = $request->input('devs_ids_in_order');
         $status = $request->input('status');
- 
+
         try {
 
             $service->swapPositions($devsIdsInOrder, $status);
@@ -120,12 +132,14 @@ class DevelopmentController extends Controller
             Inertia::flash([
                 'success' => 'Posiciones de las solicitudes de desarrollo actualizadas exitosamente.',
                 'error' => null,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
             ]);
         }
 
@@ -143,17 +157,21 @@ class DevelopmentController extends Controller
 
         try {
 
-            $service->updateStatus($developmentRequest, $newStatus, $devsIdsInOrder);
+            $progress = $service->updateStatus($developmentRequest, $newStatus, $devsIdsInOrder);
 
             Inertia::flash([
                 'success' => 'Estado de la solicitud de desarrollo actualizado exitosamente.',
                 'error' => null,
+                'progress' => $progress,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
+                'progress' => null,
+                'timestamp' => now()->timestamp,
             ]);
         }
 
@@ -172,12 +190,14 @@ class DevelopmentController extends Controller
             Inertia::flash([
                 'success' => 'Estimación de la solicitud de desarrollo guardada exitosamente.',
                 'error' => null,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
             ]);
         }
 
@@ -189,7 +209,7 @@ class DevelopmentController extends Controller
         $validated = $request->validated();
         $dto = ApproveDevelopmentDto::fromArray($validated);
 
-      
+
 
         try {
             $service->approveTechnicalDevelopment($developmentRequest, $dto);
@@ -201,16 +221,18 @@ class DevelopmentController extends Controller
             Inertia::flash([
                 'success' => $message,
                 'error' => null,
+                'timestamp' => now()->timestamp,
                 // 'approval' => $approval,
             ]);
 
-            
+
 
         } catch (\Exception $e) {
-            
+
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
                 // 'approval' => null,
             ]);
         }
@@ -224,22 +246,51 @@ class DevelopmentController extends Controller
         $dto = ApproveDevelopmentDto::fromArray($validated);
 
         try {
-            $approval = $service->approveStrategicDevelopment($developmentRequest, $dto);
+            $service->approveStrategicDevelopment($developmentRequest, $dto);
 
             Inertia::flash([
                 'success' => 'Aprobación estratégica de la solicitud de desarrollo guardada exitosamente.',
                 'error' => null,
-                'approval' => $approval,
+                'timestamp' => now()->timestamp,
             ]);
 
         } catch (\Exception $e) {
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
-                'approval' => null,
+                'timestamp' => now()->timestamp,
             ]);
         }
 
         return back();
     }
+
+    public function registerProgress(RegisterProgressRequest $request, DevelopmentRequest $developmentRequest, DevelopmentRequestService $service)
+    {
+        $validated = $request->validated();
+        $dto = StoreDevelopmentProgressDto::fromArray($validated);
+
+        try {
+            $progress = $service->registerProgress($developmentRequest, $dto);
+
+            Inertia::flash([
+                'success' => 'Progreso registrado exitosamente.',
+                'error' => null,
+                'progress' => $progress,
+                'timestamp' => now()->timestamp,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
+                'progress' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
+
+
 }

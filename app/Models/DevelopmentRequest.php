@@ -77,4 +77,20 @@ class DevelopmentRequest extends Model
                 $query->where('id_cargo', UserCharge::TI_ASSISTANT_MANAGER->value);
             });
     }
+
+    public function developmentProgress()
+    {
+        return $this->hasMany(DevelopmentProgress::class, 'development_request_id');
+    }
+
+
+    public function firstProgress()
+    {
+        return $this->hasOne(DevelopmentProgress::class, 'development_request_id')->oldestOfMany();
+    }
+
+    public function latestProgress()
+    {
+        return $this->hasOne(DevelopmentProgress::class, 'development_request_id')->latestOfMany();
+    }
 }

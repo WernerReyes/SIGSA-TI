@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full shrink-0 flex flex-col bg-background rounded-lg border border-border shadow-sm">
+    <div class=" shrink-0 flex flex-col bg-background    rounded-lg border border-border shadow-sm">
         <!-- Professional Header -->
         <div class="px-4 py-3.5 border-b bg-muted/30">
             <div class="flex items-center justify-between">
@@ -19,9 +19,7 @@
                 </Button>
             </div>
         </div>
-        <!-- <ScrollArea class="max-h-full overflow-y-auto flex-1 p-3"> -->
-
-        <!-- {{ isLoading }} -->
+    
         <draggable :scroll="true" :force-fallback="true" :scroll-sensitivity="200" :scroll-speed="20"
             :disabled="!isFromTI" v-model="devRequests" tag="transition-group" :data-status="status" :move="checkMove"
             :component-data="{
@@ -29,10 +27,11 @@
                 type: 'transition',
                 name: 'fade'
             }" @end="moveDevelopment" :group="{ name: 'dev-requests', pull: true, put: true }" item-key="id"
-            animation="200">
+            animation="200" >
             <!-- Professional Empty State -->
+             <!-- TODO : Empty state component should have a full height to fill the column -->
             <div v-if="devRequests.length === 0" :key="`empty-${title}`"
-                class="flex flex-col items-center justify-center h-60 text-center rounded-lg border-2 border-dashed bg-muted/20">
+                class="flex flex-col items-center bg-red-500  justify-center h-full text-center rounded-lg border-2 border-dashed bg-muted/20">
                 <Inbox class="h-10 w-10 text-muted-foreground/40 mb-3" />
                 <p class="text-sm font-medium text-muted-foreground">Sin solicitudes</p>
                 <p class="text-xs text-muted-foreground/60 mt-1">Arrastra aquí para agregar</p>
@@ -63,7 +62,9 @@
                                 Editar
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem class="cursor-pointer" v-if="devRequest.status == DRStatus.IN_ANALYSIS"
+                            <DropdownMenuItem
+                                :disabled="!!devRequest.strategic_approval || !!devRequest.technical_approval"
+                                class="cursor-pointer" v-if="devRequest.status == DRStatus.IN_ANALYSIS"
                                 @click="emit('open-estimation', devRequest)">
                                 <Pencil />
                                 Estimar
@@ -85,7 +86,14 @@
                                 Aprobar
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator v-if="devRequest.status === DRStatus.REGISTERED" />
+                            <DropdownMenuItem class="cursor-pointer"
+                                v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(devRequest.status)"
+                                @click="emit('open-progress', devRequest)">
+                                <TrendingUp />
+                                Registrar Avance
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator v-if='devRequest.status === DRStatus.REGISTERED' />
                             <DropdownMenuItem @click="emit('deleted', devRequest.id)"
                                 v-if="devRequest.status === DRStatus.REGISTERED"
                                 class="cursor-pointer text-destructive focus:text-destructive">
@@ -112,18 +120,15 @@
                         {{ devRequest?.area?.descripcion_area }}
                     </div>
                 </div>
-                <div class="mt-2">
+                <div class="mt-2" v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(devRequest.status)">
                     <div class="flex justify-between text-xs mb-1"><span
-                            class="text-muted-foreground">Progreso</span><span>75%</span></div>
-                    <div aria-valuemax="100" aria-valuemin="0" role="progressbar" data-state="indeterminate"
-                        data-max="100" class="relative w-full overflow-hidden rounded-full bg-secondary h-1.5">
-                        <div data-state="indeterminate" data-max="100"
-                            class="h-full w-full flex-1 bg-primary transition-all" style="transform: translateX(-25%);">
-                        </div>
-                    </div>
+                            class="text-muted-foreground">Progreso</span><span>
+                            {{ devRequest.latest_progress?.percentage || 0 }}%
+
+                            </span></div>
+                    <Progress :model-value="devRequest.latest_progress?.percentage || 0" />
                 </div>
 
-                <!-- // TODO: Implement the real data below -->
                 <div class="mt-2 pt-2 border-t border-border space-y-1">
                     <div class="flex items-center gap-2 text-xs text-muted-foreground">
                         <User class="size-3" />
@@ -131,33 +136,39 @@
                         <span class="truncate">{{ devRequest?.requested_by?.full_name }}</span>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-calendar w-3 h-3 text-muted-foreground">
-                            <path d="M8 2v4"></path>
-                            <path d="M16 2v4"></path>
-                            <rect width="18" height="18" x="3" y="4" rx="2"></rect>
-                            <path d="M3 10h18"></path>
-                        </svg>
-                        <span class="text-muted-foreground truncate">{{ devRequest?.estimated_end_date }}</span>
+                        <CalendarIcon class="size-3 text-muted-foreground" />
+                        <span class="text-muted-foreground truncate">
+                            Est:
+                            {{ devRequest?.estimated_end_date ? format(parseDateOnly(devRequest?.estimated_end_date),
+                                'dd/MM/yyyy') : 'Sin fecha estimada'
+
+                            }}</span>
                     </div>
                 </div>
-                <div class="mt-2 flex items-center gap-2 p-1.5 bg-muted/50 rounded"><button
-                        class="flex items-center gap-1 hover:opacity-80"><svg xmlns="http://www.w3.org/2000/svg"
-                            width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-circle-check w-3.5 h-3.5 text-success">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="m9 12 2 2 4-4"></path>
-                        </svg><span class="text-[10px] text-muted-foreground">Téc</span></button><button
-                        class="flex items-center gap-1 hover:opacity-80"><svg xmlns="http://www.w3.org/2000/svg"
-                            width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="lucide lucide-circle-check w-3.5 h-3.5 text-success">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="m9 12 2 2 4-4"></path>
-                        </svg><span class="text-[10px] text-muted-foreground">Est</span></button><span
-                        class="text-[10px] text-muted-foreground ml-auto">8 eventos</span></div>
+                <div class="mt-2 flex items-center gap-2 p-1.5 bg-muted/50 rounded">
+
+                    <button class="flex items-center gap-1 hover:opacity-80">
+
+
+                        <component :is="getStatusOp(devRequest.technical_approval?.status).icon"
+                            :class="['w-3.5 h-3.5', getStatusOp(devRequest.technical_approval?.status).color]" />
+
+                        <span class="text-[10px] text-muted-foreground">Téc</span>
+
+                    </button>
+
+
+
+                    <button class="flex items-center gap-1 hover:opacity-80">
+
+                        <component :is="getStatusOp(devRequest.strategic_approval?.status).icon"
+                            :class="['w-3.5 h-3.5', getStatusOp(devRequest.strategic_approval?.status).color]" />
+                        <span class="text-[10px] text-muted-foreground">Est</span>
+                    </button>
+
+
+
+                </div>
             </div>
 
         </draggable>
@@ -170,12 +181,16 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Progress } from '@/components/ui/progress';
 import { useApp } from '@/composables/useApp';
 import { DevelopmentRequestSection, DevelopmentRequestStatus as DRStatus, getPriorityOp, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
 import { router } from '@inertiajs/core';
-import { ClipboardCheck, Eye, Inbox, MonitorCheck, MoreVertical, Pencil, Plus, Save, Trash2, User } from 'lucide-vue-next';
+import { CalendarIcon, ClipboardCheck, Eye, Inbox, MonitorCheck, MoreVertical, Pencil, Save, Trash2, User, TrendingUp } from 'lucide-vue-next';
 import { computed, onUnmounted, ref } from 'vue';
 
+import { getStatusOp } from '@/interfaces/developmentApproval.interface';
+import { parseDateOnly } from '@/lib/utils';
+import { format } from 'date-fns';
 import { VueDraggableNext as draggable, SortableEvent, type MoveEvent } from 'vue-draggable-next';
 
 
@@ -202,6 +217,8 @@ const emit = defineEmits<{
     (e: 'open-estimation', item: DevelopmentRequest): void;
     (e: 'open-technical-approval', item: DevelopmentRequest): void;
     (e: 'open-strategic-approval', item: DevelopmentRequest): void;
+    (e: 'open-progress', item: DevelopmentRequest): void;
+
     (e: 'error', message: string): void;
 
 }>();
@@ -261,7 +278,12 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
         return false
     }
 
-
+    if (fromStatus === DRStatus.IN_TESTING && toStatus === DRStatus.COMPLETED) {
+        if (!item.latest_progress || item.latest_progress.percentage < 100) {
+            emit('error', 'No se puede mover a Producción si el progreso no es 100%.');
+            return false;
+        }
+    }
 
     const fromIndex = DR_STATUS_FLOW.indexOf(fromStatus)
     const toIndex = DR_STATUS_FLOW.indexOf(toStatus)
@@ -288,7 +310,7 @@ onUnmounted(() => {
 const moveDevelopment = (e: SortableEvent) => {
     const fromStatus = getCurrentStatus(e.from);
     const toStatus = getCurrentStatus(e.to)
-  
+
     if (!fromStatus || !toStatus) return;
 
     const item = e.item._underlying_vm_;
@@ -320,10 +342,13 @@ const swapPositions = () => {
         devs_ids_in_order: devRequests.value.map(dev => dev.id),
         status,
     }, {
-        onSuccess: () => {
-            hasPositionChanged.value = false;
-            originalDevRequests.value = [...devRequests.value];
+        onFlash: (flash) => {
+            if (flash.success) {
+                hasPositionChanged.value = false;
+                originalDevRequests.value = [...devRequests.value];
+            }
         },
+
     });
 }
 
