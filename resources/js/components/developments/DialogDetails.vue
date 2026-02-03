@@ -192,12 +192,157 @@
                                         `${currentDevelopment.estimated_hours}h` : 'Por definir' }}
                                 </p>
                             </div>
-
                         </div>
                     </section>
 
+                    <!-- Developers Section -->
+                    <section v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(currentDevelopment?.status)"
+                        class="space-y-4 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
+                        <div class="flex items-center gap-2">
+                            <Users class="h-4 w-4 text-blue-500" />
+                            <div>
+                                <p class="text-sm font-medium">Desarrolladores del Desarrollo</p>
+                                <p class="text-xs text-muted-foreground">Equipo asignado al proyecto</p>
+                            </div>
+                        </div>
+                        <div v-if="currentDevelopment?.developers && currentDevelopment.developers.length > 0"
+                            class="space-y-2">
+                            <div v-for="dev in currentDevelopment.developers" :key="dev.staff_id"
+                                class="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border/50">
+                                <div class="size-8 rounded-full bg-blue-500/15 flex items-center justify-center shrink-0">
+                                    <User class="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium truncate">{{ dev.full_name }}</p>
+                                    <p class="text-xs text-muted-foreground truncate">{{ dev.email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else
+                            class="rounded-md border border-dashed border-border/60 bg-background/40 px-3 py-2 text-xs text-muted-foreground text-center">
+                            No hay desarrolladores asignados
+                        </div>
+                    </section>
 
-                    <!-- Description + Requester -->
+                    <!-- Completion Details -->
+                    <section v-if="currentDevelopment?.status === DRStatus.COMPLETED"
+                        class="space-y-4 rounded-lg border border-border/80 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 sm:p-4">
+                        <div class="flex items-center gap-2">
+                            <CheckCircle class="h-4 w-4 text-emerald-600" />
+                            <div>
+                                <p class="text-sm font-medium">Detalles de Finalización</p>
+                                <p class="text-xs text-muted-foreground">Información de cierre del proyecto</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Dates Comparison -->
+                        <div class="space-y-3 p-3 rounded-lg bg-background border border-border/50">
+                            <p class="text-sm font-medium flex items-center gap-2">
+                                <Calendar class="h-4 w-4 text-muted-foreground" />
+                                Comparación de Fechas
+                            </p>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <p class="text-muted-foreground mb-1">Estimada</p>
+                                    <p class="font-semibold">
+                                        {{ currentDevelopment?.estimated_end_date
+                                            ? format(parseDateOnly(currentDevelopment.estimated_end_date), 'dd MMM yyyy', { locale: es })
+                                            : 'No definida'
+                                        }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground mb-1">Real</p>
+                                    <p class="font-semibold" :class="{
+                                        'text-red-600': isFinishedLate,
+                                        'text-emerald-600': !isFinishedLate && currentDevelopment?.completed_at,
+                                    }">
+                                        {{ currentDevelopment?.completed_at
+                                            ? format(new Date(currentDevelopment.completed_at), 'dd MMM yyyy', { locale: es })
+                                            : 'No finalizado'
+                                        }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-border/50">
+                                <div class="flex items-center gap-2 p-2 rounded-md" :class="{
+                                    'bg-red-50 dark:bg-red-950/30': isFinishedLate,
+                                    'bg-emerald-50 dark:bg-emerald-950/30': !isFinishedLate && currentDevelopment?.completed_at,
+                                }">
+                                    <div class="size-6 rounded-full flex items-center justify-center" :class="{
+                                        'bg-red-200 dark:bg-red-900/50': isFinishedLate,
+                                        'bg-emerald-200 dark:bg-emerald-900/50': !isFinishedLate && currentDevelopment?.completed_at,
+                                    }">
+                                        <span class="text-xs font-bold" :class="{
+                                            'text-red-700': isFinishedLate,
+                                            'text-emerald-700': !isFinishedLate && currentDevelopment?.completed_at,
+                                        }">{{ daysVariance }}</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-xs font-medium" :class="{
+                                            'text-red-700 dark:text-red-400': isFinishedLate,
+                                            'text-emerald-700 dark:text-emerald-400': !isFinishedLate && currentDevelopment?.completed_at,
+                                        }">
+                                            {{ isFinishedLate ? `Finalizado ${Math.abs(daysVariance)} día(s) tarde` : `Finalizado a tiempo` }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hours Comparison -->
+                        <div class="space-y-3 p-3 rounded-lg bg-background border border-border/50">
+                            <p class="text-sm font-medium flex items-center gap-2">
+                                <Timer class="h-4 w-4 text-muted-foreground" />
+                                Comparación de Horas
+                            </p>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <p class="text-muted-foreground mb-1">Estimadas</p>
+                                    <p class="font-semibold">
+                                        {{ currentDevelopment?.estimated_hours ? `${currentDevelopment.estimated_hours}h` : 'No definidas' }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-muted-foreground mb-1">Reales</p>
+                                    <p class="font-semibold" :class="{
+                                        'text-red-600': (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0),
+                                        'text-emerald-600': (currentDevelopment?.actual_hours ?? 0) <= (currentDevelopment?.estimated_hours ?? 0),
+                                    }">
+                                        {{ currentDevelopment?.actual_hours ? `${currentDevelopment.actual_hours}h` : 'No registrado' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-border/50">
+                                <div class="flex items-center gap-2 p-2 rounded-md" :class="{
+                                    'bg-red-50 dark:bg-red-950/30': (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0),
+                                    'bg-emerald-50 dark:bg-emerald-950/30': (currentDevelopment?.actual_hours ?? 0) <= (currentDevelopment?.estimated_hours ?? 0),
+                                }">
+                                    <div class="size-6 rounded-full flex items-center justify-center" :class="{
+                                        'bg-red-200 dark:bg-red-900/50': (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0),
+                                        'bg-emerald-200 dark:bg-emerald-900/50': (currentDevelopment?.actual_hours ?? 0) <= (currentDevelopment?.estimated_hours ?? 0),
+                                    }">
+                                        <span class="text-xs font-bold" :class="{
+                                            'text-red-700': (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0),
+                                            'text-emerald-700': (currentDevelopment?.actual_hours ?? 0) <= (currentDevelopment?.estimated_hours ?? 0),
+                                        }">{{ hoursVariance }}</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-xs font-medium" :class="{
+                                            'text-red-700 dark:text-red-400': (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0),
+                                            'text-emerald-700 dark:text-emerald-400': (currentDevelopment?.actual_hours ?? 0) <= (currentDevelopment?.estimated_hours ?? 0),
+                                        }">
+                                            {{ (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0) 
+                                                ? `${Math.abs(hoursVariance)}h extra` 
+                                                : `${Math.abs(hoursVariance)}h ahorradas` 
+                                            }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="space-y-3 grid  gap-2 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4"
                         :class="{
                             'grid-cols-2': currentDevelopment?.requirement_url
@@ -278,12 +423,6 @@
                     </section>
 
 
-
-
-
-
-
-
                 </div>
             </ScrollArea>
 
@@ -305,11 +444,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { getStatusOp as getAppStatusOp } from '@/interfaces/developmentApproval.interface';
-import { type DevelopmentRequest, getPriorityOp, getStatusOp } from '@/interfaces/developmentRequest.interface';
+import { type DevelopmentRequest, DevelopmentRequestStatus as DRStatus, getPriorityOp, getStatusOp } from '@/interfaces/developmentRequest.interface';
 import { parseDateOnly } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar, CheckCircle, Clock, FileArchive, FileText, Timer, User } from 'lucide-vue-next';
+import { Calendar, CheckCircle, Clock, FileArchive, FileText, Timer, User, Users } from 'lucide-vue-next';
 import { DevelopmentApprovalStatus } from '@/interfaces/developmentApproval.interface';
 import { computed } from 'vue';
 
@@ -322,5 +461,30 @@ const techAppStatusOp = computed(() => {
 
 const stratAppStatusOp = computed(() => {
     return getAppStatusOp(currentDevelopment?.value?.strategic_approval?.status);
+});
+
+// Calculate days variance (actual vs estimated)
+const daysVariance = computed(() => {
+    if (!currentDevelopment.value?.completed_at || !currentDevelopment.value?.estimated_end_date) {
+        return 0;
+    }
+    
+    const estimatedDate = parseDateOnly(currentDevelopment.value.estimated_end_date);
+    const completedDate = new Date(currentDevelopment.value.completed_at);
+    
+    return differenceInDays(completedDate, estimatedDate);
+});
+
+// Check if finished late
+const isFinishedLate = computed(() => {
+    return daysVariance.value > 0;
+});
+
+// Calculate hours variance (actual vs estimated)
+const hoursVariance = computed(() => {
+    const actual = currentDevelopment.value?.actual_hours ?? 0;
+    const estimated = currentDevelopment.value?.estimated_hours ?? 0;
+    
+    return actual - estimated;
 });
 </script>

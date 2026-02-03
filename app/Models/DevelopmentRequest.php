@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\DevelopmentRequest\DevelopmentApprovalStatus;
-use App\Enums\DevelopmentRequest\DevelopmentRequestPriority;
 use App\Enums\User\UserCharge;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +21,9 @@ class DevelopmentRequest extends Model
         // 'devs_needed',
         'estimated_hours',
         'estimated_end_date',
+        'project_url',
+        'completed_at',
+        'actual_hours',
         'area_id',
         'requested_by_id',
         'requirement_path',
@@ -45,7 +46,6 @@ class DevelopmentRequest extends Model
         return null;
     }
 
-
     public function area()
     {
         return $this->belongsTo(Area::class, 'area_id', 'id_area');
@@ -65,7 +65,6 @@ class DevelopmentRequest extends Model
     {
         return $this->hasOne(DevelopmentApproval::class, 'development_request_id')
             ->whereHas('approvedBy', function ($query) {
-                ds($query->toSql());
                 $query->where('id_cargo', UserCharge::TI_MANAGER->value);
             });
     }
@@ -93,4 +92,17 @@ class DevelopmentRequest extends Model
     {
         return $this->hasOne(DevelopmentProgress::class, 'development_request_id')->latestOfMany();
     }
+
+
+    public function developers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'development_request_developers',
+            'development_request_id',
+            'developer_id'
+        )
+     ->withTimestamps();
+    }
+
 }

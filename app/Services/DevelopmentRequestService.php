@@ -42,6 +42,7 @@ class DevelopmentRequestService
             'technicalApproval.approvedBy:staff_id,firstname,lastname',
             'strategicApproval.approvedBy:staff_id,firstname,lastname',
             'latestProgress',
+            'developers:staff_id,firstname,lastname',
         ])->orderBy('position', 'ASC')->get();
 
         return $requests->groupBy('status');
@@ -93,6 +94,11 @@ class DevelopmentRequestService
 
     public function update(DevelopmentRequest $developmentRequest, StoreDevelopmentRequestDto $dto)
     {
+
+        if ($developmentRequest->requested_by_id !== $dto->requested_by_id) {
+            throw new UnauthorizedException('No tienes permiso para actualizar esta solicitud de desarrollo.');
+        }
+
         $path = $developmentRequest->requirement_path;
         try {
             if ($dto->requirement_file) {
@@ -114,7 +120,6 @@ class DevelopmentRequestService
             ]);
 
             if ($developmentRequest->wasChanged('area_id')) {
-
                 $developmentRequest->load('area');
             }
 
@@ -178,8 +183,10 @@ class DevelopmentRequestService
 
                 $progress = null;
 
+                $completed = null;
+
                 if ($newStatus === DevelopmentRequestStatus::IN_DEVELOPMENT->value) {
-                   $progress = DevelopmentProgress::create([
+                    $progress = DevelopmentProgress::create([
                         'development_request_id' => $developmentRequest->id,
                         'percentage' => 0,
                         'notes' => 'Inicio de desarrollo',
@@ -201,26 +208,36 @@ class DevelopmentRequestService
                     if ($startProgress && $endProgress) {
                         $startDate = Carbon::parse($startProgress->created_at);
                         $endDate = Carbon::parse($endProgress->created_at);
-                        $totalHours = $startDate->diffInHours($endDate);
+                        $totalHours = round($startDate->diffInHours($endDate), 3);
+                     
                     }
-                    
-                    // TODO: Update the migration to add actual_hours and completed_at fields
-                    $developmentRequest->update([
-                        'completed_at' => Carbon::now(),
+
+                    $completed = [
+                        'completed_at' => Carbon::now()->toDateString(),
                         'actual_hours' => $totalHours,
+                    ];
+
+
+                    // n: Update the migration to add actual_hours and completed_at fields
+                    $developmentRequest->update([
+                        'completed_at' => $completed['completed_at'],
+                        'actual_hours' => $completed['actual_hours'],
                     ]);
                 }
-
 
 
                 if (!empty($devsIdsInOrder)) {
                     $this->swapPositions($devsIdsInOrder, $newStatus);
                 }
 
-                return $progress;
+                return [
+                    'progress' => $progress,
+                    'completed' => $completed,
+                ];
 
             });
         } catch (\Exception $e) {
+            ds($e->getMessage());
             throw new InternalErrorException('Error al actualizar el estado de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -229,13 +246,35 @@ class DevelopmentRequestService
 
     public function delete(DevelopmentRequest $developmentRequest)
     {
+        if ($developmentRequest->requested_by_id !== auth()->user()->staff_id) {
+            throw new UnauthorizedException('No tienes permiso para eliminar esta solicitud de desarrollo.');
+        }
+
+        if (
+            in_array($developmentRequest->status, [
+                DevelopmentRequestStatus::APPROVED->value,
+                DevelopmentRequestStatus::IN_DEVELOPMENT->value,
+                DevelopmentRequestStatus::IN_TESTING->value,
+                DevelopmentRequestStatus::COMPLETED->value,
+            ])
+        ) {
+            throw new BadRequestException('No se puede eliminar una solicitud que está en desarrollo, en pruebas o completada.');
+        }
+
         try {
-            $developmentRequest->delete();
+            DB::transaction(function () use ($developmentRequest) {
+
+                $developmentRequest->approvals()->delete();
+
+
+                $developmentRequest->delete();
+            });
 
             if ($developmentRequest->requirement_path) {
                 Storage::disk('public')->delete($developmentRequest->requirement_path);
             }
         } catch (\Exception $e) {
+            ds($e->getMessage());
             throw new InternalErrorException('Error al eliminar la solicitud de desarrollo: ' . $e->getMessage());
         }
     }
@@ -346,6 +385,10 @@ class DevelopmentRequestService
 
     public function registerProgress(DevelopmentRequest $developmentRequest, StoreDevelopmentProgressDto $dto)
     {
+        if (!in_array($developmentRequest->status, [DevelopmentRequestStatus::IN_DEVELOPMENT->value, DevelopmentRequestStatus::IN_TESTING->value])) {
+            throw new BadRequestException('Solo se puede registrar progreso en solicitudes que estén en desarrollo o en pruebas.');
+        }
+
         try {
             $progress = DevelopmentProgress::create([
                 'development_request_id' => $developmentRequest->id,
@@ -357,6 +400,49 @@ class DevelopmentRequestService
             return $progress;
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al registrar el progreso: ' . $e->getMessage());
+        }
+    }
+
+    public function assignDevelopers(DevelopmentRequest $developmentRequest, array $developerIds)
+    {
+        if ($developmentRequest->status !== DevelopmentRequestStatus::IN_DEVELOPMENT->value) {
+            throw new BadRequestException('Solo se pueden asignar desarrolladores en solicitudes que estén en desarrollo.');
+        }
+
+        try {
+            $developmentRequest->developers()->sync($developerIds);
+
+            // return $developmentRequest->fresh('developers');
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            throw new InternalErrorException('Error al asignar desarrolladores: ' . $e->getMessage());
+        }
+    }
+
+
+    public function comeBackToAnalysis(DevelopmentRequest $developmentRequest, array $devsReqIdsInOrder = [])
+    {
+        if ($developmentRequest->status !== DevelopmentRequestStatus::REJECTED->value) {
+            throw new BadRequestException('Solo se pueden volver a analizar solicitudes que estén rechazadas.');
+        }
+
+        try {
+            $maxPosition = DevelopmentRequest::where('status', DevelopmentRequestStatus::IN_ANALYSIS->value)->max('position')
+                ?? 0;
+
+            $developmentRequest->update([
+                'status' => DevelopmentRequestStatus::IN_ANALYSIS->value,
+                'position' => $maxPosition + 1,
+            ]);
+            $developmentRequest->approvals()->delete();
+
+            if (!empty($devsReqIdsInOrder)) {
+                $this->swapPositions($devsReqIdsInOrder, DevelopmentRequestStatus::IN_ANALYSIS->value);
+            }
+
+        } catch (\Exception $e) {
+            ds($e->getMessage());
+            throw new InternalErrorException('Error al volver a analizar la solicitud de desarrollo: ' . $e->getMessage());
         }
     }
 

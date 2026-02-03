@@ -18,52 +18,30 @@
                         <Plus class="h-4 w-4" />
                         Nuevo Requerimiento
                     </Button>
+                    <Button @click="showTIUsersProjectsModal = true" variant="outline" class="gap-2" size="sm">
+                        <Users class="h-4 w-4" />
+                        Equipo TI
+                    </Button>
                 </div>
             </header>
 
-            <!-- Métricas Resumen -->
-            <!-- <div class="grid gap-4 md:grid-cols-4">
-                <div class="rounded-lg border bg-card p-4">
-                    <div class="text-xs uppercase tracking-wide text-muted-foreground">Total</div>
-                    <p class="text-3xl font-bold mt-2">{{ requirements.length }}</p>
-                </div>
-                <div class="rounded-lg border bg-card p-4">
-                    <div class="text-xs uppercase tracking-wide text-muted-foreground">En Análisis</div>
-                    <p class="text-3xl font-bold mt-2 text-blue-600">
-                        {{ getCountByStatus('analysis') }}
-                    </p>
-                </div>
-                <div class="rounded-lg border bg-card p-4">
-                    <div class="text-xs uppercase tracking-wide text-muted-foreground">En QA</div>
-                    <p class="text-3xl font-bold mt-2 text-amber-600">
-                        {{ getCountByStatus('qa') }}
-                    </p>
-                </div>
-                <div class="rounded-lg border bg-card p-4">
-                    <div class="text-xs uppercase tracking-wide text-muted-foreground">En Producción</div>
-                    <p class="text-3xl font-bold mt-2 text-green-600">
-                        {{ getCountByStatus('production') }}
-                    </p>
-                </div>
-            </div> -->
-
             <!-- Board Kanban -->
-            <div class="grid grid-flow-col auto-cols-[minmax(180px,1fr)] w-full overflow-x-auto gap-4" >
+            <div class="grid grid-flow-col auto-cols-[minmax(240px,1fr)] w-full overflow-x-auto gap-4">
                 <!-- // TODO: Check why it doesn't show the toast error message  -->
                 <KanbanColumn v-model:dev-requests="registeredRequests" title="Registrados" header-color="#64748b"
                     v-model:developments-by-status="originalDevelopmentsByStatus" @deleted="(id: number) => {
                         alertDialogInfo = {
-                            title: 'Eliminar Requerimiento',
-                            description: '¿Estás seguro de que deseas eliminar este requerimiento? Esta acción no se puede deshacer.',
+                            ...deleteInfo,
                             confirm: () => {
-                                deleteDevelopmentRequest(id);
+                                deleteDevelopmentRequest(id, DevelopmentRequestStatus.REGISTERED);
                             },
-                            cancel: () => { },
-                        };
+                        }
                         showAlertDialog = true;
                     }" @moved="(id, newStatus) => {
                         updateStatus = { requestId: id, newStatus };
+                        alertDialogInfo = { ...changeStatusInfo };
                         showAlertDialog = true;
+
                     }" @open-update="(item) => {
                         showNewRequirementModal = true;
                         selectedRequirement = item;
@@ -89,6 +67,7 @@
                         selectedRequirement = item;
                     }" :status="DevelopmentRequestStatus.IN_ANALYSIS" @moved="(id, status) => {
                         updateStatus = { requestId: id, newStatus: status };
+                        alertDialogInfo = { ...changeStatusInfo };
                         showAlertDialog = true;
                     }" />
 
@@ -98,6 +77,7 @@
                         selectedRequirement = item;
                     }" @moved="(id, newStatus) => {
                         updateStatus = { requestId: id, newStatus };
+                        alertDialogInfo = { ...changeStatusInfo };
                         showAlertDialog = true;
                     }" :status="DevelopmentRequestStatus.APPROVED"
                     v-model:developments-by-status="originalDevelopmentsByStatus" />
@@ -108,8 +88,12 @@
                 }" @open-progress="(item) => {
                     showProgressModal = true;
                     selectedRequirement = item;
+                }" @open-assign-developers="(item) => {
+                    showAssignDevelopersModal = true;
+                    selectedRequirement = item;
                 }" @moved="(id, newStatus) => {
                     updateStatus = { requestId: id, newStatus };
+                    alertDialogInfo.description = '¿Estás seguro de que deseas mover este requerimiento a QA?. Esta acción indica que el desarrollo ha sido completado y está listo para ser probado por el equipo de aseguramiento de calidad.';
                     showAlertDialog = true;
                 }" v-model:dev-requests="inDevelopmentRequests" title="En Desarrollo" header-color="#8b5cf6"
                     :status="DevelopmentRequestStatus.IN_DEVELOPMENT" />
@@ -120,36 +104,56 @@
                 }" @open-progress="(item) => {
                     showProgressModal = true;
                     selectedRequirement = item;
-                }" 
-                @moved="(id, newStatus) => {
-                        updateStatus = { requestId: id, newStatus };
-                 
-                        alertDialogInfo.description = '¿Estás seguro de que deseas mover este requerimiento a Producción?. Esta acción indica que el desarrollo ha sido completado y está listo para ser usado por los usuarios finales.';
-                        showAlertDialog = true;
-                    }"
-                v-model:dev-requests="inQARequests" title="En QA" header-color="#f59e0b"
+                }" @moved="(id, newStatus) => {
+                    updateStatus = { requestId: id, newStatus };
+
+                    alertDialogInfo = {
+                        ...changeStatusInfo,
+                        description: '¿Estás seguro de que deseas mover este requerimiento a Producción?. Esta acción indica que el desarrollo ha sido completado y está listo para ser usado por los usuarios finales.'
+                    };
+                    showAlertDialog = true;
+                }" v-model:dev-requests="inQARequests" title="En QA" header-color="#f59e0b"
                     :status="DevelopmentRequestStatus.IN_TESTING" />
 
                 <KanbanColumn @open-progress="(item) => {
                     showProgressModal = true;
                     selectedRequirement = item;
-                }"
-                 @open-view="(item) => {
+                }" @open-view="(item) => {
                     showDetailModal = true;
                     selectedRequirement = item;
-                }"
-                
-
-                v-model:dev-requests="inProductionRequests" title="En Producción" header-color="#10b981"
+                }" v-model:dev-requests="inProductionRequests" title="En Producción" header-color="#10b981"
                     :status="DevelopmentRequestStatus.COMPLETED" />
 
                 <KanbanColumn @open-view="(item) => {
                     showDetailModal = true;
                     selectedRequirement = item;
-                }"
-                 v-model:dev-requests="rejectedRequests" title="Rechazados" header-color="#ef4444"
+                }" @deleted="(id: number) => {
+                    alertDialogInfo = {
+                        ...deleteInfo,
+                        confirm: () => {
+                            deleteDevelopmentRequest(id, DevelopmentRequestStatus.REJECTED);
+                        },
+                    }
+                    showAlertDialog = true;
+                }" @come-back-to-analysis="(item: DevelopmentRequest) => {
+                    updateStatus = { requestId: item.id, newStatus: DevelopmentRequestStatus.IN_ANALYSIS };
+                    alertDialogInfo = {
+                        title: 'Volver a Análisis',
+                        description: '¿Estás seguro de que deseas volver este requerimiento a Análisis para su revisión y posible re-trabajo?',
+                        confirm: () => {
+                            handleComeBackToAnalysis(item);
+                        },
+                        cancel: () => {
+                            rollbackStatus(DevelopmentRequestStatus.REJECTED);
+
+                        },
+
+                    };
+                    showAlertDialog = true;
+                }" v-model:dev-requests="rejectedRequests" title="Rechazados" header-color="#ef4444"
                     :status="DevelopmentRequestStatus.REJECTED" />
             </div>
+
 
             <DialogDetails v-model:open="showDetailModal" v-model:current-development="selectedRequirement" />
             <UpsertDialog @new-development="originalDevelopmentsByStatus = { ...developmentsByStatus }"
@@ -165,13 +169,17 @@
 
             <RegisterProgressDialog v-model:open="showProgressModal"
                 v-model:current-development="selectedRequirement" />
+            <AssignDevelopersDialog v-model:open="showAssignDevelopersModal"
+                v-model:current-development="selectedRequirement" />
+
+            <TIUsersProjectsModal v-model:open="showTIUsersProjectsModal"
+                :developments-by-status="developmentsByStatus" />
 
             <AlertDialog v-model:open="showAlertDialog" :title="alertDialogInfo.title"
                 :description="alertDialogInfo.description" @cancel="alertDialogInfo.cancel"
                 @confirm="alertDialogInfo.confirm" />
 
         </div>
-
 
     </AppLayout>
 </template>
@@ -196,6 +204,9 @@ import AlertDialog from '@/components/AlertDialog.vue';
 
 import ApprovalDialog from '@/components/developments/ApprovalDialog.vue';
 import { DevelopmentProgress } from '@/interfaces/developmentProgress.interface';
+import AssignDevelopersDialog from '@/components/developments/AssignDevelopersDialog.vue';
+import TIUsersProjectsModal from '@/components/developments/TIUsersProjectsModal.vue';
+import { Users } from 'lucide-vue-next';
 
 const { developmentsByStatus } = defineProps<{ developmentsByStatus: DevelopmentRequestSection }>();
 
@@ -207,12 +218,15 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const alertDialogInfo = ref<{
+type AlertDialogInfo = {
     title: string;
     description: string;
     confirm: () => void;
     cancel: () => void;
-}>({
+}
+
+
+const changeStatusInfo: AlertDialogInfo = {
     title: 'Cambiar Estado de Requerimiento',
     description: '¿Estás seguro de que deseas cambiar el estado de este requerimiento?',
     confirm: () => {
@@ -225,7 +239,16 @@ const alertDialogInfo = ref<{
         rollbackStatus();
         updateStatus.value = null;
     },
-});
+}
+
+const deleteInfo: AlertDialogInfo = {
+    title: 'Eliminar Requerimiento',
+    description: '¿Estás seguro de que deseas eliminar este requerimiento? Esta acción no se puede deshacer.',
+    confirm: () => { },
+    cancel: () => { },
+}
+
+const alertDialogInfo = ref<AlertDialogInfo>({ ...changeStatusInfo });
 
 const updateStatus = ref<{
     requestId: number;
@@ -238,6 +261,8 @@ const showEstimateModal = ref(false);
 const showTechnicalApprovalModal = ref(false);
 const showStrategicApprovalModal = ref(false);
 const showProgressModal = ref(false);
+const showAssignDevelopersModal = ref(false);
+const showTIUsersProjectsModal = ref(false);
 const showAlertDialog = ref(false);
 
 const originalDevelopmentsByStatus = ref<DevelopmentRequestSection>({ ...developmentsByStatus });
@@ -311,13 +336,16 @@ const updateRequestStatus = () => {
                         if (flash.progress) {
                             dev.latest_progress = flash.progress as DevelopmentProgress;
                         }
+
+                        if (flash.completed) {
+                            dev.completed_at = (flash.completed as { completed_at: string }).completed_at;
+                            dev.actual_hours = (flash.completed as { actual_hours: number }).actual_hours;
+                        }
                         return { ...dev, status: newStatus };
                     }
                     return dev;
                 });
                 showAlertDialog.value = false;
-
-
                 originalDevelopmentsByStatus.value = { ...developmentsByStatus };
 
             }
@@ -328,16 +356,45 @@ const updateRequestStatus = () => {
     });
 }
 
-const deleteDevelopmentRequest = (requestId: number) => {
+
+const deleteDevelopmentRequest = (requestId: number, status: DevelopmentRequestStatus) => {
     router.delete(`/developments/${requestId}`, {
         preserveState: true,
         preserveScroll: true,
         preserveUrl: true,
-        onSuccess: () => {
-            registeredRequests.value = registeredRequests.value.filter(dev => dev.id !== requestId);
+        onFlash: (flash) => {
+            if (flash.success) {
+                developmentsByStatus[status] = developmentsByStatus[status].filter(dev => dev.id !== requestId);
+                originalDevelopmentsByStatus.value = { ...developmentsByStatus };
 
+            }
         },
+    });
+}
 
+const handleComeBackToAnalysis = (item: DevelopmentRequest) => {
+    router.post(`/developments/${item.id}/come-back-to-analysis`, {
+        devs_ids_in_order: analysisRequests.value.map(dev => dev.id),
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            if (flash.success) {
+                analysisRequests.value = analysisRequests.value.map(dev => {
+                    if (dev.id === item.id) {
+                        return { ...dev, status: DevelopmentRequestStatus.IN_ANALYSIS, approvals: [] };
+                    }
+                    return dev;
+                });
+                rejectedRequests.value = rejectedRequests.value.filter(dev => dev.id !== item.id);
+                originalDevelopmentsByStatus.value = { ...developmentsByStatus };
+            }
+
+            if (flash.error) {
+                rollbackStatus(DevelopmentRequestStatus.REJECTED);
+            }
+        },
     });
 }
 
@@ -354,12 +411,18 @@ const showMessage = (message: string) => {
     }
 }
 
-const rollbackStatus = () => {
+const rollbackStatus = (oldStatus?: DevelopmentRequestStatus) => {
     if (!updateStatus.value) return;
     const { newStatus } = updateStatus.value;
     if (newStatus === DevelopmentRequestStatus.IN_ANALYSIS) {
-        registeredRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.REGISTERED] || [];
+        if (oldStatus && oldStatus === DevelopmentRequestStatus.REJECTED) {
+            rejectedRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.REJECTED] || [];
+        } else {
+            registeredRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.REGISTERED] || [];
+        }
         analysisRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.IN_ANALYSIS] || [];
+
+        console.log(registeredRequests.value, analysisRequests.value);
     } else if (newStatus === DevelopmentRequestStatus.IN_DEVELOPMENT) {
         approvedRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.APPROVED] || [];
         inDevelopmentRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.IN_DEVELOPMENT] || [];

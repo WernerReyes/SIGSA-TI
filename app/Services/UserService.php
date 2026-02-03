@@ -11,7 +11,7 @@ class UserService
     function getTIDepartmentUsers()
     {
         $ti = Cache::remember('ti_department_users', 60 * 60, function () {
-            return User::active()->where('dept_id', 11)->get();
+            return User::active()->select('staff_id', 'firstname', 'lastname')->where('dept_id', 11)->get();
         });
         return $ti;
     }

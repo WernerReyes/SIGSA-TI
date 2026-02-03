@@ -19,19 +19,26 @@
                 </Button>
             </div>
         </div>
-    
+
         <draggable :scroll="true" :force-fallback="true" :scroll-sensitivity="200" :scroll-speed="20"
             :disabled="!isFromTI" v-model="devRequests" tag="transition-group" :data-status="status" :move="checkMove"
             :component-data="{
                 tag: 'div',
                 type: 'transition',
                 name: 'fade'
-            }" @end="moveDevelopment" :group="{ name: 'dev-requests', pull: true, put: true }" item-key="id"
-            animation="200" >
+            }" @end="moveDevelopment"
+             @change="(e) => {
+                if (e.added || e.removed) {
+                    hasMovedInAnotherColumn = true;
+                } else {
+                    hasMovedInAnotherColumn = false;
+                }
+             }"
+            :group="{ name: 'dev-requests', pull: true, put: true }" item-key="id"
+            animation="200" class="flex-1 p-4">
             <!-- Professional Empty State -->
-             <!-- TODO : Empty state component should have a full height to fill the column -->
             <div v-if="devRequests.length === 0" :key="`empty-${title}`"
-                class="flex flex-col items-center bg-red-500  justify-center h-full text-center rounded-lg border-2 border-dashed bg-muted/20">
+                class="flex flex-col items-center justify-center min-h-100 text-center rounded-lg bg-muted/20 p-8">
                 <Inbox class="h-10 w-10 text-muted-foreground/40 mb-3" />
                 <p class="text-sm font-medium text-muted-foreground">Sin solicitudes</p>
                 <p class="text-xs text-muted-foreground/60 mt-1">Arrastra aquí para agregar</p>
@@ -39,7 +46,7 @@
 
             <!-- Clean Professional Cards -->
 
-            <div v-for="devRequest in devRequests" :key="devRequest.id"
+            <div v-esle v-for="devRequest in devRequests" :key="devRequest.id"
                 class="bg-card rounded-lg border shadow-card p-3 mb-3 transition-shadow">
                 <div class="flex items-start justify-between"><span
                         class="font-mono text-xs text-muted-foreground">DEV-{{ devRequest.id }}</span>
@@ -86,20 +93,30 @@
                                 Aprobar
                             </DropdownMenuItem>
 
-                            <DropdownMenuItem class="cursor-pointer"
+                            <DropdownMenuItem class="cursor-pointer" :disabled="devRequest?.developers?.length === 0"
                                 v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(devRequest.status)"
                                 @click="emit('open-progress', devRequest)">
                                 <TrendingUp />
-                                Registrar Avance
+                                Avance
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator v-if='devRequest.status === DRStatus.REGISTERED' />
-                            <DropdownMenuItem @click="emit('deleted', devRequest.id)"
-                                v-if="devRequest.status === DRStatus.REGISTERED"
-                                class="cursor-pointer text-destructive focus:text-destructive">
-                                <Trash2 />
-                                Eliminar
+                            <DropdownMenuItem class="cursor-pointer"
+                                v-if="devRequest.status === DRStatus.IN_DEVELOPMENT"
+                                @click="emit('open-assign-developers', devRequest)">
+                                <Users />
+                                Desarrolladores
                             </DropdownMenuItem>
+
+                            <template v-if='[DRStatus.REGISTERED, DRStatus.REJECTED].includes(devRequest.status)'>
+                                <DropdownMenuSeparator />
+
+                                <DropdownMenuItem :disabled="!isSameUser(devRequest.requested_by_id)"
+                                    @click="emit('deleted', devRequest.id)"
+                                    class="cursor-pointer text-destructive focus:text-destructive">
+                                    <Trash2 />
+                                    Eliminar
+                                </DropdownMenuItem>
+                            </template>
 
 
                         </DropdownMenuContent>
@@ -120,13 +137,42 @@
                         {{ devRequest?.area?.descripcion_area }}
                     </div>
                 </div>
-                <div class="mt-2" v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(devRequest.status)">
+                <div class="mt-2"
+                    v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(devRequest.status)">
                     <div class="flex justify-between text-xs mb-1"><span
                             class="text-muted-foreground">Progreso</span><span>
                             {{ devRequest.latest_progress?.percentage || 0 }}%
 
-                            </span></div>
+                        </span></div>
                     <Progress :model-value="devRequest.latest_progress?.percentage || 0" />
+                </div>
+
+                <!-- Project URL Section -->
+                <div class="mt-2"
+                    v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(devRequest.status)">
+                    <div class="flex items-center gap-2 p-2 bg-muted/30 rounded-md border border-border/50">
+                        <Globe class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] text-muted-foreground mb-0.5">URL del Proyecto</p>
+                            <input type="text" placeholder="https://proyecto.ejemplo.com"
+                                class="w-full text-xs bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-muted-foreground/40"
+                                :value="devRequest.project_url || ''"
+                                @input="(e) => devRequest.project_url = (e.target as HTMLInputElement).value" />
+                        </div>
+                        <Button size="icon" variant="ghost"
+                            :disabled="!devRequest.project_url || devRequest.project_url.trim() === ''"
+                            class="h-6 w-6 shrink-0" @click="saveProjectUrl(devRequest)">
+                            <Check class="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" class="h-6 w-6 shrink-0"
+                            :disabled="!devRequest.project_url || devRequest.project_url.trim() === ''" @click="() => {
+                                if (devRequest.project_url) {
+                                    openInNewTab(devRequest.project_url);
+                                }
+                            }">
+                            <ExternalLink class="h-3 w-3" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div class="mt-2 pt-2 border-t border-border space-y-1">
@@ -143,7 +189,40 @@
                                 'dd/MM/yyyy') : 'Sin fecha estimada'
 
                             }}</span>
+                        <span v-if="devRequest.status === DRStatus.COMPLETED" class="truncate" :class="{
+                            'text-red-600': isAfter(parseDateOnly(devRequest?.completed_at || ''),
+                                parseDateOnly(devRequest?.estimated_end_date || '')),
+                            'text-green-600': !isAfter(parseDateOnly(devRequest?.completed_at || ''),
+                                parseDateOnly(devRequest?.estimated_end_date || ''))
+                        }">
+                            Real:
+                            {{
+                                devRequest?.completed_at ? format(parseDateOnly(devRequest?.completed_at),
+                                    'dd/MM/yyyy') : 'No completado'
+                            }}</span>
+
+
+
                     </div>
+                    <div class=" flex items-center gap-2 text-xs">
+                        <Clock class="size-3 text-muted-foreground" />
+                        <span class="text-muted-foreground truncate">
+                            {{ devRequest?.estimated_hours }}h estimadas
+                        </span>
+
+                        <span v-if="devRequest.status === DRStatus.COMPLETED" class="truncate" :class="{
+                            'text-red-600': (devRequest?.actual_hours ?? 0) > (devRequest?.estimated_hours ?? 0),
+                            'text-green-600': (devRequest?.actual_hours ?? 0) <= (devRequest?.estimated_hours ?? 0),
+                        }">
+
+                            ({{
+                                devRequest?.actual_hours !== null && devRequest?.actual_hours !== undefined ?
+                                    `${devRequest?.actual_hours}h
+                            trabajadas` : 'No completado'
+                            }})
+                        </span>
+                    </div>
+
                 </div>
                 <div class="mt-2 flex items-center gap-2 p-1.5 bg-muted/50 rounded">
 
@@ -157,17 +236,12 @@
 
                     </button>
 
-
-
                     <button class="flex items-center gap-1 hover:opacity-80">
 
                         <component :is="getStatusOp(devRequest.strategic_approval?.status).icon"
                             :class="['w-3.5 h-3.5', getStatusOp(devRequest.strategic_approval?.status).color]" />
                         <span class="text-[10px] text-muted-foreground">Est</span>
                     </button>
-
-
-
                 </div>
             </div>
 
@@ -185,12 +259,12 @@ import { Progress } from '@/components/ui/progress';
 import { useApp } from '@/composables/useApp';
 import { DevelopmentRequestSection, DevelopmentRequestStatus as DRStatus, getPriorityOp, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
 import { router } from '@inertiajs/core';
-import { CalendarIcon, ClipboardCheck, Eye, Inbox, MonitorCheck, MoreVertical, Pencil, Save, Trash2, User, TrendingUp } from 'lucide-vue-next';
+import { CalendarIcon, Check, ClipboardCheck, Eye, Globe, ExternalLink, Inbox, MonitorCheck, MoreVertical, Pencil, Save, Trash2, User, TrendingUp, Clock, Users } from 'lucide-vue-next';
 import { computed, onUnmounted, ref } from 'vue';
 
 import { getStatusOp } from '@/interfaces/developmentApproval.interface';
 import { parseDateOnly } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isAfter, differenceInDays } from 'date-fns';
 import { VueDraggableNext as draggable, SortableEvent, type MoveEvent } from 'vue-draggable-next';
 
 
@@ -218,6 +292,8 @@ const emit = defineEmits<{
     (e: 'open-technical-approval', item: DevelopmentRequest): void;
     (e: 'open-strategic-approval', item: DevelopmentRequest): void;
     (e: 'open-progress', item: DevelopmentRequest): void;
+    (e: 'open-assign-developers', item: DevelopmentRequest): void;
+    (e: 'come-back-to-analysis', item: DevelopmentRequest): void;
 
     (e: 'error', message: string): void;
 
@@ -248,6 +324,22 @@ const hasPositionChanged = computed<boolean>(() => {
     return false;
 });
 
+const saveProjectUrl = (devRequest: DevelopmentRequest) => {
+    router.patch(`/developments/${devRequest.id}/project-url`, {
+        project_url: devRequest.project_url,
+    }, {
+        onFlash: (flash) => {
+            if (flash.error) {
+                devRequest.project_url = '';
+            }
+        },
+    });
+};
+
+const openInNewTab = (url: string) => {
+    window.open(url, '_blank');
+};
+
 const DR_STATUS_FLOW: DRStatus[] = [
     DRStatus.REGISTERED,
     DRStatus.IN_ANALYSIS,
@@ -274,8 +366,15 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
     if (fromStatus === toStatus) return true
 
     // ⛔ Estados terminales no se mueven
-    if (fromStatus === DRStatus.IN_ANALYSIS || fromStatus === DRStatus.REJECTED || fromStatus === DRStatus.COMPLETED) {
+    if (fromStatus === DRStatus.IN_ANALYSIS || fromStatus === DRStatus.COMPLETED) {
         return false
+    }
+
+    if (fromStatus == DRStatus.IN_DEVELOPMENT && toStatus == DRStatus.IN_TESTING) {
+        if (!item.developers || item.developers.length === 0) {
+            emit('error', 'No se puede mover a Testing sin desarrolladores asignados.');
+            return false;
+        }
     }
 
     if (fromStatus === DRStatus.IN_TESTING && toStatus === DRStatus.COMPLETED) {
@@ -283,6 +382,10 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
             emit('error', 'No se puede mover a Producción si el progreso no es 100%.');
             return false;
         }
+    }
+
+    if (fromStatus === DRStatus.REJECTED && toStatus === DRStatus.IN_ANALYSIS) {
+        return true;
     }
 
     const fromIndex = DR_STATUS_FLOW.indexOf(fromStatus)
@@ -297,8 +400,6 @@ const checkMove = (event: MoveEvent<DevelopmentRequest>) => {
 
     return returnValue;
 }
-
-
 
 onUnmounted(() => {
     if (timeoutId) {
@@ -322,13 +423,16 @@ const moveDevelopment = (e: SortableEvent) => {
         return;
     }
 
+    if (fromStatus === DRStatus.REJECTED && toStatus === DRStatus.IN_ANALYSIS) {
+        emit('come-back-to-analysis', item);
+        return;
+    }
+
     if (fromIndex === -1 || toIndex === -1) return;
 
     const returnValue = toIndex === fromIndex + 1;
 
-    if (fromStatus !== toStatus) {
-        hasMovedInAnotherColumn.value = true;
-    }
+    
 
     if (returnValue) {
         emit('moved', item.id, toStatus);
@@ -358,7 +462,7 @@ const hasEstimation = (devRequest: DevelopmentRequest) => {
 }
 function getCurrentStatus(element: HTMLElement): DRStatus | null {
     const sortableKey = Object.keys(element).find(key => key.startsWith('Sortable')) || '';
-    const sortableInstance = element[sortableKey!];
+    const sortableInstance = element[sortableKey];
     const dataStatus = sortableInstance?.options?.dataStatus;
     return dataStatus || null;
 }

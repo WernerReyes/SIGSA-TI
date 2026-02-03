@@ -16,19 +16,20 @@ use App\Http\Requests\DevelopmentRequest\StoreDevelopmentRequest;
 use App\Models\DevelopmentRequest;
 use App\Services\AreaService;
 use App\Services\DevelopmentRequestService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DevelopmentController extends Controller
 {
-    public function renderView(Request $request, DevelopmentRequestService $service, AreaService $areaService)
+    public function renderView(Request $request, DevelopmentRequestService $service, AreaService $areaService, UserService $userService)
     {
         $depReqId = $request->input('development_request_id', null);
 
         return Inertia::render('Developments', [
             'developmentsByStatus' => Inertia::once(fn() => $service->getSectionsByStatus()),
             'areas' => Inertia::optional(fn() => $areaService->getAll())->once(),
-
+            'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
             'progressHistory' => Inertia::optional(fn() => $depReqId ? $service->getProgressHistory($depReqId) : [])->once(),
         ]);
     }
@@ -157,12 +158,13 @@ class DevelopmentController extends Controller
 
         try {
 
-            $progress = $service->updateStatus($developmentRequest, $newStatus, $devsIdsInOrder);
+            $result = $service->updateStatus($developmentRequest, $newStatus, $devsIdsInOrder);
 
             Inertia::flash([
                 'success' => 'Estado de la solicitud de desarrollo actualizado exitosamente.',
                 'error' => null,
-                'progress' => $progress,
+                'progress' => $result['progress'] ?? null,
+                'completed' => $result['completed'] ?? null,
                 'timestamp' => now()->timestamp,
             ]);
 
@@ -171,6 +173,7 @@ class DevelopmentController extends Controller
                 'success' => null,
                 'error' => $e->getMessage(),
                 'progress' => null,
+                'completed' => null,
                 'timestamp' => now()->timestamp,
             ]);
         }
@@ -285,6 +288,91 @@ class DevelopmentController extends Controller
                 'success' => null,
                 'error' => $e->getMessage(),
                 'progress' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
+
+    public function updateProjectUrl(Request $request, DevelopmentRequest $developmentRequest)
+    {
+        $request->validate([
+            'project_url' => 'nullable|string|url',
+        ]);
+
+        $projectUrl = $request->input('project_url', null);
+
+        try {
+            $developmentRequest->update([
+                'project_url' => $projectUrl,
+            ]);
+
+            Inertia::flash([
+                'success' => 'URL del proyecto actualizada exitosamente.',
+                'error' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
+
+    public function assignDevelopers(Request $request, DevelopmentRequest $developmentRequest, DevelopmentRequestService $service)
+    {
+        $request->validate([
+            'developer_ids' => 'array|required',
+            'developer_ids.*' => 'integer|exists:ost_staff,staff_id',
+        ]);
+
+        try {
+            $service->assignDevelopers(
+                $developmentRequest,
+                $request->input('developer_ids', [])
+            );
+
+            Inertia::flash([
+                'success' => 'Desarrolladores asignados exitosamente.',
+                'error' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
+
+
+    public function comeBackToAnalysis(Request $request, DevelopmentRequest $developmentRequest, DevelopmentRequestService $service)
+    {
+        try {
+            $devsIdsInOrder = $request->input('devs_ids_in_order', []);
+
+            $service->comeBackToAnalysis($developmentRequest, $devsIdsInOrder);
+
+            Inertia::flash([
+                'success' => 'La solicitud de desarrollo ha sido devuelta a análisis exitosamente.',
+                'error' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
         }

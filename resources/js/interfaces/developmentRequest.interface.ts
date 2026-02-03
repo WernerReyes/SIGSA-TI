@@ -27,6 +27,9 @@ export interface DevelopmentRequest {
     // devs_needed?: number;
     estimated_hours?: number;
     estimated_end_date?: string;
+    project_url?: string;
+    completed_at?: string;
+    actual_hours?: number;
     area_id: number;
     requirement_url?: string;
     requested_by_id: number;
@@ -34,6 +37,7 @@ export interface DevelopmentRequest {
     requested_by?: User;
     created_at: Date;
     updated_at: Date;
+    developers?: User[];
     technical_approval?: DevelopmentApproval;
     strategic_approval?: DevelopmentApproval;
     approvals?: DevelopmentApproval[];

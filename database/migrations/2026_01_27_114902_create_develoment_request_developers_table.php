@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('development_request_developer', function (Blueprint $table) {
+        Schema::create('development_request_developers', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('development_request_id');
@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->foreign('developer_id')
                 ->references('staff_id')
                 ->on('ost_staff');
-
+            
             $table->timestamps();
         });
 
@@ -34,6 +34,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('development_request_developer');
+        Schema::dropIfExists('development_request_developers');
     }
 };

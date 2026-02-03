@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->unsignedInteger('percentage');
 
-            $table->text('notes')->nullable();
+            $table->text('notes');
 
             $table->timestamps();
 

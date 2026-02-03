@@ -1,7 +1,8 @@
 <template>
     <Dialog v-model:open="open" @update:open="(val) => { if (!val) onReset(); }">
         <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl p-0">
-            <form id="development-form" @submit.prevent="handleSubmit(onSubmit)()" class="overflow-hidden flex flex-col">
+            <form id="development-form" @submit.prevent="handleSubmit(onSubmit)()"
+                class="overflow-hidden flex flex-col">
                 <DialogHeader class="border-b px-4 py-4 sm:px-6">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-3">
@@ -15,9 +16,9 @@
                                         : 'Crear Nuevo Requerimiento' }}
                                 </DialogTitle>
                                 <p class="text-sm text-muted-foreground leading-snug">
-                                    {{ currentDevelopment ? "Actualiza la información de este requerimiento de desarrollo."
-                                        :
-                                    'Completa el formulario para crear un nuevo requerimiento de desarrollo.' }}
+                                    {{ currentDevelopment ?
+                                        "Actualiza la información de este requerimiento de desarrollo."
+                                        : 'Completa el formulario para crear un nuevo requerimiento de desarrollo.' }}
                                 </p>
                             </div>
                         </div>
@@ -123,10 +124,9 @@
                                     </VeeField>
 
                                 </div>
-                                        <!-- {{currentDevelopment}} -->
-                                <FileUpload
-                                 :currentUrl="currentDevelopment?.requirement_url"
-                                @error="(msg) => toast.error(msg)"
+                                <!-- {{currentDevelopment}} -->
+                                <FileUpload :currentUrl="currentDevelopment?.requirement_url"
+                                    @error="(msg) => toast.error(msg)"
                                     @update:file="(file) => setFieldValue('requirement_file', file)"
                                     accept="application/pdf" label="Adjuntar archivo relacionado (opcional)" />
                             </div>
@@ -195,7 +195,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions, DevelopmentRequestSection } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions, DevelopmentRequestSection, DevelopmentRequestStatus as DRStatus } from '@/interfaces/developmentRequest.interface';
 import { toTypedSchema } from '@vee-validate/zod';
 import { AlignLeft, CodeXml, FileText, Flag, MapPin, Rocket, Sparkles, TrendingUp, Type } from 'lucide-vue-next';
 import { Field as VeeField } from 'vee-validate';
@@ -215,7 +215,7 @@ import { useApp } from '@/composables/useApp';
 const open = defineModel<boolean>('open');
 
 
-    const emit = defineEmits<{
+const emit = defineEmits<{
     (e: 'new-development'): void;
 }>();
 
@@ -300,67 +300,71 @@ watch(currentDevelopment, (newVal) => {
 
 const onSubmit = (values: any) => {
     if (currentDevelopment.value) {
-        console.log(values);
         router.post(`/developments/${currentDevelopment.value.id}/update`, { ...values }, {
-            // only: [''],
-            
             preserveScroll: true,
             preserveState: true,
             preserveUrl: true,
-            except: ['areas', 'developmentsByStatus'],
             onFlash: (flash) => {
-                const devRequest = flash.devRequest as DevelopmentRequest | null;
-                if (devRequest) {
-                    // console.log('Dev Request updated:', devRequest);
-                    // nextTick(( ) => {
+                if (flash.success) {
+                    const devRequest = flash.devRequest as DevelopmentRequest | null;
+                    if (devRequest) {
+                        router.replaceProp('developmentsByStatus', (oldDevelopments: DevelopmentRequestSection) => {
+                            return {
+                                ...oldDevelopments,
+                                [devRequest.status]: oldDevelopments[devRequest.status].map((dev) =>
+                                    dev.id === devRequest.id ? {
+                                        ...devRequest,
+                                        requested_by: dev.requested_by,
+                                        area: devRequest.area || dev.area,
+                                    } : dev
+                                ),
+                            };
+                        });
 
-                    router.replaceProp('developmentsByStatus', (oldDevelopments: DevelopmentRequestSection) => {
-                        return oldDevelopments[devRequest.status].map((dev) =>
-                            dev.id === devRequest.id ? {
-                                ...dev,
-                                ...devRequest,
-                            } : dev
-                        );
-                    });
-                    // })
+                    }
+                    onReset();
                 }
             },
-            onSuccess: () => {
 
-                onReset();
-            },
 
         });
         return;
     }
 
 
-
-
     router.post('/developments', { ...values }, {
-        // only: [''],
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
-        except: ['areas', 'developments'],
         onFlash: (flash) => {
-            const devRequest = flash.devRequest as DevelopmentRequest | null;
-            if (devRequest) {
-                // console.log('Dev Request created:', devRequest);
-                // nextTick(( ) => {
+            if (flash.success) {
+                const devRequest = flash.devRequest as DevelopmentRequest | null;
 
-                router.appendToProp('developments', devRequest);
+                if (devRequest) {
+                    router.replaceProp('developmentsByStatus', (oldDevelopments: DevelopmentRequestSection) => {
+
+                        const registeredDevelopments = oldDevelopments[devRequest.status] as DevelopmentRequest[] | undefined;
+                        if (!registeredDevelopments) {
+                            return {
+                                ...oldDevelopments,
+                                [devRequest.status]: [devRequest],
+                            };
+                        }
+
+                        return {
+                            ...oldDevelopments,
+                            [devRequest.status]: [...registeredDevelopments, devRequest],
+                        };
+                    });
+
+                }
                 emit('new-development');
-                // })
+
+                onReset();
             }
         },
-        onSuccess: () => {
-
-            onReset();
-        },
-
     });
-    // Aquí puedes agregar la lógica para enviar los datos al servidor o procesarlos según sea necesario.
+
 };
 
 </script>

@@ -26,6 +26,11 @@ return new class extends Migration {
             $table->integer('estimated_hours')->nullable();
             $table->date('estimated_end_date')->nullable();
 
+            $table->string('project_url')->nullable();
+
+            $table->date('completed_at')->nullable();
+            $table->integer('actual_hours')->nullable();
+
             $table->string('requirement_path')->nullable();
 
             $table->unsignedInteger('area_id');
@@ -45,6 +50,8 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('development_requests');
+        Schema::enableForeignKeyConstraints();
     }
 };
