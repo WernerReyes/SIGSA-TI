@@ -1,9 +1,11 @@
+import { EnumOption } from '@/types';
 import { InertiaLinkProps } from '@inertiajs/vue3';
 import type { Updater } from '@tanstack/vue-table';
 import type { ClassValue } from 'clsx';
 
 import { clsx } from 'clsx';
 import { format } from 'date-fns-tz';
+import { ShieldQuestionIcon } from 'lucide-vue-next';
 import { twMerge } from 'tailwind-merge';
 import type { Ref } from 'vue';
 
@@ -32,14 +34,23 @@ export function valueUpdater<T extends Updater<any>>(
             : updaterOrValue;
 }
 
-
 export function parseDateOnly(date: string) {
-  const [y, m, d] = date.split('-').map(Number);
-  return new Date(y, m - 1, d);
+    const [y, m, d] = date.split('-').map(Number);
+    return new Date(y, m - 1, d);
 }
 
-
-export function toZonedDate(date: Date | string, timeZone: string = 'America/Lima'): string {
+export function toZonedDate(
+    date: Date | string,
+    timeZone: string = 'America/Lima',
+): string {
     return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX", { timeZone });
 }
 
+export const getEmptyEnumOption = <T>(value: T): EnumOption<T> => {
+    return {
+        label: 'Desconocido',
+        value: value as T,
+        icon: ShieldQuestionIcon,
+        bg: 'bg-gray-500',
+    };
+};

@@ -1,6 +1,12 @@
 <template>
-    <Dialog v-model:open="open">
-        <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog>
+        <DialogTrigger as-child>
+            <Button variant="outline" class="gap-2" size="sm">
+                <Users class="h-4 w-4" />
+                Equipo TI
+            </Button>
+        </DialogTrigger>
+        <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl overflow-hidden">
             <DialogHeader>
                 <div class="flex items-center gap-3">
                     <div class="size-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
@@ -15,20 +21,24 @@
                 </div>
             </DialogHeader>
 
+            <ScrollArea class="max-h-[70vh] mt-4">
             <TIUsersProjects :developments-by-status="developmentsByStatus" />
+            </ScrollArea>
         </DialogContent>
     </Dialog>
 </template>
 
 <script setup lang="ts">
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TIUsersProjects from './TIUsersProjects.vue';
 import { type DevelopmentRequestSection } from '@/interfaces/developmentRequest.interface';
 import { Users } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 defineProps<{
     developmentsByStatus: DevelopmentRequestSection;
 }>();
 
-const open = defineModel<boolean>('open');
+
 </script>

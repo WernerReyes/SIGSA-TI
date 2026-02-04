@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useApp } from '@/composables/useApp';
 import { type NavItem } from '@/types';
-import { Code, CodeXml, Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
+import { Code, CodeXml, FileText, Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -44,7 +44,12 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Accesos',
             href: "/access",
             icon: MonitorCog,
+        }, {
+            title: 'Administrativo y Control',
+            href: "/admin-control",
+            icon: FileText,
         });
+
     }
 
     if (isFromTI.value) {

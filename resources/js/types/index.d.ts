@@ -1,6 +1,7 @@
 import { User } from '@/interfaces/user.interface';
 import { InertiaLinkProps } from '@inertiajs/vue3';
 import type { LucideIcon } from 'lucide-vue-next';
+import { type Component } from 'vue';
 
 export interface Auth {
     user: User;
@@ -36,6 +37,13 @@ export type AppPageProps<
 //     created_at: string;
 //     updated_at: string;
 // }
+
+export interface EnumOption<T> {
+    label: string;
+    value: T;
+    icon?: Component;
+    bg?: string;
+}
 
 export type BreadcrumbItemType = BreadcrumbItem;
 // export interface User {

@@ -18,15 +18,13 @@
                         <Plus class="h-4 w-4" />
                         Nuevo Requerimiento
                     </Button>
-                    <Button @click="showTIUsersProjectsModal = true" variant="outline" class="gap-2" size="sm">
-                        <Users class="h-4 w-4" />
-                        Equipo TI
-                    </Button>
+                   <TIUsersProjectsModal 
+                :developments-by-status="developmentsByStatus" />
                 </div>
             </header>
 
             <!-- Board Kanban -->
-            <div class="grid grid-flow-col auto-cols-[minmax(240px,1fr)] w-full overflow-x-auto gap-4">
+            <div class="grid grid-flow-col max-h-[calc(100vh-200px)] auto-cols-[minmax(240px,1fr)] w-full overflow-x-auto gap-4 kanban-board-scroll">
                 <!-- // TODO: Check why it doesn't show the toast error message  -->
                 <KanbanColumn v-model:dev-requests="registeredRequests" title="Registrados" header-color="#64748b"
                     v-model:developments-by-status="originalDevelopmentsByStatus" @deleted="(id: number) => {
@@ -95,8 +93,8 @@
                     updateStatus = { requestId: id, newStatus };
                     alertDialogInfo.description = '¿Estás seguro de que deseas mover este requerimiento a QA?. Esta acción indica que el desarrollo ha sido completado y está listo para ser probado por el equipo de aseguramiento de calidad.';
                     showAlertDialog = true;
-                }" v-model:dev-requests="inDevelopmentRequests" title="En Desarrollo" header-color="#8b5cf6"
-                    :status="DevelopmentRequestStatus.IN_DEVELOPMENT" />
+                }" v-model:dev-requests="inDevelopmentRequests" title="En Desarrollo" header-color="#8b5cf6" v-model:developments-by-status="originalDevelopmentsByStatus"
+                        :status="DevelopmentRequestStatus.IN_DEVELOPMENT" />
 
                 <KanbanColumn @open-view="(item) => {
                     showDetailModal = true;
@@ -113,7 +111,7 @@
                     };
                     showAlertDialog = true;
                 }" v-model:dev-requests="inQARequests" title="En QA" header-color="#f59e0b"
-                    :status="DevelopmentRequestStatus.IN_TESTING" />
+                    :status="DevelopmentRequestStatus.IN_TESTING"  v-model:developments-by-status="originalDevelopmentsByStatus" />
 
                 <KanbanColumn @open-progress="(item) => {
                     showProgressModal = true;
@@ -122,7 +120,7 @@
                     showDetailModal = true;
                     selectedRequirement = item;
                 }" v-model:dev-requests="inProductionRequests" title="En Producción" header-color="#10b981"
-                    :status="DevelopmentRequestStatus.COMPLETED" />
+                    :status="DevelopmentRequestStatus.COMPLETED" v-model:developments-by-status="originalDevelopmentsByStatus" />
 
                 <KanbanColumn @open-view="(item) => {
                     showDetailModal = true;
@@ -151,7 +149,7 @@
                     };
                     showAlertDialog = true;
                 }" v-model:dev-requests="rejectedRequests" title="Rechazados" header-color="#ef4444"
-                    :status="DevelopmentRequestStatus.REJECTED" />
+                    :status="DevelopmentRequestStatus.REJECTED" v-model:developments-by-status="originalDevelopmentsByStatus" />
             </div>
 
 
@@ -172,8 +170,8 @@
             <AssignDevelopersDialog v-model:open="showAssignDevelopersModal"
                 v-model:current-development="selectedRequirement" />
 
-            <TIUsersProjectsModal v-model:open="showTIUsersProjectsModal"
-                :developments-by-status="developmentsByStatus" />
+            <!-- <TIUsersProjectsModal v-model:open="showTIUsersProjectsModal"
+                :developments-by-status="developmentsByStatus" /> -->
 
             <AlertDialog v-model:open="showAlertDialog" :title="alertDialogInfo.title"
                 :description="alertDialogInfo.description" @cancel="alertDialogInfo.cancel"
@@ -262,7 +260,6 @@ const showTechnicalApprovalModal = ref(false);
 const showStrategicApprovalModal = ref(false);
 const showProgressModal = ref(false);
 const showAssignDevelopersModal = ref(false);
-const showTIUsersProjectsModal = ref(false);
 const showAlertDialog = ref(false);
 
 const originalDevelopmentsByStatus = ref<DevelopmentRequestSection>({ ...developmentsByStatus });
@@ -436,3 +433,31 @@ const rollbackStatus = (oldStatus?: DevelopmentRequestStatus) => {
 }
 
 </script>
+
+<style scoped>
+.kanban-board-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+    scrollbar-gutter: stable;
+    overscroll-behavior-x: contain;
+}
+
+.kanban-board-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.kanban-board-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kanban-board-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground));
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.kanban-board-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--foreground));
+}
+</style>

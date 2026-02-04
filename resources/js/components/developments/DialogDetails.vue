@@ -309,7 +309,7 @@
                                         'text-red-600': (currentDevelopment?.actual_hours ?? 0) > (currentDevelopment?.estimated_hours ?? 0),
                                         'text-emerald-600': (currentDevelopment?.actual_hours ?? 0) <= (currentDevelopment?.estimated_hours ?? 0),
                                     }">
-                                        {{ currentDevelopment?.actual_hours ? `${currentDevelopment.actual_hours}h` : 'No registrado' }}
+                                        {{ [null, undefined].includes(currentDevelopment?.actual_hours) ? 'No registrado' : `${currentDevelopment.actual_hours}h` }}
                                     </p>
                                 </div>
                             </div>

@@ -18,6 +18,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__ . '/ticket.php';
     require __DIR__ . '/assets.php';
     require __DIR__ . '/access.php';
+    require __DIR__ . '/admin-control.php';
     require __DIR__ . '/developments.php';
     require __DIR__ . '/settings.php';
 

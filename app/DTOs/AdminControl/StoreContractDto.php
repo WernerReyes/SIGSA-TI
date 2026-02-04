@@ -1,0 +1,49 @@
+<?php
+namespace App\DTOs\AdminControl;
+
+use App\Enums\Contract\ContractPeriod;
+
+class StoreContractDto
+{
+    private function __construct(
+        public readonly string $name,
+        public readonly string $provider,
+        public readonly string $type,
+        public readonly string $period,
+        public readonly string $status,
+        public readonly string $startDate,
+        public readonly ?string $endDate = null,
+        public readonly ?string $notes,
+        public readonly ?string $frequency,
+        public readonly ?float $amount,
+        public readonly ?string $currency,
+        public readonly ?bool $autoRenew,
+        public readonly ?string $nextBillingDate,
+        public readonly ?int $billingCycleDays = null,
+    ) {
+    }
+
+    public static function fromArray(array $data): self
+    {
+      if ($data['period'] === ContractPeriod::RECURRING->value) {
+            $data['end_date'] = null;
+      }
+
+        return new self(
+            name: $data['name'],
+            provider: $data['provider'],
+            type: $data['type'],
+            period: $data['period'],
+            status: $data['status'],
+            startDate: $data['start_date'],
+            endDate: $data['end_date'] ?? null,
+            notes: $data['notes'] ?? null,
+            frequency: $data['frequency'] ?? null,
+            amount: isset($data['amount']) ? (float) $data['amount'] : null,
+            currency: $data['currency'] ?? null,
+            autoRenew: isset($data['auto_renew']) ? (bool) $data['auto_renew'] : null,
+            nextBillingDate: $data['next_billing_date'] ?? null,
+            billingCycleDays: isset($data['billing_cycle_days']) ? (int) $data['billing_cycle_days'] : null,
+        );
+    }
+}
