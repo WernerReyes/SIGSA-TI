@@ -531,14 +531,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useApp } from '@/composables/useApp';
-import { Contract, ContractPeriod, contractPeriodOptions, ContractStatus, contractStatusOptions, ContractType, contractTypeOptions } from '@/interfaces/contract.interface';
+import { ContractPeriod, contractPeriodOptions, ContractStatus, contractStatusOptions, ContractType, contractTypeOptions } from '@/interfaces/contract.interface';
 import { BillingFrequency, billingFrequencyDaysMap, billingFrequencyOptions, CurrencyType } from '@/interfaces/contractBilling.interface';
 import { router } from '@inertiajs/core';
 import { toTypedSchema } from '@vee-validate/zod';
-import { differenceInDays, differenceInMonths } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { BadgeDollarSign, Bell, Building2, Calendar, CalendarCheck2, Coins, CreditCard, FileText, Info, Layers, Package, Repeat, ShieldCheck, Sparkles, StickyNote, Tags, Wallet } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed } from 'vue';
 import z from 'zod';
 
 
@@ -553,8 +553,6 @@ const { isLoading } = useApp();
 const isFormValid = computed(() => {
     return !isLoading.value && Object.keys(errors.value).length === 0;
 });
-
-
 
 
 const formSchema = toTypedSchema(

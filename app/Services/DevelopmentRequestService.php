@@ -195,11 +195,6 @@ class DevelopmentRequestService
                 }
 
                 if ($newStatus === DevelopmentRequestStatus::COMPLETED->value) {
-                    // $maxPosition = DevelopmentRequest::where('status', DevelopmentRequestStatus::REGISTERED->value)->max('position')
-                    //     ?? 0;
-                    // $developmentRequest->position = $maxPosition + 1;
-                    // $developmentRequest->save();
-                    // TODO: Save the real date and hours
                     $totalHours = 0;
 
                     $startProgress = $developmentRequest->firstProgress;
