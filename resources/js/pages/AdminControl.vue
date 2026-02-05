@@ -15,7 +15,7 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <Button class="gap-2" size="sm" @click="showCreateContract = true">
+                    <Button class="gap-2" size="sm" @click="showUpsertContract = true">
                         <Plus class="h-4 w-4" />
                         Nuevo Contrato
                     </Button>
@@ -31,8 +31,9 @@
                     <TabsTrigger value="events">Bitácora de eventos</TabsTrigger>
                 </TabsList>
 
+                {{ contracts.length }}
                 <TabsContent value="contracts" class="mt-4 space-y-4">
-                    <ContractsTable />
+                    <ContractsTable :contracts="contracts" />
                 </TabsContent>
 
                 <TabsContent value="events" class="mt-4 space-y-4">
@@ -41,14 +42,14 @@
             </Tabs>
         </div>
 
-        <CreateContractDialog v-model:open="showCreateContract" />
+        <UpsertContractDialog v-model:open="showUpsertContract" />
     </AppLayout>
 </template>
 
 <script setup lang="ts">
 import AlertsPanel from '@/components/admin-control/AlertsPanel.vue';
 import ContractsTable from '@/components/admin-control/ContractsTable.vue';
-import CreateContractDialog from '@/components/admin-control/CreateContractDialog.vue';
+import UpsertContractDialog from '@/components/admin-control/UpsertContractDialog.vue';
 import EventsLog from '@/components/admin-control/EventsLog.vue';
 import StatsOverview from '@/components/admin-control/StatsOverview.vue';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { type Contract } from '@/interfaces/contract.interface';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -66,5 +68,9 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const showCreateContract = ref(false);
+defineProps<{
+    contracts: Contract[]; 
+}>();
+
+const showUpsertContract = ref(false);
 </script>

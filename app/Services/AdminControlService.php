@@ -9,24 +9,34 @@ use DB;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 class AdminControlService
 {
- 
-// TODO: Check why it throw an error
-public function storeContract(StoreContractDto $dto) {
+
+
+
+    public function getContracts()
+    {
+        return Contract::with('billing', 'expiration')->get();
+    }
+
+    public function storeContract(StoreContractDto $dto)
+    {
+
+
         try {
-            DB::transaction(function() use ($dto) {
-    
-                $contract =Contract::create([
+            return DB::transaction(function () use ($dto) {
+
+                $contract = Contract::create([
                     'name' => $dto->name,
                     'provider' => $dto->provider,
                     'type' => $dto->type,
+                    // 'total_amount' => $dto->totalAmount,
                     'period' => $dto->period,
                     'status' => $dto->status,
                     'start_date' => $dto->startDate,
                     'end_date' => $dto->endDate,
                     'notes' => $dto->notes,
                 ]);
-    
-            
+
+
                 ContractBilling::create([
                     'contract_id' => $contract->id,
                     'frequency' => $dto->frequency,
@@ -36,8 +46,9 @@ public function storeContract(StoreContractDto $dto) {
                     'billing_cycle_days' => $dto->billingCycleDays,
                     'next_billing_date' => $dto->nextBillingDate,
                 ]);
-    
-             });
+
+                return $contract;
+            });
 
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al crear el contrato: ' . $e->getMessage());

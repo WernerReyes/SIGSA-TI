@@ -12,25 +12,31 @@
                     Revisa vencimientos y tareas críticas próximas.
                 </CardDescription>
             </div>
-            <Badge variant="outline" class="border-warning/40 text-warning bg-warning/10">
+            <Badge variant="outline" class="border-warning/50 text-warning bg-warning/15 ring-1 ring-warning/30">
                 {{ alerts.length }} alertas
             </Badge>
         </CardHeader>
         <CardContent>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                <div v-for="alert in alerts" :key="alert.id"
-                    class="rounded-lg border p-3 flex items-start gap-3 relative overflow-hidden"
-                    :class="alertStyles[alert.severity].card">
-                    <span class="absolute inset-y-0 left-0 w-1" :class="alertStyles[alert.severity].bar" />
-                    <span class="h-8 w-8 rounded-full bg-background/70 border flex items-center justify-center">
-                        <component :is="alertStyles[alert.severity].icon" class="h-4 w-4" />
+            <div class="grid w-full max-w-xl items-start gap-4">
+                <Alert v-for="alert in alerts" :key="alert.id"
+                    class="relative overflow-hidden ring-1 shadow-sm"
+                    :class="periodStyles[alert.period].card">
+                    <span class="absolute inset-y-0 left-0 w-1.5" :class="periodStyles[alert.period].bar" />
+                    <span class="h-9 w-9 rounded-full border flex items-center justify-center ring-2"
+                          :class="periodStyles[alert.period].iconWrap">
+                        <component :is="periodStyles[alert.period].icon" class="h-4 w-4" />
                     </span>
                     <div class="min-w-0">
-                        <p class="text-sm font-medium truncate">{{ alert.title }}</p>
-                        <p class="text-xs opacity-70 mt-1">Vence: {{ alert.expiresAt }}</p>
-                        <p class="text-[11px] opacity-70 mt-1">{{ alert.meta }}</p>
+                        <AlertTitle class="text-sm font-medium truncate">{{ alert.title }}</AlertTitle>
+                        <AlertDescription class="text-xs opacity-70 mt-1">Vence: {{ alert.expiresAt }}</AlertDescription>
+                        <AlertDescription class="text-[11px] opacity-70 mt-1">{{ alert.meta }}</AlertDescription>
+                        <AlertDescription class="mt-2">
+                            <Badge variant="outline" :class="periodStyles[alert.period].badge">
+                                {{ periodStyles[alert.period].label }}
+                            </Badge>
+                        </AlertDescription>
                     </div>
-                </div>
+                </Alert>
             </div>
         </CardContent>
     </Card>
@@ -40,6 +46,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, BellRing, TriangleAlert } from 'lucide-vue-next';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 const alerts = [
     {
@@ -48,6 +56,7 @@ const alerts = [
         expiresAt: '2024-02-28',
         severity: 'warning',
         meta: 'Contrato CTR-002 · Soporte',
+        period: 'RECURRING',
     },
     {
         id: 2,
@@ -55,6 +64,7 @@ const alerts = [
         expiresAt: '2024-01-10',
         severity: 'critical',
         meta: 'Activo: SRV-PE740 · Hardware',
+        period: 'FIXED_TERM',
     },
     {
         id: 3,
@@ -62,6 +72,7 @@ const alerts = [
         expiresAt: '2024-01-15',
         severity: 'critical',
         meta: 'Contrato CTR-003 · Licencia',
+        period: 'ONE_TIME',
     },
     {
         id: 4,
@@ -69,6 +80,7 @@ const alerts = [
         expiresAt: '2024-02-01',
         severity: 'info',
         meta: 'Evento programado · Infraestructura',
+        period: 'RECURRING',
     },
     {
         id: 5,
@@ -76,24 +88,34 @@ const alerts = [
         expiresAt: '2025-01-01',
         severity: 'info',
         meta: 'Contrato CTR-004 · Servicio',
+        period: 'FIXED_TERM',
     },
 ];
 
-const alertStyles = {
-    warning: {
-        card: 'bg-warning/10 text-warning border-warning/30 pl-5',
-        bar: 'bg-warning',
+const periodStyles = {
+    RECURRING: {
+        label: 'Recurrente',
+        card: 'bg-linear-to-br from-emerald-500/20 via-emerald-500/10 to-background text-emerald-700 border-emerald-500/30 pl-6 ring-emerald-500/20 shadow-emerald-500/20',
+        bar: 'bg-emerald-500',
         icon: AlertTriangle,
+        iconWrap: 'bg-emerald-500/15 border-emerald-500/40 ring-emerald-500/30 text-emerald-600',
+        badge: 'border-emerald-500/40 text-emerald-700 bg-emerald-500/10 text-[10px]',
     },
-    critical: {
-        card: 'bg-critical/10 text-critical border-critical/30 pl-5',
-        bar: 'bg-critical',
+    FIXED_TERM: {
+        label: 'Plazo fijo',
+        card: 'bg-linear-to-br from-sky-500/20 via-sky-500/10 to-background text-sky-700 border-sky-500/30 pl-6 ring-sky-500/20 shadow-sky-500/20',
+        bar: 'bg-sky-500',
         icon: TriangleAlert,
+        iconWrap: 'bg-sky-500/15 border-sky-500/40 ring-sky-500/30 text-sky-600',
+        badge: 'border-sky-500/40 text-sky-700 bg-sky-500/10 text-[10px]',
     },
-    info: {
-        card: 'bg-info/10 text-info border-info/30 pl-5',
-        bar: 'bg-info',
+    ONE_TIME: {
+        label: 'Único',
+        card: 'bg-linear-to-br from-violet-500/20 via-violet-500/10 to-background text-violet-700 border-violet-500/30 pl-6 ring-violet-500/20 shadow-violet-500/20',
+        bar: 'bg-violet-500',
         icon: AlertTriangle,
+        iconWrap: 'bg-violet-500/15 border-violet-500/40 ring-violet-500/30 text-violet-600',
+        badge: 'border-violet-500/40 text-violet-700 bg-violet-500/10 text-[10px]',
     },
 };
 </script>

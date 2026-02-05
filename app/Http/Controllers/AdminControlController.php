@@ -12,9 +12,11 @@ class AdminControlController extends Controller
 {
     //
 
-    public function renderView()
+    public function renderView(AdminControlService $service)
     {
-        return Inertia::render('AdminControl');
+        return Inertia::render('AdminControl', [
+            'contracts' => Inertia::once(fn() => $service->getContracts()),
+        ]);
     }
 
 
@@ -24,16 +26,18 @@ class AdminControlController extends Controller
         $dto = StoreContractDto::fromArray($validated);
 
         try {
-            $service->storeContract($dto);
+            $contract = $service->storeContract($dto);
 
             Inertia::flash([
                 'success' => 'Contrato creado exitosamente.',
+                'contract' => $contract,
                 'error' => null
             ]);
         } catch (\Exception $e) {
-
+       
             Inertia::flash([
                 'success' => null,
+                'contract' => null,
                 'error' => $e->getMessage()
             ]);
         }

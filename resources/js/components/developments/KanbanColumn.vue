@@ -17,6 +17,7 @@
                     @click="swapPositions" class="h-8 w-8 hover:bg-accent">
                     <Save class="h-4 w-4" />
                 </Button>
+                {{devRequests.length}}
             </div>
         </div>
 
@@ -43,9 +44,11 @@
                 <p class="text-xs text-muted-foreground/60 mt-1">Arrastra aquí para agregar</p>
             </div>
 
+            
             <!-- Clean Professional Cards -->
-            <div v-else v-for="devRequest in devRequests" :key="devRequest.id"
-                class="bg-card rounded-lg border shadow-card p-2.5 mb-2 transition-all hover:shadow-md">
+            <div v-for="devRequest in devRequests" :key="devRequest.id"
+            class="bg-card rounded-lg border shadow-card p-2.5 mb-2 transition-all hover:shadow-md">
+            
                 <div class="flex items-start justify-between mb-1.5">
                     <div class="flex items-center gap-2">
                         <span class="font-mono text-xs text-muted-foreground">DEV-{{ devRequest.id }}</span>

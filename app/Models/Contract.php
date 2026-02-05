@@ -14,6 +14,7 @@ class Contract extends Model
         'provider',
         'type',
         'period',
+        'total_amount',
         'status',
         'start_date',
         'end_date',

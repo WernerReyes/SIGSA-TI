@@ -12,6 +12,7 @@ class ContractBilling extends Model
         'contract_id',
         'amount',
         'currency',
+        'frequency',
         'billing_cycle_days',
         'auto_renew',
         'next_billing_date',

@@ -2,6 +2,8 @@
 namespace App\DTOs\AdminControl;
 
 use App\Enums\Contract\ContractPeriod;
+use App\Enums\Contract\BillingFrequency;
+use function Illuminate\Support\days;
 
 class StoreContractDto
 {
@@ -24,10 +26,16 @@ class StoreContractDto
     }
 
     public static function fromArray(array $data): self
-    {
+    {   
+        $amount = $data['amount'] ?? null;
       if ($data['period'] === ContractPeriod::RECURRING->value) {
             $data['end_date'] = null;
-      }
+      } else if ($data['period'] === ContractPeriod::ONE_TIME->value) {
+            $data['frequency'] = null;
+            $data['auto_renew'] = false;
+            $data['next_billing_date'] = null;
+            $data['billing_cycle_days'] = null;
+        } 
 
         return new self(
             name: $data['name'],
@@ -39,7 +47,7 @@ class StoreContractDto
             endDate: $data['end_date'] ?? null,
             notes: $data['notes'] ?? null,
             frequency: $data['frequency'] ?? null,
-            amount: isset($data['amount']) ? (float) $data['amount'] : null,
+            amount: $amount !== null ? (float) $amount : null,
             currency: $data['currency'] ?? null,
             autoRenew: isset($data['auto_renew']) ? (bool) $data['auto_renew'] : null,
             nextBillingDate: $data['next_billing_date'] ?? null,

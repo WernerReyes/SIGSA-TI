@@ -13,7 +13,7 @@ return new class extends Migration {
     {
         Schema::create('contract_billing', function (Blueprint $table) {
             $table->id();
-            $table->decimal('amount', 10, 2);
+            $table->decimal('amount', 10, 2)->nullable();
             $table->string('currency', 3);
             $table->enum('frequency', BillingFrequency::values())->nullable();
             $table->integer('billing_cycle_days')->nullable();

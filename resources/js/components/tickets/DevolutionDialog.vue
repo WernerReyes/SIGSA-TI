@@ -298,7 +298,6 @@ const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
     const returnDate = values.returned_date.toDate(getLocalTimeZone());
-    console.log('Submitting devolution with values:', values, 'and returnDate:', returnDate);
     router.post(`/assets/devolve/${currAssetAssignment.value?.id}`, {
         responsible_id: ticket?.value?.responsible_id,
         return_date: toZonedDate(returnDate),

@@ -6,6 +6,7 @@ use App\Enums\contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
 use App\Enums\Contract\ContractStatus;
 use App\Enums\Contract\ContractType;
+use App\Rules\BillingCycleWithinRange;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContractRequest extends FormRequest
@@ -18,11 +19,6 @@ class StoreContractRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
@@ -40,10 +36,26 @@ class StoreContractRequest extends FormRequest
             'currency' => 'nullable|string|size:3',
             'auto_renew' => 'nullable|boolean',
             'next_billing_date' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|date',
-            'billing_cycle_days' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|integer|min:0',
+            'billing_cycle_days' => [
+                'required_if:period,' . ContractPeriod::RECURRING->value,
+                'required_if:period,' . ContractPeriod::FIXED_TERM->value,
+                'nullable',
+                'integer',
+                'min:0',
+                new BillingCycleWithinRange()
+            ],
 
         ];
     }
 
-    
+    public function messages(): array
+    {
+        return [
+            'end_date.required_if' => 'La fecha de finalización es obligatoria para contratos de plazo fijo.',
+            'next_billing_date.required_if' => 'La próxima fecha de facturación es obligatoria para contratos recurrentes.',
+            'billing_cycle_days.required_if' => 'Los días del ciclo de facturación son obligatorios para contratos recurrentes y de plazo fijo.',
+        ];
+    }
+
+
 }

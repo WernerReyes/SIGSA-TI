@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums\contract;
+namespace App\Enums\Contract;
 
 enum BillingFrequency: string
 {
@@ -12,12 +12,46 @@ enum BillingFrequency: string
 
     public static function values(): array
     {
-        return array_map(fn (BillingFrequency $frequency) => $frequency->value, self::cases());
+        return array_map(fn(BillingFrequency $frequency) => $frequency->value, self::cases());
     }
 
     public static function implodeValues(string $delimiter = ','): string
     {
         return implode($delimiter, self::values());
     }
+
+    public static function days(): array
+    {
+        return [
+            self::MONTHLY->value => 30,
+            self::QUARTERLY->value => 90,
+            self::SEMIANNUAL->value => 180,
+            self::ANNUAL->value => 365,
+            self::ONE_TIME->value => null,
+        ];
+    }
+
+    public static function months(): array
+    {
+        return [
+            self::MONTHLY->value => 1,
+            self::QUARTERLY->value => 3,
+            self::SEMIANNUAL->value => 6,
+            self::ANNUAL->value => 12,
+            self::ONE_TIME->value => null,
+        ];
+    }
+    public static function getDay(string $frequency): ?int
+    {
+        $days = self::days();
+        return $days[$frequency] ?? null;
+    }
+
+    public static function getMonth(string $frequency): ?int
+    {
+        $months = self::months();
+        return $months[$frequency] ?? null;
+    }
 }
 
+    

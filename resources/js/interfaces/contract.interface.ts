@@ -13,6 +13,7 @@ import {
     Wrench,
     XCircle,
 } from 'lucide-vue-next';
+import { type ContractBilling } from './contractBilling.interface';
 
 export interface Contract {
     id: number;
@@ -26,6 +27,7 @@ export interface Contract {
     notes: string | null;
     created_at: Date;
     updated_at: Date;
+    billing?: ContractBilling
 }
 
 export enum ContractType {

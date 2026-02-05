@@ -18,6 +18,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('provider');
+            // $table->decimal('total_amount', 10, 2)->nullable();
             $table->enum('type', ContractType::values());
             $table->enum('period', ContractPeriod::values());
             $table->enum('status', ContractStatus::values());
