@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\AdminControl;
 
-use App\Enums\contract\BillingFrequency;
+use App\Enums\Contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
 use App\Enums\Contract\ContractStatus;
 use App\Enums\Contract\ContractType;
