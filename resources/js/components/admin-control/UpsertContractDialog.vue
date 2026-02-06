@@ -1,10 +1,15 @@
 <template>
-    <Dialog v-model:open="open">
+    <Dialog v-model:open="open"
+    @update:open="(val) =>{
+        if(!val) resetForm();
+    }"
+    
+    >
         <DialogContent class="sm:max-w-3xl">
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <FileText class="h-5 w-5 text-primary" />
-                    Nuevo contrato
+                    {{ isEditMode ? 'Editar contrato' : 'Nuevo contrato' }}
                 </DialogTitle>
                 <DialogDescription>
                     Define la forma de contrato para ver únicamente los campos necesarios.
@@ -12,7 +17,7 @@
             </DialogHeader>
 
 
-            <ScrollArea class="h-96 sm:h-[70vh] pr-2">
+            <ScrollArea class="max-h-96 sm:max-h-[70vh] pr-2">
 
                 <form id="contract-form" class="space-y-5" @submit.prevent="handleSubmit(handleSave)()">
 
@@ -172,7 +177,7 @@
                                                 <SelectValue placeholder="Seleccionar frecuencia" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem v-for="frequency in Object.values(billingFrequencyOptions)"
+                                                <SelectItem v-for="frequency in Object.values(billingFrequencyOptions).filter(f => f.value !== BillingFrequency.ONE_TIME)"
                                                     :key="frequency.value" :value="frequency.value">
                                                     <Badge :class="frequency.bg">
                                                         <component :is="frequency.icon" />
@@ -264,7 +269,9 @@
 
 
 
-                            <VeeField name="billing_cycle_days" v-slot="{ errors, componentField }">
+                            <VeeField 
+                             v-if="values.auto_renew === false"
+                            name="alert_days_before" v-slot="{ errors, componentField }">
                                 <div class="space-y-2">
                                     <Label>Días antes para alerta de renovación</Label>
                                     <InputGroup>
@@ -275,12 +282,12 @@
                                          :v-model="componentField.modelValue"
                                          @update:model-value="(val: string | number) => {
                                             if (val === '') {
-                                                setFieldValue('billing_cycle_days', undefined);
+                                                setFieldValue('alert_days_before', undefined);
                                             } else {
-                                                setFieldValue('billing_cycle_days', Number(val));
+                                                setFieldValue('alert_days_before', Number(val));
                                             }
                                         }"
-                                        type="number" min="1"
+                                        type="number" min="0"
                                             placeholder="Ej: 15" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
@@ -341,7 +348,7 @@
                             </VeeField>
 
 
-                            <VeeField name="billing_cycle_days" v-slot="{ errors, componentField }">
+                            <VeeField name="alert_days_before" v-slot="{ errors, componentField }">
                                 <div class="space-y-2">
                                     <Label>Días antes para alerta de vencimiento</Label>
                                     <InputGroup>
@@ -351,11 +358,11 @@
                                         <InputGroupInput  :v-model="componentField.modelValue"
                                          @update:model-value="(val: string | number) => {
                                             if (val === '') {
-                                                setFieldValue('billing_cycle_days', undefined);
+                                                setFieldValue('alert_days_before', undefined);
                                             } else {
-                                                setFieldValue('billing_cycle_days', Number(val));
+                                                setFieldValue('alert_days_before', Number(val));
                                             }
-                                        }" type="number" min="1"
+                                        }" type="number" min="0"
                                             placeholder="Ej: 30" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
@@ -480,7 +487,7 @@
                                 </VeeField>
 
 
-                                <VeeField name="billing_cycle_days" v-slot="{ errors, componentField }">
+                                <VeeField name="alert_days_before" v-slot="{ errors, componentField }">
 
                                     <div class="space-y-2">
                                         <Label>Días antes para alerta de garantía</Label>
@@ -491,11 +498,11 @@
                                             <InputGroupInput  :v-model="componentField.modelValue"
                                          @update:model-value="(val: string | number) => {
                                             if (val === '') {
-                                                setFieldValue('billing_cycle_days', undefined);
+                                                setFieldValue('alert_days_before', undefined);
                                             } else {
-                                                setFieldValue('billing_cycle_days', Number(val));
+                                                setFieldValue('alert_days_before', Number(val));
                                             }
-                                        }" type="number" min="1"
+                                        }" type="number" min="0"
                                                 placeholder="Ej: 20" />
                                         </InputGroup>
                                         <FieldError :errors="errors" />
@@ -531,22 +538,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useApp } from '@/composables/useApp';
-import { ContractPeriod, contractPeriodOptions, ContractStatus, contractStatusOptions, ContractType, contractTypeOptions } from '@/interfaces/contract.interface';
+import { type Contract, ContractPeriod, contractPeriodOptions, ContractStatus, contractStatusOptions, ContractType, contractTypeOptions } from '@/interfaces/contract.interface';
 import { BillingFrequency, billingFrequencyDaysMap, billingFrequencyOptions, CurrencyType } from '@/interfaces/contractBilling.interface';
 import { router } from '@inertiajs/core';
 import { toTypedSchema } from '@vee-validate/zod';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, isAfter } from 'date-fns';
 import { BadgeDollarSign, Bell, Building2, Calendar, CalendarCheck2, Coins, CreditCard, FileText, Info, Layers, Package, Repeat, ShieldCheck, Sparkles, StickyNote, Tags, Wallet } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import z from 'zod';
 
-
-
-
-
-
 const open = defineModel<boolean>('open', { default: false });
+const selectedContract = defineModel<Contract | null>('selectedContract', { default: null });
 
 const { isLoading } = useApp();
 
@@ -555,8 +558,10 @@ const isFormValid = computed(() => {
 });
 
 
-const formSchema = toTypedSchema(
+const isEditMode = computed(() => !!selectedContract.value);
 
+
+const formSchema = toTypedSchema(
     z.object({
         name: z.string({
             message: 'Este campo es obligatorio.',
@@ -598,7 +603,7 @@ const formSchema = toTypedSchema(
         }).optional(),
         auto_renew: z.boolean().default(false),
         next_billing_date: z.string().optional(),
-        billing_cycle_days: z.number().optional(),
+        alert_days_before: z.number().optional(),
 
         hasWarranty: z.boolean().default(false),
 
@@ -667,31 +672,36 @@ const formSchema = toTypedSchema(
             path: ['next_billing_date'],
         })
         .refine((data) => {
-            if (data.period === ContractPeriod.RECURRING || data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
-                return data.billing_cycle_days !== undefined &&
-                    data.billing_cycle_days > 0;
+            if ((data.period === ContractPeriod.RECURRING && data.auto_renew === false) || data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
+                return data.alert_days_before !== undefined;
             }
             return true;
         }, {
             message: 'Ingresa los días para la alerta.',
-            path: ['billing_cycle_days'],
+            path: ['alert_days_before'],
         })
         .refine((data) => {
-            if (!data.billing_cycle_days) return true;
+            if (!data.alert_days_before) return true;
             if (data.period === ContractPeriod.RECURRING) {
                 const diff = differenceInDays(new Date(data.next_billing_date || ''), new Date(data.start_date || ''));
-                return diff > data.billing_cycle_days!;
+                if (diff === 0 && data.frequency === BillingFrequency.ONE_TIME) {
+                    return true;
+                }
+                return diff > data.alert_days_before!;
             }
 
             if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
                 const diff = differenceInDays(new Date(data.end_date || ''), new Date(data.start_date || ''));
-                return diff > data.billing_cycle_days!;
+                if (diff === 0 && data.frequency === BillingFrequency.ONE_TIME) {
+                    return true;
+                }
+                return diff > data.alert_days_before!;
             }
 
             return true;
         }, {
             message: 'Los días para la alerta deben ser menores al tiempo restante del contrato.',
-            path: ['billing_cycle_days'],
+            path: ['alert_days_before'],
         })
         .refine((data) => {
             if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
@@ -702,11 +712,21 @@ const formSchema = toTypedSchema(
         }, {
             message: 'Selecciona la fecha de fin.',
             path: ['end_date'],
+        }).refine((data) => {
+            if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
+                const start = new Date(data.start_date);
+                const end = new Date(data.end_date || '');
+                return isAfter(end, start);
+            }
+            return true;
+        }, {
+            message: 'La fecha de fin debe ser posterior a la fecha de inicio.',
+            path: ['end_date'],
         })
     
     );
 
-const { values, errors, handleSubmit, resetForm, setFieldValue } = useForm({
+const { values, errors, handleSubmit, resetForm, setFieldValue, setValues } = useForm({
     validationSchema: formSchema,
     initialValues: {
         name: '',
@@ -723,9 +743,36 @@ const { values, errors, handleSubmit, resetForm, setFieldValue } = useForm({
         amount: undefined,
         auto_renew: false,
         next_billing_date: '',
-        billing_cycle_days: undefined,
+        alert_days_before: undefined,
         hasWarranty: false,
     },
+});
+
+
+watch(selectedContract, (contract) => {
+    if (contract) {
+        setValues({
+            name: contract.name,
+            provider: contract.provider,
+            type: contract.type,
+            period: contract.period,
+            status: contract.status,
+            currency: contract.billing?.currency,
+            start_date: contract.start_date,
+            end_date: contract.end_date || '',
+            notes: contract.notes || '',
+            frequency: contract.billing?.frequency,
+            hasFixedAmount: contract.billing?.amount !== undefined,
+            amount: contract.billing?.amount || undefined,
+            auto_renew: contract.billing?.auto_renew,
+            next_billing_date: contract.billing?.next_billing_date || '',
+            alert_days_before: contract.billing?.alert_days_before || undefined,
+            hasWarranty: !!contract.end_date,
+        });
+        // open.value = true;
+    } else {
+        resetForm();
+    }
 });
 
 
@@ -734,7 +781,6 @@ const resetAndClose = () => {
     open.value = false;
 };
 
-
 const handleSave = () => {
     router.post('/admin-control', values, {
         preserveScroll: true,
@@ -742,11 +788,6 @@ const handleSave = () => {
         preserveUrl: true,
         onFlash: (flash) => {
             if (flash.success) {
-                // console.log(flash.contract);
-                // router.replaceProp('contracts', (old: Contract[]) => {
-                //     console.log('Appending new contract to contracts list:', flash.contract);
-                //     return [...old, flash.contract];
-                // });
                 router.prependToProp('contracts', flash.contract);
                 resetAndClose();
             }

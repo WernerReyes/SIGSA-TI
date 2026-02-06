@@ -3,8 +3,11 @@ namespace App\Services;
 
 
 use App\DTOs\AdminControl\StoreContractDto;
+use App\Enums\Contract\BillingFrequency;
+use App\Enums\Contract\ContractPeriod;
 use App\Models\Contract;
 use App\Models\ContractBilling;
+use App\Models\ContractExpiration;
 use DB;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 class AdminControlService
@@ -28,7 +31,6 @@ class AdminControlService
                     'name' => $dto->name,
                     'provider' => $dto->provider,
                     'type' => $dto->type,
-                    // 'total_amount' => $dto->totalAmount,
                     'period' => $dto->period,
                     'status' => $dto->status,
                     'start_date' => $dto->startDate,
@@ -36,19 +38,41 @@ class AdminControlService
                     'notes' => $dto->notes,
                 ]);
 
-
-                ContractBilling::create([
+                $billing = ContractBilling::create([
                     'contract_id' => $contract->id,
                     'frequency' => $dto->frequency,
                     'amount' => $dto->amount,
                     'currency' => $dto->currency,
                     'auto_renew' => $dto->autoRenew,
-                    'billing_cycle_days' => $dto->billingCycleDays,
+                    'billing_cycle_days' => BillingFrequency::getDay($dto->frequency),
                     'next_billing_date' => $dto->nextBillingDate,
                 ]);
 
+                // 👉 SOLO registrar expiraciones reales
+                ds($dto);
+                if (
+                    $dto->period === ContractPeriod::FIXED_TERM->value ||
+                    $dto->period === ContractPeriod::ONE_TIME->value ||
+                    (
+                        $dto->period === ContractPeriod::RECURRING->value &&
+                        $dto->autoRenew === false
+                    )
+                ) {
+                    $expirationDate = $dto->period === ContractPeriod::RECURRING->value
+                        ? $dto->nextBillingDate
+                        : $dto->endDate;
+                    ContractExpiration::create([
+                        'contract_id' => $contract->id,
+                        'expiration_type' => 'contrato',
+                        'expiration_date' => $expirationDate,
+                        'alert_days_before' => $dto->alertDaysBefore,
+                        'notified' => false,
+                    ]);
+                }
+
                 return $contract;
             });
+
 
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al crear el contrato: ' . $e->getMessage());

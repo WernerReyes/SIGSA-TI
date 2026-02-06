@@ -32,7 +32,7 @@
                 <div class="flex flex-col gap-3 lg:items-end">
                     <div class="w-full lg:w-80">
                         <InputGroup>
-                            <InputGroupInput v-model="search"
+                            <InputGroupInput v-model="globalFilter"
                                 placeholder="Buscar por contrato, proveedor o servicio..." />
                             <InputGroupAddon>
                                 <Search class="h-4 w-4" />
@@ -54,21 +54,25 @@
                     <Table class="min-w-full">
                         <TableHeader class="bg-muted/70 backdrop-blur sticky top-0 z-10">
                             <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-                                <TableHead v-for="header in headerGroup.headers" :key="header.id"
-                                    class="pl-4 uppercase text-[11px] tracking-wide text-muted-foreground">
+                                <TableHead v-for="header in headerGroup.headers" :key="header.id" :style="{
+                                    maxWidth: `${header.getSize()}px`,
+                                    // width: `${header.getSize()}px`,
+                                }" class="pl-4 uppercase text-[11px] tracking-wide text-muted-foreground">
                                     <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                                         :props="header.getContext()" />
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
-
                         <ContextMenu v-if="table.getRowModel().rows.length">
                             <ContextMenuTrigger as-child>
                                 <TableBody>
                                     <TableRow v-for="row in table.getRowModel().rows" :key="row.id"
                                         @contextmenu="activeRow = row.original"
                                         class="cursor-context-menu transition hover:bg-muted/60 odd:bg-muted/30">
-                                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
+                                        <TableCell :style="{
+                                            maxWidth: `${cell.column.getSize()}px`,
+                                            // width: `${cell.column.getSize()}px`,
+                                        }" v-for="cell in row.getVisibleCells()" :key="cell.id"
                                             class="pl-4 align-middle">
                                             <FlexRender :render="cell.column.columnDef.cell"
                                                 :props="cell.getContext()" />
@@ -77,15 +81,15 @@
                                 </TableBody>
                             </ContextMenuTrigger>
                             <ContextMenuContent class="w-56">
-                                <ContextMenuItem>
+                                <ContextMenuItem @click="emit('view-details', activeRow)">
                                     <Eye class="h-4 w-4" />
                                     Ver detalles
                                 </ContextMenuItem>
-                                <ContextMenuItem>
+                                <ContextMenuItem @click="emit('edit-contract', activeRow)">
                                     <Pencil class="h-4 w-4" />
                                     Editar contrato
                                 </ContextMenuItem>
-                                <ContextMenuItem>
+                                <ContextMenuItem @click="emit('renew-contract', activeRow)">
                                     <RefreshCcw class="h-4 w-4" />
                                     Renovar
                                 </ContextMenuItem>
@@ -107,7 +111,27 @@
                         </TableBody>
                     </Table>
                 </div>
+
+
+                <div class="flex space-x-2 p-4 w-fit ml-auto">
+                    <Pagination v-slot="{ page }" :items-per-page="10" :total="table.getFilteredRowModel().rows.length">
+                        <PaginationContent v-slot="{ items }">
+                            <PaginationPrevious @click="table.previousPage()" />
+                            <template v-for="(item, index) in items" :key="index">
+                                <PaginationItem v-if="item.type === 'page'" :value="item.value"
+                                    :is-active="item.value === page" @click="table.setPageIndex(item.value - 1)">
+
+                                    {{ item.value }}
+                                </PaginationItem>
+                            </template>
+
+                            <PaginationNext @click="table.nextPage()" />
+                        </PaginationContent>
+                    </Pagination>
+                </div>
             </div>
+
+
         </CardContent>
     </Card>
 </template>
@@ -118,16 +142,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Contract, ContractPeriod, ContractStatus, getContractOp } from '@/interfaces/contract.interface';
-import { billingFrequencyDaysMap } from '@/interfaces/contractBilling.interface';
 import { parseDateOnly } from '@/lib/utils';
-import { createColumnHelper, FlexRender, getCoreRowModel, useVueTable } from '@tanstack/vue-table';
-import { addDays, format } from 'date-fns';
+import { ColumnDef, FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, useVueTable } from '@tanstack/vue-table';
+import { format } from 'date-fns';
 import { Archive, Eye, FileText, Pencil, RefreshCcw, Search } from 'lucide-vue-next';
-import { RendererElement, RendererNode } from 'vue';
-import { computed, h, ref, VNode } from 'vue';
+import { computed, h, ref, RendererElement, RendererNode, VNode } from 'vue';
 
+
+const emit = defineEmits<{
+    (e: 'view-details', contract: Contract | null): void;
+    (e: 'edit-contract', contract: Contract | null): void;
+    (e: 'renew-contract', contract: Contract | null): void;
+}>();
 
 const { contracts } = defineProps<{
     contracts: Contract[];
@@ -148,78 +177,9 @@ type ContractRow = {
 const filters: Array<'Todos' | ContractRow['type']> = ['Todos', 'Licencia', 'Soporte', 'Servicio', 'Hardware'];
 const activeFilter = ref<typeof filters[number]>('Todos');
 const search = ref('');
-const activeRow = ref<ContractRow | null>(null);
+const activeRow = ref<Contract | null>(null);
 
-// const rows = ref<ContractRow[]>([
-//     {
-//         id: 1,
-//         code: 'CTR-001',
-//         name: 'Microsoft 365 Business',
-//         vendor: 'Microsoft',
-//         type: 'Licencia',
-//         startDate: '2024-01-01',
-//         endDate: '2024-12-31',
-//         value: '$15.000',
-//         status: 'Activo',
-//     },
-//     {
-//         id: 2,
-//         code: 'CTR-002',
-//         name: 'Soporte SAP ERP',
-//         vendor: 'SAP',
-//         type: 'Soporte',
-//         startDate: '2023-06-01',
-//         endDate: '2024-02-28',
-//         value: '$45.000',
-//         status: 'Por vencer',
-//     },
-//     {
-//         id: 3,
-//         code: 'CTR-003',
-//         name: 'Antivirus Corporativo',
-//         vendor: 'CrowdStrike',
-//         type: 'Licencia',
-//         startDate: '2023-03-01',
-//         endDate: '2024-01-15',
-//         value: '$8.000',
-//         status: 'Vencido',
-//     },
-//     {
-//         id: 4,
-//         code: 'CTR-004',
-//         name: 'Hosting Cloud AWS',
-//         vendor: 'Amazon',
-//         type: 'Servicio',
-//         startDate: '2023-01-01',
-//         endDate: '2025-01-01',
-//         value: '$36.000',
-//         status: 'Activo',
-//     },
-//     {
-//         id: 5,
-//         code: 'CTR-005',
-//         name: 'Garantía Extendida Servidores',
-//         vendor: 'Dell',
-//         type: 'Hardware',
-//         startDate: '2022-01-01',
-//         endDate: '2025-01-01',
-//         value: '$12.000',
-//         status: 'Activo',
-//     },
-// ]);
-
-// const filteredRows = computed(() => {
-//     const query = search.value.trim().toLowerCase();
-//     return contracts.filter((row) => {
-//         const matchesFilter = activeFilter.value === 'Todos' || row.type === activeFilter.value;
-//         const matchesSearch =
-//             !query ||
-//             row.code.toLowerCase().includes(query) ||
-//             row.name.toLowerCase().includes(query) ||
-//             row.vendor.toLowerCase().includes(query);
-//         return matchesFilter && matchesSearch;
-//     });
-// });
+const globalFilter = ref('');
 
 const totals = computed(() => {
     return {
@@ -230,36 +190,30 @@ const totals = computed(() => {
     };
 });
 
-const columnHelper = createColumnHelper<Contract>();
 
-// const statusStyles: Record<ContractRow['status'], string> = {
-//     Activo: 'bg-success/10 text-success',
-//     'Por vencer': 'bg-warning/10 text-warning',
-//     Vencido: 'bg-critical/10 text-critical',
-// };
-
-// const typeStyles: Record<ContractRow['type'], string> = {
-//     Licencia: 'bg-primary/10 text-primary',
-//     Soporte: 'bg-info/10 text-info',
-//     Servicio: 'bg-muted text-foreground',
-//     Hardware: 'bg-secondary text-secondary-foreground',
-// };
-
-const columns = [
-    columnHelper.accessor('name', {
+const columns: ColumnDef<Contract>[] = [
+    {
+        id: 'name',
         header: 'Contrato',
+        accessorKey: 'name',
+        size: 200,
+
         cell: ({ row }) =>
             h('div', { class: 'space-y-1' }, [
                 h('p', { class: 'font-mono text-[11px] text-muted-foreground' }, `CTR-${row.original.id.toString().padStart(3, '0')}`),
-                h('p', { class: 'font-medium text-sm' }, row.original.name),
+                h('p', { class: 'font-medium text-sm text-foreground truncate' }, row.original.name),
             ]),
-    }),
-    columnHelper.accessor('provider', {
+
+    }, {
+        id: 'provider',
         header: 'Proveedor',
+        accessorKey: 'provider',
         cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.provider),
-    }),
-    columnHelper.accessor('type', {
+
+    }, {
+        id: 'type',
         header: 'Tipo',
+        accessorFn: row => getContractOp('type', row.type)?.label || row.type,
         cell: ({ row }) => {
             const type = getContractOp('type', row.original.type);
             return h(Badge, { class: `${type.bg} text-[11px]` }, () => [
@@ -267,11 +221,10 @@ const columns = [
                 type.label,
             ]);
         },
-    }),
-
-
-    columnHelper.accessor('period', {
+    }, {
+        id: 'period',
         header: 'Periodo',
+        accessorFn: row => getContractOp('period', row.period)?.label || row.period,
         cell: ({ row }) => {
             const period = getContractOp('period', row.original.period);
             return h(Badge, { class: `${period.bg} text-[11px]` }, () => [
@@ -279,10 +232,25 @@ const columns = [
                 period.label,
             ]);
         }
-    }),
-
-
-    columnHelper.accessor('end_date', {
+    }, {
+        id: 'end_date',
+        accessorFn: row => {
+            const period = row.period;
+            if (period === ContractPeriod.RECURRING) {
+                if (row.billing?.auto_renew) {
+                    return 'Renovable automáticamente';
+                } else {
+                    return 'Sin renovación automática';
+                }
+            } else if (period === ContractPeriod.ONE_TIME) {
+                if (row.end_date) {
+                    return `con garantía hasta el ${formatDate(row.end_date)}`;
+                } else {
+                    return 'sin fecha de finalización';
+                }
+            }
+            return row.end_date ? formatDate(row.end_date) : 'N/A';
+        },
         header: 'Vigencia',
         cell: ({ row }) => {
             const period = row.original.period;
@@ -304,7 +272,6 @@ const columns = [
                     dinamicHtml = h('span', { class: 'text-muted-foreground text-xs' }, 'sin fecha de finalización');
                 }
             }
-
             return h('div', { class: 'text-xs space-y-1' }, [
                 h('div', { class: 'flex items-center gap-2' }, [
                     h('span', { class: 'font-medium text-foreground' }, formatDate(row.original.start_date)),
@@ -314,27 +281,10 @@ const columns = [
 
             ]);
         },
-    }),
-
-    // columnHelper.accessor('billing.next_billing_date', {
-    //     header: 'Próximo cobro',
-    //     cell: ({ row }) => {
-    //         const billing = row.original.billing;
-    //         let nextBillingDate = billing?.next_billing_date;
-    //         if (row.original.period == ContractPeriod.RECURRING) {
-    //             const today = new Date();
-    //             console.log(new Date(nextBillingDate));
-    //             if (nextBillingDate && new Date(nextBillingDate) < today) {
-    //                return;
-    //             }
-    //             nextBillingDate = addDays(new Date(nextBillingDate || ''), billingFrequencyDaysMap[billing!.frequency] || 0);
-    //         }
-    //         return h('span', { class: 'text-sm' }, nextBillingDate ? formatDate(nextBillingDate) : 'N/A');
-    //     },
-    // }),
-
-    columnHelper.accessor('status', {
+    }, {
+        id: 'status',
         header: 'Estado',
+        accessorFn: row => getContractOp('status', row.status)?.label || row.status,
         cell: ({ row }) => {
             const status = getContractOp('status', row.original.status);
             return h(Badge, { class: `${status.bg} text-[11px]` }, () => [
@@ -342,7 +292,8 @@ const columns = [
                 status.label,
             ]);
         },
-    }),
+    }
+
 ];
 
 const table = useVueTable({
@@ -350,17 +301,26 @@ const table = useVueTable({
     get data() {
         return contracts;
     },
+
     columns,
+
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+        get globalFilter() {
+            return globalFilter.value;
+        },
+    },
 });
- 
- const formatDate = (dateStr: Date | string | null = '') => {
+
+const formatDate = (dateStr: Date | string | null = '') => {
     if (!dateStr) return 'N/A';
     if (dateStr instanceof Date) {
         return format(dateStr, 'dd/MM/yyyy');
     }
-     return format(parseDateOnly(dateStr || ''), 'dd/MM/yyyy');
- };
+    return format(parseDateOnly(dateStr || ''), 'dd/MM/yyyy');
+};
 
 
 //  billingFrequencyDaysMap

@@ -6,8 +6,10 @@ use App\Enums\contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
 use App\Enums\Contract\ContractStatus;
 use App\Enums\Contract\ContractType;
-use App\Rules\BillingCycleWithinRange;
+
+use App\Rules\AlertDaysBeforeWithinRange;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreContractRequest extends FormRequest
 {
@@ -36,13 +38,17 @@ class StoreContractRequest extends FormRequest
             'currency' => 'nullable|string|size:3',
             'auto_renew' => 'nullable|boolean',
             'next_billing_date' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|date',
-            'billing_cycle_days' => [
-                'required_if:period,' . ContractPeriod::RECURRING->value,
-                'required_if:period,' . ContractPeriod::FIXED_TERM->value,
+            'alert_days_before' => [
+                // 'required_if:period,' . ContractPeriod::RECURRING->value,
+                Rule::requiredIf(function () {
+                    $period = $this->input('period');
+                    $autoRenew = $this->input('auto_renew');
+                    return ($period === ContractPeriod::RECURRING->value && $autoRenew === false) || $period === ContractPeriod::FIXED_TERM->value || ($period === ContractPeriod::ONE_TIME->value && $this->input('has_warranty') === true);
+                }),
                 'nullable',
                 'integer',
                 'min:0',
-                new BillingCycleWithinRange()
+                new AlertDaysBeforeWithinRange()
             ],
 
         ];
@@ -53,7 +59,7 @@ class StoreContractRequest extends FormRequest
         return [
             'end_date.required_if' => 'La fecha de finalización es obligatoria para contratos de plazo fijo.',
             'next_billing_date.required_if' => 'La próxima fecha de facturación es obligatoria para contratos recurrentes.',
-            'billing_cycle_days.required_if' => 'Los días del ciclo de facturación son obligatorios para contratos recurrentes y de plazo fijo.',
+            'alert_days_before.required_if' => 'Los días para la alerta son obligatorios para contratos recurrentes y de plazo fijo.',
         ];
     }
 

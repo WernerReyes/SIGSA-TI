@@ -4,8 +4,8 @@ namespace App\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
-
-class BillingCycleWithinRange implements ValidationRule
+// alert_days_before
+class AlertDaysBeforeWithinRange implements ValidationRule
 {
     /**
      * Run the validation rule.
@@ -26,7 +26,7 @@ class BillingCycleWithinRange implements ValidationRule
         $diffDays = $startDate->diff($endDate)->days;
 
         if ($value > $diffDays) {
-            $fail($attribute, 'El ciclo de facturación debe estar dentro del rango de duración del contrato.');
+            $fail($attribute, 'Los días para la alerta deben ser menores al tiempo restante del contrato.');
         }
     }
 }

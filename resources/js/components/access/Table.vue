@@ -141,6 +141,7 @@ import { RangeCalendar } from '@/components/ui/range-calendar';
 import { type DateRange } from 'reka-ui';
 import { Button } from '@/components/ui/button';
 import { getLocalTimeZone } from '@internationalized/date';
+import { applyColumnFilter } from '@/lib/utils';
 
 const props = defineProps<{
     rows: Service[];
@@ -175,7 +176,7 @@ const formattedDate = computed(() => {
 });
 
 
-watch(dateRange, (range) => applyColumnFilter('created_at', range));
+watch(dateRange, (range) => applyColumnFilter(table, 'created_at', range));
 
 
 const columns = [
@@ -259,7 +260,10 @@ const handleDelete = () => {
 };
 
 const table = useVueTable({
-    data: computed(() => props.rows),
+    // data: computed(() => props.rows),
+    get data() {
+        return props.rows;
+    },
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -281,16 +285,6 @@ const table = useVueTable({
 
 
 });
-
-const applyColumnFilter = <T>(id: string, value?: T) => {
-  table.setColumnFilters(prev => {
-    const next = prev.filter(f => f.id !== id);
-    if (value !== undefined) {
-      next.push({ id, value });
-    }
-    return next;
-  });
-};
 
 
 table.setPageSize(pageSize.value);

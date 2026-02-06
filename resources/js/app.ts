@@ -4,6 +4,31 @@ import { initializeTheme } from './composables/useAppearance';
 
 import { router } from '@inertiajs/vue3';
 import { toast } from 'vue-sonner';
+import { configureEcho } from '@laravel/echo-vue';
+
+console.log(import.meta.env)
+
+configureEcho({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT,
+    wssPort: import.meta.env.VITE_REVERB_PORT,
+    forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
+    enabledTransports: ['ws'],
+
+     withCredentials: true, // 👈 ESTO
+
+    authEndpoint: '/broadcasting/auth',
+    // auth: {
+    //    headers: {
+    //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+    //    }
+    // },
+
+});
+
+
 
 // import '../css/app.css';
 

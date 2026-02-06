@@ -1,6 +1,6 @@
 import { EnumOption } from '@/types';
 import { InertiaLinkProps } from '@inertiajs/vue3';
-import type { Updater } from '@tanstack/vue-table';
+import type { Table, Updater } from '@tanstack/vue-table';
 import type { ClassValue } from 'clsx';
 
 import { clsx } from 'clsx';
@@ -33,6 +33,17 @@ export function valueUpdater<T extends Updater<any>>(
             ? updaterOrValue(ref.value)
             : updaterOrValue;
 }
+
+export const applyColumnFilter = <T>(table: Table<T>, id: keyof T, value?: any   ) => {
+  table.setColumnFilters(prev => {
+    const next = prev.filter(f => f.id !== id);
+    if (value !== undefined) {
+      next.push({ id, value });
+    }
+    return next;
+  });
+};
+
 
 export function parseDateOnly(date: string) {
     const [y, m, d] = date.split('-').map(Number);

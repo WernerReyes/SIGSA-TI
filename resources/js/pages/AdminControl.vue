@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Administrativo y Control" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -22,8 +23,8 @@
                 </div>
             </header>
 
-            <AlertsPanel />
-            <StatsOverview />
+            <!-- <AlertsPanel /> -->
+            <!-- <StatsOverview /> -->
 
             <Tabs default-value="contracts" class="w-full">
                 <TabsList class="grid w-full max-w-md grid-cols-2">
@@ -31,9 +32,9 @@
                     <TabsTrigger value="events">Bitácora de eventos</TabsTrigger>
                 </TabsList>
 
-                {{ contracts.length }}
                 <TabsContent value="contracts" class="mt-4 space-y-4">
-                    <ContractsTable :contracts="contracts" />
+                    <ContractsTable :contracts="contracts"
+                        @edit-contract="selectedContract = $event, showUpsertContract = true" />
                 </TabsContent>
 
                 <TabsContent value="events" class="mt-4 space-y-4">
@@ -42,7 +43,7 @@
             </Tabs>
         </div>
 
-        <UpsertContractDialog v-model:open="showUpsertContract" />
+        <UpsertContractDialog v-model:open="showUpsertContract" v-model:selected-contract="selectedContract" />
     </AppLayout>
 </template>
 
@@ -60,6 +61,9 @@ import { Head } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { type Contract } from '@/interfaces/contract.interface';
+import { onMounted } from 'vue';
+import { useApp } from '@/composables/useApp';
+import { useEcho, useEchoModel } from '@laravel/echo-vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -69,8 +73,27 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 defineProps<{
-    contracts: Contract[]; 
+    contracts: Contract[];
 }>();
 
+const { userAuth } = useApp();
+
+const selectedContract = ref<Contract | null>(null);
+
 const showUpsertContract = ref(false);
+
+const echo = useEchoModel(
+    'App.Models.User',
+    userAuth.value.staff_id,
+)
+
+onMounted(() => {
+   echo.channel().notification((notification: any) => {
+    console.log('Notificación recibida:', notification);
+       alert(`Notificación: ${notification.message}`);
+        // Aquí puedes agregar lógica para mostrar una alerta o actualizar la lista de contratos
+    });
+});
+
+
 </script>

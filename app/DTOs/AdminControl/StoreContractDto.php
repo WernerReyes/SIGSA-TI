@@ -2,8 +2,7 @@
 namespace App\DTOs\AdminControl;
 
 use App\Enums\Contract\ContractPeriod;
-use App\Enums\Contract\BillingFrequency;
-use function Illuminate\Support\days;
+
 
 class StoreContractDto
 {
@@ -21,7 +20,7 @@ class StoreContractDto
         public readonly ?string $currency,
         public readonly ?bool $autoRenew,
         public readonly ?string $nextBillingDate,
-        public readonly ?int $billingCycleDays = null,
+        public readonly ?int $alertDaysBefore
     ) {
     }
 
@@ -51,7 +50,7 @@ class StoreContractDto
             currency: $data['currency'] ?? null,
             autoRenew: isset($data['auto_renew']) ? (bool) $data['auto_renew'] : null,
             nextBillingDate: $data['next_billing_date'] ?? null,
-            billingCycleDays: isset($data['billing_cycle_days']) ? (int) $data['billing_cycle_days'] : null,
+            alertDaysBefore: isset($data['alert_days_before']) ? (int) $data['alert_days_before'] : null,
         );
     }
 }
