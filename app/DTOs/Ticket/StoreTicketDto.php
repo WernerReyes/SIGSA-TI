@@ -34,7 +34,7 @@ class StoreTicketDto
             title: $data['title'],
             description: $data['description'],
             // technicianId: isset($data['technician_id']) ? $data['technician_id'] : null,
-            requesterId: Auth::id(),
+            requesterId: $data['requester_id'],
             type: TicketType::from($data['type']),
             priority: TicketPriority::from($data['priority']),
             requestType: isset($data['request_type']) ? TicketRequestType::from($data['request_type']) : null

@@ -231,27 +231,18 @@
                 <Pagination class="mx-0  w-fit ml-auto!" :items-per-page="assets.per_page" :total="assets.total"
                     :default-page="assets.current_page">
                     <PaginationContent class="flex-wrap">
-                        <PaginationPrevious :disabled="isLoading || assets.current_page === 1" @click="!isLoading && router.visit(assets.prev_page_url || '', {
-                            preserveScroll: true,
-                            replace: true,
-                        })">
-
+                        <PaginationPrevious :disabled="isLoading || assets.current_page === 1" @click="changePage(assets.prev_page_url || '')">
                             <ChevronLeftIcon />
                             Anterior
                         </PaginationPrevious>
                         <template v-for="(item, index) in assets.links.filter(link => +link.label)" :key="index">
                             <PaginationItem :value="+item.label" :is-active="item.active"
-                                :disabled="isLoading || item.active" @click="!isLoading && router.visit(item.url, {
-                                    preserveScroll: true,
-                                    replace: true,
-                                })">
+                                :disabled="isLoading || item.active" @click="changePage(item.url || '')">
                                 {{ item.label }}
                             </PaginationItem>
                         </template>
 
-                        <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="!isLoading && router.visit(assets.next_page_url || '', {
-                            preserveScroll: true,
-                        })">
+                        <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="changePage(assets.next_page_url || '')">
                             Siguiente
                             <ChevronRightIcon />
                         </PaginationNext>
@@ -556,6 +547,16 @@ const resetFilters = () => {
     form.department_id = [];
     applyFilters();
 };
+
+const changePage = (url: string) => {
+    if(isLoading.value) return;
+    router.visit(url, {
+        preserveScroll: true,
+        replace: true,
+        preserveState: true,
+        only: ['assetsPaginated'],
+    });
+}
 
 const handleDeleteAsset = () => {
 

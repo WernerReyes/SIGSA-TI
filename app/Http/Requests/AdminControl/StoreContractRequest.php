@@ -37,7 +37,7 @@ class StoreContractRequest extends FormRequest
             'amount' => 'nullable|numeric|min:0',
             'currency' => 'nullable|string|size:3',
             'auto_renew' => 'nullable|boolean',
-            'next_billing_date' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|date',
+            'next_billing_date' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|date|after_or_equal:start_date',
             'alert_days_before' => [
                 // 'required_if:period,' . ContractPeriod::RECURRING->value,
                 Rule::requiredIf(function () {
@@ -59,6 +59,7 @@ class StoreContractRequest extends FormRequest
         return [
             'end_date.required_if' => 'La fecha de finalización es obligatoria para contratos de plazo fijo.',
             'next_billing_date.required_if' => 'La próxima fecha de facturación es obligatoria para contratos recurrentes.',
+            'next_billing_date.after_or_equal' => 'La próxima fecha de facturación debe ser igual o posterior a la fecha de inicio.',
             'alert_days_before.required_if' => 'Los días para la alerta son obligatorios para contratos recurrentes y de plazo fijo.',
         ];
     }

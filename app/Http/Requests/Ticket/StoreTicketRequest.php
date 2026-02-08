@@ -34,11 +34,15 @@ class StoreTicketRequest extends FormRequest
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'type' => ['required', $inTicketType],
             // 'technician_id' => [
-                
+
             //     // 'required_if:type,SERVICE_REQUEST',
             //     "required_if:type," . TicketType::SERVICE_REQUEST->value,
             //     'exists:ost_staff,staff_id',
             // ],
+            'requester_id' => [
+                'required',
+                'exists:ost_staff,staff_id',
+            ],
             'priority' => ['required', $inTicketPriority],
             'request_type' => [
                 'required_if:type,' . TicketType::SERVICE_REQUEST->value,
@@ -59,6 +63,9 @@ class StoreTicketRequest extends FormRequest
             'description.string' => 'La descripción debe ser una cadena de texto.',
             'description.min' => 'La descripción debe tener al menos :min caracteres.',
             'description.max' => 'La descripción no debe exceder de :max caracteres.',
+
+            'requester_id.required' => 'El solicitante es obligatorio.',
+            'requester_id.exists' => 'El solicitante seleccionado no es válido.',
 
             // 'technician_id.required_if' => 'El técnico es obligatorio para este tipo de ticket.',
             // 'technician_id.exists' => 'El técnico seleccionado no es válido.',

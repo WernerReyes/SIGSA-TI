@@ -34,7 +34,7 @@
     </div>
 
 
-    <div class="max-sm:w-full  md:max-w-2/3 flex gap-2 flex-wrap justify-end">
+    <div class="max-sm:w-full  md:max-w-2/3 ml-auto flex gap-2 flex-wrap justify-end">
       <SelectFilters label="Solicitantes" :items="users" data-key="users" :icon="Users" show-refresh show-selected-focus
         item-value="staff_id" item-label="full_name" :multiple="true" :default-value="form.requesters"
         @select="(selects) => form.requesters = selects" />
@@ -175,7 +175,7 @@
                 :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
                 v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI" @click="() => {
                   router.reload({
-                    only: ['currentAssignment'],
+                    only: ['currentAssignment', 'requesterAssignments'],
                     data: { requester_id: activeRow?.requester_id },
                     preserveUrl: true,
                     onSuccess: () => {
@@ -293,7 +293,7 @@
   <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
   <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" />
   <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
-  <AssignDialog v-if="openAssignEquipment" v-model:open="openAssignEquipment" :ticket="activeRow" />
+  <AssignEquipmentDialog v-if="openAssignEquipment" v-model:open="openAssignEquipment" :ticket="activeRow" />
   <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" :ticket="activeRow" />
 
   <AlertDialog v-model:open="openDelete" title="Eliminar ticket"
@@ -377,7 +377,7 @@ import { computed, h, reactive, ref, watch } from 'vue';
 import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
 import ChangeStatusDialog from './ChangeStatusDialog.vue';
 import DetailsDialog from './DetailsDialog.vue';
-import AssignDialog from './AssignDialog.vue';
+import AssignEquipmentDialog from './AssignEquipmentDialog.vue';
 import AssignEquipmentModal from './AssignEquipmentModal.vue';
 import Dialog from './Dialog.vue';
 import TicketColumnTable from './TicketColumnTable.vue';
@@ -481,7 +481,7 @@ const filterstersRenders = computed(() => [{
 
 const disabledEdit = computed(() => {
   const ticket = activeRow.value;
-  return !isSameUser(ticket?.requester_id) || isLoading.value || ticket?.status !== TicketStatus.OPEN || ticket?.responsible_id !== null;
+  return  isLoading.value || ticket?.status !== TicketStatus.OPEN || ticket?.responsible_id !== null;
 })
 
 const form = reactive<Filters>({

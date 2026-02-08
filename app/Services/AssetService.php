@@ -98,6 +98,7 @@ class AssetService
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
+            ds("Fetching paginated assets with filters:", $filtersDto);
             return Asset::query()
                 ->with([
                     'type:id,name',

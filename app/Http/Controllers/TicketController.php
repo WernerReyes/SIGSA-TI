@@ -26,7 +26,7 @@ class TicketController extends Controller
         $ticketId = $request->input('ticket_id');
         $assignmentId = $request->input('assignment_id');
 
-        return Inertia::render('Tickets', [
+            return Inertia::render('Tickets', [
             // 'departments' => $departmentsWithUsers,
             'filters' => $filters,
             'users' => Inertia::optional(fn() => $userService->getAllBasicInfo())->once(),
@@ -39,6 +39,14 @@ class TicketController extends Controller
                 $requesterId = $request->input('requester_id');
                 if ($requesterId) {
                     return $ticketService->getCurrentAssignment($requesterId);
+                }
+                return null;
+            })->once(),
+
+            'requesterAssignments' => Inertia::optional(function () use ($ticketService, $request) {
+                $requesterId = $request->input('requester_id');
+                if ($requesterId) {
+                    return $ticketService->getAssignmentsByRequester($requesterId);
                 }
                 return null;
             })->once(),

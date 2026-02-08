@@ -8,6 +8,7 @@ import { format } from 'date-fns-tz';
 import { ShieldQuestionIcon } from 'lucide-vue-next';
 import { twMerge } from 'tailwind-merge';
 import type { Ref } from 'vue';
+import equal from 'fast-deep-equal/es6/react';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -64,4 +65,9 @@ export const getEmptyEnumOption = <T>(value: T): EnumOption<T> => {
         icon: ShieldQuestionIcon,
         bg: 'bg-gray-500',
     };
+};
+
+
+export const isEqual = <T>(a: T, b: T): boolean => {
+    return equal(a, b);
 };

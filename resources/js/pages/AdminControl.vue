@@ -23,7 +23,8 @@
                 </div>
             </header>
 
-            <!-- <AlertsPanel /> -->
+
+            <AlertsPanel v-model:notifications="notifications" />
             <!-- <StatsOverview /> -->
 
             <Tabs default-value="contracts" class="w-full">
@@ -43,6 +44,8 @@
             </Tabs>
         </div>
 
+
+
         <UpsertContractDialog v-model:open="showUpsertContract" v-model:selected-contract="selectedContract" />
     </AppLayout>
 </template>
@@ -59,11 +62,13 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
-import { ref } from 'vue';
-import { type Contract } from '@/interfaces/contract.interface';
+import { computed, ref } from 'vue';
+import { type Contract, type NotificationContract } from '@/interfaces/contract.interface';
 import { onMounted } from 'vue';
 import { useApp } from '@/composables/useApp';
 import { useEcho, useEchoModel } from '@laravel/echo-vue';
+import { NotificationEntity } from '../interfaces/notification.interface';
+import { toast } from 'vue-sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -72,9 +77,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-defineProps<{
+const props = defineProps<{
     contracts: Contract[];
+    notifications: NotificationContract[];
 }>();
+
+const notifications = ref(props.notifications);
+
 
 const { userAuth } = useApp();
 
@@ -88,12 +97,27 @@ const echo = useEchoModel(
 )
 
 onMounted(() => {
-   echo.channel().notification((notification: any) => {
-    console.log('Notificación recibida:', notification);
-       alert(`Notificación: ${notification.message}`);
-        // Aquí puedes agregar lógica para mostrar una alerta o actualizar la lista de contratos
+    echo.channel().notification((notification: {
+        message: string,
+        contract: Contract
+    }) => {
+        toast.success(notification.message);
+
+        notifications.value = [...notifications.value, {
+            id: new Date().getTime().toString(),
+            type: NotificationEntity.CONTRACT,
+            notifiable_type: '',
+            notifiable_id: userAuth.value.staff_id,
+            entity_id: notification.contract.id,
+            data: JSON.stringify({
+                message: notification.message
+            }),
+            read_at: null,
+            created_at: new Date(),
+            updated_at: new Date(),
+            contract: notification.contract
+        }]
     });
 });
-
 
 </script>

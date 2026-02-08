@@ -11,7 +11,7 @@
                 Nuevo Ticket
             </Button>
         </DialogTrigger>
-        <DialogContent class="sm:max-w-5/12 overflow-y-auto">
+        <DialogContent class="sm:max-w-3xl overflow-y-auto">
             <DialogHeader class="space-y-3 pb-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="p-2 rounded-lg bg-primary/10">
@@ -26,10 +26,10 @@
                     </div>
                 </div>
             </DialogHeader>
-
+  <ScrollArea class="max-h-96 sm:max-h-[70vh] pr-2">
 
             <form id="dialogForm" @submit.prevent="handleSubmit(onSubmit)()"
-                class="space-y-5 py-4 max-h-96 overflow-y-auto">
+                class="space-y-5 py-4">
                 <!-- TÍTULO -->
 
                 <div class="flex max-sm:flex-col gap-5">
@@ -40,7 +40,7 @@
                                     Título
                                 </FieldLabel>
                                 <Input id="title" placeholder="Ej: No puedo acceder al sistema de nómina"
-                                    class="h-11 mt-2" v-bind="componentField" />
+                                    class="h-11" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -55,7 +55,7 @@
                                 </FieldLabel>
                                 <Textarea id="description" rows="4"
                                     placeholder="Describe el problema en detalle: ¿Qué ocurrió? ¿Cuándo empezó? ¿Qué intentaste hacer?"
-                                    class="mt-2 resize-none" v-bind="componentField" />
+                                    class="resize-none" v-bind="componentField" />
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
@@ -65,7 +65,7 @@
                 <FieldGroup>
                     <VeeField name="type" v-slot="{ componentField, errors }">
                         <Field :data-invalid="!!errors.length">
-                            <FieldLabel class="text-sm font-semibold mb-3">
+                            <FieldLabel class="text-sm font-semibold">
                                 Tipo de Ticket
                             </FieldLabel>
                             <Tabs v-bind="componentField" :default-value="TicketType.SERVICE_REQUEST" class="w-full">
@@ -81,7 +81,6 @@
                     </VeeField>
                 </FieldGroup>
 
-
                 <div class="grid gap-5"
                     :class="values.type === TicketType.SERVICE_REQUEST ? 'md:grid-cols-2' : 'md:grid-cols-1'">
                     <!-- CATEGORÍA -->
@@ -94,9 +93,9 @@
 
 
                                 <SelectFilters :items="Object.values(ticketRequestTypeOptions)"
-                                    :show-selected-focus="false" :show-refresh="false"
-                                    label="Selecciona" item-label="label" item-value="value"
-                                    selected-as-label :default-value="componentField.modelValue"
+                                    :show-selected-focus="false" :show-refresh="false" label="Selecciona"
+                                    item-label="label" item-value="value" selected-as-label
+                                    :default-value="componentField.modelValue"
                                     @select="(value) => setFieldValue('request_type', value)"
                                     filter-placeholder="Buscar estado..." empty-text="No se encontraron estados">
                                     <template #item="{ item }">
@@ -141,24 +140,65 @@
                 </div>
 
 
+                <FieldGroup>
+                    <VeeField name="requester_id" v-slot="{ componentField, errors }">
+                        <Field :data-invalid="!!errors.length">
+                            <FieldLabel for="requester_id">Solicitante</FieldLabel>
+                            <!-- :disabled="!!asset?.current_assignment?.parent_assignment_id || !canEdit" -->
+                            <div class="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon-sm"
+                                    class=""
+                                    :disabled="!values.requester_id"
+                                    @click="handleOpenRequesterAssets"
+                                >
+                                    <MonitorSmartphone class="size-4" />
+                                </Button>
+                                <div class="flex-1">
+
+                                    <SelectFilters data-key="users" :items="users" :show-selected-focus="false"
+                                        :show-refresh="false"
+                                        :label="requesterLabel"
+                                        :full-width="true"
+                                        item-label="full_name" item-value="staff_id" selected-as-label
+                                        :default-value="componentField.modelValue"
+                                        @select="(value) => setFieldValue('requester_id', +value)"
+                                        filter-placeholder="Buscar solicitante..." empty-text="No se encontraron solicitantes">
+                                    </SelectFilters>
+                                </div>
+                            </div>
+
+                            <FieldError v-if="errors.length" :errors="errors" />
+                        </Field>
+                    </VeeField>
+                </FieldGroup>
+
             </form>
 
+            </ScrollArea>
+
             <DialogFooter class="pt-6 border-t gap-3">
-                <Button variant="outline" type="button" @click="open = false" :disabled="isSubmitting"
+                <Button variant="outline" type="button" @click="open = false" :disabled="isLoading"
                     class="flex-1 sm:flex-none">
                     Cancelar
                 </Button>
-                <Button :disabled="isSubmitting || Object.keys(errors).length > 0" type="submit" form="dialogForm"
+                <Button :disabled="disableForm" type="submit" form="dialogForm"
                     class="flex-1 sm:flex-none shadow-md hover:shadow-lg transition-all gap-2">
-                    <Spinner v-if="isSubmitting" class="size-4" />
-                    <!-- <span v-if="!isSubmitting">✅</span> -->
-                    <Check v-if="!isSubmitting" class="size-4" />
-                    <template v-if="!ticket">{{ isSubmitting ? 'Creando...' : 'Crear Ticket' }}</template>
-                    <template v-else>{{ isSubmitting ? 'Actualizando...' : 'Actualizar Ticket' }}</template>
+                 
+                    <Check  class="size-4" />
+                    <template v-if="!ticket">{{ 'Crear Ticket' }}</template>
+                    <template v-else>{{  'Actualizar Ticket' }}</template>
 
                 </Button>
             </DialogFooter>
         </DialogContent>
+        <RequesterAssetsSheet
+            v-model:open="openRequesterAssets"
+            :assignments="requesterAssignments"
+            :requester-id="values.requester_id"
+        />
     </Dialog>
     <!-- </Form> -->
 </template>
@@ -166,7 +206,7 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm, Field as VeeField } from 'vee-validate'
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -185,21 +225,29 @@ import {
     FieldLabel
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { useApp } from '@/composables/useApp'
+import type { AssetAssignment } from '@/interfaces/assetAssignment.interface'
 import { Ticket, TicketPriority, ticketPriorityOptions, TicketRequestType, ticketRequestTypeOptions, TicketType, ticketTypeOptions } from '@/interfaces/ticket.interface'
-import { router } from '@inertiajs/vue3'
-import { Check, Tag } from 'lucide-vue-next'
+import { isEqual } from '@/lib/utils'
+import { router, usePage } from '@inertiajs/vue3'
+import { Check, MonitorSmartphone, Tag } from 'lucide-vue-next'
 import * as z from 'zod'
 import SelectFilters from '../SelectFilters.vue'
+import { ScrollArea } from '@/components/ui/scroll-area';
+import RequesterAssetsSheet from './RequesterAssetsSheet.vue';
+
+
+const { isLoading, users, userAuth } = useApp();
+const page = usePage();
+
+const open = defineModel<boolean>('open', {
+    type: Boolean,
+    required: false,
+    default: false,
+});
 
 const ticket = defineModel<Ticket | null>('ticket', {
     type: Object as () => Ticket | null,
@@ -213,14 +261,34 @@ defineProps({
     }
 });
 
-// const open = ref(false);
-const open = defineModel<boolean>('open', {
-    type: Boolean,
-    required: false,
-    default: false,
-});
-const isSubmitting = ref(false);
 
+// const currentValues = computed<StoreTicket>(() => ({
+//     title: ticket.value?.title,
+//     description: ticket.value?.description,
+//     type: ticket.value?.type,
+//     priority: ticket.value?.priority,
+//     request_type: ticket.value?.request_type,
+//     requester_id: ticket.value?.requester_id || userAuth.value?.staff_id || null,
+// }));
+
+const disableForm = computed(() => {
+    return isLoading.value || Object.keys(errors.value).length > 0 || isEqual(initialValues.value, values);
+});
+
+const openRequesterAssets = ref(false);
+
+const requesterAssignments = computed<AssetAssignment[]>(() => {
+    return (page.props as unknown as { requesterAssignments?: AssetAssignment[] })?.requesterAssignments || [];
+});
+
+
+
+const requesterLabel = computed(() => {
+    if (ticket.value?.requester) {
+        return ticket.value.requester.full_name;
+    } 
+    return userAuth.value ? userAuth.value.full_name : 'Seleccionar solicitante...';
+})
 
 const formSchema = toTypedSchema(z.object({
     title: z.string({
@@ -246,44 +314,86 @@ const formSchema = toTypedSchema(z.object({
     }).optional().nullable(),
 
 
+    requester_id: z.number({
+        invalid_type_error: 'Selecciona un solicitante válido',
+        required_error: 'El solicitante es obligatorio',
+    }).optional().nullable(),
+
+
+}).refine((data) => {
+    if (data.type === TicketType.SERVICE_REQUEST) {
+        return data.request_type !== null && data.request_type !== undefined;
+    }
+    return true;
+}, {
+    path: ['request_type'],
+    message: 'El tipo de solicitud es obligatorio para tickets de tipo "Solicitud de Servicio"',
 }));
 
-const initialValues = {
-    type: TicketType.SERVICE_REQUEST,
-};
+const initialValues = computed(() => ({
+    title: ticket.value?.title || '',
+    description: ticket.value?.description || '',
+    type: ticket.value?.type || TicketType.SERVICE_REQUEST,
+    priority: ticket.value?.priority || TicketPriority.MEDIUM,
+    request_type: ticket.value?.request_type || null,
+    requester_id: ticket.value?.requester_id || userAuth.value?.staff_id || null,
+}))
 
-const { handleSubmit, errors, setValues, values, setFieldValue } = useForm({
+const { handleSubmit, errors, setValues, values, setFieldValue, resetForm } = useForm({
     validationSchema: formSchema,
-    initialValues
+    initialValues: initialValues.value,
+    keepValuesOnUnmount: true,
 });
 
-watch(() => ticket?.value, (newTicket) => {
-    if (newTicket) {
-        open.value = true;
-        setValues({
-            title: newTicket.title,
-            description: newTicket.description,
-            type: newTicket.type,
-            priority: newTicket.priority,
-            request_type: newTicket.request_type,
-        });
-    } else {
-        open.value = false;
-        setValues(initialValues);
+type StoreTicket = typeof values;
+
+// watch(() => ticket?.value, (newTicket) => {
+//     if (newTicket) {
+//         open.value = true;
+//         setValues(currentValues.value);
+//     } else {
+//         open.value = false;
+//         resetForm();
+
+//     }
+// }, { immediate: true });
+
+watch(values, (values) => {
+    if (values.type === TicketType.INCIDENT) {
+        setFieldValue('request_type', initialValues.value.request_type || null);
     }
-}, { immediate: true });
+}, { deep: true })
+
+// watch(() => userAuth.value, (newUser) => {
+//     setFieldValue('requester_id', newUser?.staff_id || null);
+// }, { immediate: true })
 
 
 const handleReset = () => {
-    setValues(initialValues);
+    resetForm();
     ticket.value = null;
+};
+
+const handleOpenRequesterAssets = () => {
+    if (!values.requester_id) {
+        openRequesterAssets.value = true;
+        return;
+    }
+
+    router.reload({
+        only: ['requesterAssignments'],
+        data: { requester_id: values.requester_id },
+        preserveUrl: true,
+        onSuccess: () => {
+            openRequesterAssets.value = true;
+        }
+    });
 };
 
 
 
-
-function onSubmit(values: any) {
-    isSubmitting.value = true;
+function onSubmit(values: StoreTicket) {
+    console.log(values);
     if (ticket?.value) {
         const only: string[] = [];
         if (ticket?.value?.priority !== values.priority) {
@@ -292,17 +402,19 @@ function onSubmit(values: any) {
         router.put(`/tickets/${ticket.value.id}`, values, {
             only,
             onFlash: (flash) => {
+                if (flash.error) return;
                 const updatedTicket = flash.ticket as Ticket | null;
                 if (updatedTicket && !only.includes('tickets')) {
-                    nextTick(() => {
+                    // nextTick(() => {
                         router.replaceProp('tickets.data', (tickets: Ticket[]) => {
 
                             const newTickets = tickets.map(t => {
                                 if (t.id === updatedTicket.id) {
+                                    console.log('Updating ticket in place with:', updatedTicket);
                                     return {
 
                                         ...updatedTicket,
-                                        requester: t.requester,
+                                        requester:  updatedTicket.requester || t.requester,
                                         responsible: t.responsible,
                                         histories: t.histories,
 
@@ -314,18 +426,19 @@ function onSubmit(values: any) {
 
                             return newTickets;
                         });
-                    })
+                    // })
 
                 }
-            },
-            onSuccess: () => {
+
                 open.value = false;
                 handleReset();
-
             },
-            onFinish: () => {
-                isSubmitting.value = false;
-            }
+            // onSuccess: () => {
+            //     open.value = false;
+            //     handleReset();
+
+            // },
+
         });
         return;
     }
@@ -335,9 +448,7 @@ function onSubmit(values: any) {
             open.value = false;
             handleReset();
         },
-        onFinish: () => {
-            isSubmitting.value = false;
-        }
+
 
 
     })

@@ -14,7 +14,12 @@ import {
     XCircle,
 } from 'lucide-vue-next';
 import { type ContractBilling } from './contractBilling.interface';
+import { ContractExpiration } from './contractExpiration.interface';
+import { Notification } from './notification.interface';
 
+export interface NotificationContract extends Notification {
+    contract?: Contract;
+}
 export interface Contract {
     id: number;
     name: string;
@@ -27,7 +32,8 @@ export interface Contract {
     notes: string | null;
     created_at: Date;
     updated_at: Date;
-    billing?: ContractBilling
+    billing?: ContractBilling;
+    expiration?: ContractExpiration;
 }
 
 export enum ContractType {
@@ -138,7 +144,7 @@ export const getContractOp = <T>(
     type: 'type' | 'period' | 'status',
     op?: T | null,
 ): EnumOption<T | undefined | null> => {
-    if (!op) return getEmptyEnumOption(op);    
+    if (!op) return getEmptyEnumOption(op);
     switch (type) {
         case 'type':
             return contractTypeOptions[op as ContractType] as EnumOption<T>;

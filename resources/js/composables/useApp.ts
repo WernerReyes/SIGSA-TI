@@ -16,6 +16,8 @@ export const useApp = () => {
     const assetTypes = computed(() => (page.props as unknown as { types: AssetType[] })?.types || []);
     const assetAccessories = computed(() => (page.props as unknown as { accessories: Asset[] })?.accessories || []);
 
+    
+
     const isFromTI = computed(() => {
         return userAuth.value?.dept_id === DepartmentAllowed.SYSTEM_TI;
     });

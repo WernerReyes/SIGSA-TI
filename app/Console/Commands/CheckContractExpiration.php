@@ -31,6 +31,8 @@ class CheckContractExpiration extends Command
                     $expiration->update([
                         'notified' => true,
                     ]);
+
+                    
                 }
             });
 

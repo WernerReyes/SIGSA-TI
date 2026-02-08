@@ -29,7 +29,7 @@ return new class extends Migration {
 
             //* Foreign key to users table
             $table->unsignedInteger('requester_id');
-            $table->foreign('requester_id')->references('staff_id')->on('ost_staff');
+            $table->foreign('requester_id')->references(columns: 'staff_id')->on('ost_staff');
 
             $table->unsignedInteger('responsible_id')->nullable();
             $table->foreign('responsible_id')->references('staff_id')->on('ost_staff');

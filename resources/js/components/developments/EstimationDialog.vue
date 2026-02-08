@@ -187,7 +187,7 @@ const formSchema = toTypedSchema(
             }),
         estimated_hours: z.coerce.number({
             message: 'Las horas estimadas son obligatorias',
-        }).min(1, 'Debe ser mínimo 1 hora'),
+        }).min(1, 'Debe ser mínimo 1 hora').max(999999, 'Las horas estimadas no pueden exceder 6 dígitos'),
 
     })
 );

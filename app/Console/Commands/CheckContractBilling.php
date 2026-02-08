@@ -52,12 +52,12 @@ class CheckContractBilling extends Command
                     ds(
                         $user->getKey(),       // debe mostrar staff_id
                         $user->getKeyName(),   // "staff_id"
-                        $user->routeNotificationFor('broadcast'),
+                       
                     );
                     $user->notify(new ContractRenewalNotification($billing));
                 });
         } catch (\Exception $e) {
-            logger()->error('Error al enviar notificación de renovación', [
+            ds('Error al enviar notificación de renovación', [
                 'contract_id' => $billing->contract_id,
                 'error' => $e->getMessage(),
             ]);

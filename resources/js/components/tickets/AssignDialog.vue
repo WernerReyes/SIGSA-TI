@@ -129,7 +129,7 @@
                                                     ?
                                                     format(componentField.modelValue.toDate(getLocalTimeZone()),
                                                         'dd/MM/yyyy')
-                                                : 'Seleccionar fecha' }}
+                                                    : 'Seleccionar fecha' }}
 
                                                 <ChevronDownIcon />
                                             </Button>
@@ -150,15 +150,12 @@
                             </VeeField>
                         </FieldGroup>
 
-                            {{ assetAccessories.length }}
                         <FieldGroup v-if="selectedAsset && selectedAsset?.type?.name !== TypeName.ACCESSORY">
                             <VeeField name="accessories" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                    <SelectFilters 
-                                     :disabled="!canEdit"
-                                    :items="assetAccessories" data-key="accessories"
+                                    <SelectFilters :disabled="!canEdit" :items="assetAccessories" data-key="accessories"
                                         :show-selected-focus="false" :show-refresh="false"
                                         :label="selectLabels(componentField.modelValue)" item-label="name"
                                         item-value="id" :multiple="true" selected-as-label
@@ -179,10 +176,9 @@
                             <VeeField name="comment" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel for="comment">Observaciones</FieldLabel>
-                                    <Textarea 
-                                     :disabled="!canEdit"
-                                    id="comment" placeholder="Condiciones del equipo, accesorios incluidos..."
-                                        rows="3" v-bind="componentField" />
+                                    <Textarea :disabled="!canEdit" id="comment"
+                                        placeholder="Condiciones del equipo, accesorios incluidos..." rows="3"
+                                        v-bind="componentField" />
                                     <FieldError v-if="errors.length" :errors="errors" />
                                 </Field>
                             </VeeField>
@@ -193,12 +189,10 @@
             </div>
 
             <DialogFooter class="gap-2 pt-2 border-t">
-                <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
-                <Button :disabled="isSubmitting
-                    || Object.keys(errors).length > 0 || !canEdit
-                    " type="submit" form="dialogForm" class="min-w-36">
-                    <Spinner v-if="isSubmitting" />
-                    {{ isSubmitting ? 'Asignando...' : 'Asignar Equipo' }}
+                <Button variant="outline" @click="open = false" :disabled="isLoading">Cancelar</Button>
+                <Button :disabled="disableForm" type="submit" form="dialogForm" class="min-w-36">
+                    <Spinner v-if="isLoading" />
+                    {{ isLoading ? 'Asignando...' : 'Asignar Equipo' }}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -255,23 +249,38 @@ import SelectFilters from '../SelectFilters.vue';
 import { AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import FileUpload from '../FileUpload.vue';
+import { isEqual } from '@/lib/utils';
 
 const ticket = defineModel<Ticket | null>('ticket');
 const open = defineModel<boolean>('open');
 
 const page = usePage();
-const { availableAssets: availables, assetAccessories: accessories } = useApp();
+const { availableAssets: availables, assetAccessories: accessories, isLoading } = useApp();
 const { downloadAssignmentDocument } = useAsset();
 
+const resetUpload = ref(false);
+const loadingAssignDocument = ref(false);
 
 const currentAssetAssignment = computed<AssetAssignment | null>(() => {
     return page.props?.currentAssignment as AssetAssignment | null;
 });
 
-const isSubmitting = ref(false);
-const resetUpload = ref(false);
-const loadingAssignDocument = ref(false);
+const currentValues = computed<Record<string, any>>(() => {
+    if (currentAssetAssignment.value) {
+        return {
+            asset_id: currentAssetAssignment.value.asset_id,
+            assign_date: parseDate(currentAssetAssignment.value.assigned_at.split('T')[0]),
+            comment: currentAssetAssignment.value.comment || '',
+            accessories: currentAssetAssignment.value.children_assignments?.map(ca => ca.asset_id) || [],
+        };
+    }
+    return {};
+});
 
+
+const disableForm = computed<boolean>(() => {
+    return isLoading.value || Object.keys(errors.value).length > 0 || !canEdit.value || isEqual(values, currentValues.value);
+});
 
 const url = computed<string>({
     get: () => {
@@ -312,7 +321,7 @@ const assignmentId = computed<number>(() => {
 
 const availableAssets = computed<Asset[]>(() => {
     if (currentAssetAssignment.value) {
-       
+
         return [
             currentAssetAssignment.value.asset!,
             ...availables.value,
@@ -359,7 +368,7 @@ const formSchema = toTypedSchema(
     })
 );
 
-const { handleSubmit, errors, setValues, setFieldValue, values } = useForm({
+const { handleSubmit, errors, setValues, setFieldValue, values, resetForm } = useForm({
     initialValues: {
         asset_id: undefined,
         assign_date: today(getLocalTimeZone()),
@@ -373,25 +382,14 @@ const { handleSubmit, errors, setValues, setFieldValue, values } = useForm({
 
 watch(currentAssetAssignment, (assignment) => {
     if (assignment) {
-        setValues({
-            asset_id: assignment.asset_id,
-            assign_date: parseDate(assignment.assigned_at.split('T')[0]),
-            comment: assignment.comment || '',
-            accessories: assignment.children_assignments?.map(ca => ca.asset_id) || [],
-        });
+        setValues(currentValues.value);
     } else {
-        setValues({
-            asset_id: undefined,
-            assign_date: today(getLocalTimeZone()),
-            comment: '',
-            accessories: [],
-        });
+        resetForm();
     }
 }, { immediate: true });
 
 
 const onSubmit = async (values: Record<string, any>) => {
-    isSubmitting.value = true;
 
     const accessoriesIds = values.accessories || [];
     const type = selectedAsset.value?.type?.name || null;
@@ -404,13 +402,11 @@ const onSubmit = async (values: Record<string, any>) => {
         const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
         if (!includeCharger) {
             toast.error('Debe incluir el cargador en los accesorios del equipo.');
-            isSubmitting.value = false;
+
             return;
         }
     }
 
-
-    
 
     router.post('/assets/assign', {
         asset_id: values.asset_id,
@@ -427,14 +423,15 @@ const onSubmit = async (values: Record<string, any>) => {
         preserveUrl: true,
 
         onFlash: (flash) => {
-            if (flash.assignment_id) {
-                const type = ticket.value?.current_asset_assignment?.asset?.type?.name || null;
-                if (type) {
-                    downloadAssignmentDocument(flash.assignment_id as number, type);
-                }
-            }
 
             if (flash.success) {
+                if (flash.assignment_id) {
+                    const type = currentAssetAssignment.value?.asset?.type?.name || null;
+                    if (type) {
+                        downloadAssignmentDocument(flash.assignment_id as number, type);
+                    }
+                }
+
                 open.value = false;
                 ticket.value = null;
                 if (!only.length) {
@@ -449,11 +446,8 @@ const onSubmit = async (values: Record<string, any>) => {
                 toast.success('Se ha enviado una alerta de stock bajo para los accesorios seleccionados.');
             }
         },
-        
-        onFinish: () => {
-            isSubmitting.value = false;
 
-        },
+
     });
 };
 

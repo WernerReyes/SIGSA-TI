@@ -20,6 +20,23 @@ enum BillingFrequency: string
         return implode($delimiter, self::values());
     }
 
+    public static function labels(): array
+    {
+        return [
+            self::MONTHLY->value => 'cada mes',
+            self::QUARTERLY->value => 'cada 3 meses',
+            self::SEMIANNUAL->value => 'cada 6 meses',
+            self::ANNUAL->value => 'cada año',
+            self::ONE_TIME->value => 'Una vez',
+        ];
+    }
+
+    public static function label(string $frequency): ?string
+    {
+        $labels = self::labels();
+        return $labels[$frequency] ?? null;
+    }
+
     public static function days(): array
     {
         return [

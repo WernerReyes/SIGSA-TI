@@ -108,7 +108,7 @@ class TicketService
 
     public function getCurrentAssignment(int $requester_id)
     {
-        return AssetAssignment::with('asset', 'asset.type:id,name', 'childrenAssignments.asset.type:id,name',)
+        return AssetAssignment::with('asset', 'asset.type:id,name', 'childrenAssignments.asset.type:id,name', )
             ->where('assigned_to_id', $requester_id)
             ->whereNull('returned_at')
             ->latest('created_at')
@@ -116,8 +116,22 @@ class TicketService
 
     }
 
+    public function getAssignmentsByRequester(int $requester_id)
+    {
+        return AssetAssignment::with(
+            'asset:id,name,type_id,brand,model,serial_number',
+            'asset.type:id,name',
+            'childrenAssignments.asset:id,name,type_id',
+            'childrenAssignments.asset.type:id,name'
+        )
+            ->where('assigned_to_id', $requester_id)
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
     public function storeTicket(StoreTicketDto $dto)
     {
+
         try {
             DB::transaction(function () use ($dto) {
                 $ticket = Ticket::create([
@@ -148,7 +162,7 @@ class TicketService
     {
 
         $user = Auth::user();
-        if ($ticket->requester_id !== $user->staff_id) {
+        if ($user->staff_id !== TicketHistory::where('ticket_id', $ticket->id)->where('action', TicketHistoryAction::CREATED->value)->value('performed_by')) {
             throw new BadRequestException("No tienes permiso para actualizar este ticket.");
         }
 
@@ -168,6 +182,7 @@ class TicketService
 
                 $ticket->title = $dto->title;
                 // $ticket->status = $dto->status->value;
+                $ticket->requester_id = $dto->requesterId;
                 $ticket->description = $dto->description;
                 $ticket->type = $dto->type->value;
                 $ticket->priority = $dto->priority->value;
@@ -181,6 +196,16 @@ class TicketService
                         $oldValue = $original[$field] ?? null;
 
                         if ($oldValue === $newValue || $field === 'updated_at') {
+                            continue;
+                        }
+
+
+                        if ($field === 'requester_id') {
+                            $oldRequester = User::select('staff_id', 'firstname', 'lastname')->find($oldValue);
+                            $newRequester = User::select('staff_id', 'firstname', 'lastname')->find($newValue);
+                            $oldName = $oldRequester ? $oldRequester->full_name : 'N/A';
+                            $newName = $newRequester ? $newRequester->full_name : 'N/A';
+                            $changeDetails[] = "Solicitante cambiado de '{$oldName}' a '{$newName}'";
                             continue;
                         }
 
@@ -219,11 +244,16 @@ class TicketService
                     $this->logHistory($ticket->id, TicketHistoryAction::UPDATED, $changeDescription);
                 }
 
+                if ($original['requester_id'] !== $dto->requesterId) {
+                    $ticket->load('requester:staff_id,firstname,lastname');
+                }
+
                 return $ticket;
             });
 
 
         } catch (\Exception $e) {
+            ds("Error updating ticket: " . $e->getMessage());
             throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
         }
     }
