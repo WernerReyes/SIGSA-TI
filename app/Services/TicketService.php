@@ -253,7 +253,7 @@ class TicketService
 
 
         } catch (\Exception $e) {
-            ds("Error updating ticket: " . $e->getMessage());
+            
             throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
         }
     }

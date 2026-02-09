@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,6 +22,14 @@ Route::middleware('auth')->group(function () {
     require __DIR__ . '/admin-control.php';
     require __DIR__ . '/developments.php';
     require __DIR__ . '/settings.php';
+
+    // notifications/12/mark-as-read
+    Route::prefix('notifications')->group(function () {
+        Route::patch('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+        Route::patch('/{notification}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+        Route::delete('/read', [NotificationController::class, 'clearRead'])->name('notifications.clearRead');
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    });
 
 });
 

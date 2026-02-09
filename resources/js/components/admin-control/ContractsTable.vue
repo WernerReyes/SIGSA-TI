@@ -89,7 +89,9 @@
                                     <Pencil class="h-4 w-4" />
                                     Editar contrato
                                 </ContextMenuItem>
-                                <ContextMenuItem @click="emit('renew-contract', activeRow)">
+                                <ContextMenuItem
+                                    :disabled="activeRow?.billing?.auto_renew || activeRow?.status === ContractStatus.ACTIVE"
+                                    @click="emit('renew-contract', activeRow)">
                                     <RefreshCcw class="h-4 w-4" />
                                     Renovar
                                 </ContextMenuItem>
@@ -297,7 +299,6 @@ const columns: ColumnDef<Contract>[] = [
 ];
 
 const table = useVueTable({
-    // data: computed(() => contracts),
     get data() {
         return contracts;
     },

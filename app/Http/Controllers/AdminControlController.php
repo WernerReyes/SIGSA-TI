@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 
+use App\DTOs\AdminControl\RenewContractDto;
 use App\DTOs\AdminControl\StoreContractDto;
+use App\Http\Requests\AdminControl\RenewContractRequest;
 use App\Http\Requests\AdminControl\StoreContractRequest;
 use App\Models\Contract;
 use App\Services\AdminControlService;
@@ -70,4 +72,31 @@ class AdminControlController extends Controller
 
         return back();
     }
+
+
+    public function renew(Contract $contract, RenewContractRequest $request, AdminControlService $service)
+    {
+        $validated = $request->validated();
+        $dto = RenewContractDto::fromRequest($validated);
+
+        try {
+            $service->renewContract($contract, $dto);
+
+            Inertia::flash([
+                'success' => 'Contrato renovado exitosamente.',
+                'contract' => $contract,
+                'error' => null
+            ]);
+        } catch (\Exception $e) {
+
+            Inertia::flash([
+                'success' => null,
+                'contract' => null,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return back();
+    }
+
 }

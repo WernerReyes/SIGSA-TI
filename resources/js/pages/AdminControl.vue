@@ -35,7 +35,9 @@
 
                 <TabsContent value="contracts" class="mt-4 space-y-4">
                     <ContractsTable :contracts="contracts"
-                        @edit-contract="selectedContract = $event, showUpsertContract = true" />
+                        @edit-contract="selectedContract = $event, showUpsertContract = true"
+                        @view-details="selectedContractDetail = $event, showContractDetails = true"
+                        @renew-contract="selectedRenewContract = $event, showRenewContract = true" />
                 </TabsContent>
 
                 <TabsContent value="events" class="mt-4 space-y-4">
@@ -45,30 +47,33 @@
         </div>
 
 
-
+            
         <UpsertContractDialog v-model:open="showUpsertContract" v-model:selected-contract="selectedContract" />
+        <ContractDetailsDialog v-model:open="showContractDetails" v-model:selected-contract="selectedContractDetail"
+            :notifications="notifications" />
+        <RenewContractDialog v-model:open="showRenewContract" v-model:selected-contract="selectedRenewContract" />
     </AppLayout>
 </template>
 
 <script setup lang="ts">
 import AlertsPanel from '@/components/admin-control/AlertsPanel.vue';
+import ContractDetailsDialog from '@/components/admin-control/ContractDetailsDialog.vue';
 import ContractsTable from '@/components/admin-control/ContractsTable.vue';
-import UpsertContractDialog from '@/components/admin-control/UpsertContractDialog.vue';
 import EventsLog from '@/components/admin-control/EventsLog.vue';
-import StatsOverview from '@/components/admin-control/StatsOverview.vue';
+import RenewContractDialog from '@/components/admin-control/RenewContractDialog.vue';
+import UpsertContractDialog from '@/components/admin-control/UpsertContractDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useApp } from '@/composables/useApp';
+import { type Contract, type NotificationContract } from '@/interfaces/contract.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
+import { useEchoModel } from '@laravel/echo-vue';
 import { Plus } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
-import { type Contract, type NotificationContract } from '@/interfaces/contract.interface';
-import { onMounted } from 'vue';
-import { useApp } from '@/composables/useApp';
-import { useEcho, useEchoModel } from '@laravel/echo-vue';
-import { NotificationEntity } from '../interfaces/notification.interface';
+import { onMounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { NotificationEntity } from '../interfaces/notification.interface';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -88,8 +93,12 @@ const notifications = ref(props.notifications);
 const { userAuth } = useApp();
 
 const selectedContract = ref<Contract | null>(null);
+const selectedContractDetail = ref<Contract | null>(null);
+const selectedRenewContract = ref<Contract | null>(null);
 
 const showUpsertContract = ref(false);
+const showContractDetails = ref(false);
+const showRenewContract = ref(false);
 
 const echo = useEchoModel(
     'App.Models.User',
@@ -99,24 +108,27 @@ const echo = useEchoModel(
 onMounted(() => {
     echo.channel().notification((notification: {
         message: string,
+        short: string,
         contract: Contract
     }) => {
-        toast.success(notification.message);
+        if (notifications.value.some(n => n.id === notification.contract.id)) {
+            return;
+        }
 
-        notifications.value = [...notifications.value, {
+        notifications.value = [{
             id: new Date().getTime().toString(),
             type: NotificationEntity.CONTRACT,
             notifiable_type: '',
             notifiable_id: userAuth.value.staff_id,
             entity_id: notification.contract.id,
             data: JSON.stringify({
-                message: notification.message
+                message: notification.short
             }),
             read_at: null,
             created_at: new Date(),
             updated_at: new Date(),
             contract: notification.contract
-        }]
+        }, ...notifications.value]
     });
 });
 

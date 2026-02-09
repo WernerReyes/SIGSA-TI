@@ -98,7 +98,6 @@ class AssetService
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
-            ds("Fetching paginated assets with filters:", $filtersDto);
             return Asset::query()
                 ->with([
                     'type:id,name',
@@ -680,8 +679,6 @@ class AssetService
 
                 $assignment = $asset->currentAssignment;
 
-                // ds($asset);
-
 
                 // 2️⃣ Si existe asignación activa → posible actualización
                 if ($assignment) {
@@ -736,7 +733,7 @@ class AssetService
                         $assets = Asset::whereIn('id', $assetsToReleaseIds)
                             ->select('id', 'name', 'brand', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
                             ->get();
-                        ds($assets);
+                      
 
                         $changes[] =
                             (count($assetsToReleaseIds) > 0 ?
@@ -1040,7 +1037,7 @@ class AssetService
             });
             return $assignment;
         } catch (\Exception $e) {
-            ds($e->getMessage());
+    
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
@@ -1420,7 +1417,7 @@ class AssetService
 
             return Storage::disk('public')->url($path);
         } catch (\Exception $e) {
-            ds($e->getMessage());
+           
             if ($e instanceof NotFoundHttpException) {
                 throw $e;
             }

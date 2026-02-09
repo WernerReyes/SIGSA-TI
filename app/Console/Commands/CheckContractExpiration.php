@@ -2,8 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Contract\ContractStatus;
 use App\Models\ContractExpiration;
+use App\Notifications\ContractExpirationNotification;
+use App\Services\UserService;
 use Carbon\Carbon;
+use DB;
 use Illuminate\Console\Command;
 
 class CheckContractExpiration extends Command
@@ -25,15 +29,44 @@ class CheckContractExpiration extends Command
                 $alertDate = Carbon::parse($expiration->expiration_date)
                     ->subDays($expiration->alert_days_before);
 
-                if ($today->greaterThanOrEqualTo($alertDate)) {
-                    $this->notify($expiration);
+                try {
+                    DB::transaction(function () use ($expiration, $today, $alertDate) {
+                        ds('Verificando vencimiento de contrato', [
+                            'contract_id' => $expiration->contract_id,
+                            'expiration_date' => Carbon::parse($expiration->expiration_date)->endOfDay()->toDateString(),
+                            'alert_date' => $alertDate->toDateString(),
+                            'today' => $today->toDateString(),
+                        ]);
+                        if ($today->equalTo(Carbon::parse($expiration->expiration_date)->endOfDay())) {
+                        ds('El contrato venció hoy', [
+                            'contract_id' => $expiration->contract_id,
+                            'expiration_date' => Carbon::parse($expiration->expiration_date)->toDateString(),
+                            'today' => $today->toDateString(),
+                        ]);
+                                
+                        $expiration->contract->update([
+                                'status' => ContractStatus::EXPIRED->value,
+                            ]);
+                        }
 
-                    $expiration->update([
-                        'notified' => true,
+                        if ($today->greaterThanOrEqualTo($alertDate)) {
+                            ds('Enviando notificación de vencimiento de contrato', [
+                                'contract_id' => $expiration->contract_id,
+                                'expiration_date' => Carbon::parse($expiration->expiration_date)->toDateString(),
+                                'alert_date' => $alertDate->toDateString(),
+                                'today' => $today->toDateString(),
+                            ]);
+                            $this->notify($expiration);
+                        }
+                    });
+                } catch (\Exception $e) {
+                    ds('Error al enviar notificación de vencimiento de contrato', [
+                        'contract_id' => $expiration->contract_id,
+                        'error' => $e->getMessage(),
                     ]);
-
-                    
                 }
+
+
             });
 
         return Command::SUCCESS;
@@ -41,23 +74,21 @@ class CheckContractExpiration extends Command
 
     protected function notify(ContractExpiration $expiration)
     {
-        // 👉 EJEMPLOS DE NOTIFICACIÓN
+        try {
+            app(UserService::class)->getTIDepartmentUsers()
+                ->each(function ($user) use ($expiration) {
 
-        // 1️⃣ Log (mínimo viable)
-        logger()->info('Contrato por vencer', [
-            'contract_id' => $expiration->contract_id,
-            'expiration_date' => $expiration->expiration_date,
-        ]);
+                    $user->notify(new ContractExpirationNotification($expiration));
+                });
 
-        ds('Notificar por contrato', $expiration->contract_id);
-
-        // 2️⃣ Notificación interna (ejemplo)
-        /*
-        foreach ($expiration->contract->responsibles as $user) {
-            $user->notify(new ContractExpirationNotification($expiration));
+            $expiration->update([
+                'notified' => true,
+            ]);
+        } catch (\Exception $e) {
+            ds('Error al enviar notificación de renovación de contrato', [
+                'contract_id' => $expiration->contract_id,
+                'error' => $e->getMessage(),
+            ]);
         }
-        */
-
-        // 3️⃣ Mail / Slack / etc (más adelante)
     }
 }

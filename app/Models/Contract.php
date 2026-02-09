@@ -31,4 +31,9 @@ class Contract extends Model
         return $this->hasOne(ContractExpiration::class);
     }
 
+    public function renewals()
+    {
+        return $this->hasMany(ContractRenewal::class);
+    }
+
 }

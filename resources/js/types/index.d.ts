@@ -43,6 +43,7 @@ export interface EnumOption<T> {
     value: T;
     icon?: Component;
     bg?: string;
+    card?: string;
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;

@@ -58,8 +58,10 @@ enum BillingFrequency: string
             self::ONE_TIME->value => null,
         ];
     }
-    public static function getDay(string $frequency): ?int
-    {
+    public static function getDay(?string $frequency): ?int
+    {   
+        if (!$frequency) { return null;
+        }
         $days = self::days();
         return $days[$frequency] ?? null;
     }

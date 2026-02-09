@@ -19,6 +19,23 @@ enum ContractType: string
     {
         return implode($delimiter, self::values());
     }
+
+    public static function labels(): array
+    {
+        return [
+            self::LICENSE->value => 'Licencia',
+            self::SERVICE->value => 'Servicio',
+            self::SUPPORT->value => 'Soporte',
+            self::HARDWARE->value => 'Hardware',
+            self::OTHER->value => 'Otro',
+        ];
+    }
+
+    public static function label($type): ?string
+    {
+        $labels = self::labels();
+        return $labels[$type] ?? null;
+    }
 }
 
 

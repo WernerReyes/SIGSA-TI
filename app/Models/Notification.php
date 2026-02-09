@@ -9,8 +9,10 @@ class Notification extends Model
 {
     protected $table = 'notifications';
 
+    protected $keyType = 'string';
+    public $incrementing = false;
+
     protected $fillable = [
-        'id',
         'type',
         'notifiable_id',
         'notifiable_type',

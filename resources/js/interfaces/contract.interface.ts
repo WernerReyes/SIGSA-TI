@@ -14,8 +14,9 @@ import {
     XCircle,
 } from 'lucide-vue-next';
 import { type ContractBilling } from './contractBilling.interface';
+import { type ContractRenewal } from './contractRenewal.interface';
 import { ContractExpiration } from './contractExpiration.interface';
-import { Notification } from './notification.interface';
+import { type Notification } from './notification.interface';
 
 export interface NotificationContract extends Notification {
     contract?: Contract;
@@ -34,6 +35,7 @@ export interface Contract {
     updated_at: Date;
     billing?: ContractBilling;
     expiration?: ContractExpiration;
+    renewals?: ContractRenewal[];
 }
 
 export enum ContractType {
@@ -101,18 +103,21 @@ export const contractPeriodOptions: Record<
         value: ContractPeriod.RECURRING,
         icon: Repeat,
         bg: 'bg-indigo-500',
+        card: 'bg-indigo-500/10 text-indigo-700 border-indigo-300/40',
     },
     [ContractPeriod.FIXED_TERM]: {
         label: 'Plazo Fijo',
         value: ContractPeriod.FIXED_TERM,
         icon: CalendarRange,
         bg: 'bg-blue-500',
+        card: 'bg-blue-500/10 text-blue-700 border-blue-300/40',
     },
     [ContractPeriod.ONE_TIME]: {
         label: 'Único',
         value: ContractPeriod.ONE_TIME,
         icon: CalendarCheck,
         bg: 'bg-emerald-500',
+        card: 'bg-emerald-500/10 text-emerald-700 border-emerald-300/40',
     },
 };
 
@@ -125,18 +130,21 @@ export const contractStatusOptions: Record<
         value: ContractStatus.ACTIVE,
         icon: CheckCircle,
         bg: 'bg-green-500',
+        card: 'bg-green-500/10 text-green-700 border-green-300/40',
     },
     [ContractStatus.EXPIRED]: {
         label: 'Expirado',
         value: ContractStatus.EXPIRED,
         icon: Clock,
         bg: 'bg-orange-500',
+        card: 'bg-orange-500/10 text-orange-700 border-orange-300/40',
     },
     [ContractStatus.CANCELED]: {
         label: 'Cancelado',
         value: ContractStatus.CANCELED,
         icon: XCircle,
         bg: 'bg-red-500',
+        card: 'bg-red-500/10 text-red-700 border-red-300/40',
     },
 };
 

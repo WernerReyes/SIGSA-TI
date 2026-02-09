@@ -232,7 +232,7 @@ class DevelopmentRequestService
 
             });
         } catch (\Exception $e) {
-            ds($e->getMessage());
+           
             throw new InternalErrorException('Error al actualizar el estado de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -269,7 +269,6 @@ class DevelopmentRequestService
                 Storage::disk('public')->delete($developmentRequest->requirement_path);
             }
         } catch (\Exception $e) {
-            ds($e->getMessage());
             throw new InternalErrorException('Error al eliminar la solicitud de desarrollo: ' . $e->getMessage());
         }
     }
@@ -320,7 +319,7 @@ class DevelopmentRequestService
                     'comments' => $dto->comments,
                 ]);
 
-                ds($developmentRequest->strategicApproval && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value);
+            
 
                 if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->strategicApproval && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
                     $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
@@ -334,7 +333,7 @@ class DevelopmentRequestService
 
 
         } catch (\Exception $e) {
-            ds('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
+
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -372,7 +371,7 @@ class DevelopmentRequestService
                 $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
             }
         } catch (\Exception $e) {
-            ds($e->getMessage());
+      
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -409,7 +408,7 @@ class DevelopmentRequestService
 
             // return $developmentRequest->fresh('developers');
         } catch (\Exception $e) {
-            ds($e->getMessage());
+          
             throw new InternalErrorException('Error al asignar desarrolladores: ' . $e->getMessage());
         }
     }
@@ -436,7 +435,7 @@ class DevelopmentRequestService
             }
 
         } catch (\Exception $e) {
-            ds($e->getMessage());
+           
             throw new InternalErrorException('Error al volver a analizar la solicitud de desarrollo: ' . $e->getMessage());
         }
     }

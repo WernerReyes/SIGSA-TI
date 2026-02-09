@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTOs\AdminControl\RenewContractDto;
 use App\DTOs\AdminControl\StoreContractDto;
 use App\Enums\Contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
@@ -11,6 +12,7 @@ use App\Models\Contract;
 use App\Models\ContractBilling;
 use App\Models\ContractExpiration;
 
+use App\Models\ContractRenewal;
 use App\Models\Notification;
 use Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,12 +23,15 @@ class AdminControlService
 
     public function getNotifications()
     {
-        return Notification::with('contract.billing', 'contract.expiration')->where('type', NotificationEntity::CONTRACT->value)->where('notifiable_id', Auth::id())->get();
+        return Notification::with('contract.billing', 'contract.expiration')
+            ->where('type', NotificationEntity::CONTRACT->value)
+            ->where('notifiable_id', Auth::id())->orderBy('created_at', 'desc')->
+            get();
     }
 
     public function getContracts()
     {
-        return Contract::with('billing', 'expiration')->get();
+        return Contract::with('billing', 'expiration', 'renewals.renewedBy')->get();
     }
     public function storeContract(StoreContractDto $dto): Contract
     {
@@ -47,7 +52,7 @@ class AdminControlService
                 $this->storeOrUpdateBilling($contract, $dto);
                 $this->storeOrUpdateExpiration($contract, $dto);
 
-                return $contract;
+                return $contract->load('billing', 'expiration');
             });
         } catch (\Throwable $e) {
             throw new InternalErrorException('Error al crear contrato: ' . $e->getMessage());
@@ -73,7 +78,7 @@ class AdminControlService
                 $this->storeOrUpdateBilling($contract, $dto);
                 $this->storeOrUpdateExpiration($contract, $dto);
 
-                return $contract;
+                return $contract->load('billing', 'expiration');
             });
         } catch (\Throwable $e) {
             throw new InternalErrorException('Error al actualizar contrato: ' . $e->getMessage());
@@ -110,24 +115,19 @@ class AdminControlService
      */
     private function storeOrUpdateExpiration(Contract $contract, StoreContractDto $dto): void
     {
-        // ❌ Si está cancelado, NO crear expiration
+        // Cancelado → borrar expiration
         if ($dto->status === ContractStatus::CANCELED->value) {
-            if ($contract->expiration) {
-                $contract->expiration->delete();
-            }
+            $contract->expiration?->delete();
             return;
         }
 
         $shouldHaveExpiration =
             $dto->period === ContractPeriod::FIXED_TERM->value ||
-            $dto->period === ContractPeriod::ONE_TIME->value ||
+            ($dto->period === ContractPeriod::ONE_TIME->value && $dto->endDate) ||
             ($dto->period === ContractPeriod::RECURRING->value && !$dto->autoRenew);
 
         if (!$shouldHaveExpiration) {
-            // Si cambia a recurrente auto-renew true, borrar expiration
-            if ($contract->expiration) {
-                $contract->expiration->delete();
-            }
+            $contract->expiration?->delete();
             return;
         }
 
@@ -138,16 +138,77 @@ class AdminControlService
         $data = [
             'expiration_date' => $expirationDate,
             'alert_days_before' => $dto->alertDaysBefore,
-            'notified' => false,
         ];
 
         if ($contract->expiration) {
-            if (!$contract->expiration->notified) {
-                $contract->expiration->update($data);
+
+            // Detectar cambios críticos
+            $hasChanged =
+                $contract->expiration->expiration_date != $expirationDate ||
+                $contract->expiration->alert_days_before != $dto->alertDaysBefore;
+
+            if ($hasChanged) {
+                $data['notified'] = false; // RESET
             }
+
+            $contract->expiration->update($data);
+
         } else {
+
             $data['contract_id'] = $contract->id;
+            $data['notified'] = false;
+
             ContractExpiration::create($data);
         }
     }
+
+
+    public function renewContract(Contract $contract, RenewContractDto $dto): Contract
+{
+    return DB::transaction(function () use ($contract, $dto) {
+
+        ds(Auth::user());
+        // Guardar historial
+        ContractRenewal::create([
+            'contract_id'   => $contract->id,
+            'old_end_date'  => $dto->autoRenew ? $contract->billing->next_billing_date : $contract->end_date,
+            'new_end_date'  => $dto->newEndDate,
+            'renewed_by_id'    => Auth::id(),
+            'notes'         => $dto->notes,
+        ]);
+
+        // Actualizar contrato
+        $contract->update([
+            'end_date' => $dto->newEndDate,
+            'status'   => ContractStatus::ACTIVE->value,
+        ]);
+
+        if ($dto->autoRenew) {
+            $contract->billing->update([
+                'next_billing_date' => $dto->newEndDate,
+            ]);
+            return $contract->load('billing');
+        }
+
+        // Reset expiration alert
+        if ($contract->expiration) {
+            $contract->expiration->update([
+                'expiration_date'   => $dto->newEndDate,
+                'alert_days_before' => $dto->alertDaysBefore,
+                'notified'          => false,
+            ]);
+        } else {
+            ContractExpiration::create([
+                'contract_id'       => $contract->id,
+                'expiration_date'   => $dto->newEndDate,
+                'alert_days_before' => $dto->alertDaysBefore,
+                'notified'          => false,
+            ]);
+        }
+
+        return $contract->load('expiration', 'billing');
+    });
+}
+
+
 }

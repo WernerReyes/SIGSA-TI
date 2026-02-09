@@ -356,7 +356,9 @@
                                         <InputGroupAddon>
                                             <Bell class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        <InputGroupInput :v-model="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                        <InputGroupInput :v-model="componentField.modelValue" 
+                                        :default-value="componentField.modelValue"
+                                        @update:model-value="(val: string | number) => {
                                             if (val === '') {
                                                 setFieldValue('alert_days_before', undefined);
                                             } else {
@@ -375,7 +377,10 @@
                                         <InputGroupAddon>
                                             <BadgeDollarSign class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        <InputGroupInput :model-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                        <InputGroupInput :model-value="componentField.modelValue"
+                                        
+                                         :default-value="componentField.modelValue"
+                                        @update:model-value="(val: string | number) => {
                                             if (val === '') {
                                                 setFieldValue('amount', undefined);
                                             } else {
@@ -463,6 +468,7 @@
                                 <Label>¿Tiene garantía?</Label>
                                 <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
                                     <Switch v-model:checked="values.hasWarranty"
+                                        :default-value="values.hasWarranty"
                                         @update:model-value="(val) => setFieldValue('hasWarranty', val)" />
                                     <span class="text-sm">{{ values.hasWarranty ? 'Sí' : 'No' }}</span>
                                 </div>
@@ -494,7 +500,9 @@
                                             <InputGroupAddon>
                                                 <Bell class="h-4 w-4" />
                                             </InputGroupAddon>
-                                            <InputGroupInput :v-model="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                            <InputGroupInput :v-model="componentField.modelValue"
+                                                :default-value="componentField.modelValue"
+                                             @update:model-value="(val: string | number) => {
                                                 if (val === '') {
                                                     setFieldValue('alert_days_before', undefined);
                                                 } else {
@@ -696,7 +704,7 @@ const formSchema = toTypedSchema(
                 if (diff === 0 && data.frequency === BillingFrequency.ONE_TIME) {
                     return true;
                 }
-                return diff > data.alert_days_before!;
+                return diff >= data.alert_days_before!;
             }
 
             if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
@@ -704,7 +712,7 @@ const formSchema = toTypedSchema(
                 if (diff === 0 && data.frequency === BillingFrequency.ONE_TIME) {
                     return true;
                 }
-                return diff > data.alert_days_before!;
+                return diff >= data.alert_days_before!;
             }
 
             return true;
@@ -725,11 +733,11 @@ const formSchema = toTypedSchema(
             if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
                 const start = new Date(data.start_date);
                 const end = new Date(data.end_date || '');
-                return isAfter(end, start);
+                return isSameDay(start, end) ||isAfter(end, start);
             }
             return true;
         }, {
-            message: 'La fecha de fin debe ser posterior a la fecha de inicio.',
+            message: 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
             path: ['end_date'],
         })
 
@@ -789,12 +797,21 @@ const handleSave = () => {
     if (!values.hasFixedAmount && values.period === ContractPeriod.RECURRING) {
             amount = null;
     } 
+
+    let end_date = values.end_date;
+    let alert_days_before = values.alert_days_before;
+    if (!values.hasWarranty && values.period === ContractPeriod.ONE_TIME) {
+        end_date = null;
+        alert_days_before = null;
+    }
     
 
     if (selectedContract.value) {
         router.put(`/admin-control/${selectedContract.value.id}`, {
             ...values,
-            amount
+            amount,
+            end_date,
+            alert_days_before,
         }, {
             preserveScroll: true,
             preserveState: true,

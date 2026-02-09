@@ -37,6 +37,20 @@ class User extends Authenticatable
         'id_empresa',
     ];
 
+
+   public function routeNotificationForBroadcast($notification): string
+{
+    $channel = 'App.Models.User.' . $this->staff_id;
+
+    ds('Broadcast channel', [
+        'channel' => $channel,
+        'user_id' => $this->id,
+        'staff_id' => $this->staff_id,
+    ]);
+
+    return $channel;
+}
+
     public function scopeActive($query)
     {
         return $query->where('activo', 1);

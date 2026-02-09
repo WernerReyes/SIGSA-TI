@@ -2,23 +2,25 @@
 
 namespace App\Notifications;
 
-use App\Enums\Contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
+use App\Enums\Contract\ContractType;
 use App\Enums\notification\NotificationEntity;
 use App\Models\Contract;
 use App\Models\ContractBilling;
 use App\Notifications\Channels\CustomDbChannel;
 use Carbon\Carbon;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
-class ContractRenewalNotification extends Notification implements ShouldBroadcastNow
+class ContractRenewalNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
-    private ContractBilling $billing;
+   
     private Contract $contract;
 
     public int $entity_id;
@@ -28,16 +30,15 @@ class ContractRenewalNotification extends Notification implements ShouldBroadcas
      */
     public function __construct(ContractBilling $billing)
     {
-        $this->billing = $billing;
+    
         $this->contract = $billing->contract->load('expiration', 'billing');
         $this->entity_id = $billing->contract_id;
     }
 
     public function databaseType(object $notifiable): string
-{
-    return NotificationEntity::CONTRACT->value;
-}
-
+    {
+        return NotificationEntity::CONTRACT->value;
+    }
 
 
     /**
@@ -56,51 +57,41 @@ class ContractRenewalNotification extends Notification implements ShouldBroadcas
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
 
-       
+    ds([
+            // 'type' => NotificationEntity::CONTRACT->value,
+            ...$this->getMessage($this->contract),
+            'contract' => $this->contract,
+        ]);
+
         return new BroadcastMessage([
-            'message' => $this->getMessage($this->contract),
-                'contract' => $this->contract,
+            // 'type' => NotificationEntity::CONTRACT->value,
+            ...$this->getMessage($this->contract),
+            'contract' => $this->contract,
         ]);
     }
 
     public function toArray($notifiable)
     {
-       
+
         return [
-            'message' => $this->getMessage($this->contract),
+            'message' => $this->getMessage($this->contract)['short'],
+             
         ];
     }
 
 
-    private function getMessage(Contract $contract) {
+    private function getMessage(Contract $contract)
+    {
         // $contract = $this->billing->contract;
-        if ($contract->period === ContractPeriod::RECURRING->value) {
-            if ($this->billing->expiration) {
-                $days = $this->getRemainingDays($this->billing->expiration, 0);
-                if ($days === 0) {
-                    return 'vence hoy';
-                }
-                if ($days === 1) {
-                    return 'vence mañana';
-                }
-                if ($days > 1) {
-                    return 'vence en ' . $days . ' días';
-                }
-                return 'venció hace ' . abs($days) . ' días';
-            }
-            return 'se renovo automaticamente';
-        }
-        return 'revisar vigencia del contrato';
+        $label = ContractType::label($contract->type);
+    
+            return [
+                'message' => "{$label}: {$contract->name} se renovó automáticamente",
+                'short' => 'se renovo automaticamente',
+            ];
+        
+       
     }
 
-    public function getRemainingDays($expirationDate, $daysBefore): int
-    {
-        if (!$expirationDate) {
-            return 0;
-        }
-        $date = $expirationDate instanceof Carbon ? $expirationDate : Carbon::parse($expirationDate);
-        $now = Carbon::now();
-        return $now->diffInDays($date, false) - (int) $daysBefore;
-    }
-    
+
 }

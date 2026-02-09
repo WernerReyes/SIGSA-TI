@@ -217,7 +217,6 @@ class AssetController extends Controller
             ]);
             
             } catch (\Exception $e) {
-                // ds($e->getMessage());
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
@@ -297,7 +296,6 @@ class AssetController extends Controller
     {
         $validated = $request->validated();
         $dto = UploadDeliveryRecordDto::fromArray($validated, $assignment);
-        // ds($dto);
         try {
             $file_url = $assetService->uploadDeliveryRecord($dto);
             Inertia::flash([
