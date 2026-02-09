@@ -28,7 +28,7 @@ class StoreContractRequest extends FormRequest
             'provider' => 'required|string|max:255',
             'type' => 'required|string|in:' . ContractType::implodeValues(),
             'period' => 'required|string|in:' . ContractPeriod::implodeValues(),
-            'status' => 'required|string|in:' . ContractStatus::implodeValues(),
+            // 'status' => 'required|string|in:' . ContractStatus::implodeValues(),
             'start_date' => 'required|date',
             'end_date' => 'required_if:period,' . ContractPeriod::FIXED_TERM->value . '|nullable|date|after_or_equal:start_date',
             'notes' => 'nullable|string|max:1000',

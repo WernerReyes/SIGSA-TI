@@ -13,7 +13,7 @@
                             </p>
                         </div>
                     </div>
-                   
+
                 </div>
 
                 <div class="flex flex-col gap-3 lg:items-end">
@@ -76,17 +76,22 @@
                                     <Pencil class="h-4 w-4" />
                                     Editar contrato
                                 </ContextMenuItem>
-                                <ContextMenuItem
-                                    :disabled="activeRow?.billing?.auto_renew || activeRow?.status === ContractStatus.ACTIVE"
+                                <ContextMenuItem :disabled="activeRow?.status === ContractStatus.CANCELED"
                                     @click="emit('renew-contract', activeRow)">
                                     <RefreshCcw class="h-4 w-4" />
                                     Renovar
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
-                                <ContextMenuItem class="text-warning">
+                                <ContextMenuItem :disabled="activeRow?.status === ContractStatus.CANCELED"
+                                    @click="emit('cancel-contract', activeRow)" class="text-warning">
                                     <Archive class="h-4 w-4" />
-                                    Archivar
+                                    Cancelar
                                 </ContextMenuItem>
+                                <ContextMenuItem @click="emit('delete-contract', activeRow)" class="text-warning">
+                                    <Trash class="h-4 w-4" />
+                                    Eliminar
+                                </ContextMenuItem>
+
                             </ContextMenuContent>
                         </ContextMenu>
 
@@ -127,7 +132,6 @@
 
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
@@ -137,14 +141,16 @@ import { Contract, ContractPeriod, ContractStatus, getContractOp } from '@/inter
 import { parseDateOnly } from '@/lib/utils';
 import { ColumnDef, FlexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, useVueTable } from '@tanstack/vue-table';
 import { format } from 'date-fns';
-import { Archive, Eye, FileText, Pencil, RefreshCcw, Search } from 'lucide-vue-next';
-import { computed, h, ref, RendererElement, RendererNode, VNode } from 'vue';
+import { Archive, Eye, FileText, Pencil, RefreshCcw, Search, Trash } from 'lucide-vue-next';
+import { h, ref, RendererElement, RendererNode, VNode } from 'vue';
 
 
 const emit = defineEmits<{
     (e: 'view-details', contract: Contract | null): void;
     (e: 'edit-contract', contract: Contract | null): void;
     (e: 'renew-contract', contract: Contract | null): void;
+    (e: 'cancel-contract', contract: Contract | null): void;
+    (e: 'delete-contract', contract: Contract | null): void;
 }>();
 
 const { contracts } = defineProps<{
@@ -262,18 +268,18 @@ const columns: ColumnDef<Contract>[] = [
                 status.label,
             ]);
         },
-    }, 
+    },
     {
         id: 'created_at',
         header: 'Creado',
         accessorKey: 'created_at',
-        cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, format(row.getValue('created_at'), 'dd/MM/yyyy HH:mm') ),
+        cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, format(row.getValue('created_at'), 'dd/MM/yyyy HH:mm')),
 
     }, {
         id: 'updated_at',
         header: 'Actualizado',
         accessorKey: 'updated_at',
-        cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, format(row.getValue('updated_at'), 'dd/MM/yyyy HH:mm') ),
+        cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, format(row.getValue('updated_at'), 'dd/MM/yyyy HH:mm')),
     }
 
 ];

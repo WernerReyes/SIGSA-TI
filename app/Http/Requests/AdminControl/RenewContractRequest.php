@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests\AdminControl;
 
+use App\Enums\Contract\BillingFrequency;
+use App\Enums\Contract\ContractPeriod;
+use App\Rules\AlertDaysBeforeWithinRange;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RenewContractRequest extends FormRequest
 {
@@ -22,10 +26,26 @@ class RenewContractRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'contract_id' => 'required|exists:contracts,id',
-            'new_end_date' => 'required|date|after:today',
+            'period' => 'required|in:' . ContractPeriod::implodeValues(),
+             'end_date' => 'required_if:period,' . ContractPeriod::FIXED_TERM->value . '|nullable|date|after_or_equal:start_date',
             'notes' => 'nullable|string|max:1000',
-            'alert_days_before' => 'required|integer|min:0',
+            'frequency' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|string|in:' . BillingFrequency::implodeValues(),
+            'amount' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|size:3',
+            'auto_renew' => 'nullable|boolean',
+             'next_billing_date' => 'required_if:period,' . ContractPeriod::RECURRING->value . '|nullable|date|after_or_equal:start_date',
+            'alert_days_before' => [
+                // 'required_if:period,' . ContractPeriod::RECURRING->value,
+                Rule::requiredIf(function () {
+                    $period = $this->input('period');
+                    $autoRenew = $this->input('auto_renew');
+                    return ($period === ContractPeriod::RECURRING->value && $autoRenew === false) || $period === ContractPeriod::FIXED_TERM->value || ($period === ContractPeriod::ONE_TIME->value && $this->input('has_warranty') === true);
+                }),
+                'nullable',
+                'integer',
+                'min:0',
+                new AlertDaysBeforeWithinRange()
+            ],
         ];
 
     }
@@ -33,14 +53,11 @@ class RenewContractRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'new_end_date.required' => 'La fecha de fin es obligatoria.',
-            'new_end_date.date' => 'La fecha de fin debe ser una fecha válida.',
-            'new_end_date.after' => 'La fecha de fin debe ser una fecha futura.',
-            'notes.string' => 'Las notas deben ser una cadena de texto.',
-            'notes.max' => 'Las notas no deben exceder los 1000 caracteres.',
-            'alert_days_before.required' => 'Los días de alerta son obligatorios.',
-            'alert_days_before.integer' => 'Los días de alerta deben ser un número entero.',
-            'alert_days_before.min' => 'Los días de alerta no pueden ser negativos.',
+            'end_date.required' => 'La fecha de finalización es obligatoria.',
+            'end_date.after' => 'La fecha de finalización debe ser una fecha futura.',
+            'frequency.required_if' => 'La frecuencia de facturación es obligatoria para contratos recurrentes.',
+            'next_billing_date.required_if' => 'La próxima fecha de facturación es obligatoria para contratos recurrentes.',
+
         ];
     }
 }

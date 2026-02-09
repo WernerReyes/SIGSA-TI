@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\notification\NotificationEntity;
+use DB;
 use Illuminate\Database\Eloquent\Model;
 
 class Contract extends Model
@@ -21,6 +23,21 @@ class Contract extends Model
         'notes',
     ];
 
+
+    protected static function booted()
+    {
+        static::deleting(function ($contract) {
+
+            DB::transaction(function () use ($contract) {
+                $contract->billing()->delete();
+                $contract->expiration()->delete();
+                $contract->renewals()->delete();
+                $contract->notifications()->delete();
+            });
+        });
+    }
+
+
     public function billing()
     {
         return $this->hasOne(ContractBilling::class);
@@ -34,6 +51,11 @@ class Contract extends Model
     public function renewals()
     {
         return $this->hasMany(ContractRenewal::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'entity_id')->where('type', NotificationEntity::CONTRACT->value);
     }
 
 }

@@ -45,7 +45,7 @@ const mainNavItems = computed<NavItem[]>(() => {
             href: "/access",
             icon: MonitorCog,
         }, {
-            title: 'Administrativo y Control',
+            title: 'Contratos',
             href: "/admin-control",
             icon: FileText,
         });

@@ -33,7 +33,7 @@
                                         <InputGroupAddon>
                                             <Tags class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        <InputGroupInput v-bind="componentField" :disabled="!isActive"
+                                        <InputGroupInput v-bind="componentField"
                                             placeholder="Ej: Microsoft 365 Business" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
@@ -84,7 +84,7 @@
                                     <div class="relative">
                                         <Layers
                                             class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
+                                        <Select :disabled="isEditMode" v-bind="componentField">
                                             <SelectTrigger class="pl-9 w-full">
                                                 <SelectValue placeholder="Seleccionar tipo de contrato" />
                                             </SelectTrigger>
@@ -105,13 +105,13 @@
                                 </div>
                             </VeeField>
 
-                            <VeeField name="status" v-slot="{ errors, componentField }">
+                            <!-- <VeeField name="status" v-slot="{ errors, componentField }">
                                 <div class="space-y-2">
                                     <Label>Estado</Label>
                                     <div class="relative">
                                         <ShieldCheck
                                             class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
+                                        <Select :disabled="isEditMode" v-bind="componentField">
                                             <SelectTrigger class="pl-9 w-full">
                                                 <SelectValue placeholder="Seleccionar estado" />
                                             </SelectTrigger>
@@ -128,7 +128,7 @@
                                     </div>
                                     <FieldError :errors="errors" />
                                 </div>
-                            </VeeField>
+                            </VeeField> -->
 
                             <VeeField name="start_date" v-slot="{ errors, componentField }">
                                 <div class="space-y-2">
@@ -137,7 +137,7 @@
                                         <InputGroupAddon>
                                             <Calendar class="size-4" />
                                         </InputGroupAddon>
-                                        <InputGroupInput v-bind="componentField" type="date" />
+                                        <InputGroupInput :disabled="isEditMode" v-bind="componentField" type="date" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
                                 </div>
@@ -158,322 +158,110 @@
                         </div>
                     </div>
 
-                    <div v-if="values.period === ContractPeriod.RECURRING" class="rounded-lg border bg-muted/30 p-4">
-                        <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
-                            <Repeat class="h-4 w-4 text-primary" />
-                            Contrato recurrente
-                        </div>
-                        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <template v-if="!isEditMode">
 
-                            <VeeField name="frequency" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Frecuencia de facturación</Label>
-                                    <div class="relative">
-                                        <CreditCard
-                                            class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger class="pl-9 w-full">
-                                                <SelectValue placeholder="Seleccionar frecuencia" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    v-for="frequency in Object.values(billingFrequencyOptions).filter(f => f.value !== BillingFrequency.ONE_TIME)"
-                                                    :key="frequency.value" :value="frequency.value">
-                                                    <Badge :class="frequency.bg">
-                                                        <component :is="frequency.icon" />
-                                                        {{ frequency.label }}
-                                                    </Badge>
-                                                </SelectItem>
-
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-                            <div class="space-y-2">
-                                <Label>¿Monto fijo?</Label>
-                                <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
-                                    <Switch v-model:checked="values.hasFixedAmount"
-                                        :default-value="values.hasFixedAmount"
-                                        @update:model-value="(val) => setFieldValue('hasFixedAmount', val)" />
-                                    <span class="text-sm">{{ values.hasFixedAmount ? 'Sí' : 'No' }}</span>
-                                </div>
+                        <div v-if="values.period === ContractPeriod.RECURRING"
+                            class="rounded-lg border bg-muted/30 p-4">
+                            <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <Repeat class="h-4 w-4 text-primary" />
+                                Contrato recurrente
                             </div>
+                            <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
 
-                            <VeeField name="amount" v-slot="{ errors, componentField }">
-                                <div v-if="values.hasFixedAmount" class="space-y-2">
-                                    <Label>Monto</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <BadgeDollarSign class="h-4 w-4" />
-                                        </InputGroupAddon>
-
-                                        <InputGroupInput :model-value="componentField.modelValue" @update:model-value="(val: string | number) => {
-                                            if (val === '') {
-                                                setFieldValue('amount', undefined);
-                                            } else {
-                                                setFieldValue('amount', Number(val));
-                                            }
-                                        }" type="number" min="0" step="0.01" placeholder="$ 0" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-                            <VeeField name="currency" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Moneda</Label>
-                                    <div class="relative">
-                                        <Coins
-                                            class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger class="pl-9 w-full">
-                                                <SelectValue placeholder="Seleccionar moneda" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="currency in Object.values(CurrencyType)"
-                                                    :key="currency" :value="currency">
-                                                    {{ currency }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-                            <div class="space-y-2">
-                                <Label>Renovación automática</Label>
-                                <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
-                                    <Switch v-model:checked="values.auto_renew" :default-value="values.auto_renew"
-                                        @update:model-value="(val) => setFieldValue('auto_renew', val)" />
-                                    <span class="text-sm">{{ values.auto_renew ? 'Sí' : 'No' }}</span>
-                                </div>
-                            </div>
-
-                            <VeeField name="next_billing_date" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Fecha del próximo cobro</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <CalendarCheck2 class="h-4 w-4" />
-                                        </InputGroupAddon>
-                                        <InputGroupInput v-bind="componentField" type="date" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-
-                            <VeeField v-if="values.auto_renew === false" name="alert_days_before"
-                                v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Días antes para alerta de renovación</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <Bell class="h-4 w-4" />
-                                        </InputGroupAddon>
-
-                                        <InputGroupInput :v-model="componentField.modelValue"
-                                            :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
-                                                if (val === '') {
-                                                    setFieldValue('alert_days_before', undefined);
-                                                } else {
-                                                    setFieldValue('alert_days_before', Number(val));
-                                                }
-                                            }" type="number" min="0" placeholder="Ej: 15" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-                        </div>
-                    </div>
-
-                    <div v-if="values.period === ContractPeriod.FIXED_TERM" class="rounded-lg border bg-muted/30 p-4">
-                        <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
-                            <CalendarCheck2 class="h-4 w-4 text-primary" />
-                            Contrato por periodo fijo
-                        </div>
-
-                        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-
-
-
-
-                            <VeeField name="end_date" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Fecha de fin (obligatoria)</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <CalendarCheck2 class="h-4 w-4" />
-                                        </InputGroupAddon>
-                                        <InputGroupInput v-bind="componentField" type="date" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-
-                                </div>
-                            </VeeField>
-
-                            <VeeField name="frequency" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Frecuencia de facturación</Label>
-                                    <div class="relative">
-                                        <CreditCard
-                                            class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger class="pl-9 w-full">
-                                                <SelectValue placeholder="Seleccionar frecuencia" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="frequency in Object.values(billingFrequencyOptions)"
-                                                    :key="frequency.value" :value="frequency.value">
-                                                    <Badge :class="frequency.bg">
-                                                        <component :is="frequency.icon" />
-                                                        {{ frequency.label }}
-                                                    </Badge>
-                                                </SelectItem>
-
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-                            <VeeField name="alert_days_before" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Días antes para alerta de vencimiento</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <Bell class="h-4 w-4" />
-                                        </InputGroupAddon>
-                                        <InputGroupInput :v-model="componentField.modelValue"
-                                            :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
-                                                if (val === '') {
-                                                    setFieldValue('alert_days_before', undefined);
-                                                } else {
-                                                    setFieldValue('alert_days_before', Number(val));
-                                                }
-                                            }" type="number" min="0" placeholder="Ej: 30" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-                            <VeeField name="amount" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Monto</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <BadgeDollarSign class="h-4 w-4" />
-                                        </InputGroupAddon>
-                                        <InputGroupInput :model-value="componentField.modelValue"
-                                            :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
-                                                if (val === '') {
-                                                    setFieldValue('amount', undefined);
-                                                } else {
-                                                    setFieldValue('amount', Number(val));
-                                                }
-                                            }" type="number" min="0" step="1" placeholder="$ 0" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-                            <VeeField name="currency" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Moneda</Label>
-                                    <div class="relative">
-                                        <Coins
-                                            class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger class="pl-9 w-full">
-                                                <SelectValue placeholder="Seleccionar moneda" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="currency in Object.values(CurrencyType)"
-                                                    :key="currency" :value="currency">
-                                                    {{ currency }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-                        </div>
-                    </div>
-
-                    <div v-if="values.period === ContractPeriod.ONE_TIME" class="rounded-lg border bg-muted/30 p-4">
-                        <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
-                            <Wallet class="h-4 w-4 text-primary" />
-                            Contrato de pago único
-                        </div>
-                        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-
-                            <VeeField name="amount" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Monto</Label>
-                                    <InputGroup>
-                                        <InputGroupAddon>
-                                            <BadgeDollarSign class="h-4 w-4" />
-                                        </InputGroupAddon>
-                                        <InputGroupInput v-bind="componentField" type="number" min="0" step="0.01"
-                                            placeholder="$ 0" />
-                                    </InputGroup>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-                            <VeeField name="currency" v-slot="{ errors, componentField }">
-                                <div class="space-y-2">
-                                    <Label>Moneda</Label>
-                                    <div class="relative">
-                                        <Coins
-                                            class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger class="pl-9 w-full">
-                                                <SelectValue placeholder="Seleccionar moneda" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem v-for="currency in Object.values(CurrencyType)"
-                                                    :key="currency" :value="currency">
-                                                    {{ currency }}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <FieldError :errors="errors" />
-                                </div>
-                            </VeeField>
-
-
-
-                            <div class="space-y-2">
-                                <Label>¿Tiene garantía?</Label>
-                                <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
-                                    <Switch v-model:checked="values.hasWarranty" :default-value="values.hasWarranty"
-                                        @update:model-value="(val) => setFieldValue('hasWarranty', val)" />
-                                    <span class="text-sm">{{ values.hasWarranty ? 'Sí' : 'No' }}</span>
-                                </div>
-                            </div>
-
-
-                            <template v-if="values.hasWarranty">
-
-
-                                <VeeField name="end_date" v-slot="{ errors, componentField }">
+                                <VeeField name="frequency" v-slot="{ errors, componentField }">
                                     <div class="space-y-2">
-                                        <Label>Fecha fin de garantía</Label>
+                                        <Label>Frecuencia de facturación</Label>
+                                        <div class="relative">
+                                            <CreditCard
+                                                class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <Select v-bind="componentField">
+                                                <SelectTrigger class="pl-9 w-full">
+                                                    <SelectValue placeholder="Seleccionar frecuencia" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        v-for="frequency in Object.values(billingFrequencyOptions).filter(f => f.value !== BillingFrequency.ONE_TIME)"
+                                                        :key="frequency.value" :value="frequency.value">
+                                                        <Badge :class="frequency.bg">
+                                                            <component :is="frequency.icon" />
+                                                            {{ frequency.label }}
+                                                        </Badge>
+                                                    </SelectItem>
+
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+
+                                <div class="space-y-2">
+                                    <Label>¿Monto fijo?</Label>
+                                    <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
+                                        <Switch v-model:checked="values.hasFixedAmount"
+                                            :default-value="values.hasFixedAmount"
+                                            @update:model-value="(val) => setFieldValue('hasFixedAmount', val)" />
+                                        <span class="text-sm">{{ values.hasFixedAmount ? 'Sí' : 'No' }}</span>
+                                    </div>
+                                </div>
+
+                                <VeeField name="amount" v-slot="{ errors, componentField }">
+                                    <div v-if="values.hasFixedAmount" class="space-y-2">
+                                        <Label>Monto</Label>
+                                        <InputGroup>
+                                            <InputGroupAddon>
+                                                <BadgeDollarSign class="h-4 w-4" />
+                                            </InputGroupAddon>
+
+                                            <InputGroupInput :model-value="componentField.modelValue"
+                                                @update:model-value="(val: string | number) => {
+                                                    if (val === '') {
+                                                        setFieldValue('amount', undefined);
+                                                    } else {
+                                                        setFieldValue('amount', Number(val));
+                                                    }
+                                                }" type="number" min="0" step="0.01" placeholder="$ 0" />
+                                        </InputGroup>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+                                <VeeField name="currency" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Moneda</Label>
+                                        <div class="relative">
+                                            <Coins
+                                                class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <Select v-bind="componentField">
+                                                <SelectTrigger class="pl-9 w-full">
+                                                    <SelectValue placeholder="Seleccionar moneda" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem v-for="currency in Object.values(CurrencyType)"
+                                                        :key="currency" :value="currency">
+                                                        {{ currency }}
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+
+                                <div class="space-y-2">
+                                    <Label>Renovación automática</Label>
+                                    <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
+                                        <Switch v-model:checked="values.auto_renew" :default-value="values.auto_renew"
+                                            @update:model-value="(val) => setFieldValue('auto_renew', val)" />
+                                        <span class="text-sm">{{ values.auto_renew ? 'Sí' : 'No' }}</span>
+                                    </div>
+                                </div>
+
+                                <VeeField name="next_billing_date" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Fecha del próximo cobro</Label>
                                         <InputGroup>
                                             <InputGroupAddon>
                                                 <CalendarCheck2 class="h-4 w-4" />
@@ -485,10 +273,88 @@
                                 </VeeField>
 
 
-                                <VeeField name="alert_days_before" v-slot="{ errors, componentField }">
 
+                                <VeeField v-if="values.auto_renew === false" name="alert_days_before"
+                                    v-slot="{ errors, componentField }">
                                     <div class="space-y-2">
-                                        <Label>Días antes para alerta de garantía</Label>
+                                        <Label>Días antes para alerta de renovación</Label>
+                                        <InputGroup>
+                                            <InputGroupAddon>
+                                                <Bell class="h-4 w-4" />
+                                            </InputGroupAddon>
+
+                                            <InputGroupInput :v-model="componentField.modelValue"
+                                                :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                    if (val === '') {
+                                                        setFieldValue('alert_days_before', undefined);
+                                                    } else {
+                                                        setFieldValue('alert_days_before', Number(val));
+                                                    }
+                                                }" type="number" min="0" placeholder="Ej: 15" />
+                                        </InputGroup>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+                            </div>
+                        </div>
+
+                        <div v-if="values.period === ContractPeriod.FIXED_TERM"
+                            class="rounded-lg border bg-muted/30 p-4">
+                            <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <CalendarCheck2 class="h-4 w-4 text-primary" />
+                                Contrato por periodo fijo
+                            </div>
+
+                            <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+
+
+
+
+                                <VeeField name="end_date" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Fecha de fin (obligatoria)</Label>
+                                        <InputGroup>
+                                            <InputGroupAddon>
+                                                <CalendarCheck2 class="h-4 w-4" />
+                                            </InputGroupAddon>
+                                            <InputGroupInput v-bind="componentField" type="date" />
+                                        </InputGroup>
+                                        <FieldError :errors="errors" />
+
+                                    </div>
+                                </VeeField>
+
+                                <VeeField name="frequency" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Frecuencia de facturación</Label>
+                                        <div class="relative">
+                                            <CreditCard
+                                                class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <Select v-bind="componentField">
+                                                <SelectTrigger class="pl-9 w-full">
+                                                    <SelectValue placeholder="Seleccionar frecuencia" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        v-for="frequency in Object.values(billingFrequencyOptions)"
+                                                        :key="frequency.value" :value="frequency.value">
+                                                        <Badge :class="frequency.bg">
+                                                            <component :is="frequency.icon" />
+                                                            {{ frequency.label }}
+                                                        </Badge>
+                                                    </SelectItem>
+
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+
+                                <VeeField name="alert_days_before" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Días antes para alerta de vencimiento</Label>
                                         <InputGroup>
                                             <InputGroupAddon>
                                                 <Bell class="h-4 w-4" />
@@ -500,14 +366,155 @@
                                                     } else {
                                                         setFieldValue('alert_days_before', Number(val));
                                                     }
-                                                }" type="number" min="0" placeholder="Ej: 20" />
+                                                }" type="number" min="0" placeholder="Ej: 30" />
                                         </InputGroup>
                                         <FieldError :errors="errors" />
                                     </div>
                                 </VeeField>
-                            </template>
+
+                                <VeeField name="amount" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Monto</Label>
+                                        <InputGroup>
+                                            <InputGroupAddon>
+                                                <BadgeDollarSign class="h-4 w-4" />
+                                            </InputGroupAddon>
+                                            <InputGroupInput :model-value="componentField.modelValue"
+                                                :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                    if (val === '') {
+                                                        setFieldValue('amount', undefined);
+                                                    } else {
+                                                        setFieldValue('amount', Number(val));
+                                                    }
+                                                }" type="number" min="0" step="1" placeholder="$ 0" />
+                                        </InputGroup>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+
+                                <VeeField name="currency" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Moneda</Label>
+                                        <div class="relative">
+                                            <Coins
+                                                class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <Select v-bind="componentField">
+                                                <SelectTrigger class="pl-9 w-full">
+                                                    <SelectValue placeholder="Seleccionar moneda" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem v-for="currency in Object.values(CurrencyType)"
+                                                        :key="currency" :value="currency">
+                                                        {{ currency }}
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+                            </div>
                         </div>
-                    </div>
+
+                        <div v-if="values.period === ContractPeriod.ONE_TIME" class="rounded-lg border bg-muted/30 p-4">
+                            <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <Wallet class="h-4 w-4 text-primary" />
+                                Contrato de pago único
+                            </div>
+                            <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+
+                                <VeeField name="amount" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Monto</Label>
+                                        <InputGroup>
+                                            <InputGroupAddon>
+                                                <BadgeDollarSign class="h-4 w-4" />
+                                            </InputGroupAddon>
+                                            <InputGroupInput v-bind="componentField" type="number" min="0" step="0.01"
+                                                placeholder="$ 0" />
+                                        </InputGroup>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+
+                                <VeeField name="currency" v-slot="{ errors, componentField }">
+                                    <div class="space-y-2">
+                                        <Label>Moneda</Label>
+                                        <div class="relative">
+                                            <Coins
+                                                class="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                                            <Select v-bind="componentField">
+                                                <SelectTrigger class="pl-9 w-full">
+                                                    <SelectValue placeholder="Seleccionar moneda" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem v-for="currency in Object.values(CurrencyType)"
+                                                        :key="currency" :value="currency">
+                                                        {{ currency }}
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <FieldError :errors="errors" />
+                                    </div>
+                                </VeeField>
+
+
+
+                                <div class="space-y-2">
+                                    <Label>¿Tiene garantía?</Label>
+                                    <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
+                                        <Switch v-model:checked="values.hasWarranty" :default-value="values.hasWarranty"
+                                            @update:model-value="(val) => setFieldValue('hasWarranty', val)" />
+                                        <span class="text-sm">{{ values.hasWarranty ? 'Sí' : 'No' }}</span>
+                                    </div>
+                                </div>
+
+
+                                <template v-if="values.hasWarranty">
+
+
+                                    <VeeField name="end_date" v-slot="{ errors, componentField }">
+                                        <div class="space-y-2">
+                                            <Label>Fecha fin de garantía</Label>
+                                            <InputGroup>
+                                                <InputGroupAddon>
+                                                    <CalendarCheck2 class="h-4 w-4" />
+                                                </InputGroupAddon>
+                                                <InputGroupInput v-bind="componentField" type="date" />
+                                            </InputGroup>
+                                            <FieldError :errors="errors" />
+                                        </div>
+                                    </VeeField>
+
+
+                                    <VeeField name="alert_days_before" v-slot="{ errors, componentField }">
+
+                                        <div class="space-y-2">
+                                            <Label>Días antes para alerta de garantía</Label>
+                                            <InputGroup>
+                                                <InputGroupAddon>
+                                                    <Bell class="h-4 w-4" />
+                                                </InputGroupAddon>
+                                                <InputGroupInput :v-model="componentField.modelValue"
+                                                    :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                        if (val === '') {
+                                                            setFieldValue('alert_days_before', undefined);
+                                                        } else {
+                                                            setFieldValue('alert_days_before', Number(val));
+                                                        }
+                                                    }" type="number" min="0" placeholder="Ej: 20" />
+                                            </InputGroup>
+                                            <FieldError :errors="errors" />
+                                        </div>
+                                    </VeeField>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
 
                 </form>
             </ScrollArea>
@@ -556,8 +563,6 @@ const isFormInvalid = computed(() => {
 });
 
 const isEditMode = computed(() => !!selectedContract.value);
-const isActive = computed(() => !isEditMode.value || selectedContract.value?.status === ContractStatus.ACTIVE);
-
 
 
 const formSchema = toTypedSchema(
@@ -576,10 +581,10 @@ const formSchema = toTypedSchema(
             errorMap: () => ({ message: 'Selecciona una forma de contrato.' }),
             message: 'Selecciona una forma de contrato.',
         }),
-        status: z.nativeEnum(ContractStatus, {
-            errorMap: () => ({ message: 'Selecciona un estado.' }),
-            message: 'Selecciona un estado.',
-        }),
+        // status: z.nativeEnum(ContractStatus, {
+        //     errorMap: () => ({ message: 'Selecciona un estado.' }),
+        //     message: 'Selecciona un estado.',
+        // }),
         currency: z.nativeEnum(CurrencyType, {
             errorMap: () => ({ message: 'Selecciona una moneda.' }),
             message: 'Selecciona una moneda.',
@@ -820,10 +825,19 @@ const handleSave = () => {
 
     if (selectedContract.value) {
         router.put(`/admin-control/${selectedContract.value.id}`, {
-            ...values,
-            amount,
-            end_date,
-            alert_days_before,
+            name: values.name,
+            provider: values.provider,
+            type: values.type,
+            notes: values.notes,
+            period: selectedContract.value.period, // El periodo no se puede cambiar al editar
+            start_date: selectedContract.value.start_date,
+            frequency: selectedContract.value.billing?.frequency,
+            next_billing_date: selectedContract.value.billing?.next_billing_date,
+            currency: selectedContract.value.billing?.currency,
+            auto_renew: selectedContract.value.billing?.auto_renew,
+
+
+
         }, {
             preserveScroll: true,
             preserveState: true,

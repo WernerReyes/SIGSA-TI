@@ -37,7 +37,21 @@
                     <ContractsTable :contracts="contracts"
                         @edit-contract="selectedContract = $event, showUpsertContract = true"
                         @view-details="selectedContractDetail = $event, showContractDetails = true"
-                        @renew-contract="selectedRenewContract = $event, showRenewContract = true" />
+                        @renew-contract="selectedRenewContract = $event, showRenewContract = true" @cancel-contract="($event) => {
+                            alertProps = {
+                                title: 'Confirmar cancelación',
+                                description: '¿Estás seguro de que deseas cancelar este contrato? Esta acción no se puede deshacer.',
+                                onConfirm: () => handleCancelContract($event!),
+                            };
+                            showAlert = true;
+                        }" @delete-contract="($event) => {
+                            alertProps = {
+                                title: 'Confirmar eliminación',
+                                description: '¿Estás seguro de que deseas eliminar este contrato? Esta acción no se puede deshacer.',
+                                onConfirm: () => handleDeleteContract($event!),
+                            };
+                            showAlert = true;
+                        }" />
                 </TabsContent>
 
                 <TabsContent value="events" class="mt-4 space-y-4">
@@ -52,6 +66,12 @@
         <ContractDetailsDialog v-model:open="showContractDetails" v-model:selected-contract="selectedContractDetail"
             :notifications="notifications" />
         <RenewContractDialog v-model:open="showRenewContract" v-model:selected-contract="selectedRenewContract" />
+
+
+        <AlertDialog v-model:open="showAlert" :title="alertProps.title" :description="alertProps.description"
+            @confirm="alertProps.onConfirm" />
+
+
     </AppLayout>
 </template>
 
@@ -65,13 +85,14 @@ import UpsertContractDialog from '@/components/admin-control/UpsertContractDialo
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/composables/useApp';
-import { type Contract, type NotificationContract } from '@/interfaces/contract.interface';
+import { ContractStatus, type Contract, type NotificationContract } from '@/interfaces/contract.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { NotificationEntity } from '../interfaces/notification.interface';
+import AlertDialog from '@/components/AlertDialog.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -97,6 +118,15 @@ const selectedRenewContract = ref<Contract | null>(null);
 const showUpsertContract = ref(false);
 const showContractDetails = ref(false);
 const showRenewContract = ref(false);
+const showAlert = ref(false);
+
+const alertProps = ref({
+    // open: false,
+    title: '',
+    description: '',
+    onConfirm: () => { },
+    // onCancel: () => { },
+});
 
 
 
@@ -107,24 +137,68 @@ onMounted(() => {
         contract: Contract
     }) => {
         // if (!props.contracts.some(n => n.id === notification.contract.id)) {
-            notifications.value = [{
-                id: new Date().getTime().toString(),
-                type: NotificationEntity.CONTRACT,
-                notifiable_type: '',
-                notifiable_id: userAuth.value.staff_id,
-                entity_id: notification.contract.id,
-                data: JSON.stringify({
-                    message: notification.short
-                }),
-                read_at: null,
-                created_at: new Date(),
-                updated_at: new Date(),
-                contract: notification.contract
-            }, ...notifications.value]
+        notifications.value = [{
+            id: new Date().getTime().toString(),
+            type: NotificationEntity.CONTRACT,
+            notifiable_type: '',
+            notifiable_id: userAuth.value.staff_id,
+            entity_id: notification.contract.id,
+            data: JSON.stringify({
+                message: notification.short
+            }),
+            read_at: null,
+            created_at: new Date(),
+            updated_at: new Date(),
+            contract: notification.contract
+        }, ...notifications.value]
         // }
 
 
     });
 });
+
+const handleCancelContract = (contract: Contract) => {
+    router.post(`/admin-control/${contract.id}/cancel`, {}, {
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            if (flash.error) return;
+            router.replaceProp('contracts', (prev: Contract[]) => {
+                return prev.map(c => {
+                    if (c.id === contract.id) {
+                        return {
+                            ...c, status: ContractStatus.CANCELED,
+                            billing: {
+                                ...c.billing,
+                                auto_renew: false
+                            },
+                            expiration: null
+                        };
+                    }
+                    return c;
+                });
+            });
+
+        }
+    });
+};
+
+const handleDeleteContract = (contract: Contract) => {
+    router.delete(`/admin-control/${contract.id}`, {
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            if (flash.error) return;
+            router.replaceProp('contracts', (prev: Contract[]) => {
+                return prev.filter(c => c.id !== contract.id);
+            });
+
+            notifications.value = notifications.value.filter(n => n.entity_id !== contract.id);
+
+        }
+    });
+};
 
 </script>

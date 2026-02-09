@@ -29,33 +29,18 @@ class CheckContractBilling extends Command
             ->get()
             ->each(function (ContractBilling $billing) {
                 try {
-                    // $this->autoRenew($billing);
-                    // ds($billing);
+          
     
                     DB::transaction(function () use ($billing) {
 
-                        $months = BillingFrequency::getMonth($billing->frequency);
-                        $nextDate = Carbon::parse($billing->next_billing_date)->addMonths($months);
-
-
-                        $label = ContractType::label($billing->contract->type);
-                        // 🔄 Renovar contrato
-                        app(AdminControlService::class)->renewContract(
-                            $billing->contract,
-                            new RenewContractDto(
-                                newEndDate: $nextDate->toDateString(),
-                                alertDaysBefore: null,
-                                notes: "{$label}: {$billing->contract->name} se renovó automáticamente",
-                                autoRenew: true
-                            )
-                        );
+                        app(AdminControlService::class)->autoRenew($billing);
 
                         // 🔔 Notify
                         $this->notify($billing);
                     });
 
                 } catch (\Exception $e) {
-                    logger()->error('Error al renovar contrato automáticamente', [
+                    ds('Error al renovar contrato automáticamente', [
                         'contract_id' => $billing->contract_id,
                         'error' => $e->getMessage(),
                     ]);
@@ -72,9 +57,14 @@ class CheckContractBilling extends Command
         try {
             app(UserService::class)->getTIDepartmentUsers()
                 ->each(function ($user) use ($billing) {
+                    ds("Enviando notificación de renovación de contrato a {$user->full_name} ({$user->email}) para el contrato {$billing->contract->name}");
                     $user->notify(new ContractRenewalNotification($billing));
                 });
         } catch (\Exception $e) {
+            ds('Error al enviar notificación de renovación de contrato', [
+                'contract_id' => $billing->contract_id,
+                'error' => $e->getMessage(),
+            ]);
             logger()->error('Error al enviar notificación de renovación de contrato', [
                 'contract_id' => $billing->contract_id,
                 'error' => $e->getMessage(),

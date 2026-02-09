@@ -12,8 +12,8 @@ Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () 
         Route::post('/', [AdminControlController::class, 'storeContract'])->name('admin.control.store.contract');
         Route::put('/{contract}', [AdminControlController::class, 'updateContract'])->name('admin.control.update.contract');
         Route::post('/{contract}/renew', [AdminControlController::class, 'renew'])->name('admin.control.renew.contract');
-
-
+        Route::post('/{contract}/cancel', [AdminControlController::class, 'cancel'])->name('admin.control.cancel.contract');
+        Route::delete('/{contract}', [AdminControlController::class, 'destroy'])->name('admin.control.delete.contract');
 
     });
 });

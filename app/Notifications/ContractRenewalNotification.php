@@ -58,13 +58,6 @@ class ContractRenewalNotification extends Notification implements ShouldBroadcas
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
 
-Log::info('Preparing broadcast message for contract expiration notification', [
-            'contract_id' => $this->contract->id,
-            'expiration_date' => $this->contract->expiration->expiration_date,
-            'alert_days_before' => $this->contract->expiration->alert_days_before,
-        ]);
-
-
         return new BroadcastMessage([
             // 'type' => 'RENEWAL',
             ...$this->getMessage($this->contract),

@@ -7,6 +7,7 @@ use App\DTOs\AdminControl\StoreContractDto;
 use App\Enums\Contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
 use App\Enums\Contract\ContractStatus;
+use App\Enums\Contract\ContractType;
 use App\Enums\notification\NotificationEntity;
 use App\Models\Contract;
 use App\Models\ContractBilling;
@@ -15,6 +16,7 @@ use App\Models\ContractExpiration;
 use App\Models\ContractRenewal;
 use App\Models\Notification;
 use Auth;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
@@ -44,7 +46,7 @@ class AdminControlService
                     'provider' => $dto->provider,
                     'type' => $dto->type,
                     'period' => $dto->period,
-                    'status' => $dto->status,
+                    'status' => ContractStatus::ACTIVE->value,
                     'start_date' => $dto->startDate,
                     'end_date' => $dto->endDate,
                     'notes' => $dto->notes,
@@ -70,9 +72,9 @@ class AdminControlService
                     'provider' => $dto->provider,
                     'type' => $dto->type,
                     'period' => $dto->period,
-                    'status' => $dto->status,
-                    'start_date' => $dto->startDate,
-                    'end_date' => $dto->endDate,
+                    // 'status' => $dto->status,
+                    // 'start_date' => $dto->startDate,
+                    // 'end_date' => $dto->endDate,
                     'notes' => $dto->notes,
                 ]);
 
@@ -89,9 +91,9 @@ class AdminControlService
     /**
      * Billing logic
      */
-    private function storeOrUpdateBilling(Contract $contract, StoreContractDto $dto): void
+    private function storeOrUpdateBilling(Contract $contract, StoreContractDto|RenewContractDto $dto): void
     {
-        $isActive = $dto->status === ContractStatus::ACTIVE->value;
+        // $isActive = $dto->status === ContractStatus::ACTIVE->value;
 
         $data = [
             'frequency' => $dto->frequency,
@@ -100,7 +102,7 @@ class AdminControlService
             'auto_renew' => $dto->autoRenew,
             'billing_cycle_days' => BillingFrequency::getDay($dto->frequency),
             'next_billing_date' => $dto->nextBillingDate,
-            'is_active' => $isActive,
+            // 'is_active' => $isActive,
         ];
 
         if ($contract->billing) {
@@ -114,13 +116,13 @@ class AdminControlService
     /**
      * Expiration logic
      */
-    private function storeOrUpdateExpiration(Contract $contract, StoreContractDto $dto): void
+    private function storeOrUpdateExpiration(Contract $contract, StoreContractDto|RenewContractDto $dto): void
     {
         // Cancelado → borrar expiration
-        if ($dto->status === ContractStatus::CANCELED->value) {
-            $contract->expiration?->delete();
-            return;
-        }
+        // if ($dto->status === ContractStatus::CANCELED->value) {
+        //     $contract->expiration?->delete();
+        //     return;
+        // }
 
         $shouldHaveExpiration =
             $dto->period === ContractPeriod::FIXED_TERM->value ||
@@ -164,59 +166,97 @@ class AdminControlService
     }
 
 
+    public function cancelContract(Contract $contract)
+    {
+        DB::transaction(function () use ($contract) {
+            $contract->update([
+                'status' => ContractStatus::CANCELED->value,
+            ]);
+
+            $contract->billing?->update(['auto_renew' => false]);
+            $contract->expiration?->delete();
+        });
+    }
+
+
+
     public function renewContract(Contract $contract, RenewContractDto $dto)
     {
-        if ($contract->status === ContractStatus::ACTIVE->value && !$dto->autoRenew) {
-        throw new BadRequestException('El contrato ya está activo. Solo se pueden renovar contratos vencidos o por vencer.');
-    }
+        if ($contract->status === ContractStatus::CANCELED->value) {
+            throw new BadRequestException('El contrato está cancelado y no puede ser renovado.');
+        }
         try {
-        return DB::transaction(function () use ($contract, $dto) {
+            return DB::transaction(function () use ($contract, $dto) {
 
-            // Guardar historial
-            ContractRenewal::create([
-                'contract_id' => $contract->id,
-                'old_end_date' => $contract->billing->next_billing_date ?? $contract->end_date,
-                'new_end_date' => $dto->newEndDate,
-                'renewed_by_id' => Auth::id(),
-                'notes' => $dto->notes,
-            ]);
-
-            // Actualizar contrato
-            $contract->update([
-                'end_date' =>  $dto->autoRenew ? null : $dto->newEndDate,
-                'status' => ContractStatus::ACTIVE->value,
-            ]);
-
-            if ($dto->autoRenew) {
-                $contract->billing->update([
-                    'next_billing_date' => $dto->newEndDate,
-                ]);
-                return;
-            }
-
-            // Reset expiration alert
-            if ($contract->expiration) {
-                $contract->expiration->update([
-                    'expiration_date' => $dto->newEndDate,
-                    'alert_days_before' => $dto->alertDaysBefore,
-                    'notified' => false,
-                ]);
-            } else {
-                ContractExpiration::create([
+                $renewal = ContractRenewal::create([
                     'contract_id' => $contract->id,
-                    'expiration_date' => $dto->newEndDate,
-                    'alert_days_before' => $dto->alertDaysBefore,
-                    'notified' => false,
+                    'old_end_date' => $contract->billing->next_billing_date ?? $contract->end_date,
+                    'new_end_date' => $dto->period === ContractPeriod::RECURRING->value ? $dto->nextBillingDate : $dto->endDate,
+                    'renewed_by_id' => Auth::id(),
+                    'notes' => $dto->notes,
                 ]);
-            }
 
-          
-        });
-    } catch (\Exception $e) {
-        ds($e->getMessage());
-        throw new InternalErrorException('Error al renovar contrato: ' . $e->getMessage());
-    }
+                $contract->update([
+                    'period' => $dto->period,
+                    'end_date' => $dto->period === ContractPeriod::RECURRING->value ? null : $dto->endDate,
+                    'status' => ContractStatus::ACTIVE->value,
+                    // 'notes' => $dto->notes,
+                ]);
+
+                $this->storeOrUpdateBilling($contract, $dto);
+                $this->storeOrUpdateExpiration($contract, $dto);
+
+                return [
+                    'contract' => $contract->load('billing', 'expiration'),
+                    'renewal' => $renewal->load('renewedBy:staff_id,firstname,lastname'),
+                ];
+            });
+        } catch (\Throwable $e) {
+            throw new InternalErrorException('Error al renovar contrato: ' . $e->getMessage());
+        }
     }
 
+    public function autoRenew(ContractBilling $billing)
+    {
+        $months = BillingFrequency::getMonth($billing->frequency);
+        $nextDate = Carbon::parse($billing->next_billing_date)->addMonths($months);
+
+        try {
+            DB::transaction(function () use ($billing, $nextDate) {
+
+                $label = ContractType::label($billing->contract->type);
+
+                ContractRenewal::create([
+                    'contract_id' => $billing->contract->id,
+                    'old_end_date' => $billing->next_billing_date,
+                    'new_end_date' => $nextDate->toDateString(),
+                    'renewed_by_id' => Auth::id(),
+                    'notes' => "{$label}: {$billing->contract->name} se renovó automáticamente",
+                ]);
+
+
+                // Actualizar contrato
+                $billing->contract->update([
+                    'end_date' => null,
+                    'status' => ContractStatus::ACTIVE->value,
+                ]);
+
+
+                $billing->update([
+                    'next_billing_date' => $nextDate->toDateString(),
+                ]);
+
+            });
+
+
+        } catch (\Exception $e) {
+
+            throw new InternalErrorException('Error al renovar contrato: ' . $e->getMessage());
+        }
+
+    }
+
+
+    
 
 }
