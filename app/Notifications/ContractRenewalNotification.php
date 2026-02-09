@@ -15,6 +15,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Log;
 
 class ContractRenewalNotification extends Notification implements ShouldBroadcast
 {
@@ -56,6 +57,13 @@ class ContractRenewalNotification extends Notification implements ShouldBroadcas
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
+
+Log::info('Preparing broadcast message for contract expiration notification', [
+            'contract_id' => $this->contract->id,
+            'expiration_date' => $this->contract->expiration->expiration_date,
+            'alert_days_before' => $this->contract->expiration->alert_days_before,
+        ]);
+
 
         return new BroadcastMessage([
             // 'type' => 'RENEWAL',
