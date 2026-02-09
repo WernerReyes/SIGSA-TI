@@ -31,36 +31,20 @@ class CheckContractExpiration extends Command
 
                 try {
                     DB::transaction(function () use ($expiration, $today, $alertDate) {
-                        ds('Verificando vencimiento de contrato', [
-                            'contract_id' => $expiration->contract_id,
-                            'expiration_date' => Carbon::parse($expiration->expiration_date)->endOfDay()->toDateString(),
-                            'alert_date' => $alertDate->toDateString(),
-                            'today' => $today->toDateString(),
-                        ]);
-                        if ($today->equalTo(Carbon::parse($expiration->expiration_date)->endOfDay())) {
-                        ds('El contrato venció hoy', [
-                            'contract_id' => $expiration->contract_id,
-                            'expiration_date' => Carbon::parse($expiration->expiration_date)->toDateString(),
-                            'today' => $today->toDateString(),
-                        ]);
-                                
-                        $expiration->contract->update([
+
+
+                        if ($today->isSameDay(Carbon::parse($expiration->expiration_date))) {
+                            $expiration->contract->update([
                                 'status' => ContractStatus::EXPIRED->value,
                             ]);
                         }
 
                         if ($today->greaterThanOrEqualTo($alertDate)) {
-                            ds('Enviando notificación de vencimiento de contrato', [
-                                'contract_id' => $expiration->contract_id,
-                                'expiration_date' => Carbon::parse($expiration->expiration_date)->toDateString(),
-                                'alert_date' => $alertDate->toDateString(),
-                                'today' => $today->toDateString(),
-                            ]);
                             $this->notify($expiration);
                         }
                     });
                 } catch (\Exception $e) {
-                    ds('Error al enviar notificación de vencimiento de contrato', [
+                    logger()->error('Error al procesar la expiración del contrato', [
                         'contract_id' => $expiration->contract_id,
                         'error' => $e->getMessage(),
                     ]);
@@ -85,7 +69,7 @@ class CheckContractExpiration extends Command
                 'notified' => true,
             ]);
         } catch (\Exception $e) {
-            ds('Error al enviar notificación de renovación de contrato', [
+            logger()->error('Error al enviar notificación de expiración de contrato', [
                 'contract_id' => $expiration->contract_id,
                 'error' => $e->getMessage(),
             ]);

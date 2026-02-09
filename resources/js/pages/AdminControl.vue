@@ -47,7 +47,7 @@
         </div>
 
 
-            
+
         <UpsertContractDialog v-model:open="showUpsertContract" v-model:selected-contract="selectedContract" />
         <ContractDetailsDialog v-model:open="showContractDetails" v-model:selected-contract="selectedContractDetail"
             :notifications="notifications" />
@@ -69,10 +69,8 @@ import { type Contract, type NotificationContract } from '@/interfaces/contract.
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
-import { useEchoModel } from '@laravel/echo-vue';
 import { Plus } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
-import { toast } from 'vue-sonner';
 import { NotificationEntity } from '../interfaces/notification.interface';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -90,7 +88,7 @@ const props = defineProps<{
 const notifications = ref(props.notifications);
 
 
-const { userAuth } = useApp();
+const { userAuth, echo } = useApp();
 
 const selectedContract = ref<Contract | null>(null);
 const selectedContractDetail = ref<Contract | null>(null);
@@ -100,10 +98,7 @@ const showUpsertContract = ref(false);
 const showContractDetails = ref(false);
 const showRenewContract = ref(false);
 
-const echo = useEchoModel(
-    'App.Models.User',
-    userAuth.value.staff_id,
-)
+
 
 onMounted(() => {
     echo.channel().notification((notification: {
@@ -111,24 +106,24 @@ onMounted(() => {
         short: string,
         contract: Contract
     }) => {
-        if (notifications.value.some(n => n.id === notification.contract.id)) {
-            return;
-        }
+        // if (!props.contracts.some(n => n.id === notification.contract.id)) {
+            notifications.value = [{
+                id: new Date().getTime().toString(),
+                type: NotificationEntity.CONTRACT,
+                notifiable_type: '',
+                notifiable_id: userAuth.value.staff_id,
+                entity_id: notification.contract.id,
+                data: JSON.stringify({
+                    message: notification.short
+                }),
+                read_at: null,
+                created_at: new Date(),
+                updated_at: new Date(),
+                contract: notification.contract
+            }, ...notifications.value]
+        // }
 
-        notifications.value = [{
-            id: new Date().getTime().toString(),
-            type: NotificationEntity.CONTRACT,
-            notifiable_type: '',
-            notifiable_id: userAuth.value.staff_id,
-            entity_id: notification.contract.id,
-            data: JSON.stringify({
-                message: notification.short
-            }),
-            read_at: null,
-            created_at: new Date(),
-            updated_at: new Date(),
-            contract: notification.contract
-        }, ...notifications.value]
+
     });
 });
 

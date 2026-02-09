@@ -13,12 +13,9 @@ interface Props {
     breadcrumbs?: BreadcrumbItemType[];
 }
 
-const { userAuth } = useApp();
+const { userAuth, echo } = useApp();
 
-const echo = useEchoModel(
-    'App.Models.User',
-    userAuth.value.staff_id,
-)
+
 onMounted(() => {
     echo.channel().notification((notification: {
         message: string,

@@ -17,6 +17,7 @@ use App\Models\Notification;
 use Auth;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AdminControlService
 {
@@ -163,52 +164,59 @@ class AdminControlService
     }
 
 
-    public function renewContract(Contract $contract, RenewContractDto $dto): Contract
-{
-    return DB::transaction(function () use ($contract, $dto) {
+    public function renewContract(Contract $contract, RenewContractDto $dto)
+    {
+        if ($contract->status === ContractStatus::ACTIVE->value && !$dto->autoRenew) {
+        throw new BadRequestException('El contrato ya está activo. Solo se pueden renovar contratos vencidos o por vencer.');
+    }
+        try {
+        return DB::transaction(function () use ($contract, $dto) {
 
-        ds(Auth::user());
-        // Guardar historial
-        ContractRenewal::create([
-            'contract_id'   => $contract->id,
-            'old_end_date'  => $dto->autoRenew ? $contract->billing->next_billing_date : $contract->end_date,
-            'new_end_date'  => $dto->newEndDate,
-            'renewed_by_id'    => Auth::id(),
-            'notes'         => $dto->notes,
-        ]);
-
-        // Actualizar contrato
-        $contract->update([
-            'end_date' => $dto->newEndDate,
-            'status'   => ContractStatus::ACTIVE->value,
-        ]);
-
-        if ($dto->autoRenew) {
-            $contract->billing->update([
-                'next_billing_date' => $dto->newEndDate,
+            // Guardar historial
+            ContractRenewal::create([
+                'contract_id' => $contract->id,
+                'old_end_date' => $contract->billing->next_billing_date ?? $contract->end_date,
+                'new_end_date' => $dto->newEndDate,
+                'renewed_by_id' => Auth::id(),
+                'notes' => $dto->notes,
             ]);
-            return $contract->load('billing');
-        }
 
-        // Reset expiration alert
-        if ($contract->expiration) {
-            $contract->expiration->update([
-                'expiration_date'   => $dto->newEndDate,
-                'alert_days_before' => $dto->alertDaysBefore,
-                'notified'          => false,
+            // Actualizar contrato
+            $contract->update([
+                'end_date' =>  $dto->autoRenew ? null : $dto->newEndDate,
+                'status' => ContractStatus::ACTIVE->value,
             ]);
-        } else {
-            ContractExpiration::create([
-                'contract_id'       => $contract->id,
-                'expiration_date'   => $dto->newEndDate,
-                'alert_days_before' => $dto->alertDaysBefore,
-                'notified'          => false,
-            ]);
-        }
 
-        return $contract->load('expiration', 'billing');
-    });
-}
+            if ($dto->autoRenew) {
+                $contract->billing->update([
+                    'next_billing_date' => $dto->newEndDate,
+                ]);
+                return;
+            }
+
+            // Reset expiration alert
+            if ($contract->expiration) {
+                $contract->expiration->update([
+                    'expiration_date' => $dto->newEndDate,
+                    'alert_days_before' => $dto->alertDaysBefore,
+                    'notified' => false,
+                ]);
+            } else {
+                ContractExpiration::create([
+                    'contract_id' => $contract->id,
+                    'expiration_date' => $dto->newEndDate,
+                    'alert_days_before' => $dto->alertDaysBefore,
+                    'notified' => false,
+                ]);
+            }
+
+          
+        });
+    } catch (\Exception $e) {
+        ds($e->getMessage());
+        throw new InternalErrorException('Error al renovar contrato: ' . $e->getMessage());
+    }
+    }
 
 
 }

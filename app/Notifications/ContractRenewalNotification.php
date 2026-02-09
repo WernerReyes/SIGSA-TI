@@ -57,14 +57,8 @@ class ContractRenewalNotification extends Notification implements ShouldBroadcas
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
 
-    ds([
-            // 'type' => NotificationEntity::CONTRACT->value,
-            ...$this->getMessage($this->contract),
-            'contract' => $this->contract,
-        ]);
-
         return new BroadcastMessage([
-            // 'type' => NotificationEntity::CONTRACT->value,
+            // 'type' => 'RENEWAL',
             ...$this->getMessage($this->contract),
             'contract' => $this->contract,
         ]);

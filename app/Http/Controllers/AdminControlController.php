@@ -84,7 +84,7 @@ class AdminControlController extends Controller
 
             Inertia::flash([
                 'success' => 'Contrato renovado exitosamente.',
-                'contract' => $contract,
+                // 'contract' => $contract,
                 'error' => null
             ]);
         } catch (\Exception $e) {

@@ -30,6 +30,7 @@ class CheckContractBilling extends Command
             ->each(function (ContractBilling $billing) {
                 try {
                     // $this->autoRenew($billing);
+                    // ds($billing);
     
                     DB::transaction(function () use ($billing) {
 
@@ -49,20 +50,11 @@ class CheckContractBilling extends Command
                             )
                         );
 
-                        // 🔁 Update billing cycle
-                        $billing->update([
-                            'next_billing_date' => $nextDate,
-                        ]);
-
                         // 🔔 Notify
                         $this->notify($billing);
                     });
 
                 } catch (\Exception $e) {
-                    ds('Error al renovar contrato automáticamente', [
-                        'contract_id' => $billing->contract_id,
-                        'error' => $e->getMessage(),
-                    ]);
                     logger()->error('Error al renovar contrato automáticamente', [
                         'contract_id' => $billing->contract_id,
                         'error' => $e->getMessage(),
@@ -80,17 +72,9 @@ class CheckContractBilling extends Command
         try {
             app(UserService::class)->getTIDepartmentUsers()
                 ->each(function ($user) use ($billing) {
-                        ds('Enviando notificación de renovación de contrato al usuario', [
-                            'user_id' => $user->staff_id,
-                            'contract_id' => $billing->contract_id,
-                        ]);
                     $user->notify(new ContractRenewalNotification($billing));
                 });
         } catch (\Exception $e) {
-            ds('Error al enviar notificación de renovación de contrato', [
-                'contract_id' => $billing->contract_id,
-                'error' => $e->getMessage(),
-            ]);
             logger()->error('Error al enviar notificación de renovación de contrato', [
                 'contract_id' => $billing->contract_id,
                 'error' => $e->getMessage(),

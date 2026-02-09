@@ -3,6 +3,7 @@ import { type AssetType } from '@/interfaces/assetType.interface';
 import { type Department, DepartmentAllowed } from '@/interfaces/department.interace';
 import { UserCharge, type User } from '@/interfaces/user.interface';
 import { router, usePage } from '@inertiajs/vue3';
+import { useEchoModel } from '@laravel/echo-vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 export const useApp = () => {
@@ -16,7 +17,11 @@ export const useApp = () => {
     const assetTypes = computed(() => (page.props as unknown as { types: AssetType[] })?.types || []);
     const assetAccessories = computed(() => (page.props as unknown as { accessories: Asset[] })?.accessories || []);
 
-    
+    const echo = useEchoModel(
+    'App.Models.User',
+    userAuth.value.staff_id,
+)
+
 
     const isFromTI = computed(() => {
         return userAuth.value?.dept_id === DepartmentAllowed.SYSTEM_TI;
@@ -54,5 +59,5 @@ export const useApp = () => {
 
     return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories,
         availableAssets,
-        departments, assetTypes, isTIManager, isTIAssistantManager };
+        departments, assetTypes, isTIManager, isTIAssistantManager, echo };
 };

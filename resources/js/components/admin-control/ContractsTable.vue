@@ -13,20 +13,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                        <Badge variant="outline" class="border-primary/30 text-primary bg-primary/5">
-                            {{ totals.total }} contratos
-                        </Badge>
-                        <Badge variant="outline" class="border-success/30 text-success bg-success/5">
-                            {{ totals.active }} activos
-                        </Badge>
-                        <Badge variant="outline" class="border-warning/30 text-warning bg-warning/5">
-                            {{ totals.expiring }} por vencer
-                        </Badge>
-                        <Badge variant="outline" class="border-critical/30 text-critical bg-critical/5">
-                            {{ totals.expired }} vencidos
-                        </Badge>
-                    </div>
+                   
                 </div>
 
                 <div class="flex flex-col gap-3 lg:items-end">
@@ -40,11 +27,11 @@
                         </InputGroup>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <Button v-for="type in filters" :key="type" size="sm"
+                        <!-- <Button v-for="type in filters" :key="type" size="sm"
                             :variant="activeFilter === type ? 'default' : 'outline'" class="rounded-full"
                             @click="activeFilter = type">
                             {{ type }}
-                        </Button>
+                        </Button> -->
                     </div>
                 </div>
             </div>
@@ -164,33 +151,14 @@ const { contracts } = defineProps<{
     contracts: Contract[];
 }>();
 
-type ContractRow = {
-    id: number;
-    code: string;
-    name: string;
-    vendor: string;
-    type: 'Licencia' | 'Soporte' | 'Servicio' | 'Hardware';
-    startDate: string;
-    endDate: string;
-    value: string;
-    status: 'Activo' | 'Por vencer' | 'Vencido';
-};
 
-const filters: Array<'Todos' | ContractRow['type']> = ['Todos', 'Licencia', 'Soporte', 'Servicio', 'Hardware'];
-const activeFilter = ref<typeof filters[number]>('Todos');
-const search = ref('');
+
+
+
 const activeRow = ref<Contract | null>(null);
 
 const globalFilter = ref('');
 
-const totals = computed(() => {
-    return {
-        total: contracts.length,
-        active: contracts.filter(row => row.status === ContractStatus.ACTIVE).length,
-        expiring: contracts.filter(row => row.status === ContractStatus.EXPIRED).length,
-        expired: contracts.filter(row => row.status === ContractStatus.EXPIRED).length,
-    };
-});
 
 
 const columns: ColumnDef<Contract>[] = [
@@ -294,6 +262,18 @@ const columns: ColumnDef<Contract>[] = [
                 status.label,
             ]);
         },
+    }, 
+    {
+        id: 'created_at',
+        header: 'Creado',
+        accessorKey: 'created_at',
+        cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, format(row.getValue('created_at'), 'dd/MM/yyyy HH:mm') ),
+
+    }, {
+        id: 'updated_at',
+        header: 'Actualizado',
+        accessorKey: 'updated_at',
+        cell: ({ row }) => h('span', { class: 'text-sm text-muted-foreground' }, format(row.getValue('updated_at'), 'dd/MM/yyyy HH:mm') ),
     }
 
 ];

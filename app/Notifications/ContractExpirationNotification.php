@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Enums\Contract\ContractPeriod;
 use App\Enums\Contract\ContractType;
 use App\Enums\notification\NotificationEntity;
 use App\Models\Contract;
@@ -10,9 +9,7 @@ use App\Models\ContractExpiration;
 use App\Notifications\Channels\CustomDbChannel;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class ContractExpirationNotification extends Notification
@@ -40,9 +37,6 @@ class ContractExpirationNotification extends Notification
     }
 
 
-    
-
-
     /**
      * Get the notification's delivery channels.
      *
@@ -56,30 +50,14 @@ class ContractExpirationNotification extends Notification
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
 
-        try {
-            return new BroadcastMessage([
+
+        return new BroadcastMessage([
             'type' => NotificationEntity::CONTRACT->value,
             ...$this->getMessage($this->contract),
             'contract' => $this->contract,
         ]);
-        } catch (\Throwable $e) {
-            ds('Error al generar mensaje de notificación de vencimiento de contrato', [
-                'error' => $e->getMessage(),
-                'contract_id' => $this->contract->id,
-            ]);
 
-            return new BroadcastMessage([
-                'type' => NotificationEntity::CONTRACT->value,
-                'message' => "Contrato: {$this->contract->name} tiene un cambio de estado",
-                'short' => 'Contrato tiene un cambio de estado',
-                'contract' => $this->contract,
-            ]);
-            // $message = [
-            //     'message' => "Contrato: {$this->contract->name} tiene un cambio de estado",
-            //     'short' => 'Contrato tiene un cambio de estado',
-            // ];
-        }
-        
+
     }
 
     public function toArray($notifiable)
@@ -98,8 +76,8 @@ class ContractExpirationNotification extends Notification
         $label = ContractType::label($contract->type);
         if ($this->expiration) {
             $days = $this->getRemainingDays($this->expiration->expiration_date);
-           
-            
+
+
             if ($days === 0) {
                 return [
                     'message' => "{$label}: {$contract->name} vence hoy",
@@ -118,7 +96,7 @@ class ContractExpirationNotification extends Notification
                     'short' => 'vence en ' . $days . ' días',
                 ];
             }
-            
+
         }
         return [
             'message' => "{$label}: {$contract->name} se renovó automáticamente",

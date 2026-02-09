@@ -33,7 +33,7 @@
                                         <InputGroupAddon>
                                             <Tags class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        <InputGroupInput v-bind="componentField"
+                                        <InputGroupInput v-bind="componentField" :disabled="!isActive"
                                             placeholder="Ej: Microsoft 365 Business" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
@@ -196,7 +196,8 @@
                             <div class="space-y-2">
                                 <Label>¿Monto fijo?</Label>
                                 <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
-                                    <Switch v-model:checked="values.hasFixedAmount" :default-value="values.hasFixedAmount"
+                                    <Switch v-model:checked="values.hasFixedAmount"
+                                        :default-value="values.hasFixedAmount"
                                         @update:model-value="(val) => setFieldValue('hasFixedAmount', val)" />
                                     <span class="text-sm">{{ values.hasFixedAmount ? 'Sí' : 'No' }}</span>
                                 </div>
@@ -209,17 +210,14 @@
                                         <InputGroupAddon>
                                             <BadgeDollarSign class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        
+
                                         <InputGroupInput :model-value="componentField.modelValue" @update:model-value="(val: string | number) => {
                                             if (val === '') {
                                                 setFieldValue('amount', undefined);
                                             } else {
                                                 setFieldValue('amount', Number(val));
                                             }
-                                        }" type="number" min="0" step="0.01" placeholder="$ 0" 
-                                          
-                                        
-                                        />
+                                        }" type="number" min="0" step="0.01" placeholder="$ 0" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
                                 </div>
@@ -247,7 +245,7 @@
                                 </div>
                             </VeeField>
 
-                               
+
                             <div class="space-y-2">
                                 <Label>Renovación automática</Label>
                                 <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
@@ -280,16 +278,15 @@
                                         <InputGroupAddon>
                                             <Bell class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        
+
                                         <InputGroupInput :v-model="componentField.modelValue"
-                                         :default-value="componentField.modelValue"
-                                        @update:model-value="(val: string | number) => {
-                                            if (val === '') {
-                                                setFieldValue('alert_days_before', undefined);
-                                            } else {
-                                                setFieldValue('alert_days_before', Number(val));
-                                            }
-                                        }" type="number" min="0" placeholder="Ej: 15" />
+                                            :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                if (val === '') {
+                                                    setFieldValue('alert_days_before', undefined);
+                                                } else {
+                                                    setFieldValue('alert_days_before', Number(val));
+                                                }
+                                            }" type="number" min="0" placeholder="Ej: 15" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
                                 </div>
@@ -356,15 +353,14 @@
                                         <InputGroupAddon>
                                             <Bell class="h-4 w-4" />
                                         </InputGroupAddon>
-                                        <InputGroupInput :v-model="componentField.modelValue" 
-                                        :default-value="componentField.modelValue"
-                                        @update:model-value="(val: string | number) => {
-                                            if (val === '') {
-                                                setFieldValue('alert_days_before', undefined);
-                                            } else {
-                                                setFieldValue('alert_days_before', Number(val));
-                                            }
-                                        }" type="number" min="0" placeholder="Ej: 30" />
+                                        <InputGroupInput :v-model="componentField.modelValue"
+                                            :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                if (val === '') {
+                                                    setFieldValue('alert_days_before', undefined);
+                                                } else {
+                                                    setFieldValue('alert_days_before', Number(val));
+                                                }
+                                            }" type="number" min="0" placeholder="Ej: 30" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
                                 </div>
@@ -378,15 +374,13 @@
                                             <BadgeDollarSign class="h-4 w-4" />
                                         </InputGroupAddon>
                                         <InputGroupInput :model-value="componentField.modelValue"
-                                        
-                                         :default-value="componentField.modelValue"
-                                        @update:model-value="(val: string | number) => {
-                                            if (val === '') {
-                                                setFieldValue('amount', undefined);
-                                            } else {
-                                                setFieldValue('amount', Number(val));
-                                            }
-                                        }" type="number" min="0" step="1" placeholder="$ 0" />
+                                            :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                if (val === '') {
+                                                    setFieldValue('amount', undefined);
+                                                } else {
+                                                    setFieldValue('amount', Number(val));
+                                                }
+                                            }" type="number" min="0" step="1" placeholder="$ 0" />
                                     </InputGroup>
                                     <FieldError :errors="errors" />
                                 </div>
@@ -467,8 +461,7 @@
                             <div class="space-y-2">
                                 <Label>¿Tiene garantía?</Label>
                                 <div class="flex items-center gap-3 rounded-lg border bg-background px-3 py-2">
-                                    <Switch v-model:checked="values.hasWarranty"
-                                        :default-value="values.hasWarranty"
+                                    <Switch v-model:checked="values.hasWarranty" :default-value="values.hasWarranty"
                                         @update:model-value="(val) => setFieldValue('hasWarranty', val)" />
                                     <span class="text-sm">{{ values.hasWarranty ? 'Sí' : 'No' }}</span>
                                 </div>
@@ -501,14 +494,13 @@
                                                 <Bell class="h-4 w-4" />
                                             </InputGroupAddon>
                                             <InputGroupInput :v-model="componentField.modelValue"
-                                                :default-value="componentField.modelValue"
-                                             @update:model-value="(val: string | number) => {
-                                                if (val === '') {
-                                                    setFieldValue('alert_days_before', undefined);
-                                                } else {
-                                                    setFieldValue('alert_days_before', Number(val));
-                                                }
-                                            }" type="number" min="0" placeholder="Ej: 20" />
+                                                :default-value="componentField.modelValue" @update:model-value="(val: string | number) => {
+                                                    if (val === '') {
+                                                        setFieldValue('alert_days_before', undefined);
+                                                    } else {
+                                                        setFieldValue('alert_days_before', Number(val));
+                                                    }
+                                                }" type="number" min="0" placeholder="Ej: 20" />
                                         </InputGroup>
                                         <FieldError :errors="errors" />
                                     </div>
@@ -519,7 +511,7 @@
 
                 </form>
             </ScrollArea>
-            {{errors}}
+            {{ errors }}
             <DialogFooter class="mt-4">
                 <Button variant="outline" @click="resetAndClose()">Cancelar</Button>
                 <Button class="gap-2" type="submit" form="contract-form" :disabled="isFormInvalid">
@@ -548,23 +540,24 @@ import { BillingFrequency, billingFrequencyDaysMap, billingFrequencyOptions, Cur
 import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/core';
 import { toTypedSchema } from '@vee-validate/zod';
-import { differenceInDays, isAfter, isSameDay } from 'date-fns';
+import { differenceInDays, isAfter, isSameDay, set } from 'date-fns';
 import { BadgeDollarSign, Bell, Building2, Calendar, CalendarCheck2, Coins, CreditCard, FileText, Info, Layers, Package, Repeat, ShieldCheck, Sparkles, StickyNote, Tags, Wallet } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
-import { computed, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import z from 'zod';
 
 const open = defineModel<boolean>('open', { default: false });
 const selectedContract = defineModel<Contract | null>('selectedContract', { default: null });
 
-const { isLoading } = useApp();
+const { isLoading, echo } = useApp();
 
 const isFormInvalid = computed(() => {
     return isLoading.value || Object.keys(errors.value).length || isEqual(initialValues.value, values);
 });
 
-
 const isEditMode = computed(() => !!selectedContract.value);
+const isActive = computed(() => !isEditMode.value || selectedContract.value?.status === ContractStatus.ACTIVE);
+
 
 
 const formSchema = toTypedSchema(
@@ -678,9 +671,9 @@ const formSchema = toTypedSchema(
             path: ['next_billing_date'],
         }).refine((data) => {
             if (data.period === ContractPeriod.RECURRING) {
-                 const start = new Date(data.start_date);
+                const start = new Date(data.start_date);
                 const end = new Date(data.next_billing_date || '');
-                
+
                 return isSameDay(start, end) || isAfter(end, start);
             }
             return true;
@@ -733,7 +726,7 @@ const formSchema = toTypedSchema(
             if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
                 const start = new Date(data.start_date);
                 const end = new Date(data.end_date || '');
-                return isSameDay(start, end) ||isAfter(end, start);
+                return isSameDay(start, end) || isAfter(end, start);
             }
             return true;
         }, {
@@ -745,7 +738,7 @@ const formSchema = toTypedSchema(
 
 
 const initialValues = computed(() => {
-   const amount = selectedContract.value?.billing?.amount;
+    const amount = selectedContract.value?.billing?.amount;
     return {
         name: selectedContract.value?.name,
         provider: selectedContract.value?.provider,
@@ -761,7 +754,7 @@ const initialValues = computed(() => {
         amount: (amount !== undefined && amount !== null) ? Number(amount) : undefined,
         auto_renew: Boolean(selectedContract.value?.billing?.auto_renew) || false,
         next_billing_date: selectedContract.value?.billing?.next_billing_date || '',
-        alert_days_before:  selectedContract.value?.expiration?.alert_days_before,
+        alert_days_before: selectedContract.value?.expiration?.alert_days_before,
         hasWarranty: !!selectedContract.value?.end_date,
     };
 
@@ -774,6 +767,25 @@ const { values, errors, handleSubmit, resetForm, setFieldValue, setValues } = us
     initialValues: initialValues.value,
     keepValuesOnUnmount: true
 
+});
+
+onMounted(() => {
+    echo.channel().notification((notification: {
+        message: string,
+        short: string,
+        contract: Contract
+    }) => {
+        if (selectedContract.value && notification.contract.id === selectedContract.value.id) {
+            if (selectedContract.value.billing?.next_billing_date) {
+                selectedContract.value.billing.next_billing_date = notification.contract.billing?.next_billing_date || null;
+                setValues({
+                    ...values,
+                    next_billing_date: notification.contract.billing?.next_billing_date || '',
+                });
+            }
+
+        };
+    });
 });
 
 
@@ -793,10 +805,10 @@ const resetAndClose = () => {
 };
 
 const handleSave = () => {
-    let amount:number | null | undefined = values.amount;
+    let amount: number | null | undefined = values.amount;
     if (!values.hasFixedAmount && values.period === ContractPeriod.RECURRING) {
-            amount = null;
-    } 
+        amount = null;
+    }
 
     let end_date = values.end_date;
     let alert_days_before = values.alert_days_before;
@@ -804,7 +816,7 @@ const handleSave = () => {
         end_date = null;
         alert_days_before = null;
     }
-    
+
 
     if (selectedContract.value) {
         router.put(`/admin-control/${selectedContract.value.id}`, {
