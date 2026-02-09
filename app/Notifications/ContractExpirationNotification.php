@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Log;
 
 class ContractExpirationNotification extends Notification
 {
@@ -49,6 +50,12 @@ class ContractExpirationNotification extends Notification
 
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
+
+        Log::info('Preparing broadcast message for contract expiration notification', [
+            'contract_id' => $this->contract->id,
+            'expiration_date' => $this->expiration->expiration_date,
+            'alert_days_before' => $this->expiration->alert_days_before,
+        ]);
 
 
         return new BroadcastMessage([
