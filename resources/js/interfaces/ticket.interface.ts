@@ -71,7 +71,7 @@ export const ticketStatusOptions: Record<TicketStatus, TicketStatusOption> = {
         icon: FolderOpen,
     },
     [TicketStatus.IN_PROGRESS]: {
-        label: 'En Progreso',
+        label: 'En espera del Proveedor',
         value: TicketStatus.IN_PROGRESS,
         bg: 'bg-yellow-500',
         icon: LoaderCircle

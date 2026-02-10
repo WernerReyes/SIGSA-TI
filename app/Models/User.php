@@ -12,7 +12,7 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     // use HasFactory, Notifiable, TwoFactorAuthenticatable;
-    use Notifiable;
+    use Notifiable; 
 
     protected $table = 'ost_staff';
     protected $primaryKey = 'staff_id';

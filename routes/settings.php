@@ -18,6 +18,10 @@ use Inertia\Inertia;
     //     ->middleware('throttle:6,1')
     //     ->name('user-password.update');
 
+    Route::get('settings/sla', function() {
+        return Inertia::render('settings/SLA');
+    })->name('sla.edit');
+
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance.edit');

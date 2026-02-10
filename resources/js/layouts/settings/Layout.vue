@@ -9,7 +9,7 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 // import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Contrast } from 'lucide-vue-next';
+import { Contrast, Shield } from 'lucide-vue-next';
 
 const sidebarNavItems: NavItem[] = [
     // {
@@ -20,10 +20,11 @@ const sidebarNavItems: NavItem[] = [
     //     title: 'Password',
     //     href: "#",
     // },
-    // {
-    //     title: 'Two-Factor Auth',
-    //     href: "#",
-    // },
+    {
+        title: 'SLA',
+        icon: Shield,
+        href: "/settings/sla",
+    },
     {
         title: 'Apariencia',
         icon: Contrast,
