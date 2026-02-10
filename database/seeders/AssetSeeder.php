@@ -16,6 +16,7 @@ class AssetSeeder extends Seeder
     public function run(): void
     {
         Schema::disableForeignKeyConstraints();
+        AssetHistory::truncate();
         Asset::truncate();
 
         $base = [
@@ -93,7 +94,9 @@ class AssetSeeder extends Seeder
                 'description' => 'Equipo registrado en el sistema',
                 'asset_id' => $asset->id,
                 'performed_by' => 1, 
-                'performed_at' => Carbon::now()->utc(),
+                'performed_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ])->toArray()
         );
 

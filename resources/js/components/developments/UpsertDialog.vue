@@ -195,7 +195,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions, DevelopmentRequestSection, DevelopmentRequestStatus as DRStatus } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions, DevelopmentRequestSection } from '@/interfaces/developmentRequest.interface';
 import { toTypedSchema } from '@vee-validate/zod';
 import { AlignLeft, CodeXml, FileText, Flag, MapPin, Rocket, Sparkles, TrendingUp, Type } from 'lucide-vue-next';
 import { Field as VeeField } from 'vee-validate';
@@ -206,12 +206,12 @@ import SelectFilters from '../SelectFilters.vue';
 import FieldError from '@/components/ui/field/FieldError.vue';
 import { type Area } from '@/interfaces/area.interface';
 import { router, usePage } from '@inertiajs/vue3';
-import { computed, nextTick, watch } from 'vue';
+import { computed, watch } from 'vue';
 import z from 'zod';
 // import { DevelopmentRequestPriority } from '@/interfaces/developmentRequest.interface';
-import { useForm } from 'vee-validate';
 import { useApp } from '@/composables/useApp';
 import { isEqual } from '@/lib/utils';
+import { useForm } from 'vee-validate';
 
 
 const open = defineModel<boolean>('open');
