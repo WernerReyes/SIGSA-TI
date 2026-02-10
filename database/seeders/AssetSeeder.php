@@ -95,8 +95,6 @@ class AssetSeeder extends Seeder
                 'asset_id' => $asset->id,
                 'performed_by' => 1, 
                 'performed_at' => Carbon::now(),
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
             ])->toArray()
         );
 
