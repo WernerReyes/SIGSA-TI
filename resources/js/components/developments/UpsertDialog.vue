@@ -174,8 +174,8 @@
 
                 <DialogFooter class="px-4 py-4 sm:px-6">
 
-                    <Button form="development-form" :disabled="Object.keys(errors).length > 0 || isLoading"
-                        type="submit" class="gap-1 w-full sm:w-auto">
+                    <Button form="development-form" :disabled="disabledForm" type="submit"
+                        class="gap-1 w-full sm:w-auto">
                         <Rocket class="h-4 w-4" />
                         {{ currentDevelopment ? 'Actualizar Requerimiento' : 'Crear Requerimiento' }}
                     </Button>
@@ -211,6 +211,8 @@ import z from 'zod';
 // import { DevelopmentRequestPriority } from '@/interfaces/developmentRequest.interface';
 import { useForm } from 'vee-validate';
 import { useApp } from '@/composables/useApp';
+import { isEqual } from '@/lib/utils';
+
 
 const open = defineModel<boolean>('open');
 
@@ -228,6 +230,11 @@ const areas = computed<Area[]>(() => {
     return (page.props.areas || []) as Area[];
 });
 
+
+const disabledForm = computed(() => isLoading.value || Object.keys(errors.value).length > 0 || isEqual(
+    values,
+    initialValues.value,
+));
 
 const areaLabel = computed(() => {
     return currentDevelopment.value?.area?.descripcion_area || 'Áreas';
@@ -257,18 +264,18 @@ const formSchema = toTypedSchema(
     })
 );
 
-const initialValues = {
-    title: '',
-    priority: undefined,
-    description: '',
-    impact: '',
-    area_id: undefined,
+const initialValues = computed(() => ({
+    title: currentDevelopment.value?.title || '',
+    priority: currentDevelopment.value?.priority,
+    description: currentDevelopment.value?.description || '',
+    impact: currentDevelopment.value?.impact || '',
+    area_id: currentDevelopment.value?.area_id,
     requirement_file: undefined,
-};
+}));
 
 const { setFieldValue, errors, handleSubmit, values, setValues, handleReset } = useForm({
     validationSchema: formSchema,
-    initialValues
+    initialValues: initialValues.value,
 });
 
 const onReset = () => {
@@ -281,18 +288,7 @@ const onReset = () => {
 watch(currentDevelopment, (newVal) => {
 
     if (newVal) {
-        setValues({
-            title: newVal.title,
-            priority: newVal.priority,
-            description: newVal.description,
-            impact: newVal.impact,
-            area_id: newVal.area_id,
-            requirement_file: undefined,
-        });
-
-        // open.value = true;
-
-
+        setValues(initialValues.value);
     } else {
         onReset();
     }

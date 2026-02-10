@@ -70,7 +70,7 @@
                     </SelectFilters>
 
 
-                    <SelectFilters label="Estados" :items="Object.values(assetStatusOptions)" data-key="status"
+                    <SelectFilters label="Estados" :items="Object.values(assetStatusOptions)" 
                         :icon="ChartArea" show-refresh show-selected-focus item-value="value" item-label="label"
                         :multiple="true" :default-value="form.status" @select="(selects) => form.status = selects">
 

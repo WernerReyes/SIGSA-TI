@@ -26,6 +26,10 @@ export interface Asset {
     type?: AssetType;
     is_new: boolean;
     invoice_url?: string;
+    phone?: string;
+    imei?: string;
+
+
     // assigned_to_id?: number | null;
     current_assignment?: AssetAssignment;
     assignments?: AssetAssignment[];

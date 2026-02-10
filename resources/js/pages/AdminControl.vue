@@ -55,7 +55,7 @@
                 </TabsContent>
 
                 <TabsContent value="events" class="mt-4 space-y-4">
-                    <EventsLog />
+                    <EventsLog :events="infrastructureEvents" />
                 </TabsContent>
             </Tabs>
         </div>
@@ -93,6 +93,7 @@ import { Plus } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { NotificationEntity } from '../interfaces/notification.interface';
 import AlertDialog from '@/components/AlertDialog.vue';
+import { InfrastructureEvent } from '@/interfaces/infrastructureEvent.interface';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -104,6 +105,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 const props = defineProps<{
     contracts: Contract[];
     notifications: NotificationContract[];
+    infrastructureEvents: InfrastructureEvent[];
 }>();
 
 const notifications = ref(props.notifications);

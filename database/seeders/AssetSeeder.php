@@ -66,7 +66,7 @@ class AssetSeeder extends Seeder
             ]),
 
             // GENERADOS
-            ...collect(range(1, 25))->map(function ($i) use ($base) {
+            ...collect(range(1, 2000))->map(function ($i) use ($base) {
                 return array_merge($base, [
                     'name' => ['Cargador', 'Mouse', 'Teclado', 'Monitor'][rand(0, 3)] . " " . rand(100, 999),
                     'color' => ['Negro', 'Blanco', 'Plateado'][rand(0, 2)],

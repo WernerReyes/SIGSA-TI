@@ -4,25 +4,25 @@
     }">
         <DialogContent class="sm:max-w-xl">
             <form @submit.prevent="handleSubmit(handleSubmitForm)()">
-               
-                    <DialogHeader class="space-y-3 pb-4 border-b">
-                        <div class="flex items-center gap-3">
-                            <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
 
-                                <MonitorCog class="size-5 text-primary" />
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <DialogTitle class="text-xl font-semibold">
-                                    {{ currentService ? `Editar ${currentService?.name}` : 'Crear Nuevo Servicio' }}
-                                </DialogTitle>
-                                <p class="text-sm text-muted-foreground">
-                                    {{ currentService ? `Actualiza la información de ${currentService?.name}` :
-                                        'Completa los datos del nuevo servicio' }}
-                                </p>
-                            </div>
+                <DialogHeader class="space-y-3 pb-4 border-b">
+                    <div class="flex items-center gap-3">
+                        <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+
+                            <MonitorCog class="size-5 text-primary" />
                         </div>
-                    </DialogHeader>
-              
+                        <div class="flex flex-col gap-1">
+                            <DialogTitle class="text-xl font-semibold">
+                                {{ currentService ? `Editar ${currentService?.name}` : 'Crear Nuevo Servicio' }}
+                            </DialogTitle>
+                            <p class="text-sm text-muted-foreground">
+                                {{ currentService ? `Actualiza la información de ${currentService?.name}` :
+                                    'Completa los datos del nuevo servicio' }}
+                            </p>
+                        </div>
+                    </div>
+                </DialogHeader>
+
                 <div class="max-h-96 overflow-y-auto space-y-4">
                     <div class="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
                         <VeeField name="name" v-slot="{ componentField, errors }">
@@ -125,7 +125,7 @@
                 <DialogFooter>
 
                     <Button type="button" variant="ghost" :disabled="isLoading" @click="resetForm">Cancelar</Button>
-                    <Button type="submit" :disabled="isLoading || Object.keys(errors).length > 0">
+                    <Button type="submit" :disabled="disabledForm">
                         {{ isLoading ? 'Guardando...' : 'Guardar servicio' }}
                     </Button>
                 </DialogFooter>
@@ -152,6 +152,7 @@ import { useForm, Field as VeeField } from 'vee-validate';
 import { computed, ref, watch } from 'vue';
 import z from 'zod';
 import { FieldError } from '@/components/ui/field';
+import { isEqual } from '@/lib/utils';
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -170,6 +171,13 @@ const services = computed(() => {
     return servicesData;
 });
 
+const disabledForm = computed(() => {
+    return isLoading.value || Object.keys(errors.value).length > 0 || isEqual(
+        values,
+        initialValues.value,
+    );
+});
+
 const formSchema = toTypedSchema(z.object({
     name: z.string({
         message: 'El nombre es obligatorio',
@@ -183,15 +191,18 @@ const formSchema = toTypedSchema(z.object({
     is_active: z.boolean().default(true),
 }));
 
+
+const initialValues = computed(() => ({
+    name: currentService.value?.name || '',
+    description: currentService.value?.description || '',
+    url: currentService.value?.url || '',
+    username: currentService.value?.username || '',
+    password: currentService.value?.password || '',
+    is_active: currentService.value?.is_active || true,
+}));
+
 const { handleSubmit, values, handleReset, errors, setValues } = useForm({
-    initialValues: {
-        name: currentService.value?.name || '',
-        description: currentService.value?.description || '',
-        url: currentService.value?.url || '',
-        username: currentService.value?.username || '',
-        password: currentService.value?.password || '',
-        is_active: currentService.value?.is_active || true,
-    },
+    initialValues: initialValues.value,
     validationSchema: formSchema,
 });
 
@@ -204,14 +215,7 @@ watch(currentService, (newService) => {
         resetForm();
         return;
     }
-    setValues({
-        name: newService.name,
-        description: newService.description || '',
-        url: newService.url || '',
-        username: newService.username || '',
-        password: newService.password || '',
-        is_active: newService.is_active,
-    });
+    setValues(initialValues.value);
 
     open.value = true;
 });
@@ -224,39 +228,37 @@ const resetForm = () => {
 const handleSubmitForm = () => {
     if (!currentService.value) {
 
-    router.post('/access', { ...values }, {
-        preserveScroll: true,
-        preserveState: true,
-        preserveUrl: true,
-        onFlash: (flash) => {
-            const service = flash?.service as Service | null;
-            if (service) {
+        router.post('/access', { ...values }, {
+            preserveScroll: true,
+            preserveState: true,
+            preserveUrl: true,
+            onFlash: (flash) => {
+                if (flash.error) return;
+                const service = flash?.service as Service;
                 router.prependToProp('services', service);
-            }
-        },
-        onSuccess: () => {
-            resetForm();
-        },
+                resetForm();
+            },
 
-    });
-    return;
-} 
+
+        });
+        return;
+    }
 
     router.put(`/access/${currentService.value.id}`, { ...values }, {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
-            const service = flash?.service as Service | null;
-            if (service) {
-                router.replaceProp('services', (services: Service[]) => {
-                    return services.map(s => s.id === service.id ? service : s);
-                });
-            }
+            if (flash.error) return;
+            const service = flash?.service as Service;
+
+            router.replaceProp('services', (services: Service[]) => {
+                return services.map(s => s.id === service.id ? service : s);
+            });
+
+            resetForm()
         },
-        onSuccess: () => {
-            resetForm();
-        },
+
 
     });
 

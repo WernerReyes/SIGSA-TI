@@ -12,12 +12,11 @@
                         </p>
                     </div>
                 </div>
-                 
+
                 <Button v-if="hasPositionChanged && isFromTI && !isLoading" size="icon" variant="ghost"
                     @click="swapPositions" class="h-8 w-8 hover:bg-accent">
                     <Save class="h-4 w-4" />
                 </Button>
-                {{devRequests.length}}
             </div>
         </div>
 
@@ -44,11 +43,11 @@
                 <p class="text-xs text-muted-foreground/60 mt-1">Arrastra aquí para agregar</p>
             </div>
 
-            
+
             <!-- Clean Professional Cards -->
             <div v-for="devRequest in devRequests" :key="devRequest.id"
-            class="bg-card rounded-lg border shadow-card p-2.5 mb-2 transition-all hover:shadow-md">
-            
+                class="bg-card rounded-lg border shadow-card p-2.5 mb-2 transition-all hover:shadow-md">
+
                 <div class="flex items-start justify-between mb-1.5">
                     <div class="flex items-center gap-2">
                         <span class="font-mono text-xs text-muted-foreground">DEV-{{ devRequest.id }}</span>
@@ -215,15 +214,15 @@
                             <span class="text-muted-foreground">
                                 Est: {{ devRequest?.estimated_end_date ?
                                     format(parseDateOnly(devRequest?.estimated_end_date),
-                                'dd/MM/yy') : 'Sin fecha' }}
+                                        'dd/MM/yy') : 'Sin fecha' }}
                             </span>
                             <span v-if="devRequest.status === DRStatus.COMPLETED" :class="{
                                 'text-red-600': isAfter(parseDateOnly(devRequest?.completed_at || ''), parseDateOnly(devRequest?.estimated_end_date || '')),
                                 'text-green-600': !isAfter(parseDateOnly(devRequest?.completed_at || ''), parseDateOnly(devRequest?.estimated_end_date || ''))
                             }">
                                 | Real: {{ devRequest?.completed_at ? format(parseDateOnly(devRequest?.completed_at),
-                                'dd/MM/yy') :
-                                'N/A' }}
+                                    'dd/MM/yy') :
+                                    'N/A' }}
                             </span>
                         </div>
                         <div class="flex items-center gap-1.5 text-[10px]">

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
         AssetTypeSeeder::class,
         AssetSeeder::class,
+        InfrastructureEventSeeder::class,
     ]);
     }
 

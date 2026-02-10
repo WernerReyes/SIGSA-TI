@@ -39,8 +39,7 @@
             </SelectFilters>
 
             <DialogFooter>
-                <Button @click="handleAssignDevelopers"
-                    :disabled="selectedDevelopers.length === 0 || isLoading || isSameDevelopers">
+                <Button @click="handleAssignDevelopers" :disabled="disabledForm">
                     Asignar
                 </Button>
             </DialogFooter>
@@ -58,6 +57,7 @@ import { Users } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 import SelectFilters from '../SelectFilters.vue';
+import { isEqual } from '@/lib/utils';
 
 const MAX_LABEL_LENGTH = 3;
 
@@ -68,12 +68,13 @@ const { isLoading, TIUsers } = useApp();
 
 const selectedDevelopers = ref<number[]>([]);
 
-const isSameDevelopers = computed(() => {
-    if (!currentDev.value) return false;
-    const currentDevIds = (currentDev.value.developers || []).map(dev => dev.staff_id).sort();
-    const selectedIds = selectedDevelopers.value.slice().sort();
-    return JSON.stringify(currentDevIds) === JSON.stringify(selectedIds);
+const disabledForm = computed(() => {
+    return selectedDevelopers.value.length === 0 || isLoading.value || isEqual(
+        currentDev.value?.developers?.map(dev => dev.staff_id).sort() || [],
+        selectedDevelopers.value.slice().sort()
+    );
 });
+
 
 const selectLabel = computed(() => {
     if (!TIUsers.value.length) {
@@ -105,10 +106,10 @@ const handleAssignDevelopers = () => {
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
-            if (flash.success) {
-                currentDev.value!.developers = TIUsers.value.filter(user => selectedDevelopers.value.includes(user.staff_id));
-                resetAndClose();
-            }
+            if (flash.error) return;
+            currentDev.value!.developers = TIUsers.value.filter(user => selectedDevelopers.value.includes(user.staff_id));
+            resetAndClose();
+
         },
     });
 };

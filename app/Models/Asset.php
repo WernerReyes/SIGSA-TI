@@ -26,7 +26,9 @@ class Asset extends Model
         'assigned_to_id',
         'type_id',
         'is_new',
-        'invoice_path'
+        'invoice_path',
+        'phone',
+        'imei',
     ];
 
     public function getInvoiceUrlAttribute()

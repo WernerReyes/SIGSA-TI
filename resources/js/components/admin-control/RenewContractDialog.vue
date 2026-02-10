@@ -491,6 +491,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FieldError } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -503,12 +504,11 @@ import { BillingFrequency, billingFrequencyDaysMap, billingFrequencyOptions, Cur
 import { ContractRenewal } from '@/interfaces/contractRenewal.interface';
 import { router } from '@inertiajs/core';
 import { toTypedSchema } from '@vee-validate/zod';
-import { differenceInDays, isAfter, isSameDay } from 'date-fns';
+import { differenceInDays, isAfter, isSameDay, parseISO } from 'date-fns';
 import { BadgeDollarSign, Bell, CalendarCheck2, CalendarClock, Coins, CreditCard, Layers, RefreshCcw, Repeat, Sparkles, StickyNote } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
 import { computed, watch } from 'vue';
 import z from 'zod';
-import { FieldError } from '@/components/ui/field';
 
 const open = defineModel<boolean>('open', { default: false });
 const selectedContract = defineModel<Contract | null>('selectedContract', { default: null });
@@ -526,11 +526,6 @@ const formSchema = toTypedSchema(
             errorMap: () => ({ message: 'Selecciona una moneda.' }),
             message: 'Selecciona una moneda.',
         }).default(CurrencyType.PEN),
-
-        // start_date: z.string({
-        //     message: 'Selecciona la fecha de inicio.',
-        // }).min(1, 'Selecciona la fecha de inicio.'),
-
 
         end_date: z.string().optional(),
         notes: z.string().optional(),
@@ -609,10 +604,10 @@ const formSchema = toTypedSchema(
             message: 'Selecciona la fecha del próximo cobro.',
             path: ['next_billing_date'],
         }).refine((data) => {
+            // TODO: Check why 
             if (data.period === ContractPeriod.RECURRING) {
                 const start = new Date();
-                const end = new Date(data.next_billing_date || '');
-
+                const end = parseISO(data.next_billing_date || '');
                 return isSameDay(start, end) || isAfter(end, start);
             }
             return true;
@@ -664,7 +659,7 @@ const formSchema = toTypedSchema(
         }).refine((data) => {
             if (data.period === ContractPeriod.FIXED_TERM || (data.period === ContractPeriod.ONE_TIME && data.hasWarranty)) {
                 const start = new Date();
-                const end = new Date(data.end_date || '');
+                const end = parseISO(data.end_date || '');
                 return isSameDay(start, end) || isAfter(end, start);
             }
             return true;

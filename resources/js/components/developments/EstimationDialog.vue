@@ -134,13 +134,13 @@
                         class="w-full sm:w-auto">
                         Cancelar
                     </Button>
-                    <Button form="estimate-form" :disabled="Object.keys(errors).length > 0 || isLoading" type="submit"
-                        class="gap-1 w-full sm:w-auto">
+                    <Button form="estimate-form" :disabled="disabledForm" type="submit" class="gap-1 w-full sm:w-auto">
                         <CheckCircle class="h-4 w-4" />
                         Confirmar estimación
                     </Button>
                 </DialogFooter>
             </form>
+
         </DialogContent>
     </Dialog>
 </template>
@@ -157,6 +157,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/composables/useApp';
 import { DevelopmentRequestSection, DevelopmentRequestStatus, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
+import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/vue3';
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
@@ -165,6 +166,7 @@ import { es } from 'date-fns/locale';
 import { CalendarIcon, CheckCircle, ChevronDownIcon, Clock, Info, Lightbulb, Timer } from 'lucide-vue-next';
 import { toDate } from 'reka-ui/date';
 import { useForm, Field as VeeField } from 'vee-validate';
+import { computed } from 'vue';
 import { watch } from 'vue';
 import { toast } from 'vue-sonner';
 import z from 'zod';
@@ -192,34 +194,40 @@ const formSchema = toTypedSchema(
     })
 );
 
-const initialValues = {
-    estimated_end_date: undefined,
-    estimated_hours: undefined,
-};
 
-const { errors, handleSubmit, values, setValues, handleReset } = useForm({
+const disabledForm = computed(() => isLoading.value || Object.keys(errors.value).length > 0 || isEqual(
+    values,
+    initialValues.value,
+));
+
+const initialValues = computed(() => {
+    const dev = currentDevelopment.value;
+    const date = new Date(dev?.estimated_end_date || '');
+    return {
+        estimated_end_date: dev?.estimated_end_date
+            ? new CalendarDate(
+                date.getUTCFullYear(),
+                date.getUTCMonth() + 1,
+                date.getUTCDate()
+
+            )
+            : undefined,
+        estimated_hours: dev?.estimated_hours || undefined,
+    }
+});
+
+const { errors, handleSubmit, values, setValues, handleReset, resetForm } = useForm({
     validationSchema: formSchema,
-    initialValues,
+    initialValues: initialValues.value,
     keepValuesOnUnmount: true
 });
 
 watch(open, (newVal) => {
     const dev = currentDevelopment.value;
     if (dev) {
-        const date = new Date(dev?.estimated_end_date || '');
-        setValues({
-            estimated_end_date: dev.estimated_end_date
-                ? new CalendarDate(
-                    date.getUTCFullYear(),
-                    date.getUTCMonth() + 1,
-                    date.getUTCDate()
-
-                )
-                : undefined,
-            estimated_hours: dev.estimated_hours || undefined,
-        });
+        setValues(initialValues.value);
     } else {
-        setValues(initialValues);
+        resetForm();
     }
 });
 
@@ -244,27 +252,27 @@ const onSubmit = async (submitValues: any) => {
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
-            if (flash.success) {
-                router.replaceProp('developmentsByStatus', (developments: DevelopmentRequestSection) => {
-                    const status = DevelopmentRequestStatus.IN_ANALYSIS;
-                    return {
-                        ...developments,
-                        [status]: developments[status].map((dev) => {
-                            if (dev.id === currentDevelopment.value?.id) {
-                                return {
-                                    ...dev,
-                                    estimated_end_date: format(date, 'yyyy-MM-dd'),
-                                    estimated_hours: submitValues.estimated_hours,
-                                };
-                            }
-                            return dev;
+            if (flash.error) return;
+            router.replaceProp('developmentsByStatus', (developments: DevelopmentRequestSection) => {
+                const status = DevelopmentRequestStatus.IN_ANALYSIS;
+                return {
+                    ...developments,
+                    [status]: developments[status].map((dev) => {
+                        if (dev.id === currentDevelopment.value?.id) {
+                            return {
+                                ...dev,
+                                estimated_end_date: format(date, 'yyyy-MM-dd'),
+                                estimated_hours: submitValues.estimated_hours,
+                            };
                         }
-
-                        ),
+                        return dev;
                     }
-                });
-                onReset();
-            }
+
+                    ),
+                }
+            });
+            onReset();
+
         }
     });
 

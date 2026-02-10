@@ -1,5 +1,5 @@
-import { createInertiaApp } from '@inertiajs/vue3';
-import { createApp, h } from 'vue';
+import { createInertiaApp, usePage } from '@inertiajs/vue3';
+import { createApp, h, watch } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 
 import { router } from '@inertiajs/vue3';
@@ -23,11 +23,19 @@ configureEcho({
 
 });
 
+const page = usePage();
 
-
-// import '../css/app.css';
+watch(
+    () => page.props?.flash,
+    (flash) => {
+        const error = (flash as { error?: string | null })?.error;
+        if (error) {
+            toast.error(error);
+        }
+ });
 
 router.on('error', (event) => {
+    console.log('Error event received:', event);    
     const errors = event.detail?.errors;
     if (!errors) return;
 
@@ -48,6 +56,8 @@ router.on('flash', (event) => {
     }
 });
 
+
+
 createInertiaApp({
     resolve: (name: string) => {
         const pages = import.meta.glob('./pages/**/*.vue', { eager: true });
@@ -58,6 +68,11 @@ createInertiaApp({
             .use(plugin)
             .mount(el);
     },
+    defaults: {
+        future: {
+            useDialogForErrorModal: false
+        }
+    }
 });
 // This will set light / dark mode on page load...
 initializeTheme();

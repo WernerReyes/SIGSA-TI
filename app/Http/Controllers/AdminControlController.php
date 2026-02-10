@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 
 use App\DTOs\AdminControl\RenewContractDto;
 use App\DTOs\AdminControl\StoreContractDto;
+use App\DTOs\AdminControl\StoreInfrastructureEventDto;
 use App\Http\Requests\AdminControl\RenewContractRequest;
 use App\Http\Requests\AdminControl\StoreContractRequest;
+use App\Http\Requests\AdminControl\StoreInfrastructureEventRequest;
 use App\Models\Contract;
+use App\Models\InfrastructureEvents;
 use App\Services\AdminControlService;
 use Inertia\Inertia;
 
@@ -20,6 +23,7 @@ class AdminControlController extends Controller
         return Inertia::render('AdminControl', [
             'notifications' => Inertia::once(fn() => $service->getNotifications()),
             'contracts' => Inertia::once(fn() => $service->getContracts()),
+            'infrastructureEvents' => Inertia::once(fn() => $service->getInfrastructureEvents()),
         ]);
     }
 
@@ -141,5 +145,80 @@ class AdminControlController extends Controller
 
         return back();
     }
+
+    //* Infrastructure Events *//
+    public function storeInfrastructureEvent(StoreInfrastructureEventRequest $request, AdminControlService $service)
+    {
+        $validated = $request->validated();
+        $dto = StoreInfrastructureEventDto::fromArray($validated);
+
+        try {
+            $event = $service->storeInfrastructureEvent($dto);
+
+            Inertia::flash([
+                'success' => 'Evento de infraestructura creado exitosamente.',
+                'event' => $event,
+                'error' => null
+            ]);
+        } catch (\Exception $e) {
+
+            Inertia::flash([
+                'success' => null,
+                'event' => null,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return back();
+    }
+
+
+    public function updateInfrastructureEvent(InfrastructureEvents $event, StoreInfrastructureEventRequest $request, AdminControlService $service)
+    {
+        $validated = $request->validated();
+        $dto = StoreInfrastructureEventDto::fromArray($validated);
+
+        try {
+            $service->updateInfrastructureEvent($event, $dto);
+
+            Inertia::flash([
+                'success' => 'Evento de infraestructura actualizado exitosamente.',
+                'event' => $event,
+                'error' => null
+            ]);
+        } catch (\Exception $e) {
+
+            Inertia::flash([
+                'success' => null,
+                'event' => null,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return back();
+    }
+
+    public function destroyInfrastructureEvent(InfrastructureEvents $event, AdminControlService $service)
+    {
+        try {
+            $service->deleteInfrastructureEvent($event);
+
+            Inertia::flash([
+                'success' => 'Evento de infraestructura eliminado exitosamente.',
+                'error' => null
+            ]);
+        } catch (\Exception $e) {
+
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return back();
+    }
+
+
+
 
 }

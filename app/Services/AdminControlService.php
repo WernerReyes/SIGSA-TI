@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\AdminControl\RenewContractDto;
 use App\DTOs\AdminControl\StoreContractDto;
+use App\DTOs\AdminControl\StoreInfrastructureEventDto;
 use App\Enums\Contract\BillingFrequency;
 use App\Enums\Contract\ContractPeriod;
 use App\Enums\Contract\ContractStatus;
@@ -14,6 +15,7 @@ use App\Models\ContractBilling;
 use App\Models\ContractExpiration;
 
 use App\Models\ContractRenewal;
+use App\Models\InfrastructureEvents;
 use App\Models\Notification;
 use Auth;
 use Carbon\Carbon;
@@ -34,8 +36,15 @@ class AdminControlService
 
     public function getContracts()
     {
-        return Contract::with('billing', 'expiration', 'renewals.renewedBy')->get();
+        return Contract::with('billing', 'expiration', 'renewals.renewedBy:staff_id,firstname,lastname')->get();
     }
+
+    public function getInfrastructureEvents()
+    {
+        return InfrastructureEvents::with('responsible:staff_id,firstname,lastname')->orderBy('date', 'desc')->get();
+    }
+
+
     public function storeContract(StoreContractDto $dto): Contract
     {
         try {
@@ -178,8 +187,6 @@ class AdminControlService
         });
     }
 
-
-
     public function renewContract(Contract $contract, RenewContractDto $dto)
     {
         if ($contract->status === ContractStatus::CANCELED->value) {
@@ -250,13 +257,55 @@ class AdminControlService
 
 
         } catch (\Exception $e) {
-
             throw new InternalErrorException('Error al renovar contrato: ' . $e->getMessage());
         }
 
     }
 
+    //* Infrastructure Events */
+    public function storeInfrastructureEvent(StoreInfrastructureEventDto $dto): InfrastructureEvents
+    {
+        try {
+            return InfrastructureEvents::create([
+                'title' => $dto->title,
+                'description' => $dto->description,
+                'type' => $dto->type,
+                'date' => $dto->date,
+                'responsible_id' => Auth::id(),
+            ])->load('responsible:staff_id,firstname,lastname');
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al crear evento de infraestructura: ' . $e->getMessage());
+        }
 
-    
+    }
+
+    public function updateInfrastructureEvent(InfrastructureEvents $event, StoreInfrastructureEventDto $dto): InfrastructureEvents
+    {
+        try {
+            $event->update([
+                'title' => $dto->title,
+                'description' => $dto->description,
+                'type' => $dto->type,
+                'date' => $dto->date,
+            ]);
+
+            return $event;
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al actualizar evento de infraestructura: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteInfrastructureEvent(InfrastructureEvents $event): void
+    {
+        try {
+            $event->delete();
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al eliminar evento de infraestructura: ' . $e->getMessage());
+        }
+    }
+
+
+
+
 
 }

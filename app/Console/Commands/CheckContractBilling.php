@@ -40,7 +40,7 @@ class CheckContractBilling extends Command
                     });
 
                 } catch (\Exception $e) {
-                    ds('Error al renovar contrato automáticamente', [
+                    logger()->error('Error al renovar contrato automáticamente', [
                         'contract_id' => $billing->contract_id,
                         'error' => $e->getMessage(),
                     ]);
@@ -57,14 +57,9 @@ class CheckContractBilling extends Command
         try {
             app(UserService::class)->getTIDepartmentUsers()
                 ->each(function ($user) use ($billing) {
-                    ds("Enviando notificación de renovación de contrato a {$user->full_name} ({$user->email}) para el contrato {$billing->contract->name}");
                     $user->notify(new ContractRenewalNotification($billing));
                 });
         } catch (\Exception $e) {
-            ds('Error al enviar notificación de renovación de contrato', [
-                'contract_id' => $billing->contract_id,
-                'error' => $e->getMessage(),
-            ]);
             logger()->error('Error al enviar notificación de renovación de contrato', [
                 'contract_id' => $billing->contract_id,
                 'error' => $e->getMessage(),

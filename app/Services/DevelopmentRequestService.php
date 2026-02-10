@@ -83,7 +83,7 @@ class DevelopmentRequestService
                 'requested_by_id' => $dto->requested_by_id,
                 'requirement_path' => $path,
             ]);
-            return $dev->load(['area']);
+            return $dev->load(['area', 'requestedBy:staff_id,firstname,lastname']);
         } catch (\Exception $e) {
             if ($path) {
                 Storage::disk('public')->delete($path);
