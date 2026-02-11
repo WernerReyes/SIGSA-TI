@@ -1,32 +1,16 @@
 <?php
 
-// use App\Http\Controllers\Settings\PasswordController;
-// use App\Http\Controllers\Settings\ProfileController;
-use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
+
+use App\Enums\Department\Allowed;
+use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-// Route::middleware('auth')->group(function () {
-    
-    // Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    // Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
-    // Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // Route::get('settings/password', [PasswordController::class, 'edit'])->name('user-password.edit');
-    
-    // Route::put('settings/password', [PasswordController::class, 'update'])
-    //     ->middleware('throttle:6,1')
-    //     ->name('user-password.update');
 
-    Route::get('settings/sla', function() {
-        return Inertia::render('settings/SLA');
-    })->name('sla.edit');
+Route::prefix('settings')->group(function () {
 
-    Route::get('settings/appearance', function () {
-        return Inertia::render('settings/Appearance');
-    })->name('appearance.edit');
-    
-    Route::redirect('settings', '/settings/appearance')->name('settings');
-    // Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
-    //     ->name('two-factor.show');
-// });
+    Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () {
+        Route::get('/sla', [SettingController::class, 'renderSlaPolicies'])->name('sla.edit');
+        Route::put('/sla', [SettingController::class, 'updateSlaPolicy'])->name('sla.update');
+    });
+    Route::get('/appearance', [SettingController::class, 'renderAppearanceSettings'])->name('appearance.edit');
+});

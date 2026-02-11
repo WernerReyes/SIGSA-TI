@@ -39,6 +39,8 @@ class AssetController extends Controller
         $assetId = $request->input('asset_id');
         $assignmentId = $request->input('assignment_id');
 
+        // ds($assetService->getPaginated($filters)->toArray());
+
         return Inertia::render('Assets', [
             'filters' => $filters,
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),

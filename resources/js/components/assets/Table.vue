@@ -23,7 +23,7 @@
                         class="flex flex-wrap gap-2 text-xs text-muted-foreground items-center animate-in fade-in-50">
                         <Badge variant="outline" class="rounded-full">{{ filterCount }} {{
                             filterCount === 1 ? 'filtro aplicado' : 'filtros aplicados'
-                            }}</Badge>
+                        }}</Badge>
 
                         <template v-for="filter in filterstersRenders" :key="filter.label">
                             <Badge v-if="filter.value" variant="secondary" class="cursor-pointer" :class="{
@@ -70,9 +70,9 @@
                     </SelectFilters>
 
 
-                    <SelectFilters label="Estados" :items="Object.values(assetStatusOptions)" 
-                        :icon="ChartArea" show-refresh show-selected-focus item-value="value" item-label="label"
-                        :multiple="true" :default-value="form.status" @select="(selects) => form.status = selects">
+                    <SelectFilters label="Estados" :items="Object.values(assetStatusOptions)" :icon="ChartArea"
+                        show-refresh show-selected-focus item-value="value" item-label="label" :multiple="true"
+                        :default-value="form.status" @select="(selects) => form.status = selects">
 
                         <template #item="{ item }">
                             <Badge :class="item.bg">
@@ -128,7 +128,7 @@
                         <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
                             <TableHead class="pl-5 uppercase text-[11px] tracking-wide text-muted-foreground"
                                 v-for="header in headerGroup.headers" :key="header.id" :style="{
-                                    width: header.getSize() + 'px'
+                                    maxWidth: header.getSize() + 'px'
                                 }">
                                 <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                                     :props="header.getContext()" />
@@ -146,7 +146,8 @@
                                         :data-state="row.getIsSelected() ? 'selected' : undefined"
                                         class="cursor-context-menu transition hover:bg-muted/60 odd:bg-muted/30">
                                         <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
-                                            class="pl-5 align-middle" :style="{ width: cell.column.getSize() + 'px' }">
+                                            class="pl-5 align-middle"
+                                            :style="{ maxWidth: cell.column.getSize() + 'px' }">
                                             <FlexRender :render="cell.column.columnDef.cell"
                                                 :props="cell.getContext()" />
                                         </TableCell>
@@ -231,7 +232,8 @@
                 <Pagination class="mx-0  w-fit ml-auto!" :items-per-page="assets.per_page" :total="assets.total"
                     :default-page="assets.current_page">
                     <PaginationContent class="flex-wrap">
-                        <PaginationPrevious :disabled="isLoading || assets.current_page === 1" @click="changePage(assets.prev_page_url || '')">
+                        <PaginationPrevious :disabled="isLoading || assets.current_page === 1"
+                            @click="changePage(assets.prev_page_url || '')">
                             <ChevronLeftIcon />
                             Anterior
                         </PaginationPrevious>
@@ -242,7 +244,8 @@
                             </PaginationItem>
                         </template>
 
-                        <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page" @click="changePage(assets.next_page_url || '')">
+                        <PaginationNext :disabled="isLoading || assets.current_page === assets.last_page"
+                            @click="changePage(assets.next_page_url || '')">
                             Siguiente
                             <ChevronRightIcon />
                         </PaginationNext>
@@ -549,7 +552,7 @@ const resetFilters = () => {
 };
 
 const changePage = (url: string) => {
-    if(isLoading.value) return;
+    if (isLoading.value) return;
     router.visit(url, {
         preserveScroll: true,
         replace: true,
@@ -588,12 +591,12 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'name',
         id: 'name',
         header: 'Nombre',
-        minSize: 180,
+        size: 300,
         enableGlobalFilter: true,
 
         cell: ({ row }) => {
             return row.getCanExpand() ? (
-                h('div', { class: 'flex items-center gap-2' }, [
+                h('div', { class: 'flex items-center gap-2 truncate' }, [
                     h(
                         Button,
                         {
@@ -609,7 +612,8 @@ const columns: ColumnDef<Asset>[] = [
                     row.original.name || h(Badge, { variant: 'secondary' }, () => 'N/A')
                 ])
             ) : (
-                row.original.name || h(Badge, { variant: 'secondary' }, () => 'N/A')
+                h('div', { class: 'truncate' },
+                    row.original.name) || h(Badge, { variant: 'secondary' }, () => 'N/A')
             );
         }
 
@@ -619,6 +623,7 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'brand',
         id: 'brand',
         header: 'Marca',
+        size: 150,
         cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },
@@ -626,6 +631,7 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'model',
         id: 'model',
         header: 'Modelo',
+        size: 200,
         cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },
@@ -633,6 +639,7 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'serial_number',
         id: 'serial_number',
         header: 'Serial',
+        size: 300,
         cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },

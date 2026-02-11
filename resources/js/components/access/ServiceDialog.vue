@@ -2,28 +2,28 @@
     <Dialog v-model:open="open" @update:open="(val) => {
         if (!val) resetForm();
     }">
-        <DialogContent class="sm:max-w-xl">
-            <form @submit.prevent="handleSubmit(handleSubmitForm)()">
+        <DialogContent class="sm:max-w-2xl">
 
-                <DialogHeader class="space-y-3 pb-4 border-b">
-                    <div class="flex items-center gap-3">
-                        <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <DialogHeader class="space-y-3 pb-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
 
-                            <MonitorCog class="size-5 text-primary" />
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <DialogTitle class="text-xl font-semibold">
-                                {{ currentService ? `Editar ${currentService?.name}` : 'Crear Nuevo Servicio' }}
-                            </DialogTitle>
-                            <p class="text-sm text-muted-foreground">
-                                {{ currentService ? `Actualiza la información de ${currentService?.name}` :
-                                    'Completa los datos del nuevo servicio' }}
-                            </p>
-                        </div>
+                        <MonitorCog class="size-5 text-primary" />
                     </div>
-                </DialogHeader>
+                    <div class="flex flex-col gap-1">
+                        <DialogTitle class="text-xl font-semibold">
+                            {{ currentService ? `Editar ${currentService?.name}` : 'Crear Nuevo Servicio' }}
+                        </DialogTitle>
+                        <p class="text-sm text-muted-foreground">
+                            {{ currentService ? `Actualiza la información de ${currentService?.name}` :
+                                'Completa los datos del nuevo servicio' }}
+                        </p>
+                    </div>
+                </div>
+            </DialogHeader>
 
-                <div class="max-h-96 overflow-y-auto space-y-4">
+            <ScrollArea class="max-h-96 md:max-h-[calc(100vh-14rem)] space-y-4 pr-2">
+                <form id="service-form" @submit.prevent="handleSubmit(handleSubmitForm)()">
                     <div class="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
                         <VeeField name="name" v-slot="{ componentField, errors }">
                             <div class="space-y-1">
@@ -121,15 +121,15 @@
                             <FieldError v-if="errors.length" :errors="errors" />
                         </VeeField>
                     </div>
-                </div>
-                <DialogFooter>
+                </form>
+            </ScrollArea>
+            <DialogFooter>
 
-                    <Button type="button" variant="ghost" :disabled="isLoading" @click="resetForm">Cancelar</Button>
-                    <Button type="submit" :disabled="disabledForm">
-                        {{ isLoading ? 'Guardando...' : 'Guardar servicio' }}
-                    </Button>
-                </DialogFooter>
-            </form>
+                <Button type="button" variant="ghost" :disabled="isLoading" @click="resetForm">Cancelar</Button>
+                <Button form="service-form" type="submit" :disabled="disabledForm">
+                    {{ isLoading ? 'Guardando...' : 'Guardar servicio' }}
+                </Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -153,6 +153,7 @@ import { computed, ref, watch } from 'vue';
 import z from 'zod';
 import { FieldError } from '@/components/ui/field';
 import { isEqual } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -184,26 +185,33 @@ const formSchema = toTypedSchema(z.object({
     }).min(3, 'El nombre es obligatorio').max(100, 'El nombre es muy largo').refine((val) => services.value.every(s => s.name?.toLowerCase().trim() !== val.toLowerCase().trim()), {
         message: 'El nombre ya está en uso',
     }),
-    url: z.string().url('Debe ser una URL válida'),
-    username: z.string().max(100, 'El usuario es muy largo'),
-    password: z.string().max(100, 'La contraseña es muy larga'),
+    url: z.string({
+        message: 'La URL es obligatoria',
+    }).url('Debe ser una URL válida'),
+    username: z.string({
+        message: 'El usuario es obligatorio',
+    }).max(100, 'El usuario es muy largo'),
+    password: z.string({
+        message: 'La contraseña es obligatoria',
+    }).max(100, 'La contraseña es muy larga'),
     description: z.string().max(500, 'La descripción es muy larga').optional().or(z.literal('')),
     is_active: z.boolean().default(true),
 }));
 
 
 const initialValues = computed(() => ({
-    name: currentService.value?.name || '',
-    description: currentService.value?.description || '',
-    url: currentService.value?.url || '',
-    username: currentService.value?.username || '',
-    password: currentService.value?.password || '',
+    name: currentService.value?.name || undefined,
+    description: currentService.value?.description || undefined,
+    url: currentService.value?.url || undefined,
+    username: currentService.value?.username || undefined,
+    password: currentService.value?.password || undefined,
     is_active: currentService.value?.is_active || true,
 }));
 
 const { handleSubmit, values, handleReset, errors, setValues } = useForm({
     initialValues: initialValues.value,
     validationSchema: formSchema,
+    keepValuesOnUnmount: true,
 });
 
 

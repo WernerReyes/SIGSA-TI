@@ -1,10 +1,12 @@
 <?php
 namespace App\DTOs\Ticket;
 
+use App\Enums\Ticket\TicketImpact;
 use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketStatus;
 use App\Enums\Ticket\TicketType;
+use App\Enums\Ticket\TicketUrgency;
 use Auth;
 
 
@@ -15,10 +17,13 @@ class StoreTicketDto
         public readonly string $description,
         // public readonly ?int $technicianId,
         public readonly int $requesterId,
-        public readonly TicketType $type,
-        public readonly TicketPriority $priority,
+        public readonly string $type,
+        public readonly string $impact,
+        public readonly string $urgency,
+        public readonly ?string $category,
+        public readonly string $priority,
         // public readonly TicketStatus $status = TicketStatus::OPEN,
-        public readonly ?TicketRequestType $requestType = null
+        // public readonly ?TicketRequestType $requestType = null
     ) {
     }
 
@@ -27,17 +32,21 @@ class StoreTicketDto
     {
         if ($data['type'] !== TicketType::SERVICE_REQUEST->value) {
             // $data['technician_id'] = null;
-            $data['request_type'] = null;
+            $data['category'] = null;
         }
 
         return new self(
             title: $data['title'],
             description: $data['description'],
-            // technicianId: isset($data['technician_id']) ? $data['technician_id'] : null,
-            requesterId: $data['requester_id'],
-            type: TicketType::from($data['type']),
-            priority: TicketPriority::from($data['priority']),
-            requestType: isset($data['request_type']) ? TicketRequestType::from($data['request_type']) : null
+            requesterId: Auth::id(),
+            type: $data['type'],
+            impact: $data['impact'],
+            urgency: $data['urgency'],
+            category: $data['category'] ?? null,
+            priority: TicketPriority::calculate(
+                TicketImpact::from($data['impact']),
+                TicketUrgency::from($data['urgency'])
+            )->value,
 
         );
     }

@@ -3,9 +3,12 @@
 namespace App\Http\Requests\Ticket;
 
 
+use App\Enums\Ticket\TicketCategory;
+use App\Enums\Ticket\TicketImpact;
 use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketType;
+use App\Enums\Ticket\TicketUrgency;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTicketRequest extends FormRequest
@@ -39,13 +42,16 @@ class StoreTicketRequest extends FormRequest
             //     "required_if:type," . TicketType::SERVICE_REQUEST->value,
             //     'exists:ost_staff,staff_id',
             // ],
-            'requester_id' => [
-                'required',
-                'exists:ost_staff,staff_id',
-            ],
-            'priority' => ['required', $inTicketPriority],
-            'request_type' => [
+            // 'requester_id' => [
+            //     'required',
+            //     'exists:ost_staff,staff_id',
+            // ],
+            // 'priority' => ['required', $inTicketPriority],
+            'impact' => ['required', 'in:' . TicketImpact::implodeValues()],
+            'urgency' => ['required', 'in:' . TicketUrgency::implodeValues()],
+            'category' => [
                 'required_if:type,' . TicketType::SERVICE_REQUEST->value,
+                'in:' . TicketCategory::implodeValues(),
                 // $inTicketRequestType
             ]
         ];
@@ -64,8 +70,8 @@ class StoreTicketRequest extends FormRequest
             'description.min' => 'La descripción debe tener al menos :min caracteres.',
             'description.max' => 'La descripción no debe exceder de :max caracteres.',
 
-            'requester_id.required' => 'El solicitante es obligatorio.',
-            'requester_id.exists' => 'El solicitante seleccionado no es válido.',
+            // 'requester_id.required' => 'El solicitante es obligatorio.',
+            // 'requester_id.exists' => 'El solicitante seleccionado no es válido.',
 
             // 'technician_id.required_if' => 'El técnico es obligatorio para este tipo de ticket.',
             // 'technician_id.exists' => 'El técnico seleccionado no es válido.',
@@ -73,11 +79,17 @@ class StoreTicketRequest extends FormRequest
             'type.required' => 'El tipo de ticket es obligatorio.',
             'type.in' => 'El tipo de ticket seleccionado no es válido.',
 
-            'priority.required' => 'La prioridad del ticket es obligatoria.',
-            'priority.in' => 'La prioridad del ticket seleccionada no es válida.',
+            // 'priority.required' => 'La prioridad del ticket es obligatoria.',
+            // 'priority.in' => 'La prioridad del ticket seleccionada no es válida.',
 
-            ' request_type.required_if' => 'El tipo de solicitud es obligatorio para este tipo de ticket.',
-            ' request_type.in' => 'El tipo de solicitud seleccionado no es válido.',
+            'impact.required' => 'El impacto del ticket es obligatorio.',
+            'impact.in' => 'El impacto del ticket seleccionado no es válido.',
+
+            'urgency.required' => 'La urgencia del ticket es obligatoria.',
+            'urgency.in' => 'La urgencia del ticket seleccionada no es válida.',
+
+            'category.required_if' => 'La categoría es obligatoria para este tipo de ticket.',
+            'category.in' => 'La categoría seleccionada no es válida.',
         ];
     }
 }

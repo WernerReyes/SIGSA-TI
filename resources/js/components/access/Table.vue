@@ -39,8 +39,10 @@
                         <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
                             <TableHead class="pl-5 uppercase text-[11px] tracking-wide text-muted-foreground"
                                 v-for="header in headerGroup.headers" :key="header.id" :style="{
-                                    width: header.getSize() + 'px'
-                                }">
+                                            maxWidth: `${header.getSize()}px`,
+                                            // width: `${cell.column.getSize()}px`,
+                                        }">
+                               
                                 <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                                     :props="header.getContext()" />
                             </TableHead>
@@ -50,13 +52,19 @@
                     <ContextMenu v-if="table.getRowModel().rows.length">
                         <ContextMenuTrigger as-child>
                             <TableBody>
-                                <TableRow @contextmenu="() => {
+                                <TableRow
+                                 
+                                @contextmenu="() => {
                                     activeRow = row.original
                                 }" :key="row.id" v-for="row in table.getRowModel().rows"
                                     :data-state="row.getIsSelected() ? 'selected' : undefined"
                                     class="cursor-context-menu transition hover:bg-muted/60 odd:bg-muted/30">
                                     <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
-                                        class="pl-5 align-middle" :style="{ width: cell.column.getSize() + 'px' }">
+                                    class="pl-5 align-middle" :style="{
+                                            maxWidth: `${cell.column.getSize()}px`,
+                                            // width: `${cell.column.getSize()}px`,
+                                        }">
+                                
                                         <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                                     </TableCell>
                                 </TableRow>
@@ -182,15 +190,18 @@ watch(dateRange, (range) => applyColumnFilter(table, 'created_at', range));
 const columns = [
     columnHelper.accessor('name', {
         header: 'Servicio',
-        cell: ({ row }) => h('div', { class: 'text-foreground' }, row.original.name),
+        cell: ({ row }) => h('div', { class: 'text-foreground truncate' }, row.original.name),
+        size: 250,
     }),
     columnHelper.accessor('url', {
         header: 'URL',
-        cell: ({ row }) => h('a', { href: row.original.url, target: '_blank', class: 'text-primary hover:underline truncate' }, row.original.url),
-    }),
+        cell: ({ row }) => h('a', { href: row.original.url, target: '_blank', class: 'text-primary hover:underline block truncate' }, row.original.url),
+        size: 300,
+}),
     columnHelper.accessor('description', {
         header: 'Descripción',
-        cell: ({ row }) => h('span', { class: 'text-muted-foreground line-clamp-1' }, row.original?.description || '—'),
+        cell: ({ row }) => h('span', { class: 'text-muted-foreground line-clamp-1 truncate' }, row.original?.description || '—'),
+        size: 300,
     }),
     columnHelper.accessor('username', {
         header: 'Usuario',

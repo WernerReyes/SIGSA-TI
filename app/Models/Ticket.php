@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ticket extends Model
 {
     //
-    protected $table = 'tickets_sistema';
+    protected $table = 'system_tickets';
 
 
     public $timestamps = true;
@@ -23,18 +23,39 @@ class Ticket extends Model
         'title',
         'description',
         // 'opened_at',
-        'closed_at',
+        // 'closed_at',
         'status',
+        'category',
+        'impact',
+        'urgency',
         'priority',
         'request_type',
         'requester_id',
         'responsible_id',
+
+
+        'sla_response_due_at',
+        'sla_resolution_due_at',
+
+        'first_response_at',
+        'resolved_at',
+
+        // 'created_at',
+
+
+
         // 'updated_at',
     ];
 
+    //   $table->timestamp('sla_response_due_at')->nullable();
+    //         $table->timestamp('sla_resolution_due_at')->nullable();
+
+    //         $table->timestamp('first_response_at')->nullable();
+    //         $table->timestamp('resolved_at')->nullable();
+
     protected $casts = [
         // 'opened_at' => 'datetime',
-        'closed_at' => 'datetime',
+        // 'closed_at' => 'datetime',
         // 'status' => TicketStatus::class,
         // 'priority' => TicketPriority::class,
         // 'type' => TicketType::class,

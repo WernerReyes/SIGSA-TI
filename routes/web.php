@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     });
 
+    Route::redirect('settings', '/settings/appearance')->name('settings');
 });
 
 //* Fallback Route

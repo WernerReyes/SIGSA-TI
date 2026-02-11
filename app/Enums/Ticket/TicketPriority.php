@@ -1,5 +1,7 @@
 <?php
 namespace App\Enums\Ticket;
+
+
 enum TicketPriority: string
 {
     case LOW = 'LOW';
@@ -24,6 +26,20 @@ enum TicketPriority: string
 
     public static function label(string $value): string
     {
-        return self::labels()[$value] ?? 'Desconocido'; 
+        return self::labels()[$value] ?? 'Desconocido';
     }
+
+    public static function calculate(TicketImpact $impact, TicketUrgency $urgency): self
+    {
+        return match (true) {
+            $impact === TicketImpact::HIGH && $urgency === TicketUrgency::HIGH => self::URGENT,
+            $impact === TicketImpact::HIGH && $urgency === TicketUrgency::MEDIUM => self::HIGH,
+            $impact === TicketImpact::MEDIUM && $urgency === TicketUrgency::HIGH => self::HIGH,
+            $impact === TicketImpact::MEDIUM && $urgency === TicketUrgency::MEDIUM => self::MEDIUM,
+            default => self::LOW,
+        };
+    }
+
+
 }
+

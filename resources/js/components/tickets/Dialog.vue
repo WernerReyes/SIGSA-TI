@@ -399,6 +399,8 @@ function onSubmit(values: StoreTicket) {
         if (ticket?.value?.priority !== values.priority) {
             only.push('tickets');
         }
+
+        
         router.put(`/tickets/${ticket.value.id}`, values, {
             only,
             onFlash: (flash) => {

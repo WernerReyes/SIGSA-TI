@@ -26,7 +26,6 @@ use App\Models\AssetType;
 
 use App\Models\DeliveryRecord;
 use App\Models\TicketAsset;
-use App\Models\TicketHistory;
 use App\Models\User;
 use App\Models\Ticket;
 
@@ -98,6 +97,7 @@ class AssetService
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
+            
             return Asset::query()
                 ->with([
                     'type:id,name',
@@ -227,11 +227,12 @@ class AssetService
                     $query->whereDate('created_at', '<=', $filtersDto->endDate);
                 })
                 ->latest()
+                ->orderByDesc('id')
                 ->paginate(10)
                 ->withQueryString();
 
         } catch (\Throwable $e) {
-            throw new InternalErrorException('Error al obtener los activos');
+            throw new InternalErrorException('Error al obtener los activos' . $e->getMessage());
         }
     }
 

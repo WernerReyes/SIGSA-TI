@@ -25,8 +25,8 @@ class StoreServiceRequest extends FormRequest
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'url' => 'required|url',
-            'username' => 'nullable|string|max:255',
-            'password' => 'nullable|string|max:255',
+            'username' => 'required|string|max:255',
+            'password' => 'required|string|max:255',
             'is_active' => 'required|boolean',
         ];
     }
@@ -40,9 +40,9 @@ class StoreServiceRequest extends FormRequest
             'description.string' => 'La descripción del servicio debe ser una cadena de texto.',
             'url.required' => 'La URL del servicio es obligatoria.',
             'url.url' => 'La URL del servicio debe ser una URL válida.',
-            'username.string' => 'El nombre de usuario debe ser una cadena de texto.',
+            'username.required' => 'El nombre de usuario es obligatorio.',
             'username.max' => 'El nombre de usuario no debe exceder los 255 caracteres.',
-            'password.string' => 'La contraseña debe ser una cadena de texto.',
+            'password.required' => 'La contraseña es obligatoria.',
             'password.max' => 'La contraseña no debe exceder los 255 caracteres.',
             'is_active.required' => 'El estado del servicio es obligatorio.',
             'is_active.boolean' => 'El estado del servicio debe ser verdadero o falso.',

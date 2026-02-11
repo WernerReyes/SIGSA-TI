@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->enum('action', TicketHistoryAction::values());
             $table->text('description');
             $table->unsignedBigInteger('ticket_id');
-            $table->foreign('ticket_id')->references('id')->on('tickets_sistema');
+            $table->foreign('ticket_id')->references('id')->on('system_tickets');
             $table->unsignedInteger('performed_by');
 
             $table->foreign('performed_by')->references('staff_id')->on('ost_staff');

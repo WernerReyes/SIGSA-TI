@@ -140,9 +140,11 @@ class TicketService
                     'description' => $dto->description,
 
                     'requester_id' => $dto->requesterId,
-                    'type' => $dto->type->value,
-                    'priority' => $dto->priority->value,
-                    'request_type' => $dto->requestType?->value,
+                    'type' => $dto->type,
+                    'priority' => $dto->priority,
+                    'category' => $dto->category,
+
+                    // 'request_type' => $dto->requestType?->value,
                     // 'opened_at' => now(),
                 ]);
 
@@ -157,6 +159,24 @@ class TicketService
 
 
     }
+
+
+//     namespace App\Services;
+
+// class PriorityCalculator
+// {
+//     public static function calculate(string $impact, string $urgency): string
+//     {
+//         return match (true) {
+//             $impact === 'HIGH' && $urgency === 'HIGH' => 'CRITICAL',
+//             $impact === 'HIGH' && $urgency === 'MEDIUM' => 'HIGH',
+//             $impact === 'MEDIUM' && $urgency === 'HIGH' => 'HIGH',
+//             $impact === 'MEDIUM' && $urgency === 'MEDIUM' => 'MEDIUM',
+//             default => 'LOW',
+//         };
+//     }
+// }
+
 
     public function updateTicket(Ticket $ticket, StoreTicketDto $dto)
     {

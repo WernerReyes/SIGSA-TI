@@ -1,15 +1,42 @@
+import { getEmptyEnumOption } from '@/lib/utils';
+import { EnumOption } from '@/types';
+import {
+    Archive,
+    ArrowDown,
+    ArrowUp,
+    Bug,
+    CheckCircle,
+    Code2,
+    Flame,
+    FolderOpen,
+    Key,
+    LifeBuoy,
+    LoaderCircle,
+    Minus,
+    MonitorSmartphone,
+} from 'lucide-vue-next';
 import { Component } from 'vue';
+import { AssetAssignment } from './assetAssignment.interface';
 import type { TicketHistory } from './ticketHistory.interface';
 import type { User } from './user.interface';
-import { Archive, ArrowDown, ArrowUp, Bug, CheckCircle, Code2, Flame, FolderOpen, Key, LifeBuoy, LoaderCircle, Minus, MonitorSmartphone } from 'lucide-vue-next';
-import { TicketAsset } from './ticketAsset.interface';
-import { AssetAssignment } from './assetAssignment.interface';
 
 export enum TicketStatus {
     OPEN = 'OPEN',
     IN_PROGRESS = 'IN_PROGRESS',
     RESOLVED = 'RESOLVED',
     CLOSED = 'CLOSED',
+}
+
+export enum TicketImpact {
+    LOW = 'LOW',
+    MEDIUM = 'MEDIUM',
+    HIGH = 'HIGH',
+}
+
+export enum TicketUrgency {
+    LOW = 'LOW',
+    MEDIUM = 'MEDIUM',
+    HIGH = 'HIGH',
 }
 
 export enum TicketPriority {
@@ -30,18 +57,31 @@ export enum TicketRequestType {
     EQUIPMENT = 'EQUIPMENT',
 }
 
-
+export enum TicketCategory {
+    SOFTWARE = 'SOFTWARE',
+    ACCESS = 'ACCESS',
+    EQUIPMENT = 'EQUIPMENT',
+}
 
 export interface Ticket {
     id: number;
     title: string;
     description: string;
+
+    impact: TicketImpact;
+    urgency: TicketUrgency;
     status: TicketStatus;
     priority: TicketPriority;
     type: TicketType;
     requester: User;
     // technician?: User;
-    request_type: TicketRequestType;
+    category: TicketCategory;
+
+    image_urls?: string[];
+
+
+
+    // request_type: TicketRequestType;
     // created_at: Date;
     // updated_at: Date;
     // opened_at?: Date;
@@ -52,6 +92,13 @@ export interface Ticket {
     requester_id: number;
     responsible_id?: number;
     responsible?: User;
+
+
+    sla_response_due_at?: Date;
+    sla_resolution_due_at?: Date;
+
+    first_response_at?: Date;
+    resolved_at?: Date;
 
     created_at: Date;
     updated_at: Date;
@@ -74,19 +121,19 @@ export const ticketStatusOptions: Record<TicketStatus, TicketStatusOption> = {
         label: 'En espera del Proveedor',
         value: TicketStatus.IN_PROGRESS,
         bg: 'bg-yellow-500',
-        icon: LoaderCircle
+        icon: LoaderCircle,
     },
     [TicketStatus.RESOLVED]: {
         label: 'Resuelto',
         value: TicketStatus.RESOLVED,
         bg: 'bg-green-500',
-        icon: CheckCircle
+        icon: CheckCircle,
     },
     [TicketStatus.CLOSED]: {
         label: 'Cerrado',
         value: TicketStatus.CLOSED,
         bg: 'bg-gray-500',
-        icon: Archive
+        icon: Archive,
     },
 };
 
@@ -128,7 +175,7 @@ type TicketPriorityOption = {
     label: string;
     value: TicketPriority;
     bg: string;
-    search: string;
+    // search: string;
     icon: Component;
 };
 
@@ -140,29 +187,29 @@ export const ticketPriorityOptions: Record<
         label: 'Baja',
         value: TicketPriority.LOW,
         bg: 'bg-green-500',
-        search: 'baja',
+        // search: 'baja',
         icon: ArrowDown,
     },
     [TicketPriority.MEDIUM]: {
         label: 'Media',
         value: TicketPriority.MEDIUM,
-        bg: 'bg-yellow-500',
-        search: 'media',
-        icon: Minus
+        bg: 'bg-sky-500',
+        // search: 'media',
+        icon: Minus,
     },
     [TicketPriority.HIGH]: {
         label: 'Alta',
         value: TicketPriority.HIGH,
-        bg: 'bg-orange-500',
-        search: 'alta',
-        icon: ArrowUp
+        bg: 'bg-amber-500',
+        // search: 'alta',
+        icon: ArrowUp,
     },
     [TicketPriority.URGENT]: {
         label: 'Crítica',
         value: TicketPriority.URGENT,
         bg: 'bg-red-500',
-        search: 'critica',
-        icon: Flame
+        // search: 'critica',
+        icon: Flame,
     },
 };
 
@@ -188,19 +235,43 @@ export const ticketRequestTypeOptions: Record<
         label: 'Equipo',
         value: TicketRequestType.EQUIPMENT,
         bg: 'bg-blue-500',
-        icon: MonitorSmartphone
+        icon: MonitorSmartphone,
     },
     [TicketRequestType.SOFTWARE]: {
         label: 'Software',
         value: TicketRequestType.SOFTWARE,
         bg: 'bg-green-500',
-        icon: Code2
+        icon: Code2,
     },
     [TicketRequestType.ACCESS]: {
         label: 'Acceso',
         value: TicketRequestType.ACCESS,
         bg: 'bg-yellow-500',
-        icon: Key
+        icon: Key,
+    },
+};
+
+export const ticketCategoryOptions: Record<
+    TicketCategory,
+    EnumOption<TicketCategory>
+> = {
+    [TicketCategory.EQUIPMENT]: {
+        label: 'Equipo',
+        value: TicketCategory.EQUIPMENT,
+        bg: 'bg-blue-500',
+        icon: MonitorSmartphone,
+    },
+    [TicketCategory.SOFTWARE]: {
+        label: 'Software',
+        value: TicketCategory.SOFTWARE,
+        bg: 'bg-green-500',
+        icon: Code2,
+    },
+    [TicketCategory.ACCESS]: {
+        label: 'Acceso',
+        value: TicketCategory.ACCESS,
+        bg: 'bg-yellow-500',
+        icon: Key,
     },
 };
 
@@ -209,4 +280,35 @@ export const requestTypeOp = (
 ): TicketRequestTypeOption | undefined => {
     if (!requestType) return undefined;
     return ticketRequestTypeOptions[requestType];
+};
+
+export const getTicketOp = <T>(
+    type: 'type' | 'status' | 'priority' | 'category',
+    op?: T | null,
+): EnumOption<T | undefined | null> => {
+    if (!op) return getEmptyEnumOption(op);
+    switch (type) {
+        case 'type':
+            return ticketTypeOptions[op as TicketType] as EnumOption<
+                T | undefined | null
+            >;
+
+        case 'status':
+            return ticketStatusOptions[op as TicketStatus] as EnumOption<
+                T | undefined | null
+            >;
+
+        case 'priority':
+            return ticketPriorityOptions[op as TicketPriority] as EnumOption<
+                T | undefined | null
+            >;
+
+        case 'category':
+            return ticketCategoryOptions[op as TicketCategory] as EnumOption<
+                T | undefined | null
+            >;
+
+        default:
+            return getEmptyEnumOption(op);
+    }
 };
