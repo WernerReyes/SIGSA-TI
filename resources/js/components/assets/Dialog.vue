@@ -34,9 +34,10 @@
                 </div>
             </DialogHeader>
 
+            <ScrollArea class="dialog-content">
             <form id="dialogForm" @submit.prevent=" 
                 handleSubmit(onSubmit)()
-                " class="space-y-5 py-4 max-h-96 overflow-y-auto">
+                " class="space-y-5 py-4">
 
                 <Accordion :unmountOnHide="false" type="multiple" :default-value="['info', 'specs', 'dates']"
                     class="w-full space-y-3">
@@ -321,6 +322,7 @@
                 </Accordion>
 
             </form>
+            </ScrollArea>
 
             <DialogFooter class="gap-2 pt-4 border-t">
                 <Button variant="outline" @click="() => { open = false; handleResetForm(); }" :disabled="isLoading">
@@ -384,6 +386,7 @@ import { isBefore
  } from 'date-fns'
 import * as z from 'zod'
 import SelectFilters from '../SelectFilters.vue'
+import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 
 
 defineProps<{

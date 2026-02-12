@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="open">
-        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto">
+        <DialogContent class="sm:max-w-4xl">
             <DialogHeader class="space-y-3 pb-4">
                 <div
                     class="flex items-start gap-4 p-4 rounded-xl bg-linear-to-br from-muted/40 via-background to-background border">
@@ -23,6 +23,7 @@
                 </div>
             </DialogHeader>
 
+            <ScrollArea class="dialog-content">
             <div class="grid lg:grid-cols-3 gap-4">
                 <div class="lg:col-span-2 grid md:grid-cols-2 gap-3">
                     <div class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
@@ -193,6 +194,7 @@
                 </div>
                 <div v-else class="mt-3 text-xs text-muted-foreground">No hay imagenes registradas.</div>
             </div>
+                </ScrollArea>
 
 
         </DialogContent>
@@ -217,6 +219,7 @@ import { format } from 'date-fns';
 import { Activity, AlertTriangle, Calendar, CheckCircle2, Clock, Gauge, Image, Tag, Ticket as TicketIcon, User, Zap, MonitorSmartphone } from 'lucide-vue-next';
 import RequesterAssetsSheet from './RequesterAssetsSheet.vue';
 import { Button } from '@/components/ui/button';
+import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 
 const open = defineModel<boolean>('open');
 

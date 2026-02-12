@@ -4,7 +4,7 @@
             currentDevelopment = null;
         }
     }">
-        <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl p-0">
+        <DialogContent class="sm:max-w-3xl p-0">
             <DialogHeader class="border-b px-4 py-4 sm:px-6">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-3">
@@ -39,7 +39,7 @@
                 </div>
             </DialogHeader>
 
-            <ScrollArea class="max-h-96 sm:max-h-[65vh]">
+            <ScrollArea class="dialog-content">
                 <div class="space-y-6 px-4 pb-5 sm:px-6 sm:pb-6">
                     <!-- Status Badges -->
 

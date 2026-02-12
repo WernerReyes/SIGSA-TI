@@ -11,7 +11,6 @@ use App\Enums\Ticket\TicketStatus;
 use App\DTOs\Ticket\TicketFiltersDto;
 use App\Enums\Ticket\TicketType;
 use App\Enums\TicketAsset\TicketAssetAction;
-use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\SlaPolicy;
 use App\Models\Ticket;
@@ -177,8 +176,8 @@ class TicketService
                     'priority' => $dto->priority,
                     'category' => $dto->category,
 
-                    'sla_response_due_at' => $this->businessHoursService->addBusinessMinutes2(now(), $sla->response_time_minutes),
-                    'sla_resolution_due_at' => $this->businessHoursService->addBusinessMinutes2(now(), $sla->resolution_time_minutes),
+                    'sla_response_due_at' => $this->businessHoursService->addBusinessMinutes(now(), $sla->response_time_minutes),
+                    'sla_resolution_due_at' => $this->businessHoursService->addBusinessMinutes(now(), $sla->resolution_time_minutes),
 
                 ]);
 
@@ -475,7 +474,7 @@ class TicketService
                     $ticket->resolved_at = now();
 
                     $totalBusinessMinutes =
-                        BusinessHoursService::businessMinutesBetween(
+                        $this->businessHoursService->businessMinutesBetween(
                             $ticket->created_at,
                             $ticket->resolved_at
                         );

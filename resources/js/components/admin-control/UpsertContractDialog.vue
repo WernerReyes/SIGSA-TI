@@ -16,7 +16,7 @@
             </DialogHeader>
 
 
-            <ScrollArea class="max-h-96 sm:max-h-[calc(100vh-15rem)] pr-2">
+            <ScrollArea class="dialog-content">
 
                 <form id="contract-form" class="space-y-5" @submit.prevent="handleSubmit(handleSave)()">
 

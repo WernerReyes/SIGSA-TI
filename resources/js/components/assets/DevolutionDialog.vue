@@ -192,7 +192,6 @@
 
 
             <DialogFooter class="gap-2 pt-2 border-t">
-                {{ values }}
                 <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
                 <Button :disabled="isSubmitting
                     || Object.keys(errors).length > 0

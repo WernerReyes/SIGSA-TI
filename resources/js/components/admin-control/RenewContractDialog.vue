@@ -15,7 +15,7 @@
                 </DialogDescription>
             </DialogHeader>
 
-            <ScrollArea class="max-h-[calc(100vh-15rem)] pr-2">
+            <ScrollArea class="dialog-content">
                 <div v-if="!selectedContract"
                     class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                     Selecciona un contrato para renovarlo.

@@ -4,7 +4,7 @@
             resetForm();
         }
     }">
-        <DialogContent class="max-w-[min(100vw-1.5rem,700px)] sm:max-w-2xl p-0">
+        <DialogContent class="sm:max-w-2xl p-0">
             <DialogHeader class="border-b px-4 py-4 sm:px-6">
                 <div class="flex items-start gap-3">
                     <div
@@ -42,7 +42,7 @@
 
                 <!-- Tab: Registrar Progreso -->
                 <TabsContent value="register" class="overflow-hidden">
-                    <ScrollArea class="h-96 sm:h-[65vh] w-full pr-6">
+                    <ScrollArea class="dialog-content">
                         <div class="space-y-5 px-4 py-4 sm:px-2">
                             <!-- Información del Desarrollo -->
                             <section class="rounded-lg border bg-card text-card-foreground shadow-sm">

@@ -19,8 +19,8 @@
             </DialogHeader>
 
 
-            <ScrollArea class="max-h-[calc(100vh-18rem)] px-6 pb-6">
-                <form id="event-create-form" class="space-y-5"
+            <ScrollArea class="dialog-content">
+                <form id="event-create-form" class="space-y-5 px-6 pb-6"
                     @submit.prevent="handleSubmit(handleUpsertInfrastructureEvent)()">
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <VeeField name="title" v-slot="{ componentField, errors }">

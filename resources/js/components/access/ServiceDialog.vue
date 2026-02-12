@@ -22,7 +22,7 @@
                 </div>
             </DialogHeader>
 
-            <ScrollArea class="max-h-96 md:max-h-[calc(100vh-14rem)] space-y-4 pr-2">
+            <ScrollArea class="dialog-content">
                 <form id="service-form" @submit.prevent="handleSubmit(handleSubmitForm)()">
                     <div class="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
                         <VeeField name="name" v-slot="{ componentField, errors }">

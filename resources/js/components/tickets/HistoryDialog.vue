@@ -30,73 +30,203 @@
                 </div>
             </DialogHeader>
 
+            <ScrollArea class="dialog-content">
+                <div class="relative space-y-6">
 
-            <div class="relative space-y-6 max-h-125 overflow-y-auto">
+                    <div class="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border/80 pt-4 pb-3">
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Badge variant="outline" class="">Filtros</Badge>
 
-                <div class="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border/80 pt-4 pb-3">
-                    <div class="flex flex-col md:flex-row md:items-center gap-3">
-                        <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" class="">Filtros</Badge>
+                                <Badge v-if="actions.length" class="cursor-pointer" variant="secondary"
+                                    @click="actions = []">
+                                    {{ actions.length }} acción(es)
+                                    <XCircle />
+                                </Badge>
 
-                            <Badge v-if="actions.length" class="cursor-pointer" variant="secondary"
-                                @click="actions = []">
-                                {{ actions.length }} acción(es)
-                                <XCircle />
-                            </Badge>
+                                <Badge v-if="dateRange" class="cursor-pointer" variant="secondary"
+                                    @click="dateRange = undefined">
+                                    Rango aplicado
+                                    <XCircle />
+                                </Badge>
+                            </div>
+                            <div class="flex flex-wrap gap-3 md:ml-auto items-center">
 
-                            <Badge v-if="dateRange" class="cursor-pointer" variant="secondary"
-                                @click="dateRange = undefined">
-                                Rango aplicado
-                                <XCircle />
-                            </Badge>
+
+                                <SelectFilters :items="Object.values(ticketHistoryActionOptions)"
+                                    :show-selected-focus="false" :show-refresh="false" :label="'Seleccione una acción'"
+                                    item-label="label" item-value="value" selected-as-label :default-value="actions"
+                                    @select="(value) => actions = value" :multiple="true"
+                                    filter-placeholder="Buscar empleado..." empty-text="No se encontraron empleados">
+                                    <template #item="{ item }">
+                                        <Badge :class="item.bg">
+                                            <component :is="item.icon" class="size-4" />
+                                            {{ item.label }}
+                                        </Badge>
+                                    </template>
+                                </SelectFilters>
+
+                                <Popover>
+                                    <PopoverTrigger as-child>
+                                        <Button variant="outline" class="w-full sm:w-60 justify-between font-normal">
+                                            {{ JSON.stringify(dateRange) !== '{}' && dateRange
+                                                ?
+                                                `${dateRange?.start?.toDate(getLocalTimeZone()).toLocaleDateString()}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
+                                                    ? ' - ' :
+                                                    ''}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
+                                                    || ''}`
+                                                : 'Seleccionar rango de fechas' }}
+
+
+                                            <ChevronDownIcon />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+
+                                        <RangeCalendar v-model="dateRange as any" class="rounded-md border shadow-sm"
+                                            :number-of-months="2" disable-days-outside-current-view locale="es" />
+                                    </PopoverContent>
+                                </Popover>
+
+                                <Button variant="ghost" size="sm" :disabled="!actions.length && !dateRange"
+                                    @click="resetFilters">
+                                    <RefreshCcw class="size-4 mr-1" />
+                                </Button>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-3 md:ml-auto items-center">
+                    </div>
 
 
-                            <SelectFilters :items="Object.values(ticketHistoryActionOptions)"
-                                :show-selected-focus="false" :show-refresh="false" :label="'Seleccione una acción'"
-                                item-label="label" item-value="value" selected-as-label :default-value="actions"
-                                @select="(value) => actions = value" :multiple="true"
-                                filter-placeholder="Buscar empleado..." empty-text="No se encontraron empleados">
-                                <template #item="{ item }">
-                                    <Badge :class="item.bg">
-                                        <component :is="item.icon" class="size-4" />
-                                        {{ item.label }}
+                    <div class="space-y-6 sticky">
+
+
+                        <Empty v-if="historiesPaginated.data.length === 0">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <History />
+                                </EmptyMedia>
+                                <EmptyTitle>Sin historial</EmptyTitle>
+                                <EmptyDescription>
+                                    No hay historial para este equipo.
+                                </EmptyDescription>
+                            </EmptyHeader>
+
+
+                        </Empty>
+
+                        <div v-for="history in historiesPaginated.data" class="relative flex gap-4 pl-12">
+                            <div class="absolute left-4 top-0 bottom-0 w-px bg-border"></div>
+                            <div
+                                class="absolute left-2 w-6 h-6 rounded-full bg-card border-2 flex items-center justify-center text-info shadow-sm">
+
+                                <component :is="actionOp(history.action)?.icon" class="size-3" />
+
+
+                            </div>
+                            <div class="flex-1 bg-muted/40 rounded-xl p-4 border">
+                                <div class="flex items-start justify-between gap-3">
+                                    <Badge :class="actionOp(history.action)?.bg">{{ actionOp(history.action)?.label }}
+                                    </Badge>
+
+
+                                    <span class="text-xs text-muted-foreground">{{ format(new
+                                        Date(history.performed_at),
+                                        'dd/MM/yyyy HH:mm') }}</span>
+                                </div>
+
+
+                                <template v-if="history.action === TicketHistoryAction.UPDATED">
+                                    <ul v-if="history.description.split(';').length > 1"
+                                        class="list-disc pl-5 mt-2 space-y-1">
+                                        <li class="text-xs text-muted-foreground"
+                                            v-for="desc in history.description.split(';')" :key="desc">
+                                            <template v-for="(part, index) in parsedUpdateAction(desc)" :key="index">
+                                                <span v-if="part.type === 'text'"
+                                                    class="text-xs text-muted-foreground mt-2">{{
+                                                        part.content }}</span>
+                                                <Badge v-else class="mx-1" variant="outline">
+                                                    <Pen class="size-4" />
+                                                    {{ part.content }}
+                                                </Badge>
+                                            </template>
+                                        </li>
+                                    </ul>
+                                    <template v-else v-for="(part, index) in parsedUpdateAction(history.description)"
+                                        :key="index">
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1" variant="outline">
+                                            <Pen class="size-4" />
+                                            {{ part.content }}
+                                        </Badge>
+                                    </template>
+                                </template>
+
+                                <template v-else-if="history.action === TicketHistoryAction.STATUS_CHANGED"
+                                    v-for="(part, index) in parsedStatusChange(history.description)">
+                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                        part.content }}</span>
+                                    <Badge v-else :class="part.bg" class="mx-1">
+                                        <component :is="part.icon" class="size-4" />
+                                        {{ part.label }}
                                     </Badge>
                                 </template>
-                            </SelectFilters>
 
-                            <Popover>
-                                <PopoverTrigger as-child>
-                                    <Button variant="outline" class="w-full sm:w-60 justify-between font-normal">
-                                        {{ JSON.stringify(dateRange) !== '{}' && dateRange
-                                            ?
-                                            `${dateRange?.start?.toDate(getLocalTimeZone()).toLocaleDateString()}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
-                                                ? ' - ' : ''}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
-                                                || ''}`
-                                            : 'Seleccionar rango de fechas' }}
+                                <template v-else-if="history.action === TicketHistoryAction.RESPONSIBLE_CHANGED">
+
+                                    <template v-for="(part) in parsedResponsibleChange(history.description)">
+
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1" variant="secondary">
+                                            <User />
+                                            {{ part.content }}
+                                        </Badge>
+                                    </template>
+
+                                </template>
+
+                                <template v-else-if="history.action === TicketHistoryAction.ASSET_ASSIGNED">
+
+                                    <template v-if="history.description.includes('Reasignado de responsable')"
+                                        v-for="(part) in parsedReassignmentChange(history.description)">
+
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1" variant="secondary">
+                                            <User />
+                                            {{ part.content }}
+                                        </Badge>
+                                    </template>
+
+                                    <template v-else v-for="(part) in parsedAssignmentChange(history.description)">
+                                        <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
+                                            part.content }}</span>
+                                        <Badge v-else class="mx-1" variant="secondary">
+                                            <User />
+                                            {{ part.content }}
+                                        </Badge>
+
+                                    </template>
 
 
-                                        <ChevronDownIcon />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+                                </template>
 
-                                    <RangeCalendar v-model="dateRange as any" class="rounded-md border shadow-sm"
-                                        :number-of-months="2" disable-days-outside-current-view locale="es" />
-                                </PopoverContent>
-                            </Popover>
+                                <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
+                                </p>
 
-                            <Button variant="ghost" size="sm" :disabled="!actions.length && !dateRange"
-                                @click="resetFilters">
-                                <RefreshCcw class="size-4 mr-1" />
-                            </Button>
+                                <p class="text-xs text-muted-foreground mt-3">Por:
+
+                                    <Badge variant="outline">{{ history.performer?.full_name }}</Badge>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </ScrollArea>
 
-
-                <div class="space-y-6 sticky">
+            <DialogFooter>
+                <div class="space-y-6">
                     <Pagination class="mx-0 w-fit ml-auto!" :items-per-page="historiesPaginated.per_page"
                         :total="historiesPaginated.total" :default-page="historiesPaginated.current_page">
                         <PaginationContent class="flex-wrap">
@@ -117,173 +247,11 @@
                             <PaginationNext
                                 :disabled="isLoading || historiesPaginated.current_page === historiesPaginated.last_page"
                                 @click="!isLoading && changePage(historiesPaginated.next_page_url)" />
-
-
-
                         </PaginationContent>
                     </Pagination>
-
-
-
-
-                    <Empty v-if="historiesPaginated.data.length === 0">
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <History />
-                            </EmptyMedia>
-                            <EmptyTitle>Sin historial</EmptyTitle>
-                            <EmptyDescription>
-                                No hay historial para este equipo.
-                            </EmptyDescription>
-                        </EmptyHeader>
-
-
-                    </Empty>
-
-                    <div v-for="history in historiesPaginated.data" class="relative flex gap-4 pl-12">
-                        <div class="absolute left-4 top-0 bottom-0 w-px bg-border"></div>
-                        <div
-                            class="absolute left-2 w-6 h-6 rounded-full bg-card border-2 flex items-center justify-center text-info shadow-sm">
-
-                            <component :is="actionOp(history.action)?.icon" class="size-3" />
-
-
-                        </div>
-                        <div class="flex-1 bg-muted/40 rounded-xl p-4 border">
-                            <div class="flex items-start justify-between gap-3">
-                                <Badge :class="actionOp(history.action)?.bg">{{ actionOp(history.action)?.label }}
-                                </Badge>
-
-
-                                <span class="text-xs text-muted-foreground">{{ format(new Date(history.performed_at),
-                                    'dd/MM/yyyy HH:mm') }}</span>
-                            </div>
-
-
-                            <template v-if="history.action === TicketHistoryAction.UPDATED">
-                                <ul v-if="history.description.split(';').length > 1"
-                                    class="list-disc pl-5 mt-2 space-y-1">
-                                    <li class="text-xs text-muted-foreground"
-                                        v-for="desc in history.description.split(';')" :key="desc">
-                                        <template v-for="(part, index) in parsedUpdateAction(desc)" :key="index">
-                                            <span v-if="part.type === 'text'"
-                                                class="text-xs text-muted-foreground mt-2">{{
-                                                    part.content }}</span>
-                                            <Badge v-else class="mx-1" variant="outline">
-                                                <Pen class="size-4" />
-                                                {{ part.content }}
-                                            </Badge>
-                                        </template>
-                                    </li>
-                                </ul>
-                                <template v-else v-for="(part, index) in parsedUpdateAction(history.description)"
-                                    :key="index">
-                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                        part.content }}</span>
-                                    <Badge v-else class="mx-1" variant="outline">
-                                        <Pen class="size-4" />
-                                        {{ part.content }}
-                                    </Badge>
-                                </template>
-                            </template>
-
-                            <template v-else-if="history.action === TicketHistoryAction.STATUS_CHANGED"
-                                v-for="(part, index) in parsedStatusChange(history.description)">
-                                <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                    part.content }}</span>
-                                <Badge v-else :class="part.bg" class="mx-1">
-                                    <component :is="part.icon" class="size-4" />
-                                    {{ part.label }}
-                                </Badge>
-                            </template>
-
-                            <template v-else-if="history.action === TicketHistoryAction.RESPONSIBLE_CHANGED">
-
-                                <template v-for="(part) in parsedResponsibleChange(history.description)">
-
-                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                        part.content }}</span>
-                                    <Badge v-else class="mx-1" variant="secondary">
-                                        <User />
-                                        {{ part.content }}
-                                    </Badge>
-                                </template>
-
-                            </template>
-
-                            <template v-else-if="history.action === TicketHistoryAction.ASSET_ASSIGNED">
-
-                                <template v-if="history.description.includes('Reasignado de responsable')"
-                                    v-for="(part) in parsedReassignmentChange(history.description)">
-
-                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                        part.content }}</span>
-                                    <Badge v-else class="mx-1" variant="secondary">
-                                        <User />
-                                        {{ part.content }}
-                                    </Badge>
-                                </template>
-
-                                <template v-else v-for="(part) in parsedAssignmentChange(history.description)">
-                                    <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
-                                        part.content }}</span>
-                                    <Badge v-else class="mx-1" variant="secondary">
-                                        <User />
-                                        {{ part.content }}
-                                    </Badge>
-
-                                </template>
-
-
-                            </template>
-
-
-
-
-                            <p v-else class="text-xs text-muted-foreground mt-2">{{ history.description }}
-                            </p>
-
-
-
-                            <p class="text-xs text-muted-foreground mt-3">Por:
-
-                                <Badge variant="outline">{{ history.performer?.full_name }}</Badge>
-                            </p>
-                        </div>
-                    </div>
-
-
-                    <div class="space-y-6">
-                        <Pagination class="mx-0 w-fit ml-auto!" :items-per-page="historiesPaginated.per_page"
-                            :total="historiesPaginated.total" :default-page="historiesPaginated.current_page">
-                            <PaginationContent class="flex-wrap">
-                                <PaginationPrevious :disabled="isLoading || historiesPaginated.current_page === 1"
-                                    @click="!isLoading && changePage(historiesPaginated.prev_page_url)">
-
-                                    <ChevronLeftIcon />
-                                    Anterior
-                                </PaginationPrevious>
-                                <template v-for="(item, index) in historiesPaginated.links.filter(link => +link.label)"
-                                    :key="index">
-                                    <PaginationItem :value="+item.label" :is-active="item.active"
-                                        :disabled="isLoading || item.active"
-                                        @click="!isLoading && changePage(item.url)">
-                                        {{ item.label }}
-                                    </PaginationItem>
-                                </template>
-
-                                <PaginationNext
-                                    :disabled="isLoading || historiesPaginated.current_page === historiesPaginated.last_page"
-                                    @click="!isLoading && changePage(historiesPaginated.next_page_url)" />
-                            </PaginationContent>
-                        </Pagination>
-                    </div>
-
-
-
-
                 </div>
-            </div>
+
+            </DialogFooter>
 
         </DialogContent>
     </Dialog>
@@ -296,7 +264,8 @@
 import {
     Dialog,
     DialogContent,
-    DialogHeader
+    DialogHeader,
+    DialogFooter
 } from '@/components/ui/dialog';
 
 import { Badge } from '@/components/ui/badge';
@@ -323,6 +292,7 @@ import { format } from 'date-fns';
 import { History, Pen, RefreshCcw, Ticket, User, XCircle } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
+import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 
 const ticket = defineModel<ITicket | null>('ticket');
 const open = defineModel<boolean>('open');

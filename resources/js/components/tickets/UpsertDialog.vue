@@ -2,7 +2,7 @@
     <Dialog :open="open" @update:open="(val) => { if (!val) handleResetAndClose(); }">
 
 
-        <DialogContent class=" sm:max-w-4xl overflow-hidden">
+        <DialogContent class="sm:max-w-4xl overflow-hidden">
             <DialogHeader class="space-y-3 border-b pb-4">
                 <div class="flex items-center gap-3">
                     <div class="rounded-lg bg-primary/10 p-2">
@@ -17,7 +17,7 @@
                 </div>
             </DialogHeader>
 
-            <ScrollArea class="max-h-[calc(100vh-14rem)] pr-4">
+            <ScrollArea class="dialog-content">
                 <form id="ticketForm" class="space-y-6 py-4" @submit.prevent="handleSubmit(handleSave)()">
                     <!-- PASO 1: TIPO DE SOLICITUD -->
                     <Card>

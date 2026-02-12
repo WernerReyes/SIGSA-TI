@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="open" @update:open="(val) => { if (!val) onReset(); }">
-        <DialogContent class="max-w-[min(100vw-1.5rem,900px)] sm:max-w-3xl p-0">
+        <DialogContent class="sm:max-w-3xl p-0">
             <form id="development-form" @submit.prevent="handleSubmit(onSubmit)()"
                 class="overflow-hidden flex flex-col">
                 <DialogHeader class="border-b px-4 py-4 sm:px-6">
@@ -25,7 +25,7 @@
                     </div>
                 </DialogHeader>
 
-                <ScrollArea class="max-h-96 sm:max-h-[65vh] py-4">
+                <ScrollArea class="dialog-content">
                     <div class="space-y-8 px-4 pb-5 sm:px-6 sm:pb-6">
                         <section class="space-y-4 rounded-lg border  border-border/80 bg-muted/20 p-3 sm:p-4">
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

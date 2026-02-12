@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="open" @update:open="(val) => { if (!val) onReset() }">
-        <DialogContent class="max-w-[min(100vw-1.5rem,500px)] sm:max-w-md p-0">
+        <DialogContent class="sm:max-w-xl p-0">
             <form id="estimate-form" @submit.prevent="handleSubmit(onSubmit)()">
                 <DialogHeader class="border-b px-4 py-4 sm:px-6">
                     <div class="flex items-center gap-3">
@@ -18,7 +18,7 @@
                     </div>
                 </DialogHeader>
 
-                <ScrollArea class="max-h-96 sm:max-h-[60vh]">
+                <ScrollArea class="dialog-content">
                     <div class="space-y-6 px-4 pb-5 sm:px-6 sm:pb-6">
                         <!-- Estimation Details Section -->
                         <section class="space-y-4 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">

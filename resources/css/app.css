@@ -178,4 +178,8 @@
     .disabled {
         @apply opacity-50 cursor-not-allowed;
     }
+
+    .dialog-content {
+        @apply max-h-96 sm:max-h-[calc(100vh-14rem)] pr-4;
+    }
 }
