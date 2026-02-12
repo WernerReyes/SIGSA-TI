@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(CheckContractExpiration::class)
-    ->dailyAt('16:20')
+    ->dailyAt('10:00')
     ->timezone(env('APP_TIMEZONE', 'America/Lima'))  
     ->onSuccess(function () {
         Log::info('Contract expiration check completed successfully.');
@@ -20,7 +20,7 @@ Schedule::command(CheckContractExpiration::class)
     });
 
 Schedule::command(CheckContractBilling::class)
-    ->dailyAt('16:20')
+    ->dailyAt('10:00')
     ->timezone(env('APP_TIMEZONE', 'America/Lima'))
     ->onSuccess(function () {
         Log::info('Contract billing check completed successfully.');
