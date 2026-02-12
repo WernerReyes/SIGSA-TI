@@ -1,128 +1,230 @@
 <template>
     <Sheet v-model:open="open">
-        <SheetContent side="right" class="w-full sm:w-[540px] overflow-y-auto">
-            <SheetHeader class="space-y-3 pb-4 border-b">
+        <SheetContent side="right" class="w-full sm:w-[420px] overflow-y-auto">
+            <SheetHeader class="space-y-3 pb-3 border-b">
                 <div class="flex items-start gap-3">
-                    <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <MonitorSmartphone class="size-5 text-primary" />
+                    <div
+                        class="size-10 rounded-xl bg-gradient-to-br from-cyan-200/60 to-blue-200/60 dark:from-cyan-900/40 dark:to-blue-900/40 flex items-center justify-center">
+                        <MonitorSmartphone class="size-5 text-blue-700 dark:text-blue-300" />
                     </div>
                     <div class="flex-1">
-                        <SheetTitle class="text-xl">Equipos del solicitante</SheetTitle>
-                        <p class="text-sm text-muted-foreground">Asignaciones actuales y anteriores</p>
+                        <SheetTitle class="text-lg">Equipos del solicitante</SheetTitle>
+                        <p class="text-xs text-muted-foreground">Asignaciones actuales y anteriores</p>
                     </div>
                 </div>
             </SheetHeader>
 
-            <div class="space-y-6 py-4">
-                <div v-if="!requesterId" class="rounded-xl border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            <div class="space-y-4 py-3">
+                <div v-if="!requesterId"
+                    class="rounded-xl border border-dashed bg-muted/30 p-4 text-center text-xs text-muted-foreground">
                     Selecciona un solicitante para ver sus equipos.
                 </div>
 
-                <template v-else>
-                    <div class="space-y-3 px-4">
-                        <div class="flex items-center justify-between">
-                            <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Asignación actual</h4>
-                            <Badge variant="secondary" class="text-xs">Actual</Badge>
-                        </div>
+                <WhenVisible data="userAssignments" always :params="{
+                    preserveUrl: true,
 
-                        <div v-if="currentAssignment" class="rounded-2xl border bg-card p-4 shadow-sm">
-                            <div class="flex flex-wrap items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold truncate">{{ currentAssignment.asset?.full_name || 'Equipo' }}</p>
-                                    <Badge variant="outline" class="mt-1 text-xs inline-flex items-center gap-1">
-                                        <component :is="assetTypeOp(currentAssignment.asset?.type?.name)?.icon" class="size-3" />
-                                        {{ assetTypeOp(currentAssignment.asset?.type?.name)?.value || 'Tipo no especificado' }}
-                                    </Badge>
-                                </div>
-                                <Badge variant="outline" class="text-[11px]">Asignado</Badge>
+                    data: {
+                        requester_id: requesterId
+                    }
+                }">
+
+
+                    <template #default="{ fetching }">
+                         <div class="space-y-4 px-3" v-if="fetching">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <Skeleton class="h-4 w-32"></Skeleton>
+                                <Skeleton class="h-6 w-12"></Skeleton>
                             </div>
-
-                            <div class="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                                <div class="rounded-lg border bg-background/60 px-3 py-2">
-                                    <span class="font-semibold text-foreground/80">Asignado</span>
-                                    <div class="mt-1">{{ formatDate(currentAssignment.assigned_at) }}</div>
-                                </div>
-                                <div class="rounded-lg border bg-background/60 px-3 py-2">
-                                    <span class="font-semibold text-foreground/80">Estado</span>
-                                    <div class="mt-1">Activo</div>
-                                </div>
-                            </div>
-
-                            <div v-if="currentAssignment.children_assignments?.length" class="mt-4">
-                                <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accesorios</p>
-                                <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                                    <div
-                                        v-for="child in currentAssignment.children_assignments"
-                                        :key="child.id"
-                                        class="rounded-lg border bg-muted/30 px-3 py-2"
-                                    >
-                                        <p class="text-xs font-semibold truncate">{{ child.asset?.name || 'Accesorio' }}</p>
-                                        <p class="text-[11px] text-muted-foreground truncate">{{ child.asset?.type?.name || 'Accesorio' }}</p>
-                                    </div>
-                                </div>
+                            <div class="space-y-2">
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
                             </div>
                         </div>
-
-                        <div v-else class="rounded-xl border border-dashed bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-                            Sin asignación actual
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <Skeleton class="h-4 w-40"></Skeleton>
+                                <Skeleton class="h-6 w-12"></Skeleton>
+                            </div>
+                            <div class="space-y-2">
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="space-y-3 px-4">
-                        <div class="flex items-center justify-between">
-                            <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Asignaciones anteriores</h4>
-                            <Badge variant="outline" class="text-xs">{{ previousAssignments.length }}</Badge>
-                        </div>
-
-                        <div v-if="previousAssignments.length" class="space-y-3">
-                            <div
-                                v-for="assignment in previousAssignments"
-                                :key="assignment.id"
-                                class="rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
-                            >
-                                <div class="flex flex-wrap items-start justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-semibold truncate">{{ assignment.asset?.full_name || 'Equipo' }}</p>
-                                        <Badge variant="outline" class="mt-1 text-xs inline-flex items-center gap-1">
-                                            <component :is="assetTypeOp(assignment.asset?.type?.name)?.icon" class="size-3" />
-                                            {{ assetTypeOp(assignment.asset?.type?.name)?.value || 'Tipo no especificado' }}
-                                        </Badge>
-                                    </div>
-                                    <Badge variant="outline" class="text-[11px]">Devuelto</Badge>
+                        <template v-else>
+                            <div class="space-y-3 px-3">
+                                <div class="flex items-center justify-between">
+                                    <h4
+                                        class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                        Asignaciones actuales</h4>
+                                    <Badge
+                                        class="text-[11px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                                        {{ currentAssignments.length }}</Badge>
                                 </div>
 
-                                <div class="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                                    <div class="rounded-lg border bg-background/60 px-3 py-2">
-                                        <span class="font-semibold text-foreground/80">Asignado</span>
-                                        <div class="mt-1">{{ formatDate(assignment.assigned_at) }}</div>
-                                    </div>
-                                    <div class="rounded-lg border bg-background/60 px-3 py-2">
-                                        <span class="font-semibold text-foreground/80">Devuelto</span>
-                                        <div class="mt-1">{{ assignment.returned_at ? formatDate(assignment.returned_at) : '—' }}</div>
-                                    </div>
-                                </div>
+                                <Accordion v-if="currentAssignments.length" type="multiple" class="space-y-2">
+                                    <AccordionItem v-for="currentAssignment in currentAssignments"
+                                        :key="currentAssignment.id" :value="`current-${currentAssignment.id}`"
+                                        class="rounded-xl border bg-card/70">
+                                        <AccordionTrigger class="px-4 py-2">
+                                            <div class="flex w-full items-center gap-3">
+                                                <div
+                                                    class="size-9 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0">
+                                                    <component
+                                                        :is="assetTypeOp(currentAssignment.asset?.type?.name)?.icon"
+                                                        class="size-4 text-emerald-700 dark:text-emerald-300" />
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-sm font-semibold truncate">{{
+                                                        currentAssignment.asset?.full_name || 'Equipo' }}</div>
+                                                    <div class="text-[11px] text-muted-foreground truncate">{{
+                                                        assetTypeOp(currentAssignment.asset?.type?.name)?.value
+                                                        || 'Tipo no especificado' }}</div>
+                                                </div>
+                                                <!-- <Badge class="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">Asignado</Badge> -->
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent class="px-3 pb-3">
+                                            <div class="grid grid-cols-2 gap-2 text-[11px]">
+                                                <div class="rounded-lg border bg-background/70 px-2 py-2">
+                                                    <div class="text-muted-foreground">Asignado</div>
+                                                    <div class="font-medium mt-0.5">{{
+                                                        formatDate(currentAssignment.assigned_at) }}</div>
+                                                </div>
+                                                <div class="rounded-lg border bg-background/70 px-2 py-2">
+                                                    <div class="text-muted-foreground">Estado</div>
+                                                    <div class="font-medium mt-0.5">Activo</div>
+                                                </div>
+                                            </div>
 
-                                <div v-if="assignment.children_assignments?.length" class="mt-4">
-                                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accesorios</p>
-                                    <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                                        <div
-                                            v-for="child in assignment.children_assignments"
-                                            :key="child.id"
-                                            class="rounded-lg border bg-muted/30 px-3 py-2"
-                                        >
-                                            <p class="text-xs font-semibold truncate">{{ child.asset?.name || 'Accesorio' }}</p>
-                                            <p class="text-[11px] text-muted-foreground truncate">{{ child.asset?.type?.name || 'Accesorio' }}</p>
-                                        </div>
-                                    </div>
+                                            <div v-if="currentAssignment.children_assignments?.length" class="mt-3">
+                                                <div
+                                                    class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                                    Accesorios</div>
+                                                <div
+                                                    class="mt-2 grid gap-2 border-l-2 border-dashed border-emerald-200 dark:border-emerald-900/50 pl-3">
+                                                    <div v-for="child in currentAssignment.children_assignments"
+                                                        :key="child.id" class="rounded-lg border bg-muted/30 px-2 py-2">
+                                                        <div class="text-xs font-semibold truncate">{{ child.asset?.name
+                                                            || 'Accesorio' }}</div>
+                                                        <div class="text-[11px] text-muted-foreground truncate">{{
+                                                            child.asset?.type?.name || 'Accesorio' }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+
+                                <div v-else
+                                    class="rounded-xl border border-dashed bg-muted/30 p-3 text-center text-xs text-muted-foreground">
+                                    Sin asignaciones actuales
                                 </div>
                             </div>
-                        </div>
 
-                        <div v-else class="rounded-xl border border-dashed bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-                            Sin asignaciones anteriores
+                            <div class="space-y-3 px-3">
+                                <div class="flex items-center justify-between">
+                                    <h4
+                                        class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                        Asignaciones anteriores</h4>
+                                    <Badge
+                                        class="text-[11px] bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-200">
+                                        {{ previousAssignments.length }}</Badge>
+                                </div>
+
+                                <Accordion v-if="previousAssignments.length" type="multiple" class="space-y-2">
+                                    <AccordionItem v-for="assignment in previousAssignments" :key="assignment.id"
+                                        :value="`prev-${assignment.id}`" class="rounded-xl border bg-card/60">
+                                        <AccordionTrigger class="px-3 py-2">
+                                            <div class="flex w-full items-center gap-3">
+                                                <div
+                                                    class="size-9 rounded-lg bg-gradient-to-br from-slate-100 to-zinc-100 dark:from-slate-900/50 dark:to-zinc-900/50 flex items-center justify-center shrink-0">
+                                                    <component :is="assetTypeOp(assignment.asset?.type?.name)?.icon"
+                                                        class="size-4 text-slate-700 dark:text-slate-300" />
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-sm font-semibold truncate">{{
+                                                        assignment.asset?.full_name || 'Equipo' }}</div>
+                                                    <div class="text-[11px] text-muted-foreground truncate">{{
+                                                        assetTypeOp(assignment.asset?.type?.name)?.value
+                                                        || 'Tipo no especificado' }}</div>
+                                                </div>
+                                                <Badge
+                                                    class="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-200">
+                                                    Devuelto</Badge>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent class="px-3 pb-3">
+                                            <div class="grid grid-cols-2 gap-2 text-[11px]">
+                                                <div class="rounded-lg border bg-background/70 px-2 py-2">
+                                                    <div class="text-muted-foreground">Asignado</div>
+                                                    <div class="font-medium mt-0.5">{{
+                                                        formatDate(assignment.assigned_at) }}</div>
+                                                </div>
+                                                <div class="rounded-lg border bg-background/70 px-2 py-2">
+                                                    <div class="text-muted-foreground">Devuelto</div>
+                                                    <div class="font-medium mt-0.5">{{ assignment.returned_at ?
+                                                        formatDate(assignment.returned_at) : '—' }}</div>
+                                                </div>
+                                            </div>
+
+                                            <div v-if="assignment.children_assignments?.length" class="mt-3">
+                                                <div
+                                                    class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                                    Accesorios</div>
+                                                <div
+                                                    class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
+                                                    <div v-for="child in assignment.children_assignments"
+                                                        :key="child.id" class="rounded-lg border bg-muted/30 px-2 py-2">
+                                                        <div class="text-xs font-semibold truncate">{{ child.asset?.name
+                                                            || 'Accesorio' }}</div>
+                                                        <div class="text-[11px] text-muted-foreground truncate">{{
+                                                            child.asset?.type?.name || 'Accesorio' }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+
+                                <div v-else
+                                    class="rounded-xl border border-dashed bg-muted/30 p-3 text-center text-xs text-muted-foreground">
+                                    Sin asignaciones anteriores
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+
+                    <template #fallback>
+                        <!-- <Skeleton v-for="_ in 6" :key="_" class="h-12"></Skeleton> -->
+                    <div class="space-y-4 px-3">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <Skeleton class="h-4 w-32"></Skeleton>
+                                <Skeleton class="h-6 w-12"></Skeleton>
+                            </div>
+                            <div class="space-y-2">
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <Skeleton class="h-4 w-40"></Skeleton>
+                                <Skeleton class="h-6 w-12"></Skeleton>
+                            </div>
+                            <div class="space-y-2">
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                                <Skeleton class="h-12 rounded-xl"></Skeleton>
+                            </div>
                         </div>
                     </div>
-                </template>
+                    </template>
+
+
+
+                </WhenVisible>
             </div>
         </SheetContent>
     </Sheet>
@@ -130,6 +232,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { MonitorSmartphone } from 'lucide-vue-next';
@@ -137,20 +240,29 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { assetTypeOp } from '@/interfaces/assetType.interface';
 import type { AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { usePage, WhenVisible } from '@inertiajs/vue3';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const open = defineModel<boolean>('open');
 
 const props = defineProps<{
     requesterId: number | null | undefined;
-    assignments: AssetAssignment[];
+    // assignments: AssetAssignment[];
 }>();
 
-const currentAssignment = computed<AssetAssignment | null>(() => {
-    return props.assignments.find(assignment => !assignment.returned_at) || null;
+const page = usePage();
+
+const assignments = computed<AssetAssignment[]>(() => {
+    return (page.props?.userAssignments || []) as AssetAssignment[];
+});
+
+const currentAssignments = computed<AssetAssignment[]>(() => {
+    console.log('Asignaciones recibidas:', assignments.value);
+    return assignments.value.filter(assignment => !assignment.returned_at);
 });
 
 const previousAssignments = computed<AssetAssignment[]>(() => {
-    return props.assignments.filter(assignment => !!assignment.returned_at);
+    return assignments.value.filter(assignment => assignment.returned_at);
 });
 
 const formatDate = (value: string) => {

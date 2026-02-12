@@ -1,5 +1,7 @@
 <template>
-    <Dialog v-model:open="open">
+    <Dialog v-model:open="open" @update:open="(val) => {
+        if (!val) onResetAndClose()
+    }">
         <DialogContent class="max-h-screen sm:max-w-2xl overflow-y-auto">
             <DialogHeader class="space-y-3">
                 <div class="flex items-center gap-3">
@@ -68,15 +70,15 @@
             </div>
 
             <DialogFooter class="gap-3 sm:gap-3">
-                <Button type="button" variant="outline" @click="open = false" :disabled="isSubmitting"
+                <Button type="button" variant="outline" @click="open = false" :disabled="isLoading"
                     class="flex-1 sm:flex-initial">
                     Cancelar
                 </Button>
                 <Button :disabled="disabled" type="submit" form="dialogForm" @click="handleSubmit(handleFormSubmit)()">
 
-                    <Spinner v-if="isSubmitting" />
-                    <Check v-else />
-                    {{ isSubmitting ? 'Cambiando estado...' : 'Cambiar Estado' }}
+
+                    <Check />
+                    Cambiar Estado
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -105,6 +107,8 @@ import z from 'zod';
 import SelectFilters from '../SelectFilters.vue';
 import { Check } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useApp } from '@/composables/useApp';
+import { isEqual } from '@/lib/utils';
 
 
 const { ticket } = defineProps<{
@@ -113,10 +117,12 @@ const { ticket } = defineProps<{
 
 const open = defineModel<boolean>('open');
 
-const isSubmitting = ref(false);
+
+const { isLoading } = useApp();
+
 
 const disabled = computed(() => {
-    return isSubmitting.value || Object.keys(errors.value).length > 0 || ticket?.status === values.status;
+    return isLoading.value || Object.keys(errors.value).length > 0 || isEqual(values.status, ticket?.status)
 });
 
 const formSchema = toTypedSchema(z.object({
@@ -134,9 +140,12 @@ const { errors, handleSubmit, handleReset, setFieldValue, values } = useForm({
     },
 });
 
+const onResetAndClose = () => {
+    handleReset();
+    open.value = false;
+};
 
 const handleFormSubmit = (values: { status?: TicketStatus }) => {
-    isSubmitting.value = true;
 
     router.post(
         `/tickets/${ticket?.id}/change-status`,
@@ -144,34 +153,30 @@ const handleFormSubmit = (values: { status?: TicketStatus }) => {
             status: values.status
         },
         {
+            preserveScroll: true,
+            preserveState: true,
+            preserveUrl: true,
+            onFlash: (flash) => {
+                if (flash.error) return;
+                router.replaceProp('tickets.data', (tickets: Ticket[]) => {
+                    return tickets.map((t: Ticket) => {
+                        if (t.id === ticket?.id) {
 
-            onSuccess: () => {
-                nextTick(() => {
-
-                    router.replaceProp('tickets.data', (tickets: Ticket[]) => {
-                        return tickets.map((t: Ticket) => {
-                            if (t.id === ticket?.id) {
-
-                                return {
-                                    ...t,
-                                    status: values.status
-                                };
-                            }
-                            return t;
-                        });
-
-
+                            return {
+                                ...t,
+                                status: values.status
+                            };
+                        }
+                        return t;
                     });
+
+
                 });
 
-
-                handleReset();
-                open.value = false;
+                onResetAndClose();
 
             },
-            onFinish: () => {
-                isSubmitting.value = false;
-            }
+
 
         }
     );

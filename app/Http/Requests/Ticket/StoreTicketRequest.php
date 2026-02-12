@@ -47,6 +47,8 @@ class StoreTicketRequest extends FormRequest
             //     'exists:ost_staff,staff_id',
             // ],
             // 'priority' => ['required', $inTicketPriority],
+            'images' => ['sometimes', 'array', 'max:5'],
+            'images.*' => ['file', 'image', 'max:2048'], //
             'impact' => ['required', 'in:' . TicketImpact::implodeValues()],
             'urgency' => ['required', 'in:' . TicketUrgency::implodeValues()],
             'category' => [
@@ -78,6 +80,14 @@ class StoreTicketRequest extends FormRequest
 
             'type.required' => 'El tipo de ticket es obligatorio.',
             'type.in' => 'El tipo de ticket seleccionado no es válido.',
+
+
+            'images.array' => 'Las imágenes deben ser un arreglo.',
+            'images.max' => 'No se pueden subir más de :max imágenes.',
+            'images.*.file' => 'Cada imagen debe ser un archivo.',
+            'images.*.image' => 'Cada archivo debe ser una imagen.',
+            'images.*.max' => 'Cada imagen no debe exceder de :max kilobytes.',
+
 
             // 'priority.required' => 'La prioridad del ticket es obligatoria.',
             // 'priority.in' => 'La prioridad del ticket seleccionada no es válida.',

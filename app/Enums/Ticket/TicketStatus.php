@@ -4,6 +4,8 @@ enum TicketStatus: string
 {
     case OPEN = 'OPEN';
     case IN_PROGRESS = 'IN_PROGRESS';
+
+    case ON_HOLD = 'ON_HOLD';
     case RESOLVED = 'RESOLVED';
     case CLOSED = 'CLOSED';
 
@@ -22,6 +24,7 @@ enum TicketStatus: string
         return [
             self::OPEN->value => 'Abierto',
             self::IN_PROGRESS->value => 'En Progreso',
+                self::ON_HOLD->value => 'En espera del proveedor',
             self::RESOLVED->value => 'Resuelto',
             self::CLOSED->value => 'Cerrado',
         ];

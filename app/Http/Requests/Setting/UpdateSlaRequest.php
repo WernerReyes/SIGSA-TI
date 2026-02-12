@@ -22,11 +22,10 @@ class UpdateSlaRequest extends FormRequest
      */
     public function rules(): array
     {
-        $priorities = implode(',', TicketPriority::values());
-
+       
         return [
             'slas' => ['required', 'array', 'min:1'],
-            'slas.*.name' => ['required', 'distinct', 'in:' . $priorities],
+            'slas.*.priority' => ['required', 'distinct', 'in:' . TicketPriority::implodeValues()],
             'slas.*.response_time_minutes' => ['required', 'integer', 'min:1'],
             'slas.*.resolution_time_minutes' => ['required', 'integer', 'min:1'],
         ];
@@ -40,9 +39,9 @@ class UpdateSlaRequest extends FormRequest
             'slas.required' => 'Se requiere al menos una configuración de SLA.',
             'slas.array' => 'El formato de las configuraciones de SLA es inválido.',
             'slas.min' => 'Se requiere al menos una configuración de SLA.',
-            'slas.*.name.required' => 'El nombre de la prioridad es obligatorio.',
-            'slas.*.name.distinct' => 'Los nombres de las prioridades deben ser únicos.',
-            'slas.*.name.in' => 'El nombre de la prioridad debe ser uno de los siguientes: ' . implode(', ', TicketPriority::values()) . '.',
+            'slas.*.priority.required' => 'El nombre de la prioridad es obligatorio.',
+            'slas.*.priority.distinct' => 'Los nombres de las prioridades deben ser únicos.',
+            'slas.*.priority.in' => 'El nombre de la prioridad debe ser uno de los siguientes: ' . TicketPriority::implodeValues(', ') . '.',
             'slas.*.response_time_minutes.required' => 'El tiempo de respuesta es obligatorio.',
             'slas.*.response_time_minutes.integer' => 'El tiempo de respuesta debe ser un número entero.',
             'slas.*.response_time_minutes.min' => 'El tiempo de respuesta debe ser al menos 1 minuto.',

@@ -41,63 +41,11 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class AssetService
 {
 
-    // public function getTypes()
-    // {
-    //     return AssetType::select('id', 'name')->get();
-    // }
-
-    // public function registerType(string $name, ?int $id = null)
-    // {
-    //     try {
-    //         if ($id) {
-    //             $assetType = $this->findTypeById($id);
-    //             $assetType->name = $name;
-    //             $assetType->save();
-    //             return $assetType;
-    //         }
-
-    //         $assetType = AssetType::firstOrCreate(['name' => $name]);
-    //         return $assetType;
-    //     } catch (\Exception $e) {
-    //         throw new InternalErrorException('Error al registrar el tipo de activo');
-    //     }
-    // }
-
-
-    // public function deleteType(int $id)
-    // {
-    //     try {
-    //         $assetType = $this->findTypeById($id);
-    //         $assetType->delete();
-    //     } catch (\Exception $e) {
-    //         if ($e->getCode() === '23000') {
-    //             throw new BadRequestException('No se puede eliminar el tipo de activo porque está asociado a uno o más equipos.');
-    //         }
-    //         throw new InternalErrorException('Error al eliminar el tipo de activo');
-    //     }
-    // }
-
-    // private function findTypeById(int $id): AssetType
-    // {
-    //     try {
-    //         $assetType = AssetType::find($id);
-    //         if (!$assetType) {
-    //             throw new NotFoundHttpException('No se encontró el tipo de activo');
-    //         }
-    //         return $assetType;
-    //     } catch (\Exception $e) {
-    //         if ($e instanceof NotFoundHttpException) {
-    //             throw $e;
-    //         }
-
-    //         throw new InternalErrorException('Error al buscar el tipo de activo');
-    //     }
-    // }
 
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
-            
+
             return Asset::query()
                 ->with([
                     'type:id,name',
@@ -281,10 +229,22 @@ class AssetService
             'currentAssignment.assignedTo.department:id,name',
 
         );
-
-
     }
 
+
+    public function getAssignmentsByUser(int $user_id)
+    {
+        try {
+            return AssetAssignment::query()
+                ->with('asset:id,name,brand,model,type_id', 'asset.type:id,name', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,type_id', 'childrenAssignments.asset.type:id,name')
+                ->where('assigned_to_id', $user_id)
+                // ->whereNull('returned_at')
+                ->where('parent_assignment_id', null)
+                ->orderBy('assigned_at', 'desc')->get();
+        } catch (\Exception $e) {
+            throw new InternalErrorException('Error al obtener las asignaciones del usuario');
+        }
+    }
 
 
     public function getHistoriesPaginated(Asset $asset, AssetHistoryFiltersDto $filtersDto)
@@ -367,38 +327,6 @@ class AssetService
             throw new InternalErrorException('Error al reenviar la alerta de accesorios agotados');
         }
     }
-
-
-    // private function logTicketHistory(
-    //     Asset $asset,
-    //     TicketHistoryAction $action,
-    //     string $description,
-    //     AssetAssignment $assignment,
-    //     TicketAssetAction $TAction,
-    //     ?int $ticketId = null
-    // ) {
-    //     if (!$ticketId) {
-    //         return;
-    //     }
-
-    //     TicketAsset::create([
-    //         'ticket_id' => $ticketId,
-    //         'asset_id' => $asset->id,
-    //         'action' => $TAction->value,
-    //         'asset_assignment_id' => $assignment->id,
-    //         'performed_by' => auth()->user()->staff_id,
-
-    //     ]);
-
-    //     TicketHistory::create([
-    //         'action' => $action->value,
-    //         'description' => $description,
-    //         'asset_id' => $asset->id,
-    //         'performed_by' => auth()->user()->staff_id,
-    //         'ticket_id' => $ticketId,
-    //         // 'performed_at' => now()->utc(),
-    //     ]);
-    // }
 
     private function logHistory(Asset $asset, AssetHistoryAction $action, string $description, ?int $deliveryRecordId = null)
     {
@@ -734,7 +662,7 @@ class AssetService
                         $assets = Asset::whereIn('id', $assetsToReleaseIds)
                             ->select('id', 'name', 'brand', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
                             ->get();
-                      
+
 
                         $changes[] =
                             (count($assetsToReleaseIds) > 0 ?
@@ -953,18 +881,18 @@ class AssetService
 
                     $originalAsset = $existingTicketAsset?->asset;
                     $originalAssignment = $existingTicketAsset?->assetAssignment;
-                    
+
 
                     app(TicketService::class)->attachAssetToTicket(
-                            $dto->ticket_id,
-                            $asset->id,
-                            TicketAssetAction::ASSIGNED,
-                            $assigned->id
-                        );
-                    
+                        $dto->ticket_id,
+                        $asset->id,
+                        TicketAssetAction::ASSIGNED,
+                        $assigned->id
+                    );
+
 
                     if ($existingTicketAsset) {
-                        
+
                         $ticketDescription = "La asignación del activo '{$originalAsset->type->name} {$originalAsset->full_name}' ha sido actualizada. Nuevo activo asignado: '{$asset->type->name} {$asset->full_name}'";
 
 
@@ -1038,7 +966,7 @@ class AssetService
             });
             return $assignment;
         } catch (\Exception $e) {
-    
+
             if ($e instanceof BadRequestException || $e instanceof NotFoundHttpException) {
                 throw $e;
             }
@@ -1418,7 +1346,7 @@ class AssetService
 
             return Storage::disk('public')->url($path);
         } catch (\Exception $e) {
-           
+
             if ($e instanceof NotFoundHttpException) {
                 throw $e;
             }

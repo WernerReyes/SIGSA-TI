@@ -1,11 +1,6 @@
 <template>
     <Dialog :open="open" @update:open="(val) => { if (!val) handleResetAndClose(); }">
-        <!-- <DialogTrigger v-if="includeButton" as-child>
-            <Button class="gap-2 shadow-md transition-all hover:shadow-lg">
-                <Plus class="h-4 w-4" />
-                Nuevo Ticket
-            </Button>
-        </DialogTrigger> -->
+
 
         <DialogContent class=" sm:max-w-4xl overflow-hidden">
             <DialogHeader class="space-y-3 border-b pb-4">
@@ -74,14 +69,14 @@
                         <CardContent class="space-y-4">
                             <!-- TÍTULO -->
                             <FieldGroup>
-                                <VeeField name="title" v-slot="{ field, errors }">
-                                    
+                                <VeeField name="title" v-slot="{ componentField, errors }">
+
                                     <Field :data-invalid="errors.length > 0">
                                         <FieldLabel for="title" class="text-sm font-medium">
                                             Titulo
                                         </FieldLabel>
                                         <Input id="title" placeholder="Ej: No puedo acceder al sistema" class="h-10"
-                                            v-bind="field" />
+                                            v-bind="componentField" />
                                         <FieldError :errors="errors" />
                                     </Field>
                                 </VeeField>
@@ -89,14 +84,14 @@
 
                             <!-- DESCRIPCIÓN -->
                             <FieldGroup>
-                                <VeeField name="description" v-slot="{ field, errors }">
+                                <VeeField name="description" v-slot="{ componentField, errors }">
                                     <Field :data-invalid="errors.length > 0">
                                         <FieldLabel for="description" class="text-sm font-medium">
                                             Describe el detalle
                                         </FieldLabel>
                                         <Textarea id="description"
                                             placeholder="Que ocurrio, cuando empezo y que intentaste hacer." rows="3"
-                                            class="resize-none" v-bind="field" />
+                                            class="resize-none" v-bind="componentField" />
                                         <FieldError :errors="errors" />
                                     </Field>
                                 </VeeField>
@@ -108,7 +103,9 @@
                                     <FieldLabel class="text-sm font-medium">
                                         Adjuntar archivos (opcional)
                                     </FieldLabel>
-                                    <Input type="file" multiple accept="image/*" />
+                                    <Input type="file" multiple accept="image/*" 
+                                        @change="(e) => setFieldValue('images', Array.from(e.target.files))"
+                                    />
                                     <p class="text-xs text-muted-foreground">Formatos sugeridos: PDF, PNG, JPG.</p>
                                 </Field>
                             </FieldGroup>
@@ -129,7 +126,8 @@
                                 <label class="text-xs font-medium text-muted-foreground">
                                     A cuantas personas afecta
                                 </label>
-                                <VeeField name="impact" v-slot="{ field, errors }">
+                                <VeeField name="impact" v-slot="{ componentField, errors }">
+                                    {{ values.impact }}
                                     <div class="grid gap-2">
                                         <div v-for="option in impactOptions" :key="option.value"
                                             @click="setFieldValue('impact', option.value)"
@@ -320,6 +318,7 @@ const disabledForm = computed(() => isLoading.value || Object.keys(errors.value)
 
 const initialValues = computed(() => {
     const ticket = selectedTicket.value;
+    console.log('Initial values computed:', ticket);
     return {
         type: ticket?.type || TicketType.SERVICE_REQUEST,
         title: ticket?.title || '',
@@ -329,7 +328,7 @@ const initialValues = computed(() => {
         impact: ticket?.impact || undefined,
         urgency: ticket?.urgency || undefined,
         // category: ticket?.category || 'ACCESS',
-        images: [],
+        images:  [],
 
         category: ticket?.category || undefined,
     };
@@ -343,6 +342,7 @@ const formSchema = toTypedSchema(z.object({
     impact: z.nativeEnum(TicketImpact, { message: 'Selecciona el impacto' }),
     urgency: z.nativeEnum(TicketUrgency, { message: 'Selecciona la urgencia' }),
     category: z.nativeEnum(TicketCategory, { message: 'Selecciona la categoria del ticket' }).optional(),
+    images: z.array(z.instanceof(File)).optional(),
 }).refine((data) => {
     if (data.type === TicketType.SERVICE_REQUEST) {
         return !!data.category;
@@ -362,7 +362,8 @@ const { handleSubmit, values, setFieldValue, handleReset, errors, setValues } = 
 
 type FormValues = typeof values;
 
-watch(selectedTicket, (newVal) => {
+watch(() => selectedTicket.value, (newVal) => {
+    console.log('Selected ticket changed:', newVal);
     if (newVal) {
         setValues(initialValues.value);
     } else {
@@ -384,13 +385,35 @@ const handleResetAndClose = () => {
 
 const handleSave = (data: FormValues) => {
     if (selectedTicket.value) {
-    } else {
-        router.post('/tickets', data, {
-            onFlash: (flash) => {
-                if (flash.error) return;
-                handleResetAndClose();
+        router.post(
+            `/tickets/${selectedTicket.value.id}`,
+            {
+                ...data,
+                _method: 'PUT',
             },
-        });
+            {
+                preserveScroll: true,
+                preserveState: true,
+                preserveUrl: true,
+                onFlash: (flash) => {
+                    if (flash.error) return;
+                    handleResetAndClose();
+                },
+            }
+        );
+
+    } else {
+        router.post('/tickets', data,
+            {
+                preserveScroll: true,
+                preserveState: true,
+                preserveUrl: true,
+                only: ['tickets'],
+                onFlash: (flash) => {
+                    if (flash.error) return;
+                    handleResetAndClose();
+                },
+            });
     }
 };
 

@@ -26,6 +26,15 @@ enum TicketImpact: string
 
         ];
     }
+    public static function score(string $value): int
+    {
+       return match ($value) {
+            self::LOW->value => 1,
+            self::MEDIUM->value => 2,
+            self::HIGH->value => 3,
+            default => 0,
+        };
+    }
 
     public static function label(string $value): string
     {

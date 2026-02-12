@@ -31,7 +31,7 @@ return new class extends Migration {
             $table->enum('urgency', TicketUrgency::values());
             $table->enum('priority', TicketPriority::values());
             
-            $table->json('image_urls')->nullable();
+            $table->json('images')->nullable();
 
             //* Foreign key to users table
             $table->unsignedInteger('requester_id');
@@ -46,6 +46,11 @@ return new class extends Migration {
 
             $table->timestamp('first_response_at')->nullable();
             $table->timestamp('resolved_at')->nullable();
+
+            $table->timestamp('sla_paused_at')->nullable();
+            $table->decimal('sla_paused_duration', 8, 2)->default(0); // Duración total en horas
+
+            $table->boolean('sla_breached')->default(false);
 
             $table->timestamps();
             // $table->id();

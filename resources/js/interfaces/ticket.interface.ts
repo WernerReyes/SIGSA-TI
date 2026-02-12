@@ -23,6 +23,7 @@ import type { User } from './user.interface';
 export enum TicketStatus {
     OPEN = 'OPEN',
     IN_PROGRESS = 'IN_PROGRESS',
+    ON_HOLD = 'ON_HOLD',
     RESOLVED = 'RESOLVED',
     CLOSED = 'CLOSED',
 }
@@ -77,7 +78,7 @@ export interface Ticket {
     // technician?: User;
     category: TicketCategory;
 
-    image_urls?: string[];
+    images_urls?: string[];
 
 
 
@@ -100,6 +101,12 @@ export interface Ticket {
     first_response_at?: Date;
     resolved_at?: Date;
 
+    opened_at?: Date;
+    sla_paused_at?: Date;
+    sla_paused_duration?: number;
+    sla_breached?: boolean;
+    images?: string[];
+
     created_at: Date;
     updated_at: Date;
 }
@@ -118,9 +125,15 @@ export const ticketStatusOptions: Record<TicketStatus, TicketStatusOption> = {
         icon: FolderOpen,
     },
     [TicketStatus.IN_PROGRESS]: {
-        label: 'En espera del Proveedor',
+        label: 'En progreso',
         value: TicketStatus.IN_PROGRESS,
         bg: 'bg-yellow-500',
+        icon: LoaderCircle,
+    },
+    [TicketStatus.ON_HOLD]: {
+        label: 'En espera del proveedor',
+        value: TicketStatus.ON_HOLD,
+        bg: 'bg-orange-500',
         icon: LoaderCircle,
     },
     [TicketStatus.RESOLVED]: {

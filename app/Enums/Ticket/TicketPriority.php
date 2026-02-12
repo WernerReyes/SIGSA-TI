@@ -14,6 +14,11 @@ enum TicketPriority: string
         return array_map(fn(self $priority) => $priority->value, self::cases());
     }
 
+    public static function implodeValues(string $separator = ','): string
+    {
+        return implode($separator, self::values());
+    }
+
     public static function labels(): array
     {
         return [
@@ -29,16 +34,44 @@ enum TicketPriority: string
         return self::labels()[$value] ?? 'Desconocido';
     }
 
+    // public static function calculate(TicketImpact $impact, TicketUrgency $urgency): self
+    // {
+    //     $matrix = [
+    //         TicketImpact::HIGH->value => [
+    //             TicketUrgency::HIGH->value => self::URGENT,
+    //             TicketUrgency::MEDIUM->value => self::HIGH,
+    //             TicketUrgency::LOW->value => self::MEDIUM,
+    //         ],
+
+    //         TicketImpact::MEDIUM->value => [
+    //             TicketUrgency::HIGH->value => self::HIGH,
+    //             TicketUrgency::MEDIUM->value => self::MEDIUM,
+    //             TicketUrgency::LOW->value => self::LOW,
+    //         ],
+
+    //         TicketImpact::LOW->value => [
+    //             TicketUrgency::HIGH->value => self::MEDIUM,
+    //             TicketUrgency::MEDIUM->value => self::LOW,
+    //             TicketUrgency::LOW->value => self::LOW,
+    //         ],
+    //     ];
+
+    //     return $matrix[$impact->value][$urgency->value] ?? self::LOW;
+    // }
+
+
     public static function calculate(TicketImpact $impact, TicketUrgency $urgency): self
     {
+        $score = TicketImpact::score($impact->value) * TicketUrgency::score($urgency->value);
+
         return match (true) {
-            $impact === TicketImpact::HIGH && $urgency === TicketUrgency::HIGH => self::URGENT,
-            $impact === TicketImpact::HIGH && $urgency === TicketUrgency::MEDIUM => self::HIGH,
-            $impact === TicketImpact::MEDIUM && $urgency === TicketUrgency::HIGH => self::HIGH,
-            $impact === TicketImpact::MEDIUM && $urgency === TicketUrgency::MEDIUM => self::MEDIUM,
+            $score >= 9 => self::URGENT,
+            $score >= 6 => self::HIGH,
+            $score >= 4 => self::MEDIUM,
             default => self::LOW,
         };
     }
+
 
 
 }

@@ -1,6 +1,7 @@
 import { Asset } from '@/interfaces/asset.interface';
 import { type AssetType } from '@/interfaces/assetType.interface';
 import { type Department, DepartmentAllowed } from '@/interfaces/department.interace';
+import { SlaPolicy } from '@/interfaces/slaPolicy.interface';
 import { UserCharge, type User } from '@/interfaces/user.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { useEchoModel } from '@laravel/echo-vue';
@@ -16,6 +17,8 @@ export const useApp = () => {
     const departments = computed(() => (page.props as unknown as { departments: Department[] })?.departments || []);
     const assetTypes = computed(() => (page.props as unknown as { types: AssetType[] })?.types || []);
     const assetAccessories = computed(() => (page.props as unknown as { accessories: Asset[] })?.accessories || []);
+
+    const slaPolicies = computed(() => (page.props as unknown as { slaPolicies: SlaPolicy[] })?.slaPolicies || []);
 
     const echo = useEchoModel(
     'App.Models.User',
@@ -57,7 +60,7 @@ export const useApp = () => {
         return userAuth.value?.staff_id === userId;
     };
 
-    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories,
+    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories, slaPolicies,
         availableAssets,
         departments, assetTypes, isTIManager, isTIAssistantManager, echo };
 };

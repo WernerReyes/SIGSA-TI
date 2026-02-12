@@ -171,9 +171,9 @@
                 <Pencil />
                 Cambiar estado
               </ContextMenuItem>
-              <ContextMenuItem
+              <!-- <ContextMenuItem
                 :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
-                v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI" @click="() => {
+                v-if="activeRow?.category === TicketCategory.EQUIPMENT && isFromTI" @click="() => {
                   router.reload({
                     only: ['currentAssignment', 'requesterAssignments'],
                     data: { requester_id: activeRow?.requester_id },
@@ -198,11 +198,11 @@
                 });
               }"
                 :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
-                v-if="activeRow?.request_type === TicketRequestType.EQUIPMENT && isFromTI">
+                v-if="activeRow?.category === TicketCategory.EQUIPMENT && isFromTI">
                 <MonitorSmartphone />
                 Devolver
-              </ContextMenuItem>
-              <ContextMenuItem :disabled="disabledEdit" @click="openEdit = true">
+              </ContextMenuItem> -->
+              <ContextMenuItem :disabled="disabledEdit" @click="emit('update:ticket', activeRow!)">
                 <Pencil />
                 Editar
               </ContextMenuItem>
@@ -250,7 +250,7 @@
       <div class="text-sm text-muted-foreground">
         Mostrando <span class="font-medium">{{ tickets.from }}</span> a <span class="font-medium">{{ tickets.to ||
           0
-        }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
+          }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
       </div>
       <Pagination class="mx-0 w-fit" :items-per-page="tickets.per_page" :total="tickets.total"
         :default-page="tickets.current_page">
@@ -291,7 +291,7 @@
   <DetailsDialog v-if="openDetails" v-model:open="openDetails" :ticket="activeRow" />
   <AssignResponsibleDialog v-if="openReassign" v-model:open="openReassign" v-model:ticket="activeRow" />
   <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
-  <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" />
+  <!-- <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" /> -->
   <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
   <AssignEquipmentDialog v-if="openAssignEquipment" v-model:open="openAssignEquipment" :ticket="activeRow" />
   <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" :ticket="activeRow" />
@@ -362,6 +362,7 @@ import {
   TicketType,
   ticketTypeOptions,
   TicketRequestType,
+  TicketCategory,
   ticketRequestTypeOptions,
   typeOp
 } from '@/interfaces/ticket.interface';
@@ -371,7 +372,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone, parseDate } from '@internationalized/date';
 import { useDebounceFn } from '@vueuse/core';
 import { format } from 'date-fns';
-import { ArrowUpDown, CalendarSearch, ChevronDown, ChevronLeftIcon, UserPen, UserPlus, ChevronRightIcon, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X, XCircle, MonitorSmartphone } from 'lucide-vue-next';
+import { ArrowUpDown, CalendarSearch, ChevronDown, ChevronLeftIcon, UserPen, UserPlus, ChevronRightIcon, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X, XCircle, MonitorSmartphone, Clock, CheckCircle2 } from 'lucide-vue-next';
 import { type DateRange } from 'reka-ui';
 import { computed, h, reactive, ref, watch } from 'vue';
 import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
@@ -383,6 +384,10 @@ import Dialog from './Dialog.vue';
 import TicketColumnTable from './TicketColumnTable.vue';
 import HistoryDialog from './HistoryDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
+
+const emit = defineEmits<{
+  (e: 'update:ticket', ticket: Ticket): void,
+}>();
 
 const { tickets } = defineProps<{ tickets: Paginated<Ticket> }>()
 
@@ -397,7 +402,7 @@ const activeRow = ref<Ticket | null>(null)
 const openDetails = ref(false);
 const openReassign = ref(false);
 const changeStatus = ref(false);
-const openEdit = ref(false);
+// const openEdit = ref(false);
 const openAssignEquipment = ref(false);
 const openDevolution = ref(false);
 const openHistory = ref(false);
@@ -481,7 +486,7 @@ const filterstersRenders = computed(() => [{
 
 const disabledEdit = computed(() => {
   const ticket = activeRow.value;
-  return  isLoading.value || ticket?.status !== TicketStatus.OPEN || ticket?.responsible_id !== null;
+  return isLoading.value || ticket?.status !== TicketStatus.OPEN || ticket?.responsible_id !== null;
 })
 
 const form = reactive<Filters>({
@@ -693,13 +698,13 @@ const columns: ColumnDef<Ticket>[] = [
   },
 
   {
-    accessorKey: 'request_type',
+    accessorKey: 'category',
     id: 'Categoría',
     header: ({ column }) => header('Categoría', column),
     accessorFn: row =>
-      requestTypeOp(row.request_type)?.label.toLowerCase() ?? 'sin categoria',
+      requestTypeOp(row.category)?.label.toLowerCase() ?? 'sin categoria',
     cell: info => {
-      const requestType = info.row.original.request_type;
+      const requestType = info.row.original.category;
       if (!requestType) {
         return h(
           Badge,
@@ -781,6 +786,107 @@ const columns: ColumnDef<Ticket>[] = [
       ])
     }
   },
+
+
+   {
+    accessorKey: 'sla_response_due_at',
+    id: 'Vence respuesta',
+    header: ({ column }) => header('Vence respuesta', column),
+    cell: info => {
+      const dueDate = info.getValue() as string | null;
+      const firstResponseDate = info.row.original.first_response_at as string | null;
+
+      const hasResponse = Boolean(firstResponseDate);
+      const hasDueDate = Boolean(dueDate);
+      const isOnTime = hasResponse && hasDueDate
+        ? new Date(firstResponseDate!) <= new Date(dueDate!)
+        : null;
+      const bgColor = isOnTime === null
+        ? 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200'
+        : isOnTime
+          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
+      const dueLabel = dueDate ? format(new Date(dueDate), 'dd/MM/yyyy HH:mm') : 'Sin fecha';
+      const responseLabel = firstResponseDate
+        ? format(new Date(firstResponseDate), 'dd/MM/yyyy HH:mm')
+        : 'Sin respuesta';
+      const diffHours = dueDate
+        ? (new Date(dueDate).getTime() - new Date(firstResponseDate || Date.now()).getTime()) / 36e5
+        : null;
+      const deltaLabel = diffHours === null
+        ? 'Sin SLA'
+        : hasResponse
+          ? (diffHours >= 0 ? `Antes: ${Math.round(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`)
+          : (diffHours >= 0 ? `Restan: ${Math.ceil(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`);
+
+      return h(Badge, { class: bgColor }, () => [
+        h('div', { class: 'flex flex-col gap-1 leading-tight' }, [
+          h('div', { class: 'flex items-center gap-2 text-[11px]' }, [
+            h(Clock, { class: 'size-3.5' }),
+            h('span', dueLabel)
+          ]),
+          h('div', { class: 'flex items-center gap-2 text-[10px] opacity-80' }, [
+            hasResponse ? h(CheckCircle2, { class: 'size-3' }) : h(XCircle, { class: 'size-3' }),
+            h('span', `Resp: ${responseLabel}`)
+          ]),
+          h('div', { class: 'text-[10px] opacity-80 pl-5' }, deltaLabel)
+          ])
+        ])
+  
+    }
+  },
+
+  {
+    accessorKey: 'sla_resolution_due_at',
+    id: 'Vence solución',
+    header: ({ column }) => header('Vence solución', column),
+    cell: info => {
+      const dueDate = info.getValue() as string | null;
+      const resolvedDate = info.row.original.resolved_at as string | null;
+
+      const hasResolved = Boolean(resolvedDate);
+      const hasDueDate = Boolean(dueDate);
+      const isOnTime = hasResolved && hasDueDate
+        ? new Date(resolvedDate!) <= new Date(dueDate!)
+        : null;
+      const bgColor = isOnTime === null
+        ? 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200'
+        : isOnTime
+          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+
+      const dueLabel = dueDate ? format(new Date(dueDate), 'dd/MM/yyyy HH:mm') : 'Sin fecha';
+      const resolvedLabel = resolvedDate
+        ? format(new Date(resolvedDate), 'dd/MM/yyyy HH:mm')
+        : 'Sin resolucion';
+      const diffHours = dueDate
+        ? (new Date(dueDate).getTime() - new Date(resolvedDate || Date.now()).getTime()) / 36e5
+        : null;
+      const deltaLabel = diffHours === null
+        ? 'Sin SLA'
+        : hasResolved
+          ? (diffHours >= 0 ? `Antes: ${Math.round(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`)
+          : (diffHours >= 0 ? `Restan: ${Math.ceil(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`);
+
+      return h(Badge, { class: bgColor }, () => [
+        h('div', { class: 'flex flex-col gap-1 leading-tight' }, [
+          h('div', { class: 'flex items-center gap-2 text-[11px]' }, [
+            h(Clock, { class: 'size-3.5' }),
+            h('span', dueLabel)
+          ]),
+          h('div', { class: 'flex items-center gap-2 text-[10px] opacity-80' }, [
+            hasResolved ? h(CheckCircle2, { class: 'size-3' }) : h(XCircle, { class: 'size-3' }),
+            h('span', `Res: ${resolvedLabel}`)
+          ]),
+          h('div', { class: 'text-[10px] opacity-80 pl-5' }, deltaLabel)
+          ])
+        ])
+        
+    }
+  },
+
+  
   {
     accessorKey: 'created_at',
     id: 'Abierto el',

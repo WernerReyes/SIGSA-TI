@@ -10,6 +10,7 @@ use App\Http\Requests\Ticket\StoreTicketRequest;
 use App\Models\AssetAssignment;
 use App\Models\Ticket;
 use App\Services\AssetService;
+use App\Services\SlaPolicyService;
 use App\Services\TicketService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ use Inertia\Inertia;
 class TicketController extends Controller
 {
     //
-    function renderView(Request $request, TicketService $ticketService, AssetService $assetService, UserService $userService)
+    function renderView(Request $request, TicketService $ticketService,  SlaPolicyService $slaPolicyService, AssetService $assetService, UserService $userService)
     {
         $filters = TicketFiltersDto::fromArray($request->all());
 
@@ -29,26 +30,35 @@ class TicketController extends Controller
             return Inertia::render('Tickets', [
             // 'departments' => $departmentsWithUsers,
             'filters' => $filters,
+            'slaPolicies' => Inertia::optional(fn() => $slaPolicyService->getSlaPolicies())->once(),
             'users' => Inertia::optional(fn() => $userService->getAllBasicInfo())->once(),
             'tickets' => Inertia::once(fn() => $ticketService->getAllOrderedByPriority($filters)),
             'availableAssets' => Inertia::optional(fn() => $assetService->getAvailableAssets())->once(),
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
 
-            'currentAssignment' => Inertia::optional(function () use ($ticketService, $request) {
-                $requesterId = $request->input('requester_id');
-                if ($requesterId) {
-                    return $ticketService->getCurrentAssignment($requesterId);
-                }
-                return null;
-            })->once(),
+            // 'currentAssignment' => Inertia::optional(function () use ($ticketService, $request) {
+            //     $requesterId = $request->input('requester_id');
+            //     if ($requesterId) {
+            //         return $ticketService->getCurrentAssignment($requesterId);
+            //     }
+            //     return null;
+            // })->once(),
 
-            'requesterAssignments' => Inertia::optional(function () use ($ticketService, $request) {
+            // 'requesterAssignments' => Inertia::optional(function () use ($ticketService, $request) {
+            //     $requesterId = $request->input('requester_id');
+            //     if ($requesterId) {
+            //         return $ticketService->getAssignmentsByRequester($requesterId);
+            //     }
+            //     return null;
+            // })->once(),
+
+            'userAssignments' => Inertia::optional(function () use ($assetService, $request) {
                 $requesterId = $request->input('requester_id');
                 if ($requesterId) {
-                    return $ticketService->getAssignmentsByRequester($requesterId);
+                    return $assetService->getAssignmentsByUser($requesterId);
                 }
-                return null;
+                return [];
             })->once(),
 
              'assignDocument' => Inertia::optional(fn() => $assignmentId ? $assetService->getAssignDocument(AssetAssignment::find($assignmentId)) : null)->once(),

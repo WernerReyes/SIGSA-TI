@@ -17,6 +17,18 @@ enum TicketUrgency: string
         return implode(",", self::values());
     }
 
+
+    public static function score(string $value): int
+    {
+        return match ($value) {
+            self::LOW->value => 1,
+            self::MEDIUM->value => 2,
+            self::HIGH->value => 3,
+            default => 0,
+        };
+    }
+    
+
     public static function labels(): array
     {
         return [
@@ -26,9 +38,11 @@ enum TicketUrgency: string
 
         ];
     }
+    
 
     public static function label(string $value): string
     {
         return self::labels()[$value] ?? 'Desconocido';
     }
+    
 }

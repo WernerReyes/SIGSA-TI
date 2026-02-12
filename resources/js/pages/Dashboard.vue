@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
 import DashboardActiveAlerts from '@/components/dashboard/DashboardActiveAlerts.vue';
-import DashboardHero from '@/components/dashboard/DashboardHero.vue';
 import DashboardPriorityChart from '@/components/dashboard/DashboardPriorityChart.vue';
 import DashboardRecentTickets from '@/components/dashboard/DashboardRecentTickets.vue';
 import DashboardSlaChart from '@/components/dashboard/DashboardSlaChart.vue';
 import DashboardStats from '@/components/dashboard/DashboardStats.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
+import { Head } from '@inertiajs/vue3';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

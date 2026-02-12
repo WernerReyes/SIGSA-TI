@@ -8,6 +8,7 @@ use App\Enums\Ticket\TicketStatus;
 use App\Enums\Ticket\TicketType;
 use DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 
 class Ticket extends Model
@@ -29,9 +30,10 @@ class Ticket extends Model
         'impact',
         'urgency',
         'priority',
-        'request_type',
+        'category',
         'requester_id',
         'responsible_id',
+        'images',
 
 
         'sla_response_due_at',
@@ -39,6 +41,11 @@ class Ticket extends Model
 
         'first_response_at',
         'resolved_at',
+
+        'sla_paused_at',
+        'sla_paused_duration',
+
+        'sla_breached',
 
         // 'created_at',
 
@@ -54,6 +61,7 @@ class Ticket extends Model
     //         $table->timestamp('resolved_at')->nullable();
 
     protected $casts = [
+            'images' => 'array',
         // 'opened_at' => 'datetime',
         // 'closed_at' => 'datetime',
         // 'status' => TicketStatus::class,
@@ -61,6 +69,23 @@ class Ticket extends Model
         // 'type' => TicketType::class,
         // 'request_type' => TicketRequestType::class,
     ];
+
+
+    protected $appends = ['images_urls'];
+
+    public function getImagesUrlsAttribute()
+    {
+        if (!$this->images || !is_array($this->images)) {
+            return null;
+        }
+
+        return array_map(function ($path) {
+            return Storage::disk('public')->url($path);
+        }, $this->images);
+    }
+
+
+    
 
     protected static function booted()
     {

@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\DTOs\Ticket\StoreTicketDto;
 use App\DTOs\Ticket\TicketHistoryFiltersDto;
+use App\Enums\Ticket\TicketCategory;
 use App\Enums\Ticket\TicketHistoryAction;
 use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
@@ -12,18 +13,28 @@ use App\Enums\Ticket\TicketType;
 use App\Enums\TicketAsset\TicketAssetAction;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
+use App\Models\SlaPolicy;
 use App\Models\Ticket;
 use App\Models\TicketAsset;
 use App\Models\TicketHistory;
 use App\Models\User;
 use Auth;
+use Carbon\Carbon;
 use DB;
+use Storage;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TicketService
 {
+
+    private BusinessHoursService $businessHoursService;
+
+    public function __construct(BusinessHoursService $businessHoursService)
+    {
+        $this->businessHoursService = $businessHoursService;
+    }
 
 
     public function getAllOrderedByPriority(TicketFiltersDto $filters)
@@ -35,11 +46,20 @@ class TicketService
                 'title',
                 'description',
                 'status',
+                'impact',
+                'urgency',
                 'priority',
                 'type',
-                'request_type',
+                'category',
                 'requester_id',
                 'responsible_id',
+                'sla_response_due_at',
+                'sla_resolution_due_at',
+                'images',
+
+                'first_response_at',
+                'resolved_at',
+                'sla_breached',
                 'created_at',
                 'updated_at',
             ])
@@ -73,11 +93,11 @@ class TicketService
             })->when($filters->categories, function ($query) use ($filters) {
                 if (in_array(null, $filters->categories, true)) {
                     $query->where(function ($subQuery) use ($filters) {
-                        $subQuery->whereNull('request_type')
-                            ->orWhereIn('request_type', array_filter($filters->categories));
+                        $subQuery->whereNull('category')
+                            ->orWhereIn('category', array_filter($filters->categories));
                     });
                 } else {
-                    $query->whereIn('request_type', $filters->categories);
+                    $query->whereIn('category', $filters->categories);
                 }
             })
             ->when($filters->startDate, function ($query) use ($filters) {
@@ -132,20 +152,34 @@ class TicketService
     public function storeTicket(StoreTicketDto $dto)
     {
 
+        $images = [];
+
         try {
-            DB::transaction(function () use ($dto) {
+            DB::transaction(function () use ($dto, &$images) {
+                $sla = SlaPolicy::where('priority', $dto->priority)
+                    ->first();
+
+                if ($dto->images) {
+                    foreach ($dto->images as $image) {
+                        $path = Storage::disk('public')->putFile('ticket_images', $image);
+                        $images[] = $path;
+                    }
+                }
+
                 $ticket = Ticket::create([
                     'title' => $dto->title,
                     'status' => TicketStatus::OPEN->value,
                     'description' => $dto->description,
+                    'images' => $images,
 
                     'requester_id' => $dto->requesterId,
                     'type' => $dto->type,
                     'priority' => $dto->priority,
                     'category' => $dto->category,
 
-                    // 'request_type' => $dto->requestType?->value,
-                    // 'opened_at' => now(),
+                    'sla_response_due_at' => $this->businessHoursService->addBusinessMinutes2(now(), $sla->response_time_minutes),
+                    'sla_resolution_due_at' => $this->businessHoursService->addBusinessMinutes2(now(), $sla->resolution_time_minutes),
+
                 ]);
 
 
@@ -154,28 +188,19 @@ class TicketService
 
             });
         } catch (\Exception $e) {
+            if (count($images) > 0) {
+                foreach ($images as $path) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+
+            ds($e->getMessage());
             throw new InternalErrorException("Error al crear el ticket: " . $e->getMessage());
         }
 
 
     }
 
-
-//     namespace App\Services;
-
-// class PriorityCalculator
-// {
-//     public static function calculate(string $impact, string $urgency): string
-//     {
-//         return match (true) {
-//             $impact === 'HIGH' && $urgency === 'HIGH' => 'CRITICAL',
-//             $impact === 'HIGH' && $urgency === 'MEDIUM' => 'HIGH',
-//             $impact === 'MEDIUM' && $urgency === 'HIGH' => 'HIGH',
-//             $impact === 'MEDIUM' && $urgency === 'MEDIUM' => 'MEDIUM',
-//             default => 'LOW',
-//         };
-//     }
-// }
 
 
     public function updateTicket(Ticket $ticket, StoreTicketDto $dto)
@@ -204,9 +229,13 @@ class TicketService
                 // $ticket->status = $dto->status->value;
                 $ticket->requester_id = $dto->requesterId;
                 $ticket->description = $dto->description;
-                $ticket->type = $dto->type->value;
-                $ticket->priority = $dto->priority->value;
-                $ticket->request_type = $dto->requestType?->value;
+                $ticket->type = $dto->type;
+                $ticket->impact = $dto->impact;
+                $ticket->urgency = $dto->urgency;
+                $ticket->priority = $dto->priority;
+                $ticket->category = $dto->category;
+                // $ticket->priority = $dto->priority->value;
+                // $ticket->request_type = $dto->requestType?->value;
                 $ticket->save();
 
                 $changes = $ticket->getChanges();
@@ -229,7 +258,7 @@ class TicketService
                             continue;
                         }
 
-                        if ($field === 'request_type') {
+                        if ($field === 'category') {
                             if ($oldValue === null) {
                                 $changeDetails[] = "{$this->fieldsLabels($field)} establecido a '" . TicketRequestType::label($newValue) . "'";
                             } elseif ($newValue === null) {
@@ -249,9 +278,9 @@ class TicketService
                                 $oldValue = TicketType::label($oldValue);
                                 $newValue = TicketType::label($newValue);
                                 break;
-                            case 'request_type':
-                                $oldValue = TicketRequestType::label($oldValue);
-                                $newValue = TicketRequestType::label($newValue);
+                            case 'category':
+                                $oldValue = TicketCategory::label($oldValue);
+                                $newValue = TicketCategory::label($newValue);
                                 break;
                         }
 
@@ -273,7 +302,7 @@ class TicketService
 
 
         } catch (\Exception $e) {
-            
+
             throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
         }
     }
@@ -287,7 +316,7 @@ class TicketService
             'description' => 'Descripción',
             'type' => 'Tipo',
             'priority' => 'Prioridad',
-            'request_type' => 'Tipo de Solicitud',
+            'category' => 'Categoría',
             default => $field,
         };
     }
@@ -349,6 +378,11 @@ class TicketService
 
     public function assignTicket(Ticket $ticket, int $responsible_id)
     {
+
+        if ($ticket->status !== TicketStatus::IN_PROGRESS->value) {
+            throw new BadRequestException("No se puede asignar un ticket que no esté en estado 'En progreso'.");
+        }
+
         try {
 
             $responsible = User::select(
@@ -396,38 +430,111 @@ class TicketService
 
     public function changeTicketStatus(Ticket $ticket, string $newStatus)
     {
-        try {
-            $oldStatus = $ticket->status;
+        $oldStatus = $ticket->status;
 
-            if ($oldStatus === $newStatus) {
-                throw new BadRequestException("El ticket ya tiene el estado seleccionado.");
-            }
+        if ($oldStatus === $newStatus) {
+            throw new BadRequestException("El ticket ya tiene el estado seleccionado.");
+        }
+
+        if (!$this->canTransition($oldStatus, $newStatus)) {
+            throw new BadRequestException("Transición de estado no permitida de '" . TicketStatus::label($oldStatus) . "' a '" . TicketStatus::label($newStatus) . "'.");
+        }
+
+        try {
 
             return DB::transaction(function () use ($ticket, $newStatus, $oldStatus) {
                 $ticket->status = $newStatus;
-                if ($newStatus === TicketStatus::CLOSED->value) {
-                    $ticket->closed_at = now();
+
+                if ($newStatus === TicketStatus::IN_PROGRESS->value) {
+                    if ($ticket->first_response_at === null) {
+                        $ticket->first_response_at = now();
+                    } else {
+                        $pausedMinutes = Carbon::parse($ticket->sla_paused_at)->diffInMinutes(now());
+                        $ticket->sla_paused_duration += $pausedMinutes;
+                        $ticket->sla_paused_at = null;
+                    }
                 }
+
+                if ($newStatus === TicketStatus::ON_HOLD->value) {
+                    $ticket->sla_paused_at = now();
+                }
+
+                if ($newStatus === TicketStatus::RESOLVED->value) {
+
+                    if ($ticket->responsible_id === null) {
+                        throw new BadRequestException("No se puede resolver un ticket que no tiene un responsable asignado.");
+                    }
+
+
+                    // if ($ticket->sla_paused_at) {
+                    //     $pausedMinutes = Carbon::parse($ticket->sla_paused_at)->diffInMinutes(now());
+                    //     $ticket->sla_paused_duration += $pausedMinutes;
+                    //     $ticket->sla_paused_at = null;
+                    // }
+
+                    $ticket->resolved_at = now();
+
+                    $totalBusinessMinutes =
+                        BusinessHoursService::businessMinutesBetween(
+                            $ticket->created_at,
+                            $ticket->resolved_at
+                        );
+
+                    $realConsumedMinutes =
+                        $totalBusinessMinutes - $ticket->sla_paused_duration;
+
+                    if ($realConsumedMinutes > $ticket->sla_resolution_minutes) {
+                        $ticket->sla_breached = true;
+                    }
+                }
+
+
                 $ticket->save();
-
-
 
                 $description = $newStatus === TicketStatus::CLOSED->value
                     ? "Cerrado el ticket"
                     : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
-                // : "Cambio de estado de {TicketStatus::label($oldStatus)} a {TicketStatus::label($newStatus)}";
 
                 $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description);
 
                 return $description;
             });
         } catch (\Exception $e) {
-            if ($e instanceof BadRequestException) {
-                throw $e;
-            }
             throw new InternalErrorException("Error al cambiar el estado del ticket: " . $e->getMessage());
         }
     }
+
+
+
+    private function canTransition(string $from, string $to): bool
+    {
+        $allowedTransitions = [
+
+            TicketStatus::OPEN->value => [
+                TicketStatus::IN_PROGRESS->value,
+            ],
+
+            TicketStatus::IN_PROGRESS->value => [
+                TicketStatus::ON_HOLD->value,
+                TicketStatus::RESOLVED->value,
+            ],
+
+            TicketStatus::ON_HOLD->value => [
+                TicketStatus::IN_PROGRESS->value,
+            ],
+
+            TicketStatus::RESOLVED->value => [
+                TicketStatus::CLOSED->value,
+            ],
+
+            TicketStatus::CLOSED->value => [
+                // Nada, estado final
+            ],
+        ];
+
+        return in_array($to, $allowedTransitions[$from] ?? []);
+    }
+
 
 
 
