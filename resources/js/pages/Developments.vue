@@ -418,8 +418,7 @@ const rollbackStatus = (oldStatus?: DevelopmentRequestStatus) => {
             registeredRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.REGISTERED] || [];
         }
         analysisRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.IN_ANALYSIS] || [];
-
-        // console.log(registeredRequests.value, analysisRequests.value);
+        
     } else if (newStatus === DevelopmentRequestStatus.IN_DEVELOPMENT) {
         approvedRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.APPROVED] || [];
         inDevelopmentRequests.value = originalDevelopmentsByStatus.value[DevelopmentRequestStatus.IN_DEVELOPMENT] || [];

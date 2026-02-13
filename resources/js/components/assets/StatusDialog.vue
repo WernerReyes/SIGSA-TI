@@ -168,10 +168,12 @@ const handleFormSubmit = (values: { status: AssetStatus }) => {
             preserveState: true,
             preserveUrl: true,
             only,
-            onSuccess: () => {
+            onFlash: (flash) => {
+                if (flash.error) return;
                 handleReset();
-                open.value = false;
-            },
+                asset.value = null;
+            }
+            
 
 
         }

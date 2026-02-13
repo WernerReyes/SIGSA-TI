@@ -42,16 +42,14 @@
 </template>
 
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
-import { Button } from '@/components/ui/button';
-import AccessTable from '@/components/access/Table.vue';
-import AccessStats from '@/components/access/Stats.vue';
-import AccessHistoryPanel from '@/components/access/HistoryPanel.vue';
 import ServiceDialog from '@/components/access/ServiceDialog.vue';
-import { KeyRound, Mail, Server, ShieldCheck, UserMinus, UserPlus, XCircle, CheckCircle2 } from 'lucide-vue-next';
+import AccessStats from '@/components/access/Stats.vue';
+import AccessTable from '@/components/access/Table.vue';
+import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
+import { Head } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 import { Service } from '@/interfaces/service.interface';
 

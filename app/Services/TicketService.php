@@ -5,11 +5,13 @@ use App\DTOs\Ticket\StoreTicketDto;
 use App\DTOs\Ticket\TicketHistoryFiltersDto;
 use App\Enums\Ticket\TicketCategory;
 use App\Enums\Ticket\TicketHistoryAction;
+use App\Enums\Ticket\TicketImpact;
 use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketStatus;
 use App\DTOs\Ticket\TicketFiltersDto;
 use App\Enums\Ticket\TicketType;
+use App\Enums\Ticket\TicketUrgency;
 use App\Enums\TicketAsset\TicketAssetAction;
 use App\Models\AssetAssignment;
 use App\Models\SlaPolicy;
@@ -35,10 +37,10 @@ class TicketService
         $this->businessHoursService = $businessHoursService;
     }
 
-
     public function getAllOrderedByPriority(TicketFiltersDto $filters)
     {
-        return Ticket::
+        ds('Getting tickets with filters', $filters);
+        $list = Ticket::
             query()
             ->select([
                 'id',
@@ -52,9 +54,13 @@ class TicketService
                 'category',
                 'requester_id',
                 'responsible_id',
+                'images',
                 'sla_response_due_at',
                 'sla_resolution_due_at',
-                'images',
+        
+
+                'sla_paused_at',
+                'sla_paused_duration',
 
                 'first_response_at',
                 'resolved_at',
@@ -107,6 +113,8 @@ class TicketService
             ->orderedByPriority()
             ->paginate(10)
             ->withQueryString();
+
+            return $list;
     }
 
     public function getHistoriesPaginated(Ticket $ticket, TicketHistoryFiltersDto $filters)
@@ -192,8 +200,6 @@ class TicketService
                     Storage::disk('public')->delete($path);
                 }
             }
-
-            ds($e->getMessage());
             throw new InternalErrorException("Error al crear el ticket: " . $e->getMessage());
         }
 
@@ -225,7 +231,7 @@ class TicketService
                 $original = $ticket->getOriginal();
 
                 $ticket->title = $dto->title;
-                // $ticket->status = $dto->status->value;
+               
                 $ticket->requester_id = $dto->requesterId;
                 $ticket->description = $dto->description;
                 $ticket->type = $dto->type;
@@ -233,8 +239,7 @@ class TicketService
                 $ticket->urgency = $dto->urgency;
                 $ticket->priority = $dto->priority;
                 $ticket->category = $dto->category;
-                // $ticket->priority = $dto->priority->value;
-                // $ticket->request_type = $dto->requestType?->value;
+                
                 $ticket->save();
 
                 $changes = $ticket->getChanges();
@@ -268,6 +273,16 @@ class TicketService
                         }
 
                         switch ($field) {
+
+                            case 'impact':
+                                $oldValue = TicketImpact::label($oldValue);
+                                $newValue = TicketImpact::label($newValue);
+                                break;
+
+                            case 'urgency':
+                                $oldValue = TicketUrgency::label($oldValue);
+                                $newValue = TicketUrgency::label($newValue);
+                                break;
 
                             case 'priority':
                                 $oldValue = TicketPriority::label($oldValue);
@@ -464,13 +479,6 @@ class TicketService
                         throw new BadRequestException("No se puede resolver un ticket que no tiene un responsable asignado.");
                     }
 
-
-                    // if ($ticket->sla_paused_at) {
-                    //     $pausedMinutes = Carbon::parse($ticket->sla_paused_at)->diffInMinutes(now());
-                    //     $ticket->sla_paused_duration += $pausedMinutes;
-                    //     $ticket->sla_paused_at = null;
-                    // }
-
                     $ticket->resolved_at = now();
 
                     $totalBusinessMinutes =
@@ -482,7 +490,11 @@ class TicketService
                     $realConsumedMinutes =
                         $totalBusinessMinutes - $ticket->sla_paused_duration;
 
-                    if ($realConsumedMinutes > $ticket->sla_resolution_minutes) {
+
+                        $sla_resolution_minutes = SlaPolicy::where('priority', $ticket->priority)->value('resolution_time_minutes');
+                    
+
+                    if ($realConsumedMinutes > $sla_resolution_minutes) {
                         $ticket->sla_breached = true;
                     }
                 }
@@ -496,7 +508,10 @@ class TicketService
 
                 $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description);
 
-                return $description;
+                return [
+                    'description' => $description,
+                    'ticket' => $ticket,
+                ];
             });
         } catch (\Exception $e) {
             throw new InternalErrorException("Error al cambiar el estado del ticket: " . $e->getMessage());

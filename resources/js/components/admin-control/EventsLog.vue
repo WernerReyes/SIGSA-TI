@@ -93,7 +93,7 @@
 
     <AlertDialog title="Confirmar eliminación" v-model:open="openAlertDialog"
         description="¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer."
-        @confirm="handleDeleteInfrastructureEvent(selectedEvent?.id!)" />
+        @confirm="handleDeleteInfrastructureEvent(selectedEvent?.id!)" @cancel="selectedEvent = null" />
 </template>
 
 <script setup lang="ts">
@@ -146,8 +146,6 @@ const eventsFiltered = computed(() => {
 });
 
 const handleDeleteInfrastructureEvent = (eventId: number) => {
-    // if (!confirm('¿Estás seguro de que deseas eliminar este evento?')) return;
-
     router.delete(`/admin-control/infrastructure-events/${eventId}`, {
         preserveScroll: true,
         preserveState: true,

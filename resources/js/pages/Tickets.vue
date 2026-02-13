@@ -6,7 +6,7 @@
 
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="ml-auto flex items-center gap-2">
-               <SLAHelperInfo />
+                <SLAHelperInfo />
 
                 <Button class="w-fit shadow-md hover:shadow-lg transition-all gap-2" @click="open = true">
                     <Tag class="size-4" />
@@ -32,6 +32,7 @@
 
                 </div>
             </div> -->
+
             <div class="relative min-h-screen flex-1 rounded-xl md:min-h-min">
                 <!-- <PlaceholderPattern /> -->
                 <Table :tickets="tickets" @update:ticket="(ticket) => {

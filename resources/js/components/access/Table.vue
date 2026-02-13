@@ -262,10 +262,12 @@ const handleDelete = () => {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
-        onSuccess: () => {
+        onFlash: (flash) => {
+            if (flash.error)  return;
             router.replaceProp('services', (services: Service[]) => {
                 return services.filter(s => s.id !== activeRow.value?.id);
-            })
+            });
+            activeRow.value = null;
         }
     });
 };

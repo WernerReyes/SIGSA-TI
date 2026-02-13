@@ -102,9 +102,13 @@ const handleResendAlert = () => {
     router.post('assets/resend-accessory-out-of-stock-alert', {}, {
         only: ['accessoriesOutOfStockAlert'],
         preserveScroll: true,
-        onSuccess: () => {
+        preserveState: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            if (flash.error)  return;
             updatedDate.value = format(new Date(), 'dd/MM/yyyy HH:mm');
         },
+       
         onFinish: () => {
             isSending.value = false;
         }

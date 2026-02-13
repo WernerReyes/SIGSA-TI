@@ -6,8 +6,6 @@ import { router } from '@inertiajs/vue3';
 import { toast } from 'vue-sonner';
 import { configureEcho } from '@laravel/echo-vue';
 
-console.log(import.meta.env)
-
 configureEcho({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,
@@ -35,7 +33,6 @@ watch(
  });
 
 router.on('error', (event) => {
-    console.log('Error event received:', event);    
     const errors = event.detail?.errors;
     if (!errors) return;
 

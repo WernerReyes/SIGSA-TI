@@ -158,14 +158,12 @@ const handleFormSubmit = (values: { status?: TicketStatus }) => {
             preserveUrl: true,
             onFlash: (flash) => {
                 if (flash.error) return;
+                const ticket = flash?.ticket as Ticket;
                 router.replaceProp('tickets.data', (tickets: Ticket[]) => {
                     return tickets.map((t: Ticket) => {
                         if (t.id === ticket?.id) {
 
-                            return {
-                                ...t,
-                                status: values.status
-                            };
+                            return ticket;
                         }
                         return t;
                     });

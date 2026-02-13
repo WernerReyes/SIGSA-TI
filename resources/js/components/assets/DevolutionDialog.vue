@@ -351,24 +351,26 @@ const onSubmit = async (values: Record<string, any>) => {
         preserveUrl: true,
 
         onFlash: (flash) => {
+            if (flash.error) return;
+            
             if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
                 router.reload({
                     only: ['accessoriesOutOfStockAlert'],
                 });
 
             }
+
+            open.value = false;
+            asset.value = null;
+
+            downloadReturnAssignmentDocument(assign.value!.id);
         },
 
 
         onFinish: () => {
             isSubmitting.value = false;
         },
-        onSuccess: () => {
-            open.value = false;
-            asset.value = null;
-
-            downloadReturnAssignmentDocument(assign.value!.id);
-        }
+       
     });
 };
 

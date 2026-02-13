@@ -150,34 +150,99 @@
                 </div>
 
                 <div class="space-y-3">
-                    <div class="rounded-lg border bg-card p-4">
-                        <div class="flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
+                    <!-- SLA Response -->
+                    <div class="rounded-lg border bg-card overflow-hidden">
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground px-4 py-3 bg-muted/30">
                             <Clock class="size-4" />
-                            SLA Respuesta y Solucion
+                            SLA Respuesta
                         </div>
-                        <div class="mt-3 grid gap-2 text-xs">
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Vence respuesta</span>
-                                <span class="font-medium">{{ formatDate(ticket?.sla_response_due_at) }}</span>
+                        <div class="p-4 space-y-3">
+                            <div v-if="ticket?.sla_response_time_minutes" class="space-y-2">
+                                <Badge 
+                                    v-if="ticket.sla_response_time_minutes.late_minutes" 
+                                    class="bg-red-500 text-white w-full justify-center py-2"
+                                >
+                                    <Clock class="size-4" />
+                                    {{ formatMinutes(ticket.sla_response_time_minutes.late_minutes) }} tarde
+                                </Badge>
+                                <Badge 
+                                    v-else-if="ticket.sla_response_time_minutes.before_late_minutes" 
+                                    class="bg-green-500 text-white w-full justify-center py-2"
+                                >
+                                    <CheckCircle2 class="size-4" />
+                                    {{ formatMinutes(ticket.sla_response_time_minutes.before_late_minutes) }} antes
+                                </Badge>
+                                <Badge 
+                                    v-else-if="ticket.sla_response_time_minutes.remaining_minutes" 
+                                    class="bg-yellow-500 text-white w-full justify-center py-2"
+                                >
+                                    <Clock class="size-4" />
+                                    {{ formatMinutes(ticket.sla_response_time_minutes.remaining_minutes) }} restantes
+                                </Badge>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Primera respuesta</span>
-                                <span class="font-medium">{{ formatDate(ticket?.first_response_at) }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Vence solucion</span>
-                                <span class="font-medium">{{ formatDate(ticket?.sla_resolution_due_at) }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-muted-foreground">Resuelto</span>
-                                <span class="font-medium">{{ formatDate(ticket?.resolved_at) }}</span>
+                            <div class="grid gap-2 text-xs">
+                                <div class="flex items-center justify-between py-1">
+                                    <span class="text-muted-foreground">Debe responder</span>
+                                    <span class="font-medium">{{ formatDate(ticket?.sla_response_due_at) }}</span>
+                                </div>
+                                <div class="flex items-center justify-between py-1">
+                                    <span class="text-muted-foreground">Primera respuesta</span>
+                                    <span class="font-medium" :class="{ 'text-muted-foreground/60 italic': !ticket?.first_response_at }">
+                                        {{ formatDate(ticket?.first_response_at) }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-
-
+                    <!-- SLA Resolution -->
+                    <div class="rounded-lg border bg-card overflow-hidden">
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground px-4 py-3 bg-muted/30">
+                            <CheckCircle2 class="size-4" />
+                            SLA Solución
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div v-if="ticket?.sla_resolution_time_minutes" class="space-y-2">
+                                <Badge 
+                                    v-if="ticket.sla_resolution_time_minutes.late_minutes" 
+                                    class="bg-red-500 text-white w-full justify-center py-2"
+                                >
+                                    <Clock class="size-4" />
+                                    {{ formatMinutes(ticket.sla_resolution_time_minutes.late_minutes) }} tarde
+                                </Badge>
+                                <Badge 
+                                    v-else-if="ticket.sla_resolution_time_minutes.before_late_minutes" 
+                                    class="bg-green-500 text-white w-full justify-center py-2"
+                                >
+                                    <CheckCircle2 class="size-4" />
+                                    {{ formatMinutes(ticket.sla_resolution_time_minutes.before_late_minutes) }} antes
+                                </Badge>
+                                <Badge 
+                                    v-else-if="ticket.sla_resolution_time_minutes.remaining_minutes" 
+                                    class="bg-yellow-500 text-white w-full justify-center py-2"
+                                >
+                                    <Clock class="size-4" />
+                                    {{ formatMinutes(ticket.sla_resolution_time_minutes.remaining_minutes) }} restantes
+                                </Badge>
+                            </div>
+                            <div class="grid gap-2 text-xs">
+                                <div class="flex items-center justify-between py-1">
+                                    <span class="text-muted-foreground">Debe resolver</span>
+                                    <span class="font-medium">{{ formatDate(ticket?.sla_resolution_due_at) }}</span>
+                                </div>
+                                <div class="flex items-center justify-between py-1">
+                                    <span class="text-muted-foreground">Resuelto</span>
+                                    <span class="font-medium" :class="{ 'text-muted-foreground/60 italic': !ticket?.resolved_at }">
+                                        {{ formatDate(ticket?.resolved_at) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+
+
             </div>
 
             <div class="mt-4 rounded-lg border bg-card p-4">
@@ -247,13 +312,17 @@ const urgencyLabels: Record<string, string> = {
 };
 
 const formatDate = (value?: string | Date | null): string => {
-    if (!value) return 'Sin fecha';
+    if (!value) return 'Sin registrar';
     return format(new Date(value), 'dd/MM/yyyy HH:mm');
 };
 
-const formatHours = (value?: number | null): string => {
-    if (value === null || value === undefined || Number.isNaN(value)) return '0h';
-    return `${Number(value).toFixed(2)}h`;
+const formatMinutes = (minutes: number): string => {
+    if (!Number.isFinite(minutes) || minutes === 0) return '0 min';
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs && mins) return `${hrs}h ${mins}m`;
+    if (hrs) return `${hrs}h`;
+    return `${mins}m`;
 };
 
 </script>

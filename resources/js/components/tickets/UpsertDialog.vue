@@ -103,9 +103,8 @@
                                     <FieldLabel class="text-sm font-medium">
                                         Adjuntar archivos (opcional)
                                     </FieldLabel>
-                                    <Input type="file" multiple accept="image/*" 
-                                        @change="(e) => setFieldValue('images', Array.from(e.target.files))"
-                                    />
+                                    <Input type="file" multiple accept="image/*"
+                                        @change="(e) => setFieldValue('images', Array.from(e.target.files))" />
                                     <p class="text-xs text-muted-foreground">Formatos sugeridos: PDF, PNG, JPG.</p>
                                 </Field>
                             </FieldGroup>
@@ -296,6 +295,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import z from 'zod';
 import { useApp } from '@/composables/useApp';
 import { isEqual } from '@/lib/utils';
+import { es } from 'date-fns/locale';
 
 
 
@@ -318,7 +318,6 @@ const disabledForm = computed(() => isLoading.value || Object.keys(errors.value)
 
 const initialValues = computed(() => {
     const ticket = selectedTicket.value;
-    console.log('Initial values computed:', ticket);
     return {
         type: ticket?.type || TicketType.SERVICE_REQUEST,
         title: ticket?.title || '',
@@ -328,7 +327,7 @@ const initialValues = computed(() => {
         impact: ticket?.impact || undefined,
         urgency: ticket?.urgency || undefined,
         // category: ticket?.category || 'ACCESS',
-        images:  [],
+        images: [],
 
         category: ticket?.category || undefined,
     };
@@ -385,6 +384,22 @@ const handleResetAndClose = () => {
 
 const handleSave = (data: FormValues) => {
     if (selectedTicket.value) {
+       let only:string[] = [];
+       
+        if (!isEqual(
+            {
+                impact: selectedTicket.value.impact,
+                urgency: selectedTicket.value.urgency,
+            }, {
+            impact: data.impact,
+            urgency: data.urgency,
+        }
+        )) {
+            only.push('tickets');
+        } else {
+            only = [];
+        }
+
         router.post(
             `/tickets/${selectedTicket.value.id}`,
             {
@@ -392,11 +407,28 @@ const handleSave = (data: FormValues) => {
                 _method: 'PUT',
             },
             {
+            
+                only: [...only, 'filters'],
                 preserveScroll: true,
                 preserveState: true,
                 preserveUrl: true,
                 onFlash: (flash) => {
                     if (flash.error) return;
+
+                    if (!only.includes('tickets')) {
+                        const updatedTicket = flash.ticket as Ticket;
+                        router.replaceProp('tickets.data', (tickets: Ticket[]) => {
+                            return tickets.map(t => {
+                                if (t.id === updatedTicket.id) {
+                                    return {
+                                        ...updatedTicket,
+                                    };
+                                }
+                                return t;
+                            });
+                        });
+                    }
+
                     handleResetAndClose();
                 },
             }
@@ -408,7 +440,7 @@ const handleSave = (data: FormValues) => {
                 preserveScroll: true,
                 preserveState: true,
                 preserveUrl: true,
-                only: ['tickets'],
+                only: ['tickets', 'filters'],
                 onFlash: (flash) => {
                     if (flash.error) return;
                     handleResetAndClose();

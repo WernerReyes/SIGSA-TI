@@ -27,150 +27,152 @@
                     </div>
                 </div>
             </DialogHeader>
-                <div class="max-h-96 overflow-y-auto">
+            <div class="max-h-96 overflow-y-auto">
 
-                    <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
-                        toast.error('El tiempo para editar esta asignación ha expirado.');
-                canEdit = false;
-            }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
-                target-label="Tiempo restante para poder editar la información" :duration="15" />
+                <Countdown title="Tiempo para editar la asignación (15 minutos)" @timeout="() => {
+                    toast.error('El tiempo para editar esta asignación ha expirado.');
+                    canEdit = false;
+                }" v-if="canEdit && asset?.current_assignment" :target-date="asset?.current_assignment?.created_at"
+                    target-label="Tiempo restante para poder editar la información" :duration="15" />
 
-            <Alert v-else-if="asset?.current_assignment">
-                <LockKeyhole class="size-4" />
-                <AlertTitle>No es posible editar esta asignación</AlertTitle>
-                <AlertDescription>
-                    Han pasado más de 15 minutos desde que se asignó este equipo.
-                </AlertDescription>
+                <Alert v-else-if="asset?.current_assignment">
+                    <LockKeyhole class="size-4" />
+                    <AlertTitle>No es posible editar esta asignación</AlertTitle>
+                    <AlertDescription>
+                        Han pasado más de 15 minutos desde que se asignó este equipo.
+                    </AlertDescription>
 
-            </Alert>
-            
-            <div class="space-y-5 py-2">
-                <div v-if="!canEdit" @vue:mounted="() => {
-                    loadingAssignDocument = true;
-                    router.reload({
-                        data: {
-                            assignment_id: asset?.current_assignment?.id || 0
-                        },
-                        only: ['assignDocument'],
+                </Alert>
 
-                        preserveUrl: true,
-                        onFinish: () => {
-                            loadingAssignDocument = false;
-                        }
-                    });
-                }" class="p-4 rounded-xl border bg-muted/40">
+                <div class="space-y-5 py-2">
+                    <div v-if="!canEdit" @vue:mounted="() => {
+                        loadingAssignDocument = true;
+                        router.reload({
+                            data: {
+                                assignment_id: asset?.current_assignment?.id || 0
+                            },
+                            only: ['assignDocument'],
 
-                    <template v-if="loadingAssignDocument">
-                        <Skeleton class="h-4 w-3/4 mb-2" />
-                        <Skeleton class="h-4 w-1/2" />
-                    </template>
+                            preserveUrl: true,
+                            onFinish: () => {
+                                loadingAssignDocument = false;
+                            }
+                        });
+                    }" class="p-4 rounded-xl border bg-muted/40">
 
-                    <template v-else>
-                        <p class="mb-2 text-sm font-medium">Subir documento de entrega firmado</p>
-                        <p class="text-xs text-muted-foreground mb-3">Solo PDF o imagen, máx. 2MB.</p>
-                        <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
-                            accept="application/pdf,image/*" v-model:reset="resetUpload"
-                            @update:file="handleUploadSignedDocument($event)" />
-                    </template>
+                        <template v-if="loadingAssignDocument">
+                            <Skeleton class="h-4 w-3/4 mb-2" />
+                            <Skeleton class="h-4 w-1/2" />
+                        </template>
+
+                        <template v-else>
+                            <p class="mb-2 text-sm font-medium">Subir documento de entrega firmado</p>
+                            <p class="text-xs text-muted-foreground mb-3">Solo PDF o imagen, máx. 2MB.</p>
+                            <FileUpload :current-url="url" @error="(msg) => toast.error(msg)"
+                                accept="application/pdf,image/*" v-model:reset="resetUpload"
+                                @update:file="handleUploadSignedDocument($event)" />
+                        </template>
+                    </div>
+
+                    <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
+                        class="space-y-4 p-4 rounded-xl border bg-card/70">
+
+                        <FieldGroup>
+                            <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
+                                    <SelectFilters data-key="users" :items="users" :show-selected-focus="false"
+                                        :show-refresh="false"
+                                        :disabled="!!asset?.current_assignment?.parent_assignment_id || !canEdit"
+                                        :label="asset?.current_assignment?.assigned_to?.full_name || 'Seleccionar empleado'"
+                                        item-label="full_name" item-value="staff_id" selected-as-label
+                                        :default-value="componentField.modelValue"
+                                        @select="(value) => setFieldValue('assigned_to_id', +value)"
+                                        filter-placeholder="Buscar empleado..."
+                                        empty-text="No se encontraron empleados">
+                                    </SelectFilters>
+
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+
+
+                        <FieldGroup>
+                            <VeeField name="assign_date" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="assign_date">Fecha de Entrega</FieldLabel>
+                                    <Popover v-slot="{ close }">
+                                        <PopoverTrigger as-child>
+
+                                            <Button
+                                                :disabled="asset?.current_assignment?.parent_assignment_id || !canEdit"
+                                                variant="outline" class="w-48 justify-between font-normal">
+                                                {{ componentField.modelValue
+                                                    ?
+                                                    componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
+                                                    : 'Seleccionar fecha' }}
+
+                                                <ChevronDownIcon />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+
+                                            <Calendar v-bind="componentField" locale="es" layout="month-and-year"
+                                                selection-mode="single" @update:model-value="(value) => {
+                                                    if (value) {
+                                                        componentField.onChange(value)
+                                                        close()
+                                                    }
+                                                }" />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+
+
+                        <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
+                            <VeeField name="accessories" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="accessories">Accesorios</FieldLabel>
+
+                                    <SelectFilters :items="assetAccessories" data-key="accessories"
+                                        :show-selected-focus="false" :show-refresh="false"
+                                        :label="selectLabels(componentField.modelValue)" item-label="name"
+                                        item-value="id" :multiple="true" selected-as-label
+                                        :default-value="componentField.modelValue"
+                                        @select="(values) => setFieldValue('accessories', values)"
+                                        filter-placeholder="Buscar accesorio..."
+                                        empty-text="No se encontraron accesorios">
+                                    </SelectFilters>
+
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+
+
+
+                        <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
+                            <VeeField name="comment" v-slot="{ componentField, errors }">
+                                <Field :data-invalid="!!errors.length">
+                                    <FieldLabel for="comment">Observaciones</FieldLabel>
+                                    <Textarea id="comment" placeholder="Condiciones del equipo, accesorios incluidos..."
+                                        rows="3" v-bind="componentField" />
+                                    <FieldError v-if="errors.length" :errors="errors" />
+                                </Field>
+                            </VeeField>
+                        </FieldGroup>
+                    </form>
                 </div>
 
-                <form @submit.prevent="handleSubmit(onSubmit)()" id="dialogForm"
-                    class="space-y-4 p-4 rounded-xl border bg-card/70">
-
-                    <FieldGroup>
-                        <VeeField name="assigned_to_id" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="assigned_to_id">Empleado</FieldLabel>
-                                <SelectFilters data-key="users" :items="users" :show-selected-focus="false"
-                                    :show-refresh="false"
-                                    :disabled="!!asset?.current_assignment?.parent_assignment_id || !canEdit"
-                                    :label="asset?.current_assignment?.assigned_to?.full_name || 'Seleccionar empleado'"
-                                    item-label="full_name" item-value="staff_id" selected-as-label
-                                    :default-value="componentField.modelValue"
-                                    @select="(value) => setFieldValue('assigned_to_id', +value)"
-                                    filter-placeholder="Buscar empleado..." empty-text="No se encontraron empleados">
-                                </SelectFilters>
-
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
-
-
-                    <FieldGroup>
-                        <VeeField name="assign_date" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="assign_date">Fecha de Entrega</FieldLabel>
-                                <Popover v-slot="{ close }">
-                                    <PopoverTrigger as-child>
-
-                                        <Button :disabled="asset?.current_assignment?.parent_assignment_id || !canEdit"
-                                            variant="outline" class="w-48 justify-between font-normal">
-                                            {{ componentField.modelValue
-                                                ?
-                                                componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
-                                                : 'Seleccionar fecha' }}
-
-                                            <ChevronDownIcon />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent class="w-auto overflow-hidden p-0" align="start">
-
-                                        <Calendar v-bind="componentField" locale="es" layout="month-and-year"
-                                            selection-mode="single" @update:model-value="(value) => {
-                                                if (value) {
-                                                    componentField.onChange(value)
-                                                    close()
-                                                }
-                                            }" />
-                                    </PopoverContent>
-                                </Popover>
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
-
-
-                    <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
-                        <VeeField name="accessories" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="accessories">Accesorios</FieldLabel>
-
-                                <SelectFilters :items="assetAccessories" data-key="accessories"
-                                    :show-selected-focus="false" :show-refresh="false"
-                                    :label="selectLabels(componentField.modelValue)" item-label="name" item-value="id"
-                                    :multiple="true" selected-as-label :default-value="componentField.modelValue"
-                                    @select="(values) => setFieldValue('accessories', values)"
-                                    filter-placeholder="Buscar accesorio..." empty-text="No se encontraron accesorios">
-                                </SelectFilters>
-
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
-
-
-
-                    <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
-                        <VeeField name="comment" v-slot="{ componentField, errors }">
-                            <Field :data-invalid="!!errors.length">
-                                <FieldLabel for="comment">Observaciones</FieldLabel>
-                                <Textarea id="comment" placeholder="Condiciones del equipo, accesorios incluidos..."
-                                    rows="3" v-bind="componentField" />
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </Field>
-                        </VeeField>
-                    </FieldGroup>
-                </form>
             </div>
 
-        </div>
-            
             <DialogFooter class="gap-2 pt-2 border-t">
                 <Button variant="outline" @click="open = false" :disabled="isSubmitting">Cancelar</Button>
-                <Button :disabled="isSubmitting
-                    || Object.keys(errors).length > 0 || !canEdit
-                    " type="submit" form="dialogForm" class="min-w-36">
+                <Button :disabled="disabledForm" type="submit" form="dialogForm" class="min-w-36">
                     <Spinner v-if="isSubmitting" />
                     {{ isSubmitting ? 'Asignando...' : 'Asignar Equipo' }}
                 </Button>
@@ -226,6 +228,7 @@ import { toast } from 'vue-sonner';
 import Countdown from '../Countdown.vue';
 import FileUpload from '../FileUpload.vue';
 import SelectFilters from '../SelectFilters.vue';
+import { isEqual } from '@/lib/utils';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -256,6 +259,10 @@ const url = computed<string>({
     }
 });
 
+
+const disabledForm = computed(() => {
+    return isSubmitting.value || Object.keys(errors.value).length > 0 || !canEdit.value || isEqual(values, initialValues.value);
+});
 
 const canEdit = computed({
     get: () => {
@@ -307,13 +314,21 @@ const formSchema = toTypedSchema(
     })
 );
 
-const { handleSubmit, errors, setValues, setFieldValue } = useForm({
-    initialValues: {
-        assigned_to_id: undefined,
-        assign_date: today(getLocalTimeZone()),
-        comment: '',
-        accessories: [],
-    },
+
+const initialValues = computed(() => {
+    return {
+        assigned_to_id: assign.value?.assigned_to_id,
+        assign_date: assign.value ? parseDate(assign.value.assigned_at.split('T')[0]) : today(getLocalTimeZone()),
+        comment: assign.value?.comment || '',
+        accessories: assign.value?.children_assignments?.map(ca => ca.asset_id) ||
+            [],
+
+    }
+});
+
+
+const { handleSubmit, errors, setValues, setFieldValue, resetForm, values } = useForm({
+    initialValues: initialValues.value,
     validationSchema: formSchema,
     validateOnMount: false,
 
@@ -321,19 +336,9 @@ const { handleSubmit, errors, setValues, setFieldValue } = useForm({
 
 watch(assign, (assignment) => {
     if (assignment) {
-        setValues({
-            assigned_to_id: assignment.assigned_to_id,
-            assign_date: parseDate(assignment.assigned_at.split('T')[0]),
-            comment: assignment.comment || '',
-            accessories: assignment.children_assignments?.map(ca => ca.asset_id) || [],
-        });
+        setValues(initialValues.value);
     } else {
-        setValues({
-            assigned_to_id: undefined,
-            assign_date: today(getLocalTimeZone()),
-            comment: '',
-            accessories: [],
-        });
+        resetForm();
     }
 }, { immediate: true });
 
@@ -372,6 +377,7 @@ const onSubmit = async (values: Record<string, any>) => {
         preserveUrl: true,
 
         onFlash: (flash) => {
+            if (flash.error) return;
             if (flash.assignment_id) {
                 const type = asset.value?.type?.name;
                 if (type) {
@@ -384,11 +390,12 @@ const onSubmit = async (values: Record<string, any>) => {
                     only: ['accessoriesOutOfStockAlert'],
                 });
             }
-        },
-        onSuccess: () => {
+
             open.value = false;
             asset.value = null;
         },
+
+
         onFinish: () => {
             isSubmitting.value = false;
 
@@ -437,3 +444,4 @@ const selectLabels = (modelValue: Array<number>) => {
 
 
 </script>
+

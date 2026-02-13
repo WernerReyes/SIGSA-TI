@@ -171,42 +171,13 @@
                 <Pencil />
                 Cambiar estado
               </ContextMenuItem>
-              <!-- <ContextMenuItem
-                :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
-                v-if="activeRow?.category === TicketCategory.EQUIPMENT && isFromTI" @click="() => {
-                  router.reload({
-                    only: ['currentAssignment', 'requesterAssignments'],
-                    data: { requester_id: activeRow?.requester_id },
-                    preserveUrl: true,
-                    onSuccess: () => {
-                      openAssignEquipment = true;
-
-                    }
-                  });
-                }">
-                <MonitorSmartphone />
-                Asignar
-              </ContextMenuItem>
-              <ContextMenuItem @click="() => {
-                router.reload({
-                  only: ['currentAssignment'],
-                  data: { requester_id: activeRow?.requester_id },
-                  preserveUrl: true,
-                  onSuccess: () => {
-                    openDevolution = true;
-                  }
-                });
-              }"
-                :disabled="!isSameUser(activeRow?.responsible_id) || !isFromTI || activeRow?.status !== TicketStatus.IN_PROGRESS"
-                v-if="activeRow?.category === TicketCategory.EQUIPMENT && isFromTI">
-                <MonitorSmartphone />
-                Devolver
-              </ContextMenuItem> -->
+             
               <ContextMenuItem :disabled="disabledEdit" @click="emit('update:ticket', activeRow!)">
                 <Pencil />
                 Editar
               </ContextMenuItem>
-              <ContextMenuItem :disabled="!isSameUser(activeRow?.requester_id) && !isFromTI"
+              <!-- :disabled="!isSameUser(activeRow?.requester_id) && !isFromTI" -->
+              <ContextMenuItem 
                 @click="handleOpenHistories">
                 <History />
                 Ver historial
@@ -250,7 +221,7 @@
       <div class="text-sm text-muted-foreground">
         Mostrando <span class="font-medium">{{ tickets.from }}</span> a <span class="font-medium">{{ tickets.to ||
           0
-          }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
+        }}</span> de <span class="font-medium">{{ tickets.total }}</span> tickets
       </div>
       <Pagination class="mx-0 w-fit" :items-per-page="tickets.per_page" :total="tickets.total"
         :default-page="tickets.current_page">
@@ -291,10 +262,9 @@
   <DetailsDialog v-if="openDetails" v-model:open="openDetails" :ticket="activeRow" />
   <AssignResponsibleDialog v-if="openReassign" v-model:open="openReassign" v-model:ticket="activeRow" />
   <ChangeStatusDialog v-if="changeStatus" v-model:open="changeStatus" :ticket="activeRow" />
-  <!-- <Dialog v-if="openEdit" v-model:open="openEdit" v-model:ticket="activeRow" /> -->
+ 
   <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
-  <AssignEquipmentDialog v-if="openAssignEquipment" v-model:open="openAssignEquipment" :ticket="activeRow" />
-  <DevolutionDialog v-if="openDevolution" v-model:open="openDevolution" :ticket="activeRow" />
+ 
 
   <AlertDialog v-model:open="openDelete" title="Eliminar ticket"
     description="¿Estás seguro de que deseas eliminar este ticket? Esta acción no se puede deshacer."
@@ -344,7 +314,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { valueUpdater } from '@/lib/utils';
+import { formatMinutes, valueUpdater } from '@/lib/utils';
 
 import AlertDialog from '@/components/AlertDialog.vue';
 import SelectFilters from '@/components/SelectFilters.vue';
@@ -354,16 +324,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { RangeCalendar } from '@/components/ui/range-calendar';
 import { useApp } from '@/composables/useApp';
 import {
-  priorityOp, requestTypeOp, statusOp, type Ticket,
+  priorityOp, requestTypeOp, SlaTimeMinutes, statusOp, type Ticket,
   TicketPriority,
   ticketPriorityOptions,
+  TicketRequestType,
+  ticketRequestTypeOptions,
   TicketStatus,
   ticketStatusOptions,
   TicketType,
   ticketTypeOptions,
-  TicketRequestType,
-  TicketCategory,
-  ticketRequestTypeOptions,
   typeOp
 } from '@/interfaces/ticket.interface';
 import { type User as IUser } from '@/interfaces/user.interface';
@@ -372,18 +341,15 @@ import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone, parseDate } from '@internationalized/date';
 import { useDebounceFn } from '@vueuse/core';
 import { format } from 'date-fns';
-import { ArrowUpDown, CalendarSearch, ChevronDown, ChevronLeftIcon, UserPen, UserPlus, ChevronRightIcon, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, Users, X, XCircle, MonitorSmartphone, Clock, CheckCircle2 } from 'lucide-vue-next';
+import { AlertCircle, ArrowUpDown, CalendarSearch, CheckCircle2, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Clock, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, UserPen, UserPlus, Users, X, XCircle } from 'lucide-vue-next';
 import { type DateRange } from 'reka-ui';
 import { computed, h, reactive, ref, watch } from 'vue';
 import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
 import ChangeStatusDialog from './ChangeStatusDialog.vue';
 import DetailsDialog from './DetailsDialog.vue';
-import AssignEquipmentDialog from './AssignEquipmentDialog.vue';
-import AssignEquipmentModal from './AssignEquipmentModal.vue';
-import Dialog from './Dialog.vue';
-import TicketColumnTable from './TicketColumnTable.vue';
+
 import HistoryDialog from './HistoryDialog.vue';
-import DevolutionDialog from './DevolutionDialog.vue';
+import TicketColumnTable from './TicketColumnTable.vue';
 
 const emit = defineEmits<{
   (e: 'update:ticket', ticket: Ticket): void,
@@ -402,7 +368,7 @@ const activeRow = ref<Ticket | null>(null)
 const openDetails = ref(false);
 const openReassign = ref(false);
 const changeStatus = ref(false);
-// const openEdit = ref(false);
+
 const openAssignEquipment = ref(false);
 const openDevolution = ref(false);
 const openHistory = ref(false);
@@ -594,10 +560,11 @@ const handleOpenHistories = () => {
     only: ['historiesPaginated'],
     data: { ticket_id: activeRow.value?.id },
     preserveUrl: true,
-    onSuccess: (page) => {
-
+    onSuccess: () => {
+     
       openHistory.value = true;
-    }
+    },
+
   });
 }
 
@@ -608,7 +575,8 @@ const handleDeleteTicket = () => {
     preserveScroll: true,
     replace: true,
     preserveState: true,
-    onSuccess: () => {
+    onFlash: (flash) => {
+      if (flash.error) return;
       openDelete.value = false;
       activeRow.value = null;
     }
@@ -788,105 +756,41 @@ const columns: ColumnDef<Ticket>[] = [
   },
 
 
-   {
-    accessorKey: 'sla_response_due_at',
-    id: 'Vence respuesta',
-    header: ({ column }) => header('Vence respuesta', column),
-    cell: info => {
-      const dueDate = info.getValue() as string | null;
-      const firstResponseDate = info.row.original.first_response_at as string | null;
-
-      const hasResponse = Boolean(firstResponseDate);
-      const hasDueDate = Boolean(dueDate);
-      const isOnTime = hasResponse && hasDueDate
-        ? new Date(firstResponseDate!) <= new Date(dueDate!)
-        : null;
-      const bgColor = isOnTime === null
-        ? 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200'
-        : isOnTime
-          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-
-      const dueLabel = dueDate ? format(new Date(dueDate), 'dd/MM/yyyy HH:mm') : 'Sin fecha';
-      const responseLabel = firstResponseDate
-        ? format(new Date(firstResponseDate), 'dd/MM/yyyy HH:mm')
-        : 'Sin respuesta';
-      const diffHours = dueDate
-        ? (new Date(dueDate).getTime() - new Date(firstResponseDate || Date.now()).getTime()) / 36e5
-        : null;
-      const deltaLabel = diffHours === null
-        ? 'Sin SLA'
-        : hasResponse
-          ? (diffHours >= 0 ? `Antes: ${Math.round(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`)
-          : (diffHours >= 0 ? `Restan: ${Math.ceil(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`);
-
-      return h(Badge, { class: bgColor }, () => [
-        h('div', { class: 'flex flex-col gap-1 leading-tight' }, [
-          h('div', { class: 'flex items-center gap-2 text-[11px]' }, [
-            h(Clock, { class: 'size-3.5' }),
-            h('span', dueLabel)
-          ]),
-          h('div', { class: 'flex items-center gap-2 text-[10px] opacity-80' }, [
-            hasResponse ? h(CheckCircle2, { class: 'size-3' }) : h(XCircle, { class: 'size-3' }),
-            h('span', `Resp: ${responseLabel}`)
-          ]),
-          h('div', { class: 'text-[10px] opacity-80 pl-5' }, deltaLabel)
-          ])
-        ])
-  
-    }
-  },
-
   {
-    accessorKey: 'sla_resolution_due_at',
-    id: 'Vence solución',
-    header: ({ column }) => header('Vence solución', column),
-    cell: info => {
-      const dueDate = info.getValue() as string | null;
-      const resolvedDate = info.row.original.resolved_at as string | null;
+  accessorKey: "sla_response_due_at",
+  id: "Vence respuesta",
+  header: ({ column }) => header("Vence respuesta", column),
+  cell: info => {
+    return renderSlaCell(
+      info.row.original.sla_response_time_minutes,
+      info.row.original.sla_response_due_at,
+      info.row.original.first_response_at,
+      {
+        dueLabel: 'Debe responder',
+        actualLabel: 'Respondio'
+      }
+    )
+  }
+}
+,
+  {
+  accessorKey: "sla_resolution_due_at",
+  id: "Vence solución",
+  header: ({ column }) => header("Vence solución", column),
+  cell: info =>
+    renderSlaCell(
+      info.row.original.sla_resolution_time_minutes,
+      info.row.original.sla_resolution_due_at,
+      info.row.original.resolved_at,
+      {
+        dueLabel: 'Debe resolver',
+        actualLabel: 'Resuelto'
+      }
+    )
+},
 
-      const hasResolved = Boolean(resolvedDate);
-      const hasDueDate = Boolean(dueDate);
-      const isOnTime = hasResolved && hasDueDate
-        ? new Date(resolvedDate!) <= new Date(dueDate!)
-        : null;
-      const bgColor = isOnTime === null
-        ? 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200'
-        : isOnTime
-          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
 
-      const dueLabel = dueDate ? format(new Date(dueDate), 'dd/MM/yyyy HH:mm') : 'Sin fecha';
-      const resolvedLabel = resolvedDate
-        ? format(new Date(resolvedDate), 'dd/MM/yyyy HH:mm')
-        : 'Sin resolucion';
-      const diffHours = dueDate
-        ? (new Date(dueDate).getTime() - new Date(resolvedDate || Date.now()).getTime()) / 36e5
-        : null;
-      const deltaLabel = diffHours === null
-        ? 'Sin SLA'
-        : hasResolved
-          ? (diffHours >= 0 ? `Antes: ${Math.round(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`)
-          : (diffHours >= 0 ? `Restan: ${Math.ceil(diffHours)}h` : `Tarde: ${Math.abs(Math.round(diffHours))}h`);
 
-      return h(Badge, { class: bgColor }, () => [
-        h('div', { class: 'flex flex-col gap-1 leading-tight' }, [
-          h('div', { class: 'flex items-center gap-2 text-[11px]' }, [
-            h(Clock, { class: 'size-3.5' }),
-            h('span', dueLabel)
-          ]),
-          h('div', { class: 'flex items-center gap-2 text-[10px] opacity-80' }, [
-            hasResolved ? h(CheckCircle2, { class: 'size-3' }) : h(XCircle, { class: 'size-3' }),
-            h('span', `Res: ${resolvedLabel}`)
-          ]),
-          h('div', { class: 'text-[10px] opacity-80 pl-5' }, deltaLabel)
-          ])
-        ])
-        
-    }
-  },
-
-  
   {
     accessorKey: 'created_at',
     id: 'Abierto el',
@@ -933,4 +837,82 @@ const table = useVueTable({
     get sorting() { return sorting.value },
   },
 })
+
+
+
+
+type SlaLabels = {
+  dueLabel: string;
+  actualLabel: string;
+}
+
+type SlaDate = {
+  text: string;
+  isMissing: boolean;
+}
+
+function formatSlaDate(value?: Date | string | null): SlaDate {
+  if (!value) return { text: 'Sin registrar', isMissing: true };
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { text: 'Sin registrar', isMissing: true };
+  return { text: format(parsed, 'dd/MM/yyyy HH:mm'), isMissing: false };
+}
+
+function renderSlaDateLine(label: string, value?: Date | string | null) {
+  const formatted = formatSlaDate(value);
+  const className = formatted.isMissing
+    ? 'text-[11px] text-muted-foreground flex items-center gap-1'
+    : 'text-[11px] text-muted-foreground';
+  return h('span', { class: className }, [
+    formatted.isMissing ? h(AlertCircle, { class: 'size-3 text-muted-foreground/70' }) : null,
+    `${label}: ${formatted.text}`
+  ]);
+}
+
+function renderSlaCell(
+  slaTimeMinutes: SlaTimeMinutes | null | undefined,
+  dueAt?: Date | string | null,
+  actualAt?: Date | string | null,
+  labels: SlaLabels = { dueLabel: 'Vence', actualLabel: 'Atendido' }
+) {
+  if (!slaTimeMinutes) {
+    return h('div', { class: 'flex flex-col gap-1 rounded-md bg-muted/30 px-2 py-1' }, [
+      h(Badge, { variant: 'outline' }, 'Sin SLA'),
+      renderSlaDateLine(labels.dueLabel, dueAt),
+      renderSlaDateLine(labels.actualLabel, actualAt)
+    ]);
+  }
+
+  let statusBadge = h(Badge, { variant: 'secondary' }, 'Sin tiempo');
+  if (slaTimeMinutes.late_minutes) {
+    statusBadge = h(Badge, { class: 'bg-red-500 text-white' }, [
+      h(Clock, { class: 'size-4' }),
+      `${formatMinutes(slaTimeMinutes.late_minutes)} tarde`
+    ]);
+  } else if (slaTimeMinutes.before_late_minutes) {
+    statusBadge = h(Badge, { class: 'bg-green-500 text-white' }, [
+      h(Clock, { class: 'size-4' }),
+      `${formatMinutes(slaTimeMinutes.before_late_minutes)} antes`
+    ]);
+  } else if (slaTimeMinutes.remaining_minutes) {
+    statusBadge = h(Badge, { class: 'bg-yellow-500 text-white' }, [
+      h(CheckCircle2, { class: 'size-4' }),
+      `${formatMinutes(slaTimeMinutes.remaining_minutes)} restantes`
+    ]);
+  }
+
+  return h('div', { class: 'flex flex-col gap-1 rounded-md bg-muted/30 px-2 py-1' }, [
+    statusBadge,
+    renderSlaDateLine(labels.dueLabel, dueAt),
+    renderSlaDateLine(labels.actualLabel, actualAt)
+  ]);
+}
+
+
+
+
+
+
+
+
 </script>

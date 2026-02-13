@@ -1,5 +1,10 @@
-- Cuando no hayga accesorios, que envie un correo a compras
-- Verificar que cuando se asigne una laptop verifique qu hayga un cargador disponible. ✓
-- tipos: LAPTOP, PC, CELULAR, ACCESORIOS ✓
-- hay 3 actas de entrega ✓
-- mejorar el filtro de busqueda de empleados ✓
+* FALTA
+- Mejorar el diseño de detalles de los tickets ( SLA ). ✅
+- Mejorar el orden de inserción en la bitacora. ✅
+- Habilitar el modo disabled en los boton de asignación ✅.
+- Mejorar el historia de tickets y assets. ✅
+- Mejorar la logica de envio de correo de sin accesorios.
+
+- Reemplazar el dasboard con valores reales
+
+- TESTEAR APP

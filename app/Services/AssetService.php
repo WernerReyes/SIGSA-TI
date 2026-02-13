@@ -236,7 +236,7 @@ class AssetService
     {
         try {
             return AssetAssignment::query()
-                ->with('asset:id,name,brand,model,type_id', 'asset.type:id,name', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,type_id', 'childrenAssignments.asset.type:id,name')
+                ->with('asset:id,name,brand,model,serial_number,type_id', 'asset.type:id,name', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,serial_number,type_id', 'childrenAssignments.asset.type:id,name')
                 ->where('assigned_to_id', $user_id)
                 // ->whereNull('returned_at')
                 ->where('parent_assignment_id', null)
@@ -563,6 +563,8 @@ class AssetService
                     'performed_by' => auth()->user()->staff_id,
                     // 'performed_at' => now()->utc(),
                 ]);
+
+                app(AccessoryOutOfStockAlertService::class)->check();
             });
 
         } catch (\Exception $e) {
@@ -1058,14 +1060,7 @@ class AssetService
                     'return_reason' => $dto->return_reason,
                 ]);
 
-                // AssetHistory::create([
-                //     'action' => AssetHistoryAction::RETURNED->value,
-                //     'description' => $description,
-                //     'asset_id' => $assignment->asset_id,
-                //     'performed_by' => $responsible->staff_id,
-                //     // 'performed_at' => now()->utc(),
-                //     // 'related_assignment_id' => $assignment->id,
-                // ]);
+
 
                 $this->logHistory(
                     $assignment->asset,
@@ -1073,15 +1068,6 @@ class AssetService
                     $description,
 
                 );
-
-                // $this->logTicketHistory(
-                //     $assignment->asset,
-                //     TicketHistoryAction::ASSET_RETURNED,
-                //     $description,
-                //     $assignment,
-                //     TicketAssetAction::RETURNED,
-                //     $dto->ticket_id
-                // );
 
 
             });
@@ -1180,7 +1166,13 @@ class AssetService
             Storage::disk('public')->makeDirectory('documents');
 
             $template = new TemplateProcessor(storage_path('app/templates/cargo-celular.docx'));
-            // 24/11/2025
+
+            // 24/11/2025|
+
+            $accesories = $assignment->childrenAssignments->map(function ($childAssignment) {
+                $asset = $childAssignment->asset;
+                return $asset->full_name;
+            })->implode(', ');
 
             $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
             $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
@@ -1190,7 +1182,7 @@ class AssetService
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
             $template->setValue('brand', $asset->brand);
             $template->setValue('model', $asset->model);
-            $template->setValue('comment', $assignment->comment ?? 'N/A');
+            $template->setValue('comment', $accesories);
             $template->setValue('phone', $asset->phone ?? 'N/A');
             $template->setValue('imei', $asset->imei ?? 'N/A');
 

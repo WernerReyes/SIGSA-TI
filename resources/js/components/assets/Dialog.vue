@@ -559,14 +559,6 @@ function onSubmit(values: any) {
                 handleResetForm();
             },
 
-            // onSuccess: () => {
-            //     open.value = false;
-            //     handleResetForm();
-
-            // },
-            // onFinish: () => {
-            //     // isSubmitting.value = false;
-            // }
         })
         return;
     }
@@ -580,13 +572,7 @@ function onSubmit(values: any) {
             open.value = false;
             handleResetForm();
         }
-        // onSuccess: () => {
-        //     open.value = false;
-        //     handleResetForm();
-        // },
-        // onFinish: () => {
-        //     // isSubmitting.value = false;
-        // }
+       
 
 
     })
@@ -596,7 +582,7 @@ const handleResetForm = () => {
     handleReset();
     currentAsset.value = null;
     openEditor.value = false;
-    // setValues(initialFormValues);
+   
 
 
 }

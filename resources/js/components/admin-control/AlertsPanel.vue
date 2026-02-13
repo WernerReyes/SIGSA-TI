@@ -539,34 +539,7 @@ const alertMeta = (notification: NotificationContract) => {
     return 'Revisar vigencia del contrato';
 };
 
-const periodCardClass = (period?: ContractPeriod) => {
-    switch (period) {
-        case ContractPeriod.RECURRING:
-            return 'bg-indigo-500/10 text-indigo-700 border-indigo-300/40';
-        case ContractPeriod.FIXED_TERM:
-            return 'bg-amber-500/10 text-amber-700 border-amber-300/40';
-        case ContractPeriod.ONE_TIME:
-            return 'bg-emerald-500/10 text-emerald-700 border-emerald-300/40';
-        default:
-            return 'bg-muted/40 text-foreground border-muted';
-    }
-};
 
-const typeAccentClass = (type?: ContractType) => {
-    switch (type) {
-        case ContractType.LICENSE:
-            return 'border-l-4 border-l-blue-500';
-        case ContractType.SERVICE:
-            return 'border-l-4 border-l-green-500';
-        case ContractType.SUPPORT:
-            return 'border-l-4 border-l-yellow-500';
-        case ContractType.HARDWARE:
-            return 'border-l-4 border-l-purple-500';
-        case ContractType.OTHER:
-        default:
-            return 'border-l-4 border-l-slate-400';
-    }
-};
 
 const typeHeaderClass = (type?: string) => {
     switch (type) {
@@ -593,19 +566,6 @@ const typeBadgeClass = (type?: ContractType) => {
             return 'border-yellow-300/60 bg-yellow-500/10 text-yellow-700';
         case ContractType.HARDWARE:
             return 'border-purple-300/60 bg-purple-500/10 text-purple-700';
-        default:
-            return 'border-slate-300/60 bg-slate-500/10 text-slate-700';
-    }
-};
-
-const periodBadgeClass = (period?: ContractPeriod) => {
-    switch (period) {
-        case ContractPeriod.RECURRING:
-            return 'border-indigo-300/60 bg-indigo-500/10 text-indigo-700';
-        case ContractPeriod.FIXED_TERM:
-            return 'border-amber-300/60 bg-amber-500/10 text-amber-700';
-        case ContractPeriod.ONE_TIME:
-            return 'border-emerald-300/60 bg-emerald-500/10 text-emerald-700';
         default:
             return 'border-slate-300/60 bg-slate-500/10 text-slate-700';
     }

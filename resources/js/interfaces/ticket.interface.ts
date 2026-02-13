@@ -64,6 +64,12 @@ export enum TicketCategory {
     EQUIPMENT = 'EQUIPMENT',
 }
 
+export type SlaTimeMinutes = {
+    late_minutes: number | null;
+    before_late_minutes: number | null;
+    remaining_minutes: number | null;
+}
+
 export interface Ticket {
     id: number;
     title: string;
@@ -80,8 +86,6 @@ export interface Ticket {
 
     images_urls?: string[];
 
-
-
     // request_type: TicketRequestType;
     // created_at: Date;
     // updated_at: Date;
@@ -94,7 +98,6 @@ export interface Ticket {
     responsible_id?: number;
     responsible?: User;
 
-
     sla_response_due_at?: Date;
     sla_resolution_due_at?: Date;
 
@@ -106,6 +109,8 @@ export interface Ticket {
     sla_paused_duration?: number;
     sla_breached?: boolean;
     images?: string[];
+    sla_response_time_minutes?: SlaTimeMinutes;
+    sla_resolution_time_minutes?: SlaTimeMinutes;
 
     created_at: Date;
     updated_at: Date;

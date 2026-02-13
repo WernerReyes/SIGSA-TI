@@ -23,7 +23,7 @@
                         class="flex flex-wrap gap-2 text-xs text-muted-foreground items-center animate-in fade-in-50">
                         <Badge variant="outline" class="rounded-full">{{ filterCount }} {{
                             filterCount === 1 ? 'filtro aplicado' : 'filtros aplicados'
-                        }}</Badge>
+                            }}</Badge>
 
                         <template v-for="filter in filterstersRenders" :key="filter.label">
                             <Badge v-if="filter.value" variant="secondary" class="cursor-pointer" :class="{
@@ -497,13 +497,15 @@ const handleOpenDetails = () => {
         only: ['details'],
         data: { asset_id: assetId.value },
         preserveUrl: true,
-        onSuccess: (page) => {
+        onSuccess: () => {
+            // if (flash.error) return;
             activeRow.value = {
                 ...activeRow.value!,
                 ...page.props.details as Asset,
             }
             openDetails.value = true;
         }
+
     });
 
 }
@@ -513,7 +515,7 @@ const handleOpenHistories = () => {
         only: ['historiesPaginated'],
         data: { asset_id: assetId.value },
         preserveUrl: true,
-        onSuccess: (page) => {
+        onSuccess: () => {  
             openHistory.value = true;
         }
     });
@@ -578,10 +580,11 @@ const handleDeleteAsset = () => {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
-        onSuccess: () => {
+        onFlash: (flash) => {
+            if (flash.error) return;
             activeRow.value = null;
             openDelete.value = false;
-        }
+        },
     });
 }
 

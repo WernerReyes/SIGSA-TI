@@ -244,10 +244,11 @@ class TicketController extends Controller
         }
 
         try {
-            $description = $ticketService->changeTicketStatus($ticket, $newStatus);
+            $data = $ticketService->changeTicketStatus($ticket, $newStatus);
 
             Inertia::flash([
-                'success' => $description,
+                'success' => $data['description'],
+                'ticket' => $data['ticket'],
                 'error' => null,
                 'timestamp' => now()->timestamp,
             ]);
@@ -256,6 +257,7 @@ class TicketController extends Controller
 
             Inertia::flash([
                 'success' => null,
+                'ticket' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);

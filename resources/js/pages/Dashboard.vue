@@ -8,6 +8,12 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 
+defineProps<{
+   metrics: any;
+   charts: any;
+
+}>();
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
@@ -22,6 +28,9 @@ const breadcrumbs: BreadcrumbItem[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-6">
             <!-- <DashboardHero /> -->
+
+            {{metrics || 'nothing' }}
+            {{ charts || 'nothing' }}
 
             <DashboardStats />
 

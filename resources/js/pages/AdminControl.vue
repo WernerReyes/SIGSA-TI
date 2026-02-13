@@ -69,7 +69,9 @@
 
 
         <AlertDialog v-model:open="showAlert" :title="alertProps.title" :description="alertProps.description"
-            @confirm="alertProps.onConfirm" />
+            @confirm="alertProps.onConfirm"
+             
+            />
 
 
     </AppLayout>
@@ -181,6 +183,8 @@ const handleCancelContract = (contract: Contract) => {
                     return c;
                 });
             });
+
+            
 
         }
     });

@@ -149,6 +149,7 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
         only: ['filters'],
         preserveUrl: true,
         onFlash: (flash) => {
+            if (flash.error) return;
             const responsible = flash.responsible as User | null;
             if (!responsible) return;
             router.replaceProp('tickets.data', (tickets: Ticket[]) => {
@@ -163,12 +164,12 @@ const handleFormSubmit = async (values: { responsible_id: number }) => {
                     return t;
                 });
             });
-        },
-        onSuccess: () => {
-            handleFormReset();
 
+            handleReset();
             open.value = false;
+            ticket.value = null;
         },
+       
 
     });
 

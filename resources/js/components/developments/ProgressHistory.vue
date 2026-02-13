@@ -203,8 +203,10 @@ watch(
                 },
                 preserveUrl: true,
                 onSuccess: () => {
-                    loadedHistoryFor.value = id ?? null;
+                    // if (flash.error) return;
+                    loadedHistoryFor.value = id;
                 }
+              
             });
         }
     }

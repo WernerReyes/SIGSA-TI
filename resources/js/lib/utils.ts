@@ -71,3 +71,12 @@ export const getEmptyEnumOption = <T>(value: T): EnumOption<T> => {
 export const isEqual = <T>(a: T, b: T): boolean => {
     return equal(a, b);
 };
+
+export const formatMinutes = (minutes: number) => {
+    if (!minutes || minutes <= 0) return 'Sin definir';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours && mins) return `${hours} h ${mins} min`;
+    if (hours) return `${hours} h`;
+    return `${mins} min`;
+};

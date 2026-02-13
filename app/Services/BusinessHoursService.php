@@ -68,6 +68,25 @@ class BusinessHoursService
     }
 
 
+    // public function calculateLateMinutes(Carbon $dueDate, Carbon $responseDate): int
+    // {
+    //     // ds($this->businessMinutesBetween($responseDate, $dueDate));
+
+    //     if ($responseDate->lte($dueDate)) {
+    //         return 0;
+    //     }
+
+    //     return $this->businessMinutesBetween($dueDate, $responseDate);
+    // }
+
+    public function calculateBusinessMinutesBetween(Carbon $start, Carbon $end): int
+    {
+        if ($end->lte($start)) {
+            return 0;
+        }
+
+        return $this->businessMinutesBetween($start, $end);
+    }
 
 
     public  function businessMinutesBetween(Carbon $start, Carbon $end): int

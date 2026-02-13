@@ -10,9 +10,15 @@
                         <CalendarClock class="size-5 text-primary" />
                     </div>
                     <div>
-                        <DialogTitle class="text-xl font-semibold">Nuevo evento</DialogTitle>
+                        <DialogTitle class="text-xl font-semibold">
+                            {{
+                                selectedEvent ? 'Editar evento' : 'Registrar nuevo evento'
+                            }}
+                        </DialogTitle>
                         <DialogDescription class="text-sm">
-                            Registra un nuevo evento de infraestructura o mantenimiento.
+                            {{ selectedEvent ?
+                                'Modifica los detalles del evento de infraestructura.'
+                                : 'Registra un nuevo evento de infraestructura proporcionando los detalles necesarios.' }}
                         </DialogDescription>
                     </div>
                 </div>

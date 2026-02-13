@@ -6,6 +6,8 @@ use App\Enums\Ticket\TicketPriority;
 use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketStatus;
 use App\Enums\Ticket\TicketType;
+use App\Services\BusinessHoursService;
+use Carbon\Carbon;
 use DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -71,7 +73,9 @@ class Ticket extends Model
     ];
 
 
-    protected $appends = ['images_urls'];
+    protected $appends = ['images_urls', 'sla_response_time_minutes', 'sla_resolution_time_minutes'];
+
+
 
     public function getImagesUrlsAttribute()
     {
@@ -84,8 +88,99 @@ class Ticket extends Model
         }, $this->images);
     }
 
+    public function getSlaResponseTimeMinutesAttribute()
+    {
+        
 
-    
+        $businessHoursService = app(BusinessHoursService::class);
+
+        return [
+            'late_minutes' => $this->first_response_at ? $businessHoursService->calculateBusinessMinutesBetween(
+                Carbon::parse($this->sla_response_due_at),
+                Carbon::parse($this->first_response_at)
+            ) : null,
+            'before_late_minutes' =>  $this->first_response_at ? $businessHoursService->calculateBusinessMinutesBetween(
+                Carbon::parse($this->first_response_at),
+                Carbon::parse($this->sla_response_due_at)
+            ) : null,
+             'remaining_minutes' => $this->sla_response_due_at ? $businessHoursService->calculateBusinessMinutesBetween(
+                Carbon::now(),
+                Carbon::parse($this->sla_response_due_at)
+            ) : null,
+
+        ];
+    }
+
+    public function getSlaResolutionTimeMinutesAttribute()
+    {
+       
+
+        $businessHoursService = app(BusinessHoursService::class);
+
+        return [
+            'late_minutes' =>  $this->resolved_at ? $businessHoursService->calculateBusinessMinutesBetween(
+                Carbon::parse($this->sla_resolution_due_at),
+                Carbon::parse($this->resolved_at)
+            ) : null,
+            'before_late_minutes' => $this->resolved_at ? $businessHoursService->calculateBusinessMinutesBetween(
+                Carbon::parse($this->resolved_at),
+                Carbon::parse($this->sla_resolution_due_at)
+            ) : null,
+             'remaining_minutes' => $this->sla_resolution_due_at ? $businessHoursService->calculateBusinessMinutesBetween(
+                Carbon::now(),
+                Carbon::parse($this->sla_resolution_due_at)
+            ) : null,
+
+        ];
+    }
+
+    // public function getLateMinutesAttribute()
+    // {
+    //     if (!$this->sla_response_due_at || !$this->first_response_at) {
+    //         return null;
+    //     }
+
+    //     ds('Calculating late minutes for ticket ID: ' . $this->id);
+
+    //     return app(BusinessHoursService::class)->calculateBusinessMinutesBetween(
+    //         Carbon::parse($this->sla_response_due_at),
+    //         Carbon::parse($this->first_response_at)
+    //     );
+    // }
+
+    // public function getBeforeLateMinutesAttribute()
+    // {
+    //     if (!$this->sla_response_due_at || !$this->first_response_at) {
+    //         return null;
+    //     }
+
+    //     ds('Calculating before late minutes for ticket ID: ' . $this->id);
+
+    //     return app(BusinessHoursService::class)->calculateBusinessMinutesBetween(
+    //         Carbon::parse($this->first_response_at),
+    //         Carbon::parse($this->sla_response_due_at)
+    //     );
+    // }
+
+    // public function getSlaRemainingMinutesAttribute()
+    // {
+    //     if (!$this->sla_response_due_at) {
+    //         return null;
+    //     }
+
+    //     $now = Carbon::now();
+    //     $dueAt = Carbon::parse($this->sla_response_due_at);
+
+    //     if ($now->greaterThan($dueAt)) {
+    //         return 0;
+    //     }
+
+    //     return app(BusinessHoursService::class)->calculateBusinessMinutesBetween(
+    //         $now,
+    //         $dueAt
+    //     );
+    // }
+
 
     protected static function booted()
     {
