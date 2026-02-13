@@ -39,7 +39,6 @@ class TicketService
 
     public function getAllOrderedByPriority(TicketFiltersDto $filters)
     {
-        ds('Getting tickets with filters', $filters);
         $list = Ticket::
             query()
             ->select([

@@ -362,7 +362,6 @@ const { handleSubmit, values, setFieldValue, handleReset, errors, setValues } = 
 type FormValues = typeof values;
 
 watch(() => selectedTicket.value, (newVal) => {
-    console.log('Selected ticket changed:', newVal);
     if (newVal) {
         setValues(initialValues.value);
     } else {
