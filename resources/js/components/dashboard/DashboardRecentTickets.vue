@@ -26,48 +26,6 @@ const { tickets  } = defineProps<{
     tickets: Ticket[]
 }>();
 
-// const tickets = [
-//     {
-//         id: 'TK-1234',
-//         title: 'Error critico en servidor de produccion',
-//         priority: 'Critico',
-//         status: 'En progreso',
-//         assignee: 'Maria Lopez',
-//         created: 'Hace 15 min',
-//     },
-//     {
-//         id: 'TK-1233',
-//         title: 'Solicitud de acceso a VPN',
-//         priority: 'Medio',
-//         status: 'Abierto',
-//         assignee: 'Sin asignar',
-//         created: 'Hace 1 hora',
-//     },
-//     {
-//         id: 'TK-1232',
-//         title: 'Falla en impresora del piso 3',
-//         priority: 'Bajo',
-//         status: 'Pendiente',
-//         assignee: 'Juan Perez',
-//         created: 'Hace 2 horas',
-//     },
-//     {
-//         id: 'TK-1231',
-//         title: 'Actualizacion de licencia Office',
-//         priority: 'Alto',
-//         status: 'Abierto',
-//         assignee: 'Carlos Ruiz',
-//         created: 'Hace 3 horas',
-//     },
-//     {
-//         id: 'TK-1230',
-//         title: 'Configuracion de nuevo equipo',
-//         priority: 'Medio',
-//         status: 'Resuelto',
-//         assignee: 'Ana Martinez',
-//         created: 'Hace 4 horas',
-//     },
-// ];
 
 </script>
 
@@ -97,7 +55,12 @@ const { tickets  } = defineProps<{
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-for="ticket in tickets" :key="ticket.id">
+                    <TableRow v-if ="!tickets.length">
+                        <TableCell colspan="6" class="text-center text-sm text-muted-foreground">
+                            No hay tickets recientes.
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-else v-for="ticket in tickets" :key="ticket.id">
                         <TableCell class="font-mono text-primary">
                            TK-{{ ticket.id.toString().padStart(3, '0') }}
                         </TableCell>
