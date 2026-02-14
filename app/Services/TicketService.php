@@ -155,6 +155,16 @@ class TicketService
             ->get();
     }
 
+    public function getTicketById(int $id)
+    {
+        return Ticket::with([
+            'requester:staff_id,firstname,lastname,dept_id',
+            'requester.department:id,name',
+            'responsible:staff_id,firstname,lastname',
+        ])->findOrFail($id);
+    }
+
+
     public function storeTicket(StoreTicketDto $dto)
     {
 

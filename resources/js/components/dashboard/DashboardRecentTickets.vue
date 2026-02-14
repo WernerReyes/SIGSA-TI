@@ -9,6 +9,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { type Ticket, getTicketOp } from '@/interfaces/ticket.interface';
 import {
     Table,
     TableBody,
@@ -17,63 +18,57 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const tickets = [
-    {
-        id: 'TK-1234',
-        title: 'Error critico en servidor de produccion',
-        priority: 'Critico',
-        status: 'En progreso',
-        assignee: 'Maria Lopez',
-        created: 'Hace 15 min',
-    },
-    {
-        id: 'TK-1233',
-        title: 'Solicitud de acceso a VPN',
-        priority: 'Medio',
-        status: 'Abierto',
-        assignee: 'Sin asignar',
-        created: 'Hace 1 hora',
-    },
-    {
-        id: 'TK-1232',
-        title: 'Falla en impresora del piso 3',
-        priority: 'Bajo',
-        status: 'Pendiente',
-        assignee: 'Juan Perez',
-        created: 'Hace 2 horas',
-    },
-    {
-        id: 'TK-1231',
-        title: 'Actualizacion de licencia Office',
-        priority: 'Alto',
-        status: 'Abierto',
-        assignee: 'Carlos Ruiz',
-        created: 'Hace 3 horas',
-    },
-    {
-        id: 'TK-1230',
-        title: 'Configuracion de nuevo equipo',
-        priority: 'Medio',
-        status: 'Resuelto',
-        assignee: 'Ana Martinez',
-        created: 'Hace 4 horas',
-    },
-];
 
-const priorityClasses: Record<string, string> = {
-    Critico: 'bg-destructive/10 text-destructive border-destructive/20',
-    Alto: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    Medio: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-    Bajo: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-};
+const { tickets  } = defineProps<{
+    tickets: Ticket[]
+}>();
 
-const statusClasses: Record<string, string> = {
-    'En progreso': 'bg-primary/10 text-primary border-primary/20',
-    Abierto: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
-    Pendiente: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-    Resuelto: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-};
+// const tickets = [
+//     {
+//         id: 'TK-1234',
+//         title: 'Error critico en servidor de produccion',
+//         priority: 'Critico',
+//         status: 'En progreso',
+//         assignee: 'Maria Lopez',
+//         created: 'Hace 15 min',
+//     },
+//     {
+//         id: 'TK-1233',
+//         title: 'Solicitud de acceso a VPN',
+//         priority: 'Medio',
+//         status: 'Abierto',
+//         assignee: 'Sin asignar',
+//         created: 'Hace 1 hora',
+//     },
+//     {
+//         id: 'TK-1232',
+//         title: 'Falla en impresora del piso 3',
+//         priority: 'Bajo',
+//         status: 'Pendiente',
+//         assignee: 'Juan Perez',
+//         created: 'Hace 2 horas',
+//     },
+//     {
+//         id: 'TK-1231',
+//         title: 'Actualizacion de licencia Office',
+//         priority: 'Alto',
+//         status: 'Abierto',
+//         assignee: 'Carlos Ruiz',
+//         created: 'Hace 3 horas',
+//     },
+//     {
+//         id: 'TK-1230',
+//         title: 'Configuracion de nuevo equipo',
+//         priority: 'Medio',
+//         status: 'Resuelto',
+//         assignee: 'Ana Martinez',
+//         created: 'Hace 4 horas',
+//     },
+// ];
+
 </script>
 
 <template>
@@ -104,26 +99,28 @@ const statusClasses: Record<string, string> = {
                 <TableBody>
                     <TableRow v-for="ticket in tickets" :key="ticket.id">
                         <TableCell class="font-mono text-primary">
-                            {{ ticket.id }}
+                           TK-{{ ticket.id.toString().padStart(3, '0') }}
                         </TableCell>
-                        <TableCell class="max-w-[240px] truncate font-medium">
+                        <TableCell class="max-w-60 truncate font-medium">
                             {{ ticket.title }}
                         </TableCell>
                         <TableCell>
-                            <Badge class="border" :class="priorityClasses[ticket.priority]" variant="secondary">
-                                {{ ticket.priority }}
+                            <Badge class="border" :class="getTicketOp('priority', ticket.priority).bg">
+                                <component :is="getTicketOp('priority', ticket.priority)?.icon" />
+                                {{ getTicketOp('priority', ticket.priority).label }}
                             </Badge>
                         </TableCell>
                         <TableCell>
-                            <Badge class="border" :class="statusClasses[ticket.status]" variant="secondary">
-                                {{ ticket.status }}
+                            <Badge class="border" :class="getTicketOp('status', ticket.status).bg" variant="secondary">
+                                <component :is="getTicketOp('status', ticket.status)?.icon" />
+                                {{ getTicketOp('status', ticket.status).label }}
                             </Badge>
                         </TableCell>
                         <TableCell class="text-muted-foreground">
-                            {{ ticket.assignee }}
+                            {{ ticket.responsible ? ticket.responsible.full_name : 'Sin asignar' }}
                         </TableCell>
                         <TableCell class="text-muted-foreground">
-                            {{ ticket.created }}
+                            {{ formatDistanceToNow(ticket.created_at, { addSuffix: true, locale: es }) }}
                         </TableCell>
                     </TableRow>
                 </TableBody>
