@@ -14,23 +14,11 @@ class DashboardController extends Controller
         $end = now()->endOfMonth();
 
         return Inertia::render('Dashboard', [
-            'stats' => $dashboardService->stats(),
-            'tickets_by_priority' => $dashboardService->ticketsByPriority(),
-            'recent_tickets' => $dashboardService->recentTickets(),
-            'weekly_sla_compliance' => $dashboardService->getWeeklySlaCompliance(),
-            'recent_contract_notifications' => $dashboardService->recentContractNotifications(),
-
-            // 'metrics' => [
-            //     'sla_compliance' => $metrics->getMonthlyCompliance(),
-            //     'mttr_minutes' => $metrics->calculateMttr($start, $end),
-            //     'total_resolved' => $metrics->totalResolved($start, $end),
-            //     'breached' => $metrics->totalBreached($start, $end),
-            // ],
-            // 'charts' => [
-            //     'daily_compliance' => $metrics->dailyCompliance(),
-            //     'monthly_trend' => $metrics->monthlyTrend(),
-            //     'by_priority' => $metrics->complianceByPriority($start, $end),
-            // ]
+            'stats' => Inertia::once( fn() => $dashboardService->stats()),
+            'tickets_by_priority' => Inertia::once( fn() => $dashboardService->ticketsByPriority()),
+            'recent_tickets' => Inertia::once( fn() => $dashboardService->recentTickets()),
+            'weekly_sla_compliance' => Inertia::once( fn() => $dashboardService->getWeeklySlaCompliance()),
+            'recent_contract_notifications' => Inertia::once( fn() => $dashboardService->recentContractNotifications())
         ]);
     }
 }

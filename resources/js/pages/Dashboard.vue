@@ -31,13 +31,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-6">
-        
-            
+    
             <DashboardStats :stats="stats" />
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <!-- <ChartTooltip /> -->
-                <!-- :template="componentToString({}, ChartTooltipContent)" -->
                 <DashboardPriorityChart 
                 :tickets="tickets_by_priority" />
                 <DashboardSlaChart />
