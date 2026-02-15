@@ -218,7 +218,7 @@ const open = defineModel<boolean>('open');
 
 
 const emit = defineEmits<{
-    (e: 'new-development'): void;
+    (e: 'new-development', devRequest: DevelopmentRequest): void;
 }>();
 
 const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelopment');
@@ -354,7 +354,7 @@ const onSubmit = (values: any) => {
                     });
 
                 }
-                emit('new-development');
+                emit('new-development', devRequest);
 
                 onReset();
             }

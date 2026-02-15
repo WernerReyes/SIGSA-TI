@@ -5,6 +5,15 @@
     <AppLayout :breadcrumbs="breadcrumbs">
 
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+
+                <div>
+                    <p class="text-xs uppercase tracking-[0.25em] text-muted-foreground">Gestión de tickets</p>
+                    <h1 class="text-2xl font-bold leading-tight">Matriz de Tickets</h1>
+                    <p class="text-sm text-muted-foreground">Seguimiento centralizado de solicitudes, incidencias y tareas con detalles de estado, prioridad y asignación.</p>
+                </div>
+                   
+              
             <div class="ml-auto flex items-center gap-2">
                 <SLAHelperInfo />
 
@@ -13,25 +22,8 @@
                     Nuevo Ticket
                 </Button>
             </div>
-            <!-- <Dialog v-model="toggleModel" :departments="departments" /> -->
-
-            <!-- <Demo /> -->
-
-            <!-- <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-                <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
-                <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-                </div>
-                <div
-                    class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                    <PlaceholderPattern />
-
-                </div>
-            </div> -->
+            </div>
+            
 
             <div class="relative min-h-screen flex-1 rounded-xl md:min-h-min">
                 <!-- <PlaceholderPattern /> -->
@@ -42,7 +34,7 @@
 
                 <UpsertDialog v-model:open="open" v-model:selected="selectedTicket" />
 
-                <!-- <Table2 /> -->
+           
             </div>
         </div>
     </AppLayout>
@@ -51,7 +43,6 @@
 
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-// import { dashboard } from '@/routes';
 import Table from '@/components/tickets/Table.vue';
 import UpsertDialog from '@/components/tickets/UpsertDialog.vue';
 import Button from '@/components/ui/button/Button.vue';

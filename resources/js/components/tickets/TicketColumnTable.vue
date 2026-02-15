@@ -5,7 +5,7 @@
                 <Ticket class="h-4 w-4" />
             </span>
             <span class="font-mono text-xs font-semibold uppercase tracking-wide text-primary">
-                TK-{{ ticket.id }}
+                TK-{{ ticket.id.toString().padStart(3, '0') }}
             </span>
         </div>
 

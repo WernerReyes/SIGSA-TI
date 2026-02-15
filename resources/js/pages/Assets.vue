@@ -6,13 +6,22 @@
 
         <!-- Botón flotante de alerta -->
         <Teleport to="body" v-if="generalAlert">
-           
-            <AlertAccessoryOutStock  />
+
+            <AlertAccessoryOutStock />
         </Teleport>
 
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 
-            <Dialog includeButton v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
+                <div>
+                    <p class="text-xs uppercase tracking-[0.25em] text-muted-foreground">Gestión de activos</p>
+                    <h1 class="text-2xl font-bold leading-tight">Matriz de Activos TI</h1>
+                    <p class="text-sm text-muted-foreground">Inventario centralizado de hardware, software y accesorios
+                        con detalles de estado, ubicación y garantías.</p>
+                </div>
+
+                <Dialog includeButton v-model:current-asset="currentAsset" v-model:open-editor="openEditor" />
+            </div>
 
             <!-- Contenido principal -->
             <div class="space-y-4">
@@ -21,7 +30,9 @@
                         class="group relative overflow-hidden rounded-xl border bg-lineal-to-br from-background via-background to-muted/40 shadow-card transition hover:-translate-y-0.5 hover:shadow-2xl">
 
                         <div class="pointer-events-none absolute inset-0 opacity-50" :class="stat.bg"></div>
-                        <div class="pointer-events-none absolute inset-0 bg-lineal-to-br from-white/60 via-transparent to-white/10 dark:from-white/5"></div>
+                        <div
+                            class="pointer-events-none absolute inset-0 bg-lineal-to-br from-white/60 via-transparent to-white/10 dark:from-white/5">
+                        </div>
 
                         <CardContent class="relative space-y-4 p-4 sm:p-5">
                             <div class="flex items-start justify-between gap-3">
@@ -39,7 +50,8 @@
                                 </div>
                                 <DropdownMenu v-if="stat.label === statusOp.label">
                                     <DropdownMenuTrigger as-child>
-                                        <button class="p-1.5 rounded-lg hover:bg-muted transition" title="Cambiar estado">
+                                        <button class="p-1.5 rounded-lg hover:bg-muted transition"
+                                            title="Cambiar estado">
                                             <EllipsisVertical class="size-4 text-muted-foreground" />
                                         </button>
                                     </DropdownMenuTrigger>
@@ -61,7 +73,8 @@
                                 <span class="text-4xl font-black leading-none tracking-tight" :class="stat.color">
                                     {{ stat.value }}
                                 </span>
-                                <span class="text-xs text-muted-foreground group-hover:text-foreground transition">Estadística</span>
+                                <span
+                                    class="text-xs text-muted-foreground group-hover:text-foreground transition">Estadística</span>
                             </div>
                         </CardContent>
                     </Card>

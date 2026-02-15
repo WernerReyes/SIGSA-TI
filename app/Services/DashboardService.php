@@ -11,6 +11,7 @@ use App\Models\Asset;
 use App\Models\DevelopmentRequest;
 use App\Models\Notification;
 use App\Models\Ticket;
+use Carbon\Carbon;
 
 class DashboardService
 {
@@ -164,9 +165,9 @@ class DashboardService
             ->groupBy('priority')
             ->get()
             ->mapWithKeys(function ($item) {
-            return [$item->priority => $item->count];
+                return [$item->priority => $item->count];
             });
-        }
+    }
 
     public function recentTickets()
     {
@@ -177,49 +178,66 @@ class DashboardService
 
 
 
-    public function getWeeklySlaCompliance(): array
+    public function getSlaComplianceByDateRange(string $from, string $to): array
     {
-        $startOfWeek = now()->startOfWeek(); // lunes
-        $endOfWeek = now()->endOfWeek();     // domingo
+        $startDate = Carbon::parse($from)->startOfDay();
+        $endDate = Carbon::parse($to)->endOfDay();
 
-        $stats = Ticket::selectRaw("
+        $data = Ticket::selectRaw("
+            DATE(resolved_at) as day,
             SUM(CASE WHEN sla_breached = 0 THEN 1 ELSE 0 END) as complied,
-            SUM(CASE 
-                WHEN sla_breached = 1 THEN 1 
-                ELSE 0
-            END) as breached
+            SUM(CASE WHEN sla_breached = 1 THEN 1 ELSE 0 END) as breached
         ")
-            ->whereBetween('resolved_at', [$startOfWeek, $endOfWeek])
+            ->whereBetween('resolved_at', [$startDate, $endDate])
             ->whereNotNull('sla_resolution_due_at')
-            ->where('status', 'CLOSED')
-            ->first();
+            ->where('status', TicketStatus::CLOSED->value)
+            ->groupByRaw("DATE(resolved_at)")
+            ->orderBy("day")
+            ->get();
 
-        $total = ($stats->complied ?? 0) + ($stats->breached ?? 0);
+        $result = [];
 
-        $complianceRate = $total > 0
-            ? round(($stats->complied / $total) * 100, 1)
-            : 0;
+        // Fill in missing dates with 0 compliance
+        $period = Carbon::parse($from)->daysUntil(Carbon::parse($to));
+        foreach ($period as $date) {
+            $dayData = $data->firstWhere('day', $date->toDateString());
+
+            $complied = $dayData ? (int) $dayData->complied : 0;
+            $breached = $dayData ? (int) $dayData->breached : 0;
+            $total = $complied + $breached;
+
+            $result[] = [
+                'date' => $date->toDateString(),
+                'complied' => $complied,
+                'breached' => $breached,
+                'compliance_rate' => $total > 0 ? round(($complied / $total) * 100, 1) : 0,
+                'breach_rate' => $total > 0 ? round(($breached / $total) * 100, 1) : 0,
+            ];
+        }
 
         return [
-            'week_range' => [
-                'from' => $startOfWeek->toDateString(),
-                'to' => $endOfWeek->toDateString(),
+            'range' => [
+                'from' => $startDate->toDateString(),
+                'to' => $endDate->toDateString(),
             ],
-            'complied' => (int) $stats->complied,
-            'breached' => (int) $stats->breached,
-            'compliance_rate' => $complianceRate,
+            'daily' => $result
         ];
     }
 
 
+
     public function recentContractNotifications()
     {
-        if (auth()->user()->id_cargo !== Allowed::SYSTEM_TI->value) {
+     
+        if (auth()->user()->dept_id !== Allowed::SYSTEM_TI->value) {
             return [];
         }
 
-        return Notification::where('type', NotificationEntity::CONTRACT->value)
+        return Notification::
+            with('contract')->
+            where('type', NotificationEntity::CONTRACT->value)
             ->where('read_at', null)
+            ->where('notifiable_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();

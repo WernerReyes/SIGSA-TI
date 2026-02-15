@@ -27,7 +27,7 @@ const { appearance } = useAppearance();
             v-slot="{ processing }">
             <div class="grid gap-6">
                 <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
+                    <Label for="email">Usuario</Label>
                     <Input id="email" type="text" name="username" required autofocus :tabindex="1"
                         default-value="isaac.ramos" autocomplete="username" placeholder="Correo, DNI o Usuario" />
 
@@ -35,7 +35,7 @@ const { appearance } = useAppearance();
 
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between">
-                        <Label for="password">Password</Label>
+                        <Label for="password">Contraseña</Label>
 
                     </div>
                     <Input id="password" type="password" name="password" required :tabindex="2"

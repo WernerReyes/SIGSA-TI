@@ -152,10 +152,10 @@
                     :status="DevelopmentRequestStatus.REJECTED" v-model:developments-by-status="originalDevelopmentsByStatus" />
             </div>
 
-
             <DialogDetails v-model:open="showDetailModal" v-model:current-development="selectedRequirement" />
-            <UpsertDialog @new-development="originalDevelopmentsByStatus = { ...developmentsByStatus }"
+            <UpsertDialog @new-development="originalDevelopmentsByStatus[DevelopmentRequestStatus.REGISTERED].push($event)"
                 v-model:open="showNewRequirementModal" v-model:current-development="selectedRequirement" />
+
             <EstimationDialog v-model:open="showEstimateModal" v-model:current-development="selectedRequirement" />
 
             <ApprovalDialog v-if="showTechnicalApprovalModal" role="Gerente TI" title="Aprobación Técnica"

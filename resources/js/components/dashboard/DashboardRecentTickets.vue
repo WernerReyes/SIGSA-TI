@@ -20,9 +20,11 @@ import {
 } from '@/components/ui/table';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
+import { TicketIcon } from 'lucide-vue-next';
 
 
-const { tickets  } = defineProps<{
+const { tickets } = defineProps<{
     tickets: Ticket[]
 }>();
 
@@ -55,14 +57,30 @@ const { tickets  } = defineProps<{
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-if ="!tickets.length">
+                    <TableRow v-if="!tickets.length">
                         <TableCell colspan="6" class="text-center text-sm text-muted-foreground">
-                            No hay tickets recientes.
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <TicketIcon />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No hay tickets recientes</EmptyTitle>
+                                    <EmptyDescription>
+                                        No se han reportado nuevas solicitudes esta semana.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                                <EmptyContent>
+                                    <Button as="a" href="/tickets">
+                                        Crear ticket
+                                    </Button>
+                                </EmptyContent>
+
+                            </Empty>
                         </TableCell>
                     </TableRow>
                     <TableRow v-else v-for="ticket in tickets" :key="ticket.id">
                         <TableCell class="font-mono text-primary">
-                           TK-{{ ticket.id.toString().padStart(3, '0') }}
+                            TK-{{ ticket.id.toString().padStart(3, '0') }}
                         </TableCell>
                         <TableCell class="max-w-60 truncate font-medium">
                             {{ ticket.title }}
@@ -82,7 +100,7 @@ const { tickets  } = defineProps<{
                         <TableCell class="text-muted-foreground">
                             {{ ticket.responsible ? ticket.responsible.full_name : 'Sin asignar' }}
                         </TableCell>
-                        <TableCell class="text-muted-foreground">
+                        <TableCell class="text-muted-foreground ">
                             {{ formatDistanceToNow(ticket.created_at, { addSuffix: true, locale: es }) }}
                         </TableCell>
                     </TableRow>

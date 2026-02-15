@@ -29,3 +29,17 @@ export interface DashboardStats {
 }
 
 export interface DashboardTicketsByPriority extends Record<TicketPriority, number> {}
+
+export interface DashboardSLACompliance {
+    range: {
+        from: string;
+        to: string;
+    };
+    daily: Array<{
+        date: string;
+        complied: number;
+        breached: number;
+        compliance_rate: number;
+        breach_rate: number;
+    }>;
+}

@@ -1,53 +1,51 @@
 <script setup lang="ts">
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, ShieldAlert, TriangleAlert } from 'lucide-vue-next';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { ContractPeriod, contractPeriodOptions, getContractOp, NotificationContract } from '@/interfaces/contract.interface';
+import { parseDateOnly } from '@/lib/utils';
+import { format, formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ShieldAlert } from 'lucide-vue-next';
 
-const alerts = [
-    {
-        title: 'Contrato Microsoft por vencer',
-        description: 'El contrato #CT-2024-001 vence en 15 dias',
-        time: 'Hace 2 horas',
-        tone: 'warning',
-        icon: TriangleAlert,
-    },
-    {
-        title: '3 equipos con garantia proxima a expirar',
-        description: 'Laptops Dell XPS del area de Finanzas',
-        time: 'Hace 5 horas',
-        tone: 'warning',
-        icon: TriangleAlert,
-    },
-    {
-        title: 'Servidor DB-01 con alto uso de CPU',
-        description: 'Uso sostenido por encima del 90%',
-        time: 'Hace 30 min',
-        tone: 'critical',
-        icon: ShieldAlert,
-    },
-    {
-        title: 'Backup completado exitosamente',
-        description: 'Respaldo nocturno finalizado sin errores',
-        time: 'Hace 8 horas',
-        tone: 'info',
-        icon: Clock,
-    },
-];
+const { notifications } = defineProps<{
+    notifications: NotificationContract[];
+}>();
 
-const toneStyles: Record<string, { card: string; badge: string }> = {
-    warning: {
-        card: 'border-l-4 border-amber-500/60 bg-amber-500/5',
-        badge: 'border-amber-500/20 bg-amber-500/10 text-amber-700',
-    },
-    critical: {
-        card: 'border-l-4 border-destructive/70 bg-destructive/5',
-        badge: 'border-destructive/20 bg-destructive/10 text-destructive',
-    },
-    info: {
-        card: 'border-l-4 border-sky-500/60 bg-sky-500/5',
-        badge: 'border-sky-500/20 bg-sky-500/10 text-sky-700',
-    },
+
+const periodLabel = (period?: ContractPeriod) => {
+    if (!period) return 'Contrato';
+    return contractPeriodOptions[period]?.label || 'Contrato';
 };
+
+const alertTitle = (notification: NotificationContract) => {
+    const message = JSON.parse(notification.data || '{}');
+    const name = notification.contract?.name || 'Contrato sin nombre';
+    const typeLabel = getContractOp('type', notification.contract?.type).label || 'Contrato';
+    return `${typeLabel}: ${name} ${message.message || ''}`;
+};
+
+const alertSubtitle = (notification: NotificationContract) => {
+    const provider = notification.contract?.provider ? notification.contract.provider : 'Proveedor no definido';
+    const period = periodLabel(notification.contract?.period);
+    return `${provider} · ${period}`;
+};
+
+
+const alertMeta = (notification: NotificationContract) => {
+    const nextBilling = notification.contract?.billing?.next_billing_date;
+    if (notification.contract?.billing?.next_billing_date && notification.contract.billing.auto_renew) {
+        return `Próxima facturación: ${format(parseDateOnly(nextBilling), 'dd MMM yyyy', { locale: es })}`;
+    } else if (notification.contract?.billing?.next_billing_date) {
+        return `Vigencia hasta: ${format(parseDateOnly(nextBilling), 'dd MMM yyyy', { locale: es })}`;
+    }
+    if (notification.contract?.end_date) {
+        return `Vence el ${format(parseDateOnly(notification.contract.end_date), 'dd MMM yyyy', { locale: es })}`;
+    }
+    return 'Revisar vigencia del contrato';
+};
+
+
 </script>
 
 <template>
@@ -57,30 +55,50 @@ const toneStyles: Record<string, { card: string; badge: string }> = {
             <CardDescription>Eventos que requieren seguimiento inmediato.</CardDescription>
         </CardHeader>
         <CardContent class="space-y-3">
-            <div
-                v-for="alert in alerts"
-                :key="alert.title"
-                class="rounded-lg border border-border/60 p-4 transition-colors hover:bg-muted/40"
-                :class="toneStyles[alert.tone].card"
-            >
-                <div class="flex items-start gap-3">
-                    <div class="rounded-md bg-background/80 p-2">
-                        <component :is="alert.icon" class="h-4 w-4" />
+            <div v-if="notifications.length === 0" class="text-center text-sm text-muted-foreground">
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                            <ShieldAlert />
+                        </EmptyMedia>
+                        <EmptyTitle>No hay alertas activas</EmptyTitle>
+                        <EmptyDescription>
+                            No se han reportado nuevas alertas esta semana.
+                        </EmptyDescription>
+                    </EmptyHeader>
+
+
+                </Empty>
+            </div>
+            <div v-for="notification in notifications" :key="notification.id"
+                class="p-2 rounded-lg border flex items-start gap-2"
+                :class="[getContractOp('period', notification.contract?.period).card]">
+                <component :is="getContractOp('type', notification.contract?.type).icon"
+                    class="w-4 h-4 mt-0.5 shrink-0" />
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold wrap-break-word">
+                        {{ alertTitle(notification) }}
+                    </p>
+                    <p class="text-[11px] opacity-80 mt-1">
+                        {{ alertSubtitle(notification) }}
+                    </p>
+                    <div class="mt-2 flex flex-wrap gap-1">
+
+                        <Badge class="text-[10px]" :class="getContractOp('type', notification?.contract?.type).bg">
+                            {{ getContractOp('type', notification?.contract?.type).label }}
+                        </Badge>
+                        <Badge class="text-[10px]" :class="getContractOp('period', notification?.contract?.period).bg">
+                            <component :is="getContractOp('period', notification?.contract?.period).icon" />
+                            {{ getContractOp('period', notification?.contract?.period).label }}
+                        </Badge>
                     </div>
-                    <div class="flex-1 space-y-2">
-                        <p class="text-sm font-medium text-foreground">
-                            {{ alert.title }}
-                        </p>
-                        <p class="text-xs text-muted-foreground">
-                            {{ alert.description }}
-                        </p>
-                        <div class="flex items-center gap-2">
-                            <Badge class="border" :class="toneStyles[alert.tone].badge" variant="secondary">
-                                {{ alert.time }}
-                            </Badge>
-                            <span class="text-[11px] text-muted-foreground">Prioridad {{ alert.tone }}</span>
-                        </div>
-                    </div>
+                    <p class="text-[11px] opacity-80 mt-1">
+                        {{ alertMeta(notification) }}
+                    </p>
+                    <small class="text-[10px] block text-end opacity-60 mt-2">
+
+                        {{ formatDistanceToNow(notification.created_at, { addSuffix: true, locale: es }) }}
+                    </small>
                 </div>
             </div>
         </CardContent>
