@@ -25,7 +25,6 @@ class Asset extends Model
         'storage',
         'purchase_date',
         'warranty_expiration',
-        'assigned_to_id',
         'type_id',
         'is_new',
         'invoice_path',

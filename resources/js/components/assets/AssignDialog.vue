@@ -146,6 +146,9 @@
                                         @select="(values) => setFieldValue('accessories', values)"
                                         filter-placeholder="Buscar accesorio..."
                                         empty-text="No se encontraron accesorios">
+                                         <template #item="{ item }">
+                                            {{item.full_name}}
+                                         </template>
                                     </SelectFilters>
 
                                     <FieldError v-if="errors.length" :errors="errors" />

@@ -207,7 +207,7 @@ class AssetService
         try {
             return Asset::
                 query()->
-                select('id', 'name', 'model', 'brand', 'status')
+                select('id', 'name', 'model', 'brand', 'serial_number', 'status')
                 ->whereHas('type', function ($query) {
                     $query->where('name', 'Accesorio');
                 })
