@@ -72,11 +72,11 @@ export const isEqual = <T>(a: T, b: T): boolean => {
     return equal(a, b);
 };
 
-export const formatMinutes = (minutes: number) => {
-    if (!minutes || minutes <= 0) return 'Sin definir';
-    const hours = Math.floor(minutes / 60);
+export const formatMinutes = (minutes: number): string => {
+    if (!Number.isFinite(minutes) || minutes === 0) return '0 min';
+    const hrs = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hours && mins) return `${hours} h ${mins} min`;
-    if (hours) return `${hours} h`;
-    return `${mins} min`;
+    if (hrs && mins) return `${hrs}h ${mins}m`;
+    if (hrs) return `${hrs}h`;
+    return `${mins}m`;
 };

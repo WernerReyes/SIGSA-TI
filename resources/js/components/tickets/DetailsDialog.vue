@@ -282,6 +282,7 @@ import { Activity, AlertTriangle, Calendar, CheckCircle2, Clock, Gauge, Image, T
 import RequesterAssetsSheet from './RequesterAssetsSheet.vue';
 import { Button } from '@/components/ui/button';
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
+import { formatMinutes } from '@/lib/utils';
 
 const open = defineModel<boolean>('open');
 
@@ -313,13 +314,6 @@ const formatDate = (value?: string | Date | null): string => {
     return format(new Date(value), 'dd/MM/yyyy HH:mm');
 };
 
-const formatMinutes = (minutes: number): string => {
-    if (!Number.isFinite(minutes) || minutes === 0) return '0 min';
-    const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hrs && mins) return `${hrs}h ${mins}m`;
-    if (hrs) return `${hrs}h`;
-    return `${mins}m`;
-};
+
 
 </script>
