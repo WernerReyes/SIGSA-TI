@@ -32,6 +32,10 @@ return new class extends Migration {
             $table->unsignedBigInteger('type_id')->nullable();
             $table->foreign('type_id')->references('id')->on('assets_type');
 
+            $table->unique('serial_number');
+            $table->unique('imei');
+
+
             // $table->unsignedInteger('assigned_to_id')->nullable();
             // $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');
 

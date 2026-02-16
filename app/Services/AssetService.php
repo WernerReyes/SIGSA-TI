@@ -232,9 +232,6 @@ class AssetService
             'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
             'assignments.childrenAssignments.asset:id,name,brand,model,serial_number',
            
-    
-            
-
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
 
@@ -395,6 +392,9 @@ class AssetService
 
             return $asset;
         } catch (\Exception $e) {
+            if ($e->getCode() === '23000') { 
+                throw new BadRequestException('El número de serie o IMEI ya existe en el sistema.');
+            }
 
             throw new InternalErrorException('Error al registrar el activo');
         }

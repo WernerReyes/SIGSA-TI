@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
 
-        $isDev = env('APP_ENV') === 'local';
+        $isDev = config('app.env') === 'local';
         if ($isDev) {
             $this->call([
                 AssetTypeSeeder::class,
