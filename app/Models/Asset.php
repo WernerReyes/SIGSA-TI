@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\AssetHistory\AssetHistoryAction;
+use App\Enums\Department\Allowed;
 use DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -51,8 +53,6 @@ class Asset extends Model
         'full_name',
     ];
 
-    
-
 
     protected static function booted()
     {
@@ -92,7 +92,7 @@ class Asset extends Model
         });
     }
 
-   
+
     public function getFullNameAttribute()
     {
         if ($this->serial_number && $this->model) {
@@ -102,6 +102,24 @@ class Asset extends Model
         } else {
             return "{$this->name} ({$this->brand})";
         }
+    }
+
+
+
+    public function scopeIsFromRRHH($query)
+    {
+        $isFromRRHH = auth()->user()->dept_id == Allowed::RRHH->value;
+        return $query->when($isFromRRHH, function ($q) {
+            $q->whereHas('type', function ($q2) {
+                $q2->where('name', 'Celular');
+            })->orWhereHas('histories', function ($q2) {
+                $q2->
+                    where('action', AssetHistoryAction::CREATED->value)->
+                    whereHas('performer', function ($q3) {
+                        $q3->where('dept_id', Allowed::RRHH->value);
+                    });
+            });
+        });
     }
 
 

@@ -21,15 +21,14 @@ const { appearance } = useAppearance();
 
         <Head title="Login" />
 
-        
+
         <Form action="/login" :reset-on-success="['password']" method="post" class="flex flex-col gap-6"
-        
             v-slot="{ processing }">
             <div class="grid gap-6">
                 <div class="grid gap-2">
                     <Label for="email">Usuario</Label>
                     <Input id="email" type="text" name="username" required autofocus :tabindex="1"
-                        default-value="isaac.ramos" autocomplete="username" placeholder="Correo, DNI o Usuario" />
+                        autocomplete="username" placeholder="Correo, DNI o Usuario" />
 
                 </div>
 
@@ -39,7 +38,7 @@ const { appearance } = useAppearance();
 
                     </div>
                     <Input id="password" type="password" name="password" required :tabindex="2"
-                        default-value="isaac.ramos" autocomplete="current-password" placeholder="Password" />
+                        autocomplete="current-password" placeholder="Password" />
 
                 </div>
 

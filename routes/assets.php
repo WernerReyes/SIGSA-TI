@@ -3,7 +3,7 @@
 use App\Enums\Department\Allowed;
 use App\Http\Controllers\AssetController;
 
-Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () {
+Route::middleware('department:' . Allowed::SYSTEM_TI->value . ',' . Allowed::RRHH->value)->group(function () {
 
     Route::prefix('assets')->group(function () {
 

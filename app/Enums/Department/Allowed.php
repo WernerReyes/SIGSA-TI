@@ -4,6 +4,7 @@ namespace App\Enums\Department;
 enum Allowed: int
 {
     case SYSTEM_TI = 11;
+    case RRHH = 17;
 }
 
 

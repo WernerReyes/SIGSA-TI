@@ -6,7 +6,7 @@ class AssetTypeService
 {
     public function getTypes()
     {
-        return AssetType::select('id', 'name')->get();
+        return AssetType::select('id', 'name')->isFromRRHH()->get();
     }
 
 }

@@ -30,6 +30,10 @@ export const useApp = () => {
         return userAuth.value?.dept_id === DepartmentAllowed.SYSTEM_TI;
     });
 
+    const isFromRRHH = computed(() => {
+        return userAuth.value?.dept_id === DepartmentAllowed.RRHH;
+    });
+
     const isTIAssistantManager = computed(() => {
         return isFromTI.value && userAuth.value?.id_cargo === UserCharge.IT_ASSISTANT_MANAGER;
     });
@@ -60,7 +64,7 @@ export const useApp = () => {
         return userAuth.value?.staff_id === userId;
     };
 
-    return { isLoading, userAuth, isFromTI, isSameUser, users, TIUsers, assetAccessories, slaPolicies,
+    return { isLoading, userAuth, isFromTI, isFromRRHH, isSameUser, users, TIUsers, assetAccessories, slaPolicies,
         availableAssets,
         departments, assetTypes, isTIManager, isTIAssistantManager, echo };
 };

@@ -18,7 +18,7 @@ import AppLogo from './AppLogo.vue';
 
 
 
-const { isFromTI } = useApp();
+const { isFromTI, isFromRRHH } = useApp();
 
 
 const mainNavItems = computed<NavItem[]>(() => {
@@ -35,12 +35,17 @@ const mainNavItems = computed<NavItem[]>(() => {
         },
     ];
 
-    if (isFromTI.value) { // SYSTEM_TI
+    if (isFromTI.value || isFromRRHH.value) { // SYSTEM_TI or RRHH
         items.push({
             title: 'Activos TI',
             href: "/assets",
             icon: Laptop,
-        }, {
+        });
+
+    }
+
+    if (isFromTI.value) { // SYSTEM_TI
+        items.push({
             title: 'Accesos',
             href: "/access",
             icon: MonitorCog,
@@ -60,7 +65,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         });
     }
 
-   
+
 
     return items;
 });

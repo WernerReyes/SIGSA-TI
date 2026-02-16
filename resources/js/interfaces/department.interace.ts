@@ -23,4 +23,5 @@ export interface Department {
 
 export enum DepartmentAllowed {
     SYSTEM_TI = 11,
+    RRHH = 17,
 }

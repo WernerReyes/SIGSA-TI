@@ -29,6 +29,7 @@ use App\Models\TicketAsset;
 use App\Models\User;
 use App\Models\Ticket;
 
+use Auth;
 use DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +41,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AssetService
 {
+    private function isFromRRHH()
+    {
+        return auth()->user()->dept_id == Allowed::RRHH->value;
+    }
 
 
     public function getPaginated(AssetFiltersDto $filtersDto)
@@ -57,13 +62,14 @@ class AssetService
                     'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
                     'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
-                ])
+                ])->
 
                 /*
                 |--------------------------------------------------------------------------
                 | Activos raíz (no accesorios huérfanos)
                 |--------------------------------------------------------------------------
                 */
+                isFromRRHH()
                 ->where(function ($q) {
                     $q->whereDoesntHave('currentAssignment')
                         ->orWhereHas(
@@ -281,15 +287,20 @@ class AssetService
     {
 
         try {
-            $totalAssets = Asset::count();
+            $totalAssets = Asset::isFromRRHH()->count();
 
-            $assignedAssets = Asset::where('status', AssetStatus::ASSIGNED->value)->count();
-            $availableAssets = Asset::where('status', AssetStatus::AVAILABLE->value)->count();
-            $inRepairAssets = Asset::where('status', AssetStatus::IN_REPAIR->value)->count();
-            $decommissionedAssets = Asset::where('status', AssetStatus::DECOMMISSIONED->value)->count();
+            $statuses = Asset::isFromRRHH()
+                ->selectRaw('status, COUNT(*) as count')
+                ->groupBy('status')
+                ->pluck('count', 'status');
 
-            $notExpiredWarrantyAssets = Asset::whereDate('warranty_expiration', '>=', now()->toDateString())->count();
-            $expiredWarrantyAssets = Asset::whereDate('warranty_expiration', '<', now()->toDateString())->count();
+            $assignedAssets = $statuses[AssetStatus::ASSIGNED->value] ?? 0;
+            $availableAssets = $statuses[AssetStatus::AVAILABLE->value] ?? 0;
+            $inRepairAssets = $statuses[AssetStatus::IN_REPAIR->value] ?? 0;
+            $decommissionedAssets = $statuses[AssetStatus::DECOMMISSIONED->value] ?? 0;
+
+            $notExpiredWarrantyAssets = Asset::isFromRRHH()->whereDate('warranty_expiration', '>=', now()->toDateString())->count();
+            $expiredWarrantyAssets = Asset::isFromRRHH()->whereDate('warranty_expiration', '<', now()->toDateString())->count();
 
             return [
                 'total' => $totalAssets,
@@ -344,6 +355,15 @@ class AssetService
     public function storeAsset(StoreAssetDto $dto)
     {
 
+
+        if ($this->isFromRRHH() && $dto->type_id) {
+            $type = AssetType::find($dto->type_id);
+            if ($type && !in_array($type->name, ['Celular', 'Accesorio'])) {
+                throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Accesorio');
+            }
+        }
+
+
         try {
             $asset = DB::transaction(function () use ($dto) {
 
@@ -384,6 +404,14 @@ class AssetService
 
     public function updateAsset(UpdateAssetDto $dto, Asset $asset)
     {
+
+        if ($this->isFromRRHH() && $dto->type_id) {
+            $type = AssetType::find($dto->type_id);
+            if ($type && !in_array($type->name, ['Celular', 'Accesorio'])) {
+                throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Accesorio');
+            }
+        }
+
         try {
 
             $assetUpdated = DB::transaction(function () use ($dto, $asset) {
@@ -752,10 +780,10 @@ class AssetService
                             $description . " para el equipo {$asset->full_name}",
                         );
 
-                       
+
                     }
 
-                  
+
 
                     return $assignment;
                 }
@@ -775,7 +803,7 @@ class AssetService
                         'assigned_at' => $dto->assign_date,
                         'comment' => $dto->comment,
                         'asset_id' => $dto->asset_id,
-                      
+
 
                     ]
                 );
@@ -794,7 +822,7 @@ class AssetService
                                 'parent_assignment_id' => $assigned->id,
                                 // 'comment' => "Accesorio asignado junto al equipo principal.",
                                 'asset_id' => $accessoryId,
-                              
+
                             ];
                         }, $dto->accessories)
 
