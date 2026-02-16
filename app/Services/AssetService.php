@@ -294,22 +294,13 @@ class AssetService
                 ->groupBy('status')
                 ->pluck('count', 'status');
 
-            $assignedAssets = $statuses[AssetStatus::ASSIGNED->value] ?? 0;
-            $availableAssets = $statuses[AssetStatus::AVAILABLE->value] ?? 0;
-            $inRepairAssets = $statuses[AssetStatus::IN_REPAIR->value] ?? 0;
-            $decommissionedAssets = $statuses[AssetStatus::DECOMMISSIONED->value] ?? 0;
 
             $notExpiredWarrantyAssets = Asset::isFromRRHH()->whereDate('warranty_expiration', '>=', now()->toDateString())->count();
             $expiredWarrantyAssets = Asset::isFromRRHH()->whereDate('warranty_expiration', '<', now()->toDateString())->count();
 
             return [
                 'total' => $totalAssets,
-                'statuses' => [
-                    AssetStatus::ASSIGNED->value => $assignedAssets,
-                    AssetStatus::AVAILABLE->value => $availableAssets,
-                    AssetStatus::IN_REPAIR->value => $inRepairAssets,
-                    AssetStatus::DECOMMISSIONED->value => $decommissionedAssets,
-                ],
+                'statuses' => $statuses,
                 'not_expired_warranty' => $notExpiredWarrantyAssets,
                 'expired_warranty' => $expiredWarrantyAssets,
             ];
@@ -334,7 +325,7 @@ class AssetService
         if ($this->isFromRRHH()) {
             throw new BadRequestException('No tienes permiso para reenviar esta alerta');
         }
-        
+
         try {
             $alertService = app(AccessoryOutOfStockAlertService::class);
             $alertService->forceNotify();
