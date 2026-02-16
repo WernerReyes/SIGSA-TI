@@ -69,8 +69,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useApp } from '@/composables/useApp';
 
 const page = usePage();
+const { isFromRRHH  } = useApp();
 
 const showAlertPanel = ref(false);
 
@@ -92,12 +94,10 @@ const isSending = ref(false);
 
 
 const handleResendAlert = () => {
-    if (isSending.value) {
+    if (isSending.value || !generalAlert.value || isFromRRHH.value) {
         return;
     }
-    if (!generalAlert.value) {
-        return;
-    }
+    
     isSending.value = true;
     router.post('assets/resend-accessory-out-of-stock-alert', {}, {
         only: ['accessoriesOutOfStockAlert'],

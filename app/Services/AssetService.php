@@ -331,6 +331,10 @@ class AssetService
 
     public function resendAccessoryOutOfStockAlert()
     {
+        if ($this->isFromRRHH()) {
+            throw new BadRequestException('No tienes permiso para reenviar esta alerta');
+        }
+        
         try {
             $alertService = app(AccessoryOutOfStockAlertService::class);
             $alertService->forceNotify();

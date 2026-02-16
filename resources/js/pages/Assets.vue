@@ -7,7 +7,7 @@
         <!-- Botón flotante de alerta -->
         <Teleport to="body" v-if="generalAlert">
 
-            <AlertAccessoryOutStock />
+            <AlertAccessoryOutStock v-if="isFromTI" />
         </Teleport>
 
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
@@ -106,8 +106,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Boxes, Check, EllipsisVertical, ShieldCheck, ShieldX } from 'lucide-vue-next';
+import { useApp } from '@/composables/useApp';
 
 const { assetsPaginated, stats } = defineProps<{ assetsPaginated: Paginated<Asset>, stats: AssetStats }>();
+
+const { isFromTI } = useApp();
 
 const currentAsset = ref<Asset | null>(null);
 const openDetails = ref(false);
