@@ -47,7 +47,7 @@
                         <Button size="sm" variant="outline" class="text-xs" :disabled="isSending"
                             @click="handleResendAlert">
                             <LoaderCircle v-if="isSending" class="size-4 animate-spin" />
-                            <span v-else>Reenviar a Ventas</span>
+                            <span v-else>Reenviar</span>
                             <span v-if="isSending">Enviando...</span>
                         </Button>
                     </div>
