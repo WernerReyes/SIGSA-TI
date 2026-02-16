@@ -171,11 +171,12 @@
 
                         </Empty>
                         <div v-else v-for="assignment in assignments" :key="assignment.id"
-                            class="flex max-md:flex-col items-start justify-between gap-4 p-4 rounded-xl border transition hover:shadow-md"
+                            class="rounded-xl border transition hover:shadow-md p-4"
                             :class="{
                                 'bg-linear-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800': !assignment.returned_at,
                                 'bg-muted/30 border-muted': assignment.returned_at
                             }">
+                            <div class="flex max-md:flex-col items-start justify-between gap-4 ">
                             <div class="flex items-start gap-4 flex-1">
 
                                 <div
@@ -197,8 +198,11 @@
                                         <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente asignado
                                         </Badge>
                                     </div>
+
+                                    
                                 </div>
                             </div>
+                            
 
                             <div class="flex max-md:justify-end max-md:w-full  items-start gap-2 shrink-0">
 
@@ -277,8 +281,33 @@
 
 
                             </div>
+                            </div>
 
 
+                            <Accordion v-if="assignment.children_assignments?.length" type="single"
+                                        collapsible class="mt-3 w-full">
+                                        <AccordionItem :value="`children-${assignment.id}`" class="border-0">
+                                            <AccordionTrigger class="py-1.5 hover:no-underline">
+                                                <div class="flex items-center gap-2 text-xs font-semibold">
+                                                    <component :is="assetTypeOp(TypeName.ACCESSORY)?.icon" class="size-3" />
+                                                    Accesorios ({{ assignment.children_assignments.length }})
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent class="pt-2">
+                                                <div
+                                                    class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
+                                                    <div v-for="child in assignment.children_assignments"
+                                                        :key="child.id"
+                                                        class="rounded-lg border bg-muted/30 px-2 py-2">
+                                                        <p class="text-xs font-semibold truncate wrap-break-word">{{
+                                                            child.asset?.full_name
+                                                            || 'Accesorio' }}</p>
+                                                      
+                                                    </div>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    </Accordion>
                         </div>
 
 
@@ -344,6 +373,7 @@ import {
     EmptyMedia,
     EmptyTitle
 } from '@/components/ui/empty';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
     Tabs,
     TabsContent,
@@ -367,6 +397,7 @@ import {
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import FileUpload from '../FileUpload.vue';
+import { TypeName } from '@/interfaces/assetType.interface';
 
 
 const asset = defineModel<Asset | null>('asset');

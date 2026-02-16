@@ -29,7 +29,6 @@ use App\Models\TicketAsset;
 use App\Models\User;
 use App\Models\Ticket;
 
-use Auth;
 use DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -230,6 +229,11 @@ class AssetService
             'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
             'assignments.deliveryDocument',
             'assignments.returnDocument',
+            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+            'assignments.childrenAssignments.asset:id,name,brand,model,serial_number',
+           
+    
+            
 
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
