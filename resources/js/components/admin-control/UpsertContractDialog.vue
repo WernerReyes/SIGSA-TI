@@ -518,7 +518,7 @@
 
                 </form>
             </ScrollArea>
-            {{ errors }}
+
             <DialogFooter class="mt-4">
                 <Button variant="outline" @click="resetAndClose()">Cancelar</Button>
                 <Button class="gap-2" type="submit" form="contract-form" :disabled="isFormInvalid">
@@ -542,13 +542,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useApp } from '@/composables/useApp';
-import { type Contract, ContractPeriod, contractPeriodOptions, ContractStatus, contractStatusOptions, ContractType, contractTypeOptions } from '@/interfaces/contract.interface';
+import { type Contract, ContractPeriod, contractPeriodOptions, ContractType, contractTypeOptions } from '@/interfaces/contract.interface';
 import { BillingFrequency, billingFrequencyDaysMap, billingFrequencyOptions, CurrencyType } from '@/interfaces/contractBilling.interface';
 import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/core';
 import { toTypedSchema } from '@vee-validate/zod';
-import { differenceInDays, isAfter, isSameDay, set } from 'date-fns';
-import { BadgeDollarSign, Bell, Building2, Calendar, CalendarCheck2, Coins, CreditCard, FileText, Info, Layers, Package, Repeat, ShieldCheck, Sparkles, StickyNote, Tags, Wallet } from 'lucide-vue-next';
+import { differenceInDays, isAfter, isSameDay } from 'date-fns';
+import { BadgeDollarSign, Bell, Building2, Calendar, CalendarCheck2, Coins, CreditCard, FileText, Info, Layers, Package, Repeat, Sparkles, StickyNote, Tags, Wallet } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
 import { computed, onMounted, watch } from 'vue';
 import z from 'zod';

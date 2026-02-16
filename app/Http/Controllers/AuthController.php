@@ -15,6 +15,9 @@ class AuthController extends Controller
     
     function renderLoginView()
     {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
         return Inertia::render('auth/Login');
     }
     function login(LoginRequest $request, AuthService $authService)

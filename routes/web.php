@@ -3,8 +3,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
 
 Route::get('/login', [AuthController::class, 'renderLoginView'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

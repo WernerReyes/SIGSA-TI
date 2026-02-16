@@ -134,54 +134,7 @@ class Ticket extends Model
         ];
     }
 
-    // public function getLateMinutesAttribute()
-    // {
-    //     if (!$this->sla_response_due_at || !$this->first_response_at) {
-    //         return null;
-    //     }
-
-    //     ds('Calculating late minutes for ticket ID: ' . $this->id);
-
-    //     return app(BusinessHoursService::class)->calculateBusinessMinutesBetween(
-    //         Carbon::parse($this->sla_response_due_at),
-    //         Carbon::parse($this->first_response_at)
-    //     );
-    // }
-
-    // public function getBeforeLateMinutesAttribute()
-    // {
-    //     if (!$this->sla_response_due_at || !$this->first_response_at) {
-    //         return null;
-    //     }
-
-    //     ds('Calculating before late minutes for ticket ID: ' . $this->id);
-
-    //     return app(BusinessHoursService::class)->calculateBusinessMinutesBetween(
-    //         Carbon::parse($this->first_response_at),
-    //         Carbon::parse($this->sla_response_due_at)
-    //     );
-    // }
-
-    // public function getSlaRemainingMinutesAttribute()
-    // {
-    //     if (!$this->sla_response_due_at) {
-    //         return null;
-    //     }
-
-    //     $now = Carbon::now();
-    //     $dueAt = Carbon::parse($this->sla_response_due_at);
-
-    //     if ($now->greaterThan($dueAt)) {
-    //         return 0;
-    //     }
-
-    //     return app(BusinessHoursService::class)->calculateBusinessMinutesBetween(
-    //         $now,
-    //         $dueAt
-    //     );
-    // }
-
-
+    
     protected static function booted()
     {
         static::deleting(function ($ticket) {

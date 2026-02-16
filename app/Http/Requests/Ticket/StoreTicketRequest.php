@@ -5,11 +5,10 @@ namespace App\Http\Requests\Ticket;
 
 use App\Enums\Ticket\TicketCategory;
 use App\Enums\Ticket\TicketImpact;
-use App\Enums\Ticket\TicketPriority;
-use App\Enums\Ticket\TicketRequestType;
 use App\Enums\Ticket\TicketType;
 use App\Enums\Ticket\TicketUrgency;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTicketRequest extends FormRequest
 {
@@ -28,34 +27,26 @@ class StoreTicketRequest extends FormRequest
      */
     public function rules(): array
     {
-        $inTicketType = "in:" . implode(",", TicketType::values());
-        $inTicketPriority = "in:" . implode(",", TicketPriority::values());
-        $inTicketRequestType = "in:" . implode(",", TicketRequestType::values());
-
         return [
+
             'title' => ['required', 'string', 'min:5', 'max:255'],
             'description' => ['required', 'string', 'min:10', 'max:1000'],
-            'type' => ['required', $inTicketType],
-            // 'technician_id' => [
+            'type' => ['required', 'in:' . TicketType::implodeValues()],
 
-            //     // 'required_if:type,SERVICE_REQUEST',
-            //     "required_if:type," . TicketType::SERVICE_REQUEST->value,
-            //     'exists:ost_staff,staff_id',
-            // ],
-            // 'requester_id' => [
-            //     'required',
-            //     'exists:ost_staff,staff_id',
-            // ],
-            // 'priority' => ['required', $inTicketPriority],
             'images' => ['sometimes', 'array', 'max:5'],
             'images.*' => ['file', 'image', 'max:2048'], //
             'impact' => ['required', 'in:' . TicketImpact::implodeValues()],
             'urgency' => ['required', 'in:' . TicketUrgency::implodeValues()],
             'category' => [
+                'nullable',
                 'required_if:type,' . TicketType::SERVICE_REQUEST->value,
                 'in:' . TicketCategory::implodeValues(),
-                // $inTicketRequestType
-            ]
+            ],
+            'requester_id' => [
+                Rule::requiredIf($this->is('api/*')),
+                'nullable',
+                'exists:ost_staff,staff_id',
+            ],
         ];
     }
 
@@ -72,11 +63,6 @@ class StoreTicketRequest extends FormRequest
             'description.min' => 'La descripción debe tener al menos :min caracteres.',
             'description.max' => 'La descripción no debe exceder de :max caracteres.',
 
-            // 'requester_id.required' => 'El solicitante es obligatorio.',
-            // 'requester_id.exists' => 'El solicitante seleccionado no es válido.',
-
-            // 'technician_id.required_if' => 'El técnico es obligatorio para este tipo de ticket.',
-            // 'technician_id.exists' => 'El técnico seleccionado no es válido.',
 
             'type.required' => 'El tipo de ticket es obligatorio.',
             'type.in' => 'El tipo de ticket seleccionado no es válido.',
@@ -89,9 +75,6 @@ class StoreTicketRequest extends FormRequest
             'images.*.max' => 'Cada imagen no debe exceder de :max kilobytes.',
 
 
-            // 'priority.required' => 'La prioridad del ticket es obligatoria.',
-            // 'priority.in' => 'La prioridad del ticket seleccionada no es válida.',
-
             'impact.required' => 'El impacto del ticket es obligatorio.',
             'impact.in' => 'El impacto del ticket seleccionado no es válido.',
 
@@ -100,6 +83,10 @@ class StoreTicketRequest extends FormRequest
 
             'category.required_if' => 'La categoría es obligatoria para este tipo de ticket.',
             'category.in' => 'La categoría seleccionada no es válida.',
+            
+            'requester_id.required' => 'El ID del solicitante es obligatorio para solicitudes API.',
+
+            'requester_id.exists' => 'El solicitante seleccionado no existe.',
         ];
     }
 }

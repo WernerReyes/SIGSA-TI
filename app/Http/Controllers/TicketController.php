@@ -37,21 +37,6 @@ class TicketController extends Controller
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
 
-            // 'currentAssignment' => Inertia::optional(function () use ($ticketService, $request) {
-            //     $requesterId = $request->input('requester_id');
-            //     if ($requesterId) {
-            //         return $ticketService->getCurrentAssignment($requesterId);
-            //     }
-            //     return null;
-            // })->once(),
-
-            // 'requesterAssignments' => Inertia::optional(function () use ($ticketService, $request) {
-            //     $requesterId = $request->input('requester_id');
-            //     if ($requesterId) {
-            //         return $ticketService->getAssignmentsByRequester($requesterId);
-            //     }
-            //     return null;
-            // })->once(),
 
             'userAssignments' => Inertia::optional(function () use ($assetService, $request) {
                 $requesterId = $request->input('requester_id');
@@ -74,40 +59,6 @@ class TicketController extends Controller
     }
 
 
-    // function getCurrentAssignment(Request $request, TicketService $ticketService)
-    // {
-    //     $requesterId = $request->input('requester_id');
-    //     if (!$requesterId) {
-    //         Inertia::flash([
-    //             'success' => null,
-    //             'error' => 'El solicitante es obligatorio.',
-    //             'timestamp' => now()->timestamp,
-    //         ]);
-    //        return back();
-    //     }
-
-    //     try {
-    //         $assignment = $ticketService->getCurrentAssignment($requesterId);
-
-    //         Inertia::flash([
-    //             'assignment' => $assignment,
-    //             'success' => 'Asignación obtenida exitosamente.',
-    //             'error' => null,
-    //             'timestamp' => now()->timestamp,
-    //         ]);
-
-    //     } catch (\Exception $e) {
-    //         Inertia::flash([
-    //             'assignment' => null,
-    //             'success' => null,
-    //             'error' => $e->getMessage(),
-    //             'timestamp' => now()->timestamp,
-    //         ]);
-    //     }
-
-    //     return back();
-    // }
-
     function storeAPI(StoreTicketRequest $request, TicketService $ticketService)
     {
         $validated = $request->validated();
@@ -116,7 +67,26 @@ class TicketController extends Controller
             $ticketService->storeTicket($dto);
             return response()->json(['message' => 'El ticket ha sido creado exitosamente.'], 201);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Ocurrió un error al crear el ticket. Por favor, inténtelo de nuevo.'], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    function updateAPI($id, StoreTicketRequest $request, TicketService $ticketService)
+    {
+        $ticket = Ticket::find($id);
+
+        if (!$ticket) {
+            return response()->json(['error' => 'Ticket no encontrado.'], 404);
+        }
+
+  
+        $validated = $request->validated();
+        $dto = StoreTicketDto::fromArray($validated);
+        try {
+            $ticketService->updateTicket($ticket, $dto);
+            return response()->json(['message' => 'El ticket ha sido actualizado exitosamente.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

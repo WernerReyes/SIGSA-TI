@@ -752,44 +752,10 @@ class AssetService
                             $description . " para el equipo {$asset->full_name}",
                         );
 
-                        // $existingTicketAsset = TicketAsset::where('ticket_id', $dto->ticket_id)
-                        //     ->where('action', TicketAssetAction::ASSIGNED->value)
-                        //     ->first();
-
-                        // ds($existingTicketAsset);
-
-                        // if ($existingTicketAsset) {
-                        //     app(abstract: TicketService::class)->attachAssetToTicket(
-                        //         $dto->ticket_id,
-                        //         $asset->id,
-                        //         TicketAssetAction::ASSIGNED,
-                        //         $assignment->id
-                        //     );
-                        // } else {
-                        //     $existingTicketAsset->update([
-                        //         'action' => TicketAssetAction::CHANGED->value,
-                        //         'notes' => 'Actualización de asignación de activo.',
-                        //     ]);
-                        // }
+                       
                     }
 
-                    // $this->logTicketHistory(
-                    //     $asset,
-                    //     TicketHistoryAction::ASSET_ASSIGNED,
-                    //     $description,
-                    //     $assignment,
-                    //     TicketAssetAction::ASSIGNED,
-                    //     $dto->ticket_id
-                    // );
-
-                    // AssetHistory::create([
-                    //     'action' => AssetHistoryAction::ASSIGNED->value,
-                    //     'description' => $description,
-                    //     'asset_id' => $asset->id,
-                    //     'performed_by' => auth()->user()->staff_id,
-                    //     // 'performed_at' => now()->utc(),
-                    //     'related_assignment_id' => $assignment->id,
-                    // ]);
+                  
 
                     return $assignment;
                 }
@@ -809,8 +775,7 @@ class AssetService
                         'assigned_at' => $dto->assign_date,
                         'comment' => $dto->comment,
                         'asset_id' => $dto->asset_id,
-                        // 'created_at' => now()->utc(),
-                        // 'updated_at' => now()->utc()
+                      
 
                     ]
                 );
@@ -829,10 +794,7 @@ class AssetService
                                 'parent_assignment_id' => $assigned->id,
                                 // 'comment' => "Accesorio asignado junto al equipo principal.",
                                 'asset_id' => $accessoryId,
-                                // 'assigned_at' => $dto->assign_date,
-    
-                                // 'created_at' => now()->utc(),
-                                // 'updated_at' => now()->utc(),
+                              
                             ];
                         }, $dto->accessories)
 

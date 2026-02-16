@@ -10,6 +10,11 @@ enum TicketType: string
         return array_map(fn(self $priority) => $priority->value, self::cases());
 
     }
+
+    public static function implodeValues(): string
+    {
+        return implode(',', self::values());
+    }
     public static function label(string $value): string
     {
         return self::labels()[$value] ?? 'Desconocido';

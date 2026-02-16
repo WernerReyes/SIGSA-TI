@@ -84,12 +84,7 @@ class SlaMetricsService
 
     public function dailyCompliance(int $days = 30)
     {
-        ds(Ticket::selectRaw("
-                DATE(resolved_at) as date,
-                COUNT(*) as total,
-                SUM(CASE WHEN sla_breached = 0 THEN 1 ELSE 0 END) as complied
-            ") ->where('resolved_at', '>=', now()->subDays($days)) ->groupBy('date')->get());
-
+       
         return Ticket::selectRaw("
                 DATE(resolved_at) as date,
                 COUNT(*) as total,
@@ -111,7 +106,7 @@ class SlaMetricsService
 
     public function monthlyTrend(int $months = 12)
     {
-// ds(now()->subMonths($months));
+
 
         return Ticket::selectRaw("
                 YEAR(resolved_at) as year,

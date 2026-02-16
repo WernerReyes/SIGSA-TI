@@ -9,9 +9,12 @@
                         <Tag class="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                        <DialogTitle class="text-xl">Crear Nuevo Ticket</DialogTitle>
+                        <DialogTitle class="text-xl">
+                            {{ selectedTicket ? 'Editar ticket' : 'Nuevo ticket' }}
+
+                        </DialogTitle>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Cuéntanos qué necesitas en 3 pasos sencillos
+                            {{ selectedTicket ? 'Modifica los detalles de tu ticket.' : 'Completa el formulario para crear un nuevo ticket.' }}
                         </p>
                     </div>
                 </div>
@@ -240,11 +243,9 @@
                 </Button>
                 <Button form="ticketForm" type="submit" class="gap-2" :disabled="disabledForm">
                     <CheckCircle2 class="h-4 w-4" />
-                    Crear Ticket
+                    {{ selectedTicket ? 'Guardar cambios' : 'Crear ticket' }}
                 </Button>
             </DialogFooter>
-
-
 
         </DialogContent>
     </Dialog>
@@ -287,15 +288,13 @@ import Input from '@/components/ui/input/Input.vue';
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 import Textarea from '@/components/ui/textarea/Textarea.vue';
 import { Field as VeeField } from 'vee-validate';
-// import * as yup from 'yup';
 import { DialogFooter } from '@/components/ui/dialog';
+import { useApp } from '@/composables/useApp';
 import { Ticket, TicketCategory, TicketImpact, TicketType, TicketUrgency, ticketCategoryOptions } from '@/interfaces/ticket.interface';
+import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import z from 'zod';
-import { useApp } from '@/composables/useApp';
-import { isEqual } from '@/lib/utils';
-import { es } from 'date-fns/locale';
 
 
 
@@ -313,7 +312,9 @@ const selectedTicket = defineModel<Ticket | null>('selected', {
 
 const { isLoading } = useApp();
 
-const disabledForm = computed(() => isLoading.value || Object.keys(errors.value).length > 0 || isEqual(values, initialValues.value));
+const disabledForm = computed(() => {
+    return isLoading.value || Object.keys(errors.value).length > 0 || isEqual(values, initialValues.value)
+});
 
 
 const initialValues = computed(() => {
@@ -322,11 +323,8 @@ const initialValues = computed(() => {
         type: ticket?.type || TicketType.SERVICE_REQUEST,
         title: ticket?.title || '',
         description: ticket?.description || '',
-        // service_id: ticket?.service_id || '',
-        // category_id: ticket?.category_id || '',
         impact: ticket?.impact || undefined,
         urgency: ticket?.urgency || undefined,
-        // category: ticket?.category || 'ACCESS',
         images: [],
 
         category: ticket?.category || undefined,
@@ -357,6 +355,8 @@ const { handleSubmit, values, setFieldValue, handleReset, errors, setValues } = 
     // validationSchema,
     validationSchema: formSchema,
     initialValues: initialValues.value,
+    keepValuesOnUnmount: true,
+    
 });
 
 type FormValues = typeof values;
@@ -421,6 +421,7 @@ const handleSave = (data: FormValues) => {
                                 if (t.id === updatedTicket.id) {
                                     return {
                                         ...updatedTicket,
+                                        requester: t.requester,
                                     };
                                 }
                                 return t;

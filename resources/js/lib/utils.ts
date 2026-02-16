@@ -8,7 +8,7 @@ import { format } from 'date-fns-tz';
 import { ShieldQuestionIcon } from 'lucide-vue-next';
 import { twMerge } from 'tailwind-merge';
 import type { Ref } from 'vue';
-import equal from 'fast-deep-equal/es6/react';
+import equal from 'fast-deep-equal';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));

@@ -172,7 +172,9 @@
                 Cambiar estado
               </ContextMenuItem>
              
-              <ContextMenuItem :disabled="disabledEdit" @click="emit('update:ticket', activeRow!)">
+              <ContextMenuItem 
+               v-if="isSameUser(activeRow?.requester_id)"
+              :disabled="disabledEdit" @click="emit('update:ticket', activeRow!)">
                 <Pencil />
                 Editar
               </ContextMenuItem>

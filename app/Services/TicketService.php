@@ -200,10 +200,11 @@ class TicketService
 
 
 
-                $this->logHistory($ticket->id, TicketHistoryAction::CREATED, 'Ticket creado');
+                $this->logHistory($ticket->id, TicketHistoryAction::CREATED, 'Ticket creado', $dto->requesterId);
 
             });
         } catch (\Exception $e) {
+         
             if (count($images) > 0) {
                 foreach ($images as $path) {
                     Storage::disk('public')->delete($path);
@@ -220,8 +221,8 @@ class TicketService
     public function updateTicket(Ticket $ticket, StoreTicketDto $dto)
     {
 
-        $user = Auth::user();
-        if ($user->staff_id !== TicketHistory::where('ticket_id', $ticket->id)->where('action', TicketHistoryAction::CREATED->value)->value('performed_by')) {
+       
+        if ($dto->requesterId !== $ticket->requester_id) {
             throw new BadRequestException("No tienes permiso para actualizar este ticket.");
         }
 
@@ -237,11 +238,26 @@ class TicketService
         try {
             return DB::transaction(function () use ($ticket, $dto) {
 
+                if ($dto->images) {
+                    if (is_array($ticket->images)) {
+                        foreach ($ticket->images as $oldImage) {
+                            Storage::disk('public')->delete($oldImage);
+                        }
+                    }
+
+                    $images = [];
+                    foreach ($dto->images as $image) {
+                        $path = Storage::disk('public')->putFile('ticket_images', $image);
+                        $images[] = $path;
+                    }
+                    $ticket->images = $images;
+                }
+
                 $original = $ticket->getOriginal();
 
                 $ticket->title = $dto->title;
                
-                $ticket->requester_id = $dto->requesterId;
+                // $ticket->requester_id = $dto->requesterId;
                 $ticket->description = $dto->description;
                 $ticket->type = $dto->type;
                 $ticket->impact = $dto->impact;
@@ -250,6 +266,8 @@ class TicketService
                 $ticket->category = $dto->category;
                 
                 $ticket->save();
+
+
 
                 $changes = $ticket->getChanges();
                 if (count($changes) > 0) {
@@ -260,7 +278,6 @@ class TicketService
                         if ($oldValue === $newValue || $field === 'updated_at') {
                             continue;
                         }
-
 
                         if ($field === 'requester_id') {
                             $oldRequester = User::select('staff_id', 'firstname', 'lastname')->find($oldValue);
@@ -279,6 +296,11 @@ class TicketService
                             }
                             continue;
 
+                        }
+
+                        if ($field === 'images') {
+                            $changeDetails[] = "Imágenes actualizadas";
+                            continue;
                         }
 
                         switch ($field) {
@@ -313,7 +335,7 @@ class TicketService
                     }
                     $changeDescription = implode('; ', $changeDetails);
 
-                    $this->logHistory($ticket->id, TicketHistoryAction::UPDATED, $changeDescription);
+                    $this->logHistory($ticket->id, TicketHistoryAction::UPDATED, $changeDescription, $dto->requesterId);
                 }
 
                 if ($original['requester_id'] !== $dto->requesterId) {
@@ -325,6 +347,7 @@ class TicketService
 
 
         } catch (\Exception $e) {
+           
 
             throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
         }
@@ -340,6 +363,9 @@ class TicketService
             'type' => 'Tipo',
             'priority' => 'Prioridad',
             'category' => 'Categoría',
+                'impact' => 'Impacto',
+                'urgency' => 'Urgencia',
+                'images' => 'Imágenes',
             default => $field,
         };
     }
@@ -364,12 +390,12 @@ class TicketService
 
     }
 
-    function logHistory(int $ticketId, TicketHistoryAction $action, ?string $description = null)
+    function logHistory(int $ticketId, TicketHistoryAction $action, ?string $description = null, $performerId = null)
     {
         TicketHistory::create([
             'action' => $action->value,
             'ticket_id' => $ticketId,
-            'performed_by' => auth()->id(),
+            'performed_by' => $performerId ?? auth()->id(),
             'description' => $description,
             'performed_at' => now(),
         ]);

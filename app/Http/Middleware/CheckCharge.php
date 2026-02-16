@@ -18,8 +18,6 @@ class CheckCharge
             return redirect()->route('login');
         }
 
-        ds($user->id_cargo, $charges);
-
         if (!in_array($user->id_cargo, $charges)) {
             Inertia::flash('error', 'No tienes permiso para acceder a esta sección.');
             return redirect()->route('dashboard');
