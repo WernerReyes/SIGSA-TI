@@ -54,7 +54,6 @@ router.on('flash', (event) => {
 });
 
 
-
 createInertiaApp({
     resolve: (name: string) => {
         const pages = import.meta.glob('./pages/**/*.vue', { eager: true });

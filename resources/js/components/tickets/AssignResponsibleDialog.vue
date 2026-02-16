@@ -14,7 +14,7 @@
                     <div>
                         <h2 class="text-xl font-semibold">Reasignar Ticket</h2>
                         <p class="text-sm text-muted-foreground mt-1">
-                            <span class="font-medium text-foreground">TK-{{ ticket?.id }}</span> - Selecciona un
+                            <span class="font-medium text-foreground">TK-{{ ticket?.id.toString().padStart(3, '0') }}</span> - Selecciona un
                             nuevo responsable
                         </p>
                     </div>

@@ -22,7 +22,7 @@
                             este ticket.</p>
                         <p v-if="ticket"
                             class="text-xs text-muted-foreground mt-1 inline-flex gap-2 items-center bg-muted px-2 py-1 rounded-md">
-                            <span class="font-mono">TK-{{ ticket?.id }}</span>
+                            <span class="font-mono">TK-{{ ticket.id.toString().padStart(3, '0') }}</span>
                             <span class="text-foreground">·</span>
                             <span class="font-medium line-clamp-1">{{ ticket?.description }}</span>
                         </p>

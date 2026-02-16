@@ -18,7 +18,7 @@
                             Cambiar Estado de Ticket
                         </h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            TK-{{ ticket?.id }}
+                            TK-{{ ticket.id.toString().padStart(3, '0') }}
                         </p>
                     </div>
                 </div>
@@ -86,7 +86,6 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
 
 import {
     Dialog,
@@ -98,17 +97,16 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Spinner } from '@/components/ui/spinner';
+import { useApp } from '@/composables/useApp';
 import { TicketStatus, ticketStatusOptions, type Ticket } from '@/interfaces/ticket.interface';
+import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
+import { Check } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
+import { computed } from 'vue';
 import z from 'zod';
 import SelectFilters from '../SelectFilters.vue';
-import { Check } from 'lucide-vue-next';
-import { computed } from 'vue';
-import { useApp } from '@/composables/useApp';
-import { isEqual } from '@/lib/utils';
 
 
 const { ticket } = defineProps<{
@@ -163,7 +161,11 @@ const handleFormSubmit = (values: { status?: TicketStatus }) => {
                     return tickets.map((t: Ticket) => {
                         if (t.id === ticket?.id) {
 
-                            return ticket;
+                            return {
+                                ...ticket,
+                                responsible: t.responsible,
+                                requester: t.requester,
+                            };
                         }
                         return t;
                     });
