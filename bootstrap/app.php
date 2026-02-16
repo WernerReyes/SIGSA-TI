@@ -45,18 +45,18 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($previous instanceof ModelNotFoundException) {
                 $modelClass = $previous->getModel();
                 $message = match ($modelClass) {
-                    \App\Models\Ticket::class => 'El ticket solictado ya no existe',
-                    \App\Models\Asset::class => 'El equipo solictado ya no existe',
-                    \App\Models\AssetAssignment::class => 'La asignación de equipo solicitada ya no existe',
-                    \App\Models\Service::class => 'La solicitud de servicio solicitada ya no existe',
-                    \App\Models\Contract::class => 'El contrato solicitado ya no existe',
-                    \App\Models\InfrastructureEvents::class => 'El evento de infraestructura solicitado ya no existe',
-                    \App\Models\DevelopmentRequest::class => 'La solicitud de desarrollo solicitada ya no existe',
-                    \App\Models\Notification::class => 'La notificación solicitada ya no existe',
-                    default => 'El recurso solicitado ya no existe'
+                    \App\Models\Ticket::class => 'El ticket solictado',
+                    \App\Models\Asset::class => 'El equipo solictado',
+                    \App\Models\AssetAssignment::class => 'La asignación de equipo solicitada',
+                    \App\Models\Service::class => 'La solicitud de servicio solicitada',
+                    \App\Models\Contract::class => 'El contrato solicitado',
+                    \App\Models\InfrastructureEvents::class => 'El evento de infraestructura solicitado',
+                    \App\Models\DevelopmentRequest::class => 'La solicitud de desarrollo solicitada',
+                    \App\Models\Notification::class => 'La notificación solicitada',
+                    default => 'El recurso solicitado'
                 };
 
-                $message .= ", por favor recarga la página para actualizar los datos.";
+                $message .= " ya no existe, por favor recarga la página para actualizar los datos.";
             }
 
             return back()->with([

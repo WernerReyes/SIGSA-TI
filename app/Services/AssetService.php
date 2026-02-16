@@ -778,8 +778,6 @@ class AssetService
 
                     }
 
-
-
                     return $assignment;
                 }
 
@@ -1068,15 +1066,24 @@ class AssetService
     }
 
 
-    private function setCompanyInfoByEmployee(User $employee, TemplateProcessor $template)
+    private function setCompanyInfoByEmployee(User $employee, TemplateProcessor $template, ?array $size = null)
     {
         if ($employee->id_empresa === EmployeeCompany::CECHRIZA->value) {
-            $template->setValue('company', 'CECHRIZA SAC');
+            $template->setValue('company', 'CECHRIZA S.A.C');
             $logo = storage_path('app/companies/cechriza-logo.png');
+            if ($size) {
+                $template->setImageValue('logo', ['path' => $logo, 'width' => $size['width'], 'height' => $size['height']]);
+                return;
+            }
             $template->setImageValue('logo', ['path' => $logo, 'width' => 280, 'height' => 280]);
+
         } else if ($employee->id_empresa === EmployeeCompany::YDIEZA->value) {
-            $template->setValue('company', 'YDIEZA SAC');
+            $template->setValue('company', 'YDIEZA S.A.C');
             $logo = storage_path('app/companies/ydieza-logo.png');
+            if ($size) {
+                $template->setImageValue('logo', ['path' => $logo, 'width' => $size['width'], 'height' => $size['height']]);
+                return;
+            }
             $template->setImageValue('logo', ['path' => $logo, 'width' => 250, 'height' => 250]);
         }
     }
@@ -1152,14 +1159,13 @@ class AssetService
 
             $template = new TemplateProcessor(storage_path('app/templates/cargo-celular.docx'));
 
-            // 24/11/2025|
 
-            $accesories = $assignment->childrenAssignments->map(function ($childAssignment) {
+            $accessories = $assignment->childrenAssignments->map(function ($childAssignment) {
                 $asset = $childAssignment->asset;
-                return $asset->full_name;
-            })->implode(', ');
+                return '- ' . $asset->full_name;
+            })->implode('</w:t><w:br/><w:t>');
 
-            $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
+            $this->setCompanyInfoByEmployee($assignment->assignedTo, $template, ['width' => 80, 'height' => 60]);
             $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
@@ -1167,7 +1173,7 @@ class AssetService
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
             $template->setValue('brand', $asset->brand);
             $template->setValue('model', $asset->model);
-            $template->setValue('comment', $accesories);
+            $template->setValue('accessories', $accessories);
             $template->setValue('phone', $asset->phone ?? 'N/A');
             $template->setValue('imei', $asset->imei ?? 'N/A');
 
