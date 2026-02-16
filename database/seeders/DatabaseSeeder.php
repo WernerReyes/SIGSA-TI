@@ -13,13 +13,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-    
-        $this->call([
-        AssetTypeSeeder::class,
-        AssetSeeder::class,
-        InfrastructureEventSeeder::class,
-        SlaPolicySeeder::class,
-    ]);
+
+        $isDev = env('APP_ENV') === 'local';
+        if ($isDev) {
+            $this->call([
+                AssetTypeSeeder::class,
+                AssetSeeder::class,
+                InfrastructureEventSeeder::class,
+                SlaPolicySeeder::class,
+            ]);
+
+        } else {
+            $this->call([
+                AssetTypeSeeder::class,
+                    // AssetSeeder::class,
+                    // InfrastructureEventSeeder::class,
+                SlaPolicySeeder::class,
+            ]);
+
+        }
     }
 
 
