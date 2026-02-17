@@ -6,7 +6,7 @@
 
         }
     }">
-        <DialogContent class="sm:max-w-4xl max-h-screen overflow-y-auto">
+        <DialogContent class="sm:max-w-4xl">
             <DialogHeader class="space-y-3 pb-4">
                 <div
                     class="flex items-start gap-4 p-4 rounded-xl bg-linear-to-br from-muted/40 via-background to-background border">
@@ -37,6 +37,7 @@
             </DialogHeader>
 
 
+            <ScrollArea class="dialog-content">
             <Tabs default-value="history" class="mt-6">
                 <TabsList class="grid w-full grid-cols-2 h-auto p-1">
                     <TabsTrigger value="info" class="gap-2 py-2.5">
@@ -49,9 +50,9 @@
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="info" class="mt-6">
+                <TabsContent value="info" class="mt-6 overflow-hidden">
                     <div class="grid md:grid-cols-2 gap-4">
-                        <div class="space-y-3">
+                        
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
@@ -93,9 +94,10 @@
                                     </p>
                                 </div>
                             </div>
-                        </div>
-                        <div class="space-y-3">
-                            <div
+                       
+                        <!-- <div class="space-y-3"> -->
+
+                            <div v-if="asset?.purchase_date"
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
                                     class="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
@@ -110,7 +112,7 @@
                                 </div>
                             </div>
 
-                            <div
+                            <div v-if="asset?.warranty_expiration"
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div class="size-10 rounded-lg flex items-center justify-center shrink-0"
                                     :class="isWarrantyValid(asset?.warranty_expiration || '') ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'">
@@ -149,14 +151,113 @@
                                 </div>
                             </div>
 
-                        </div>
+                            <div v-if="asset?.type?.name"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
+                                    <component :is="assetTypeOp(asset.type.name)?.icon" class="size-5 text-cyan-600 dark:text-cyan-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.type.name }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="asset?.color"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center shrink-0">
+                                    <Palette class="size-5 text-pink-600 dark:text-pink-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Color</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.color }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="asset?.processor"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+                                    <Cpu class="size-5 text-violet-600 dark:text-violet-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Procesador</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.processor }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="asset?.ram"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center shrink-0">
+                                    <MemoryStick class="size-5 text-sky-600 dark:text-sky-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">RAM</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.ram }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="asset?.storage"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
+                                    <HardDrive class="size-5 text-teal-600 dark:text-teal-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Almacenamiento</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.storage }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="isCellPhone && asset?.phone"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-lime-100 dark:bg-lime-900/30 flex items-center justify-center shrink-0">
+                                    <Phone class="size-5 text-lime-600 dark:text-lime-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Teléfono</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.phone }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="isCellPhone && asset?.imei"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                                    <Smartphone class="size-5 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">IMEI</p>
+                                    <p class="text-sm font-semibold mt-1">{{ asset.imei }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="asset?.invoice_url"
+                                class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
+                                <div
+                                    class="size-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                                    <Receipt class="size-5 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Factura</p>
+                                    <Button variant="link" class="px-0 h-auto text-sm font-semibold mt-1"
+                                        @click="viewDocument(asset.invoice_url)">
+                                        Ver documento
+                                    </Button>
+                                </div>
+                            </div>
+
+                        <!-- </div> -->
                     </div>
                 </TabsContent>
 
                 <TabsContent value="history" class="mt-6">
 
                     <div class="space-y-4">
-
+                        
                         <Empty v-if="assignments.length === 0" class="py-8">
                             <EmptyHeader>
                                 <EmptyMedia variant="icon">
@@ -180,7 +281,7 @@
                             <div class="flex items-start gap-4 flex-1">
 
                                 <div
-                                    :class="!assignment.returned_at ? 'w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/50 mt-1' : 'w-3 h-3 rounded-full bg-muted-foreground mt-1'">
+                                :class="!assignment.returned_at ? 'w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/50 mt-1' : 'w-3 h-3 rounded-full bg-muted-foreground mt-1'">
                                 </div>
                                 <div class="flex-1">
                                     <p class="text-sm font-semibold flex items-center gap-2">
@@ -237,7 +338,7 @@
                                         }">
                                             <Download />
                                             Activo
-                                            <component :is="assetTypeOp(asset?.type?.name)?.icon" class="size-4" />
+                                            <component :is="asset?.type?.name ? assetTypeOp(asset.type.name as TypeName)?.icon : MonitorSmartphone" class="size-4" />
                                         </DropdownMenuItem>
 
                                     </DropdownMenuContent>
@@ -316,8 +417,9 @@
 
 
                 </TabsContent>
-
+                
             </Tabs>
+        </ScrollArea>
 
 
 
@@ -390,7 +492,7 @@ import { format, isAfter, isSameDay, parseISO, startOfDay } from 'date-fns';
 import {
     Calendar, Download, Eye, FileText,
     History,
-    Laptop, Monitor, MonitorSmartphone, Shield,
+    Cpu, HardDrive, Laptop, MemoryStick, Monitor, MonitorSmartphone, Palette, Phone, Receipt, Shield, Smartphone,
     Sparkles,
     Upload, User
 } from 'lucide-vue-next';
@@ -398,6 +500,7 @@ import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import FileUpload from '../FileUpload.vue';
 import { TypeName } from '@/interfaces/assetType.interface';
+import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -419,6 +522,10 @@ const assignments = computed({
             asset.value.assignments = val;
         }
     }
+});
+
+const isCellPhone = computed(() => {
+    return asset.value?.type?.name === TypeName.CELL_PHONE || asset.value?.type_id === 3;
 });
 
 const isWarrantyValid = (warrantyEndDate: string): boolean => {
