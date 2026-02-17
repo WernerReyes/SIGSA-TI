@@ -17,6 +17,7 @@ class AuthService
             })
             ->first();
         ;
+       
         if (!$user || !password_verify($dto->password, $user->password)) {
             return back()->withErrors([
                 'username' => 'Las credenciales proporcionadas no son correctas.',

@@ -715,13 +715,16 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'purchase_date',
         id: 'purchase_date',
         header: 'Fecha de compra',
-        cell: info => format(info.getValue() as string, 'dd/MM/yyyy'),
+        cell: info =>  info.getValue() ? format(info.getValue() as string, 'dd/MM/yyyy') : h(Badge, { variant: 'secondary' }, () => 'Sin fecha'),
     }, {
         accessorKey: 'warranty_expiration',
         id: 'warranty_expiration',
         header: 'Garantía hasta',
         cell: info => {
-            const warrantyDate = info.getValue() as string;
+            const warrantyDate = info.getValue() as string | null;
+            if (!warrantyDate) {
+                return h(Badge, { variant: 'secondary' }, () => 'Sin fecha');
+            }
             const isValid = isWarrantyValid(warrantyDate);
             return h(
                 Badge,

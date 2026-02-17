@@ -374,19 +374,20 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover'
 
-import { Spinner } from '@/components/ui/spinner'
+
+import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
+import { useApp } from '@/composables/useApp'
 import { type Asset } from '@/interfaces/asset.interface'
 import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
-import { router, usePage } from '@inertiajs/vue3'
-import { CalendarDate, getLocalTimeZone, parseDate, today } from '@internationalized/date'
-import { ChevronDownIcon, Laptop } from 'lucide-vue-next'
 import { isEqual } from '@/lib/utils'
-import { useApp } from '@/composables/useApp'
-import { isBefore
- } from 'date-fns'
+import { router, usePage } from '@inertiajs/vue3'
+import { CalendarDate, getLocalTimeZone, parseDate } from '@internationalized/date'
+import {
+    isBefore
+} from 'date-fns'
+import { ChevronDownIcon, Laptop } from 'lucide-vue-next'
 import * as z from 'zod'
 import SelectFilters from '../SelectFilters.vue'
-import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 
 
 defineProps<{
@@ -438,12 +439,15 @@ const formSchema = toTypedSchema(z.object({
     imei: z.string().optional().nullable(),
     purchase_date: z.instanceof(CalendarDate, {
         message: 'La fecha de compra es obligatoria'
-    }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())),
+    }).
+    nullable().
+    transform((date: CalendarDate | null) => date?.toDate(getLocalTimeZone()) || null),
     warranty_expiration: z.instanceof(CalendarDate, {
         message: 'La fecha de vencimiento de la garantía es obligatoria'
-    }).transform((date: CalendarDate) => date.toDate(getLocalTimeZone())).refine((date) => {
-        const purchaseDate = (values.purchase_date as CalendarDate).toDate(getLocalTimeZone()) as Date;
-        return isBefore(purchaseDate, date) || isEqual(purchaseDate, date);
+    }).nullable().transform((date: CalendarDate | null) => date?.toDate(getLocalTimeZone()) || null).refine((date) => {
+        if (!date) return true; // Si no se proporciona fecha de vencimiento, no se realiza la validación
+        const purchaseDate = (values.purchase_date as CalendarDate)?.toDate(getLocalTimeZone()) as Date;
+        return !purchaseDate || isBefore(purchaseDate, date) || isEqual(purchaseDate, date);
     }, {
         message: 'La fecha de vencimiento de la garantía no puede ser anterior a la fecha de compra'
     }),
@@ -452,26 +456,6 @@ const formSchema = toTypedSchema(z.object({
 
 
 }));
-
-
-// const initialFormValues = {
-//     name: '',
-//     color: '',
-//     brand: '',
-//     model: '',
-//     serial_number: '',
-//     type_id: undefined,
-//     purchase_date: today(getLocalTimeZone()),
-//     warranty_expiration: today(getLocalTimeZone()),
-//     processor: '',
-//     ram: '',
-//     storage: '',
-//     phone: '',
-//     imei: '',
-//     is_new: true,
-//     assigned_to: undefined,
-// };
-
 
 const initialValues = computed(() => {
     const asset = currentAsset.value;
@@ -482,8 +466,8 @@ const initialValues = computed(() => {
         model: asset?.model || '',
         serial_number: asset?.serial_number || '',
         type_id: asset?.type_id,
-        purchase_date: asset ? parseDate(asset.purchase_date.split('T')[0]) : today(getLocalTimeZone()),
-        warranty_expiration: asset ? parseDate(asset.warranty_expiration.split('T')[0]) : today(getLocalTimeZone()),
+        purchase_date: asset?.purchase_date ? parseDate(asset.purchase_date.split('T')[0]) : null,
+        warranty_expiration: asset?.warranty_expiration ? parseDate(asset.warranty_expiration.split('T')[0]) : null,
         processor: asset?.processor || '',
         ram: asset?.ram || '',
         storage: asset?.storage || '',
@@ -506,25 +490,6 @@ watch(() => openEditor.value, (editor) => {
     if (editor && newAsset) {
         open.value = true;
         setValues(initialValues.value);
-        // setValues({
-        //     name: newAsset.name,
-        //     color: newAsset.color,
-        //     brand: newAsset.brand,
-        //     model: newAsset.model,
-        //     serial_number: newAsset.serial_number,
-        //     processor: newAsset.processor,
-        //     ram: newAsset.ram,
-        //     storage: newAsset.storage,
-        //     type_id: newAsset.type_id,
-        //     purchase_date: parseDate(
-        //         newAsset.purchase_date.split('T')[0]
-        //     ),
-        //     warranty_expiration: parseDate(
-        //         newAsset.warranty_expiration.split('T')[0]
-        //     ),
-        //     is_new: Boolean(newAsset.is_new),
-        //     // assigned_to: newAsset.assigned_to_id || undefined,
-        // });
     } else {
         open.value = false;
         openEditor.value = false;
