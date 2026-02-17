@@ -6,14 +6,16 @@ import { router } from '@inertiajs/vue3';
 import { toast } from 'vue-sonner';
 import { configureEcho } from '@laravel/echo-vue';
 
+const isHttps = import.meta.env.VITE_REVERB_SCHEME === 'https';
+
 configureEcho({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,
     wsHost: import.meta.env.VITE_REVERB_HOST,
     wsPort: import.meta.env.VITE_REVERB_PORT,
     wssPort: import.meta.env.VITE_REVERB_PORT,
-    forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
-    enabledTransports: ['ws'],
+    forceTLS: isHttps,
+    enabledTransports: [isHttps ? 'wss' : 'ws'],
 
      withCredentials: true, // 👈 ESTO
 
