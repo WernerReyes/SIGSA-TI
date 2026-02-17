@@ -6,6 +6,7 @@ use App\Enums\Asset\AssetStatus;
 use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Imports\AssetsImport;
 use App\Models\AssetHistory;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
@@ -64,13 +65,14 @@ class AssetSeeder extends Seeder
         ]);
 
 
-
+         $user = User::select('staff_id')->where('email', 'werner.reyes@cechriza.com')->first();
+           
         AssetHistory::insert(
             Asset::get()->map(fn($asset) => [
                 'action' => AssetHistoryAction::CREATED->value,
                 'description' => 'Equipo registrado en el sistema',
                 'asset_id' => $asset->id,
-                'performed_by' => 137,
+                'performed_by' => $user->staff_id,
                 'performed_at' => Carbon::now(),
             ])->toArray()
         );

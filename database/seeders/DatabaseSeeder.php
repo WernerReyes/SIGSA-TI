@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
         if ($isDev) {
             $this->call([
                 AssetTypeSeeder::class,
-                AssetSeeder::class,
                 InfrastructureEventSeeder::class,
                 SlaPolicySeeder::class,
             ]);
@@ -26,6 +25,7 @@ class DatabaseSeeder extends Seeder
         } else {
             $this->call([
                 AssetTypeSeeder::class,
+                AssetSeeder::class,
                     // AssetSeeder::class,
                     // InfrastructureEventSeeder::class,
                 SlaPolicySeeder::class,
