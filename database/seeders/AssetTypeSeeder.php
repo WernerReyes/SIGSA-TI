@@ -19,6 +19,7 @@ class AssetTypeSeeder extends Seeder
         AssetType::insert([
             ['name' => 'Laptop', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'PC', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Mini PC', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Celular', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Accesorio', 'created_at' => now(), 'updated_at' => now()],
         ]);

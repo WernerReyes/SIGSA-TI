@@ -11,6 +11,7 @@ export interface AssetType {
 export enum TypeName {
     LAPTOP = 'Laptop',
     PC = 'PC',
+    MINI_PC = 'Mini PC',
     CELL_PHONE = 'Celular',
     ACCESSORY = 'Accesorio',
 }
@@ -28,6 +29,10 @@ export const assetTypeOptions: Record<TypeName, TypeNameOption> = {
     [TypeName.PC]: {
         value: TypeName.PC,
         icon: Monitor,
+    },
+    [TypeName.MINI_PC]: {
+        value: TypeName.MINI_PC,
+        icon: Cpu,
     },
     [TypeName.CELL_PHONE]: {
         value: TypeName.CELL_PHONE,
