@@ -28,6 +28,7 @@ class AssetController extends Controller
 {
     //
 
+    
     public function renderView(
         AssetService $assetService,
         AssetTypeService $assetTypeService,
@@ -77,6 +78,7 @@ class AssetController extends Controller
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -100,6 +102,7 @@ class AssetController extends Controller
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -122,6 +125,7 @@ class AssetController extends Controller
 
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -173,6 +177,7 @@ class AssetController extends Controller
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -198,6 +203,7 @@ class AssetController extends Controller
 
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -220,6 +226,7 @@ class AssetController extends Controller
             
             } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -308,6 +315,7 @@ class AssetController extends Controller
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);
@@ -331,6 +339,7 @@ class AssetController extends Controller
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
+                'success' => null,
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
             ]);

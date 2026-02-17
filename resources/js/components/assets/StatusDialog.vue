@@ -172,6 +172,7 @@ const handleFormSubmit = (values: { status: AssetStatus }) => {
                 if (flash.error) return;
                 handleReset();
                 asset.value = null;
+                open.value = false;
             }
             
 

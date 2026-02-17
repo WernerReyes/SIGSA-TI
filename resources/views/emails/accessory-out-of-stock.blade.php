@@ -47,7 +47,7 @@
                                 <tr>
                                     <td style="padding:6px 0; font-size:14px; color:#111827;">
                                         <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#1f429b; margin-right:8px; vertical-align:middle;"></span>
-                                        <span style="vertical-align:middle;">{{ $asset->name }}</span>
+                                        <span style="vertical-align:middle;">{{ $asset->full_name }}</span>
                                     </td>
                                 </tr>
                                 @endforeach

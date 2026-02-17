@@ -327,6 +327,10 @@ class AssetService
             throw new BadRequestException('No tienes permiso para reenviar esta alerta');
         }
 
+        if (!Asset::whereHas('type', fn($q) => $q->where('name', 'Accesorio'))->whereNot('status', AssetStatus::AVAILABLE->value)->exists()) {
+            throw new BadRequestException('No hay accesorios agotados actualmente, no se puede reenviar la alerta');
+        }
+
         try {
             $alertService = app(AccessoryOutOfStockAlertService::class);
             $alertService->forceNotify();

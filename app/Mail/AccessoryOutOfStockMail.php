@@ -25,10 +25,10 @@ class AccessoryOutOfStockMail extends Mailable
     private function getAccessories()
     {
         return Asset::
-            select('id', 'name', 'serial_number')
+            select('id', 'name', 'brand', 'model')
             ->whereNot('status', AssetStatus::AVAILABLE)
             ->whereHas('type', fn($q) => $q->where('name', 'Accesorio'))
-            ->get()->unique(fn($item) => strtolower($item->name));
+            ->get()->unique(fn($item) => strtolower($item->full_name));
 
     }
 
