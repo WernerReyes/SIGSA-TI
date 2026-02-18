@@ -103,7 +103,6 @@ class AssetSeeder extends Seeder
         DB::transaction(function () use ($cechLima, $cechProvince, $ydieza, $user) {
             $array = array_merge($cechLima, $cechProvince, $ydieza);
             // ds($array);
-            ds(array_filter($array, fn($asset) => $asset['assigned_to'] == null));
             array_map(function ($data) use ($user) {
                 $accessories = $data['accessories'] ?? [];
                 $assignedTo = $data['assigned_to'];
@@ -246,7 +245,6 @@ class AssetSeeder extends Seeder
         //* 'cargador,mouse' -> ['cargador', 'mouse']
         $data = function ($row)  {
             $accesories = array_filter(explode(',', $row[9] ?? ''), fn($item) => !empty(trim($item)) && trim($item) !== '');
-            ds($accesories);
             return [
                 'name' => $row[2],
                 'status' => AssetStatus::AVAILABLE->value,
