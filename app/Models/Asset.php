@@ -93,15 +93,29 @@ class Asset extends Model
 
 
     public function getFullNameAttribute()
-    {
-        if ($this->serial_number && $this->model) {
-            return "{$this->name} ({$this->brand} {$this->model} - S/N: {$this->serial_number})";
-        } elseif ($this->model) {
-            return "{$this->name} ({$this->brand} {$this->model})";
-        } else {
-            return "{$this->name} ({$this->brand})";
-        }
+{
+    $parts = [];
+
+    if ($this->brand) {
+        $parts[] = $this->brand;
     }
+
+    if ($this->model) {
+        $parts[] = $this->model;
+    }
+
+    if ($this->serial_number) {
+        $parts[] = "S/N: {$this->serial_number}";
+    }
+
+    // Si hay partes adicionales, las concatenamos con espacios y guiones
+    if (!empty($parts)) {
+        return "{$this->name} (" . implode(' - ', $parts) . ")";
+    }
+
+    // Si no hay nada extra, solo devolvemos el nombre
+    return $this->name;
+}
 
 
 
@@ -144,7 +158,7 @@ class Asset extends Model
 
     public function histories()
     {
-        return $this->hasMany(AssetHistory::class, 'asset_id')->orderBy('performed_at', 'desc');
+        return $this->hasMany(AssetHistory::class, 'asset_id')->orderBy('performed_at', 'desc')->orderBy('id', 'desc');
     }
 
 

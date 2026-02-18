@@ -776,15 +776,15 @@ class AssetService
 
 
                     // TODO: Ticket history log
-                    if ($dto->ticket_id) {
-                        app(abstract: TicketService::class)->logHistory(
-                            $dto->ticket_id,
-                            TicketHistoryAction::ASSET_ASSIGNED,
-                            $description . " para el equipo {$asset->full_name}",
-                        );
+                    // if ($dto->ticket_id) {
+                        // app(abstract: TicketService::class)->logHistory(
+                        //     $dto->ticket_id,
+                        //     TicketHistoryAction::ASSET_ASSIGNED,
+                        //     $description . " para el equipo {$asset->full_name}",
+                        // );
 
 
-                    }
+                    // }
 
                     return $assignment;
                 }
@@ -810,7 +810,7 @@ class AssetService
                 );
 
                 $description = "Equipo asignado a {$assigned->assignedTo->full_name}";
-                $ticketDescription = "Equipo '{$asset->type->name} {$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}'";
+                // $ticketDescription = "Equipo '{$asset->type->name} {$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}'";
 
                 // Asignar accesorios si los hay
                 if ($dto->accessories && is_array($dto->accessories)) {
@@ -836,7 +836,7 @@ class AssetService
                     ]);
 
                     $description = "Equipo asignado a {$assigned->assignedTo->full_name} junto con los accesorios: " . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray());
-                    $ticketDescription = "Equipo '{$asset->type->name} {$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}' junto con los accesorios: '" . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray()) . "'";
+                    // $ticketDescription = "Equipo '{$asset->type->name} {$asset->full_name}' asignado a '{$assigned->assignedTo->full_name}' junto con los accesorios: '" . implode(',', $accesories->pluck('full_name')->map(fn($name) => "{$name}")->toArray()) . "'";
 
 
                     AssetHistory::insert(
@@ -866,84 +866,84 @@ class AssetService
                 );
 
                 // TODO: Ticket history log
-                if ($dto->ticket_id) {
+                // if ($dto->ticket_id) {
 
 
-                    $existingTicketAsset = TicketAsset::where('ticket_id', $dto->ticket_id)->whereNot('action', TicketAssetAction::RETURNED->value)
-                        ->first();
+                //     $existingTicketAsset = TicketAsset::where('ticket_id', $dto->ticket_id)->whereNot('action', TicketAssetAction::RETURNED->value)
+                //         ->first();
 
-                    $originalAsset = $existingTicketAsset?->asset;
-                    $originalAssignment = $existingTicketAsset?->assetAssignment;
-
-
-                    app(TicketService::class)->attachAssetToTicket(
-                        $dto->ticket_id,
-                        $asset->id,
-                        TicketAssetAction::ASSIGNED,
-                        $assigned->id
-                    );
+                //     $originalAsset = $existingTicketAsset?->asset;
+                //     $originalAssignment = $existingTicketAsset?->assetAssignment;
 
 
-                    if ($existingTicketAsset) {
-
-                        $ticketDescription = "La asignación del activo '{$originalAsset->type->name} {$originalAsset->full_name}' ha sido actualizada. Nuevo activo asignado: '{$asset->type->name} {$asset->full_name}'";
-
-
-                        $existingTicketAsset->update([
-                            'action' => TicketAssetAction::CHANGED->value,
-                            'notes' => "El activo fue reasignado a {$asset->full_name}",
-                            'asset_assignment_id' => $assigned->id,
-                            'asset_id' => $asset->id,
-                        ]);
-
-                        if ($originalAssignment->childrenAssignments()->count() > 0) {
-                            // $originalAssignment->childrenAssignments->delete();
-
-                            AssetAssignment::whereIn('id', $originalAssignment->childrenAssignments->pluck('id'))->update([
-                                // 'parent_assignment_id' => null,
-                                'returned_at' => now()->toDateTimeString(),
-                                'return_comment' => "Liberado junto a la reasignación del equipo principal {$asset->full_name}",
-                                'responsible_id' => auth()->user()->staff_id,
-                                'return_reason' => ReturnReason::WRONG_ASSIGNMENT
-                            ]);
-
-                            Asset::whereIn('id', $originalAssignment->childrenAssignments->pluck('asset_id'))->update([
-                                'status' => AssetStatus::AVAILABLE->value,
-                            ]);
-                        }
-
-                        $originalAssignment->update([
-                            // 'parent_assignment_id' => null,
-                            'returned_at' => now()->toDateTimeString(),
-                            'return_comment' => "Reasignación del equipo a {$asset->full_name}",
-                            'responsible_id' => auth()->user()->staff_id,
-                            'return_reason' => ReturnReason::WRONG_ASSIGNMENT
-                        ]);
-
-                        $originalAsset->update([
-                            'status' => AssetStatus::AVAILABLE->value,
-                        ]);
+                //     app(TicketService::class)->attachAssetToTicket(
+                //         $dto->ticket_id,
+                //         $asset->id,
+                //         TicketAssetAction::ASSIGNED,
+                //         $assigned->id
+                //     );
 
 
+                //     if ($existingTicketAsset) {
+
+                //         $ticketDescription = "La asignación del activo '{$originalAsset->type->name} {$originalAsset->full_name}' ha sido actualizada. Nuevo activo asignado: '{$asset->type->name} {$asset->full_name}'";
 
 
-                        // $existingTicketAsset->assetAssignment->delete();
+                //         $existingTicketAsset->update([
+                //             'action' => TicketAssetAction::CHANGED->value,
+                //             'notes' => "El activo fue reasignado a {$asset->full_name}",
+                //             'asset_assignment_id' => $assigned->id,
+                //             'asset_id' => $asset->id,
+                //         ]);
 
-                    }
+                //         if ($originalAssignment->childrenAssignments()->count() > 0) {
+                //             // $originalAssignment->childrenAssignments->delete();
 
-                    app(TicketService::class)->logHistory(
-                        $dto->ticket_id,
-                        TicketHistoryAction::ASSET_ASSIGNED,
-                        $ticketDescription,
-                    );
+                //             AssetAssignment::whereIn('id', $originalAssignment->childrenAssignments->pluck('id'))->update([
+                //                 // 'parent_assignment_id' => null,
+                //                 'returned_at' => now()->toDateTimeString(),
+                //                 'return_comment' => "Liberado junto a la reasignación del equipo principal {$asset->full_name}",
+                //                 'responsible_id' => auth()->user()->staff_id,
+                //                 'return_reason' => ReturnReason::WRONG_ASSIGNMENT
+                //             ]);
 
-                    // app(TicketService::class)->attachAssetToTicket(
-                    //     $dto->ticket_id,
-                    //     $asset->id,
-                    //     TicketAssetAction::ASSIGNED,
-                    //     $assigned->id
-                    // );
-                }
+                //             Asset::whereIn('id', $originalAssignment->childrenAssignments->pluck('asset_id'))->update([
+                //                 'status' => AssetStatus::AVAILABLE->value,
+                //             ]);
+                //         }
+
+                //         $originalAssignment->update([
+                //             // 'parent_assignment_id' => null,
+                //             'returned_at' => now()->toDateTimeString(),
+                //             'return_comment' => "Reasignación del equipo a {$asset->full_name}",
+                //             'responsible_id' => auth()->user()->staff_id,
+                //             'return_reason' => ReturnReason::WRONG_ASSIGNMENT
+                //         ]);
+
+                //         $originalAsset->update([
+                //             'status' => AssetStatus::AVAILABLE->value,
+                //         ]);
+
+
+
+
+                //         // $existingTicketAsset->assetAssignment->delete();
+
+                //     }
+
+                //     app(TicketService::class)->logHistory(
+                //         $dto->ticket_id,
+                //         TicketHistoryAction::ASSET_ASSIGNED,
+                //         $ticketDescription,
+                //     );
+
+                //     // app(TicketService::class)->attachAssetToTicket(
+                //     //     $dto->ticket_id,
+                //     //     $asset->id,
+                //     //     TicketAssetAction::ASSIGNED,
+                //     //     $assigned->id
+                //     // );
+                // }
 
                 // $this->logTicketHistory(
                 //     $asset,

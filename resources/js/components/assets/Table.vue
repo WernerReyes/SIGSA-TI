@@ -591,7 +591,7 @@ const handleDeleteAsset = () => {
 const columns: ColumnDef<Asset>[] = [
     {
 
-        accessorKey: 'name',
+        accessorKey: 'full_name',
         id: 'name',
         header: 'Nombre',
         size: 300,
