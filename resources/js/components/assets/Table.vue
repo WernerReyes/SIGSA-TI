@@ -651,7 +651,7 @@ const columns: ColumnDef<Asset>[] = [
         accessorFn: row => row?.current_assignment?.assigned_to ? row.current_assignment.assigned_to.full_name : 'Sin asignar',
         id: 'assigned_to',
         header: 'Asignado a',
-        size: 250,
+        size: 300,
         cell: info => {
             const assignedTo = info.row.original.current_assignment?.assigned_to;
             if (assignedTo) {

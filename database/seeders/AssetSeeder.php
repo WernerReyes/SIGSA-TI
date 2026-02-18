@@ -7,6 +7,7 @@ use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Imports\AssetsImport;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
+use App\Models\AssetType;
 use App\Models\User;
 use Carbon\Carbon;
 use DB;
@@ -30,80 +31,56 @@ class AssetSeeder extends Seeder
         // Convertir el Excel a un Array
         $rows = Excel::toArray(new AssetsImport, $filePath);
 
+        $cechLima = $this->getTechAssigned($rows[0], 42); //* Cechriza Technical Lima
+        $cechProvince = $this->getTechAssigned($rows[1], 39); //* Cechriza Technical Province
+        $ydieza = $this->getTechAssigned($rows[2], 13); //* Ydieza Technical
 
+        $administrativeAssigned = $this->getAdministrativeAssigned($rows[3], 22); //* Administrative Assets
 
-
-        // Omitir la fila de encabezados
-        // ds($this->getLimaCechTechnicalAssets($rows));
-
-
-
-        // El primer índice [0] es la primera hoja del Excel
-        // foreach ($rows[0] as $index => $row) {
-        //     if ($index === 0) {
-        //         continue; // Saltar la fila de encabezados
-        //     }
-
-        //     ds($row);
-        // }
-
-        // User::create([
-        //     'name'  => $row[0],
-        //     'email' => $row[1],
-        //     'password' => bcrypt('password123'),
-        // ]);
-
-        $cechLima = $this->getAssigned($rows[0], 42); //* Cechriza Technical Lima
-        $cechLimaChargers = $this->generateLaptopsChargerByLaptop($cechLima);
-
-
-
-
-
-        $cechProvince = $this->getAssigned($rows[1], 39); //* Cechriza Technical Province
-        $cechProvinceChargers = $this->generateLaptopsChargerByLaptop($cechProvince);
-
-
-        $ydieza = $this->getAssigned($rows[2], 13); //* Ydieza Technical
-        $ydiezaChargers = $this->generateLaptopsChargerByLaptop($ydieza);
-
-        $decommissioned = $this->getAvailable($rows[3], 3); //* Decommissioned Assets
-        // $inRepair = $this->getAvailable($rows[4], 3); //* In repair Assets
-        $available = $this->getAvailable($rows[5], 3); //* Available
+        $decommissioned = $this->getAvailable($rows[4], 3); //* Decommissioned Assets
+        // $inRepair = $this->getAvailable($rows[5], 3); //* In repair Assets
+        $available = $this->getAvailable($rows[6], 3); //* Available
 
         $user = User::select('staff_id')->where('email', 'werner.reyes@cechriza.com')->first();
 
+        $registeredAssigmentsDates = [
+            72 => Carbon::parse('2025-12-17'), // SEGUNDO MARCELO TIMANÁ,
+            186 => Carbon::parse('2025-12-17'), // ANDERSON ERICK RIOS ECHEGARAY,
+            61 => Carbon::parse('2025-12-13'), // Jhimi Christian PEZO MORI
+            21 => Carbon::parse('2026-01-09'), // JOSE ANDRES CARHUAS QUISPE 
+            143 => Carbon::parse('2026-01-12'), // RUBÉN ALEJANDRO ZÁRATE RÍOS
+            146 => Carbon::parse('2026-01-30'), // TATIANA YASMIN ODALIS VERA FLORES
 
-        //             $array = array_merge(array_slice($rows[0], offset: 1, length: 42), array_slice($rows[1], offset: 1, length: 39), array_slice($rows[2], offset: 1, length: 9));
-//             foreach ($array as $index => $row) {
-//                 if ($index === 0) {
-//                     continue; // Saltar la fila de encabezados
-//                 }
+        ];
 
-        //                 $assignedTo = User::select('staff_id')->where('firstname', trim($row[0]))->where('lastname', trim($row[1]))->first();
+        $extraOutSideAssigments = [
+            [
+                'name' => 'Teclado + Mouse Inalambrico',
+                'status' => AssetStatus::AVAILABLE->value,
+                'brand' => 'Logitech',
+                'model' => 'MK235',
+                'color' => null,
+                'serial_number' => strtoupper('2518mr21b7g9'),
+                'processor' => null,
+                'ram' => null,
+                'storage' => null,
+                'purchase_date' => null,
+                'warranty_expiration' => null,
+                'type_id' => 4,
+                'is_new' => true,
+                'invoice_path' => null,
+                'phone' => null,
+                'imei' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'assigned_to' => User::select('staff_id', 'firstname', 'lastname')->find(146), // TATIANA YASMIN ODALIS VERA FLORES
+            ]
+        ];
 
-        //                 if (!$assignedTo) {
-//                     ds("El usuario {$row[0]} {$row[1]} no existe en la base de datos, por lo que no se incluirá en el resultado.");
-//                     continue;
-//                 }
-
-        //                 // ds("El usuario {$row[0]} {$row[1]} existe en la base de datos y se incluirá en el resultado.");
-//             }
-// ds($user);
-// ds(array_filter(array_merge($rows[0], $rows[1], $rows[2]), function ($row) {
-//     if (!User::select('staff_id')->where('firstname', trim($row[0]))->where('lastname', trim($row[1]))->exists()) {
-//     ds("El usuario {$row[0]} {$row[1]} no existe en la base de datos, por lo que no se incluirá en el resultado.");
-//     return false;
-//     }
-//     return true;
-// }));
-
-
-
-        DB::transaction(function () use ($cechLima, $cechProvince, $ydieza, $user) {
-            $array = array_merge($cechLima, $cechProvince, $ydieza);
+        DB::transaction(function () use ($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $user, $registeredAssigmentsDates, $extraOutSideAssigments) {
+            $array = array_merge($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $extraOutSideAssigments);
             // ds($array);
-            array_map(function ($data) use ($user) {
+            array_map(function ($data) use ($user, $registeredAssigmentsDates) {
                 $accessories = $data['accessories'] ?? [];
                 $assignedTo = $data['assigned_to'];
 
@@ -151,7 +128,7 @@ class AssetSeeder extends Seeder
                     $parent = AssetAssignment::create([
                         'asset_id' => $asset->id,
                         'assigned_to_id' => $assignedTo->staff_id,
-                        'assigned_at' => Carbon::now(),
+                        'assigned_at' => $registeredAssigmentsDates[$assignedTo->staff_id] ?? Carbon::now(),
                         'returned_at' => null,
                         'comment' => 'Asignación inicial durante la importación',
                         'return_comment' => null,
@@ -174,7 +151,7 @@ class AssetSeeder extends Seeder
                             AssetAssignment::create([
                                 'asset_id' => $accesory->id,
                                 'assigned_to_id' => $assignedTo->staff_id,
-                                'assigned_at' => Carbon::now(),
+                                'assigned_at' => $registeredAssigmentsDates[$assignedTo->staff_id] ?? Carbon::now(),
                                 'returned_at' => null,
                                 'comment' => 'Asignación inicial durante la importación',
                                 'return_comment' => null,
@@ -193,44 +170,25 @@ class AssetSeeder extends Seeder
 
                             $accesory->update(['status' => AssetStatus::ASSIGNED->value]);
                         }
+                    } else {
+                        AssetHistory::create([
+                            'action' => AssetHistoryAction::ASSIGNED->value,
+                            'description' => "Equipo asignado a {$assignedTo->full_name}",
+                            'asset_id' => $asset->id,
+                            'performed_by' => $user?->staff_id ?? null,
+                            'performed_at' => Carbon::now(),
+                        ]);
                     }
 
-                    // AssetAssignment::create([
-                    //     'asset_id' => $charger->id,
-                    //     'assigned_to_id' => $assignedTo->staff_id,
-                    //     'assigned_at' => Carbon::now(),
-                    //     'returned_at' => null,
-                    //     'comment' => 'Asignación inicial durante la importación',
-                    //     'return_comment' => null,
-                    //     'responsible_id' => $assignedTo->staff_id,
-                    //     'return_reason' => null,
-                    //     'parent_assignment_id' => $parent->id,
-                    // ]);
-
-
-
-
-
-                    // AssetHistory::create([
-                    //     'action' => AssetHistoryAction::ASSIGNED->value,
-                    //     'description' => "Accesorio asignado a {$assignedTo->full_name} junto al equipo principal ({$asset->full_name})",
-                    //     'asset_id' => $charger->id,
-                    //     'performed_by' => $user?->staff_id ?? null,
-                    //     'performed_at' => Carbon::now(),
-                    // ]);
-
                     $asset->update(['status' => AssetStatus::ASSIGNED->value]);
-                    // $charger->update(['status' => AssetStatus::ASSIGNED->value]);
+
                 }
 
 
 
 
             }, $array);
-
-
         });
-
 
 
 
@@ -239,12 +197,17 @@ class AssetSeeder extends Seeder
 
 
 
-    private function getAssigned($rows, $length)
+    private function getTechAssigned($rows, $length)
     {
-      
+
         //* 'cargador,mouse' -> ['cargador', 'mouse']
-        $data = function ($row)  {
+        $data = function ($row) {
             $accesories = array_filter(explode(',', $row[9] ?? ''), fn($item) => !empty(trim($item)) && trim($item) !== '');
+
+            if ($row[10] && trim($row[10]) === 'cambio de equipo') {
+                return ["name" => null]; // Saltar esta fila si el motivo es "cambio de equipo"
+            }
+
             return [
                 'name' => $row[2],
                 'status' => AssetStatus::AVAILABLE->value,
@@ -265,7 +228,7 @@ class AssetSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
                 'assigned_to' => User::select('staff_id', 'firstname', 'lastname')->where('firstname', trim($row[0]))->where('lastname', trim($row[1]))->first(),
-                'accessories' => array_map(function ($accesory)  {
+                'accessories' => array_map(function ($accesory) {
                     return [
                         'name' => strtoupper($accesory),
                         'status' => AssetStatus::AVAILABLE->value,
@@ -278,7 +241,7 @@ class AssetSeeder extends Seeder
                         'storage' => null,
                         'purchase_date' => null,
                         'warranty_expiration' => null,
-                        'type_id' => 4, // Assuming 4 is accessory type
+                        'type_id' => 4,
                         'is_new' => false,
                         'invoice_path' => null,
                         'phone' => null,
@@ -287,26 +250,6 @@ class AssetSeeder extends Seeder
                         'updated_at' => now(),
                     ];
                 }, $accesories),
-                // 'charger' => [
-                // 'name' => 'CARGADOR DE ' . $row[2],
-                // 'status' => AssetStatus::AVAILABLE->value,
-                // 'brand' => $row[3],
-                // 'model' => null,
-                // 'color' => null,
-                // 'serial_number' => null,
-                // 'processor' => null,
-                // 'ram' => null,
-                // 'storage' => null,
-                // 'purchase_date' => null,
-                // 'warranty_expiration' => null,
-                // 'type_id' => 4, // Assuming 4 is accessory type
-                // 'is_new' => false,
-                // 'invoice_path' => null,
-                // 'phone' => null,
-                // 'imei' => null,
-                // 'created_at' => now(),
-                // 'updated_at' => now(),
-                // ]
 
             ];
         };
@@ -317,6 +260,100 @@ class AssetSeeder extends Seeder
                 array_map(fn($row) => $data($row), array_slice($rows, 1, $length)),
                 fn($asset) => !is_null($asset['name'])
             ); // Filtrar solo los activos con nombre no nulo
+    }
+
+
+    private function getAdministrativeAssigned($rows, $length)
+    {
+
+        return array_filter(
+            array_map(function ($row) {
+                $mouse = $row[28] && trim(strtolower($row[28])) !== 'no aplica' ? explode(" ", $row[28], 2) : null;
+                $keyboard = $row[29] && trim(strtolower($row[29])) !== 'no aplica' ? explode(" ", $row[29], 2) : null;
+                $monitors = $row[30] && trim(strtolower($row[30])) !== 'no aplica' ? explode(',', $row[30]) : [];
+
+                $same = trim(strtolower($row[19])) === 'no aplica' ? 'yes' : 'no';
+                return [
+                    'name' => strtoupper($row[7]),
+                    'status' => AssetStatus::AVAILABLE->value,
+                    'brand' => strtoupper($row[8]) ?? null,
+                    'model' => $row[10] ? (string) $row[10] : null,
+                    'color' => null,
+                    'serial_number' => trim(strtolower($row[19])) === 'no aplica' ? null : (string) $row[19],
+                    'processor' => $row[20],
+                    'ram' => $row[27],
+                    'storage' => $row[22], // Asumiendo que el almacenamiento principal es el del disco 1
+                    'purchase_date' => null,
+                    'warranty_expiration' => null,
+                    'type_id' => AssetType::where('name', 'LIKE', '%' . strtoupper($row[7]) . '%')->first()->id ?? 4, // Buscar el type_id basado en el nombre del tipo de equipo, o asignar 4 (accesorio) si no se encuentra
+                    'is_new' => false,
+                    'invoice_path' => null,
+                    'phone' => null,
+                    'imei' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'assigned_to' => $row[2] ? User::select('staff_id', 'firstname', 'lastname')->find($row[2]) : null,
+                    'accessories' => array_filter([
+                        $mouse ? [
+                            'name' => 'MOUSE',
+                            'status' => AssetStatus::AVAILABLE->value,
+                            'brand' => strtoupper($mouse[0] ?? null),
+                            'model' => $mouse[1] ?? null,
+                            'color' => null,
+                            'serial_number' => null,
+                            'processor' => null,
+                            'ram' => null,
+                            'storage' => null,
+                            'purchase_date' => null,
+                            'warranty_expiration' => null,
+                            'type_id' => 4, // Accesorio
+                            'is_new' => false,
+                            'invoice_path' => null,
+                            'phone' => null,
+                            'imei' => null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ] : null,
+                        $keyboard ? [
+                            'name' => 'TECLADO',
+                            'status' => AssetStatus::AVAILABLE->value,
+                            'brand' => strtoupper($keyboard[0] ?? null),
+                            'model' => $keyboard[1] ?? null,
+                            'color' => null,
+                            'serial_number' => null,
+                            'processor' => null,
+                            'ram' => null,
+                            'storage' => null,
+                            'purchase_date' => null,
+                            'warranty_expiration' => null,
+                            'type_id' => 4, // Accesorio
+                            'is_new' => false,
+                            'invoice_path' => null,
+                            'phone' => null,
+                            'imei' => null,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ] : null,
+                        ...(count($monitors) > 0 ? array_map(function ($monitor) {
+                            return [
+                                'name' => 'MONITOR',
+                                'status' => AssetStatus::AVAILABLE->value,
+                                'brand' => strtoupper($monitor ?? null),
+                                'is_new' => false,
+                                'type_id' => 4, // Accesorio
+                                // ... resto de tus campos
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }, $monitors) : [])
+                    ], fn($item) => !is_null($item)),
+                ];
+            }, array_slice($rows, 1, $length)),
+            fn($asset) => !is_null($asset['assigned_to'])
+        ); // Filtrar solo los activos con nombre no nulo
+
+        //   ]
+
     }
 
     private function getAvailable($rows, $length)
@@ -347,32 +384,6 @@ class AssetSeeder extends Seeder
             ); // Filtrar solo los activos con nombre no nulo
     }
 
-    private function generateLaptopsChargerByLaptop(array $assets)
-    {
-
-        $laptops = array_filter($assets, fn($asset) => $asset['type_id'] === 1);
-        return array_map(fn($asset) => [
-            'name' => 'CARGADOR',
-            'status' => AssetStatus::AVAILABLE->value,
-            'brand' => $asset['brand'],
-            'model' => null,
-            'color' => null,
-            'serial_number' => null,
-            'processor' => null,
-            'ram' => null,
-            'storage' => null,
-            'purchase_date' => null,
-            'warranty_expiration' => null,
-            'type_id' => 4, // Assuming 4 is accessory type
-            'is_new' => false,
-            'invoice_path' => null,
-            'phone' => null,
-            'imei' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ], $laptops);
-    }
-    // private function 
 
 
 }

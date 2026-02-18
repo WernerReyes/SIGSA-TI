@@ -8,6 +8,8 @@ export interface AssetType {
     updated_at: Date;
 }
 
+// TODO: Check the download document functions, maybe we can use a single endpoint for all types and generate the document based on the type in the backend, this way we can avoid the switch case and make it more scalable for future types.
+
 export enum TypeName {
     LAPTOP = 'Laptop',
     PC = 'PC',

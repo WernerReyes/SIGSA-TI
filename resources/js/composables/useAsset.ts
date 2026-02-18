@@ -8,9 +8,11 @@ export const useAsset = () => {
         type: TypeName,
     ) => {
         let endpoint = '';
+        console.log('Downloading document for assignment ID:', assigmentId, 'Type:', type);
         switch (type) {
             case TypeName.LAPTOP:
             case TypeName.PC:
+            case TypeName.MINI_PC:
                 endpoint = `${PREFIX}/generate-laptop-assignment-doc/${assigmentId}`;
                 break;
 
