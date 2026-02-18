@@ -331,13 +331,14 @@
                                             <Upload />
                                             Cargar
                                         </DropdownMenuItem>
-
+                                                <!-- // TODO: Check this -->
                                         <DropdownMenuItem @click="() => {
                                             if (!asset?.type) return;
                                             downloadAssignmentDocument(assignment.id, asset?.type?.name);
                                         }">
                                             <Download />
                                             Activo
+                                            {{ asset?.type?.name ?? 'DDD' }}
                                             <component :is="asset?.type?.name ? assetTypeOp(asset.type.name as TypeName)?.icon : MonitorSmartphone" class="size-4" />
                                         </DropdownMenuItem>
 
