@@ -11,10 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('assets_type', function (Blueprint $table) {
+        Schema::create('asset_reparations', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->boolean('is_accessory')->default(false);
+            $table->unsignedBigInteger('asset_id');
+            $table->foreign('asset_id')->references('id')->on('assets')->onDelete('cascade');
+            
+            $table->text('description');
+
+            $table->date('date');
+
+            $table->json('image_paths')->nullable();
+
             $table->timestamps();
         });
     }
@@ -24,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('assets_type');
+        Schema::dropIfExists('reparations');
     }
 };

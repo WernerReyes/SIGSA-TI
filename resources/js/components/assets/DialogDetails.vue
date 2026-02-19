@@ -38,21 +38,66 @@
 
 
             <ScrollArea class="dialog-content">
-            <Tabs default-value="history" class="mt-6">
-                <TabsList class="grid w-full grid-cols-2 h-auto p-1">
-                    <TabsTrigger value="info" class="gap-2 py-2.5">
-                        <FileText class="size-4" />
-                        Información
-                    </TabsTrigger>
-                    <TabsTrigger value="history" class="gap-2 py-2.5">
-                        <MonitorSmartphone class="size-4" />
-                        Asignaciones
-                    </TabsTrigger>
-                </TabsList>
+                <Tabs default-value="history" class="mt-6">
+                    <TabsList class="grid w-full grid-cols-3 h-auto p-1">
+                        <TabsTrigger value="info" class="gap-2 py-2.5">
+                            <FileText class="size-4" />
+                            Información
+                        </TabsTrigger>
+                        <TabsTrigger value="history" class="gap-2 py-2.5">
+                            <MonitorSmartphone class="size-4" />
+                            Asignaciones
+                        </TabsTrigger>
+                        <TabsTrigger value="repairs" class="gap-2 py-2.5">
+                            <Wrench class="size-4" />
+                            Reparaciones
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="repairs" class="mt-6">
+                        <div class="space-y-4">
+                            <Empty v-if="!asset?.reparations || asset.reparations.length === 0" class="py-8">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <Wrench />
+                                    </EmptyMedia>
+                                    <EmptyTitle>Sin reparaciones</EmptyTitle>
+                                    <EmptyDescription>
+                                        No hay reparaciones registradas para este equipo.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                            <div v-else>
+                                <div v-for="repair in asset.reparations" :key="repair.id" class="rounded-lg border bg-yellow-50 dark:bg-yellow-950/10 border-yellow-200 dark:border-yellow-800 mb-2 px-4 py-2 flex md:flex-row flex-col items-center md:items-stretch gap-4 w-full">
+                                    <div class="flex flex-col items-center justify-center md:mr-4 mr-0 md:w-24 w-full">
+                                        <Wrench class="size-6 text-yellow-600 dark:text-yellow-400 mb-1" />
+                                        <span class="text-xs font-mono text-muted-foreground">{{ format(parseISO(repair.date), 'dd-MM-yyyy') }}</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0 w-full flex">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Descripción</p>
+                                            <p class="text-sm font-semibold truncate">{{ repair.description }}</p>
+                                        </div>
+                                        <div v-if="repair.image_paths && repair.image_paths.length > 0" class="flex md:flex-row flex-col gap-2 mt-2">
+                                            <img v-for="img in repair.image_paths" :key="img" :src="getImageUrl(img)" class="w-20 h-20 object-cover rounded border cursor-pointer hover:ring-2 hover:ring-yellow-400 transition" :alt="'Imagen reparación ' + repair.id"
+                                              @click="() => {
+                                                  const imageUrl = getImageUrl(img);
+                                                  if (imageUrl) {
+                                                      viewDocument(imageUrl);
+                                                  } else {
+                                                      toast.error('No se pudo cargar la imagen.');
+                                                  }
+                                              }"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
 
-                <TabsContent value="info" class="mt-6 overflow-hidden">
-                    <div class="grid md:grid-cols-2 gap-4">
-                        
+                    <TabsContent value="info" class="mt-6 overflow-hidden">
+                        <div class="grid md:grid-cols-2 gap-4">
+
                             <div
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
@@ -94,8 +139,8 @@
                                     </p>
                                 </div>
                             </div>
-                       
-                        <!-- <div class="space-y-3"> -->
+
+                            <!-- <div class="space-y-3"> -->
 
                             <div v-if="asset?.purchase_date"
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
@@ -155,10 +200,12 @@
                                 class="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 transition">
                                 <div
                                     class="size-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
-                                    <component :is="assetTypeOp(asset.type.name)?.icon" class="size-5 text-cyan-600 dark:text-cyan-400" />
+                                    <component :is="assetTypeOp(asset.type.name)?.icon"
+                                        class="size-5 text-cyan-600 dark:text-cyan-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo
+                                    </p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.type.name }}</p>
                                 </div>
                             </div>
@@ -170,7 +217,8 @@
                                     <Palette class="size-5 text-pink-600 dark:text-pink-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Color</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Color
+                                    </p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.color }}</p>
                                 </div>
                             </div>
@@ -182,7 +230,8 @@
                                     <Cpu class="size-5 text-violet-600 dark:text-violet-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Procesador</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Procesador</p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.processor }}</p>
                                 </div>
                             </div>
@@ -194,7 +243,8 @@
                                     <MemoryStick class="size-5 text-sky-600 dark:text-sky-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">RAM</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">RAM
+                                    </p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.ram }}</p>
                                 </div>
                             </div>
@@ -206,7 +256,8 @@
                                     <HardDrive class="size-5 text-teal-600 dark:text-teal-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Almacenamiento</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Almacenamiento</p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.storage }}</p>
                                 </div>
                             </div>
@@ -218,7 +269,8 @@
                                     <Phone class="size-5 text-lime-600 dark:text-lime-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Teléfono</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Teléfono</p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.phone }}</p>
                                 </div>
                             </div>
@@ -230,7 +282,8 @@
                                     <Smartphone class="size-5 text-orange-600 dark:text-orange-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">IMEI</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">IMEI
+                                    </p>
                                     <p class="text-sm font-semibold mt-1">{{ asset.imei }}</p>
                                 </div>
                             </div>
@@ -242,7 +295,8 @@
                                     <Receipt class="size-5 text-emerald-600 dark:text-emerald-400" />
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Factura</p>
+                                    <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Factura</p>
                                     <Button variant="link" class="px-0 h-auto text-sm font-semibold mt-1"
                                         @click="viewDocument(asset.invoice_url)">
                                         Ver documento
@@ -250,177 +304,180 @@
                                 </div>
                             </div>
 
-                        <!-- </div> -->
-                    </div>
-                </TabsContent>
+                            <!-- </div> -->
+                        </div>
+                    </TabsContent>
 
-                <TabsContent value="history" class="mt-6">
+                    <TabsContent value="history" class="mt-6">
 
-                    <div class="space-y-4">
-                        
-                        <Empty v-if="assignments.length === 0" class="py-8">
-                            <EmptyHeader>
-                                <EmptyMedia variant="icon">
-                                    <MonitorSmartphone />
-                                </EmptyMedia>
-                                <EmptyTitle>Sin asignaciones</EmptyTitle>
-                                <EmptyDescription>
-                                    No hay asignaciones registradas para este equipo.
-                                </EmptyDescription>
-                            </EmptyHeader>
+                        <div class="space-y-4">
+
+                            <Empty v-if="assignments.length === 0" class="py-8">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <MonitorSmartphone />
+                                    </EmptyMedia>
+                                    <EmptyTitle>Sin asignaciones</EmptyTitle>
+                                    <EmptyDescription>
+                                        No hay asignaciones registradas para este equipo.
+                                    </EmptyDescription>
+                                </EmptyHeader>
 
 
-                        </Empty>
-                        <div v-else v-for="assignment in assignments" :key="assignment.id"
-                            class="rounded-xl border transition hover:shadow-md p-4"
-                            :class="{
-                                'bg-linear-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800': !assignment.returned_at,
-                                'bg-muted/30 border-muted': assignment.returned_at
-                            }">
-                            <div class="flex max-md:flex-col items-start justify-between gap-4 ">
-                            <div class="flex items-start gap-4 flex-1">
+                            </Empty>
+                            <div v-else v-for="assignment in assignments" :key="assignment.id"
+                                class="rounded-xl border transition hover:shadow-md p-4" :class="{
+                                    'bg-linear-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-emerald-200 dark:border-emerald-800': !assignment.returned_at,
+                                    'bg-muted/30 border-muted': assignment.returned_at
+                                }">
+                                <div class="flex max-md:flex-col items-start justify-between gap-4 ">
+                                    <div class="flex items-start gap-4 flex-1">
 
-                                <div
-                                :class="!assignment.returned_at ? 'w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/50 mt-1' : 'w-3 h-3 rounded-full bg-muted-foreground mt-1'">
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-semibold flex items-center gap-2">
-                                        <User class="size-4" />
-                                        {{ assignment?.assigned_to?.full_name }}
-                                    </p>
-                                    <div class="flex items-center gap-2 mt-1.5">
-                                        <p class="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Calendar class="size-3" />
-                                            {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
-                                        </p>
-                                        <span v-if="assignment.returned_at" class="text-xs text-muted-foreground">
-                                            → {{ format(assignment.returned_at, 'dd/MM/yyyy HH:mm') }}
-                                        </span>
-                                        <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente asignado
-                                        </Badge>
+                                        <div
+                                            :class="!assignment.returned_at ? 'w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/50 mt-1' : 'w-3 h-3 rounded-full bg-muted-foreground mt-1'">
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-semibold flex items-center gap-2">
+                                                <User class="size-4" />
+                                                {{ assignment?.assigned_to?.full_name }}
+                                            </p>
+                                            <div class="flex items-center gap-2 mt-1.5">
+                                                <p class="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Calendar class="size-3" />
+                                                    {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
+                                                </p>
+                                                <span v-if="assignment.returned_at"
+                                                    class="text-xs text-muted-foreground">
+                                                    → {{ format(assignment.returned_at, 'dd/MM/yyyy HH:mm') }}
+                                                </span>
+                                                <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente
+                                                    asignado
+                                                </Badge>
+                                            </div>
+
+
+                                        </div>
                                     </div>
 
-                                    
+
+                                    <div class="flex max-md:justify-end max-md:w-full  items-start gap-2 shrink-0">
+
+
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button variant="outline" size="sm" :disabled="!assignment"
+                                                    class="gap-2">
+                                                    <FileText class="size-4" />
+                                                    Entrega
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent class="w-44" align="end">
+
+                                                <DropdownMenuItem :disabled="!assignment.delivery_document" @click="() => {
+                                                    viewDocument(assignment.delivery_document?.file_url)
+                                                }">
+                                                    <Eye />
+                                                    Ver
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem @click="() => {
+                                                    openUploadDialog = true; type = DeliveryRecordType.ASSIGNMENT,
+                                                        assignmentId = assignment.id, url = assignment.delivery_document?.file_url || ''
+                                                }">
+                                                    <Upload />
+                                                    Cargar
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem @click="() => {
+                                                    if (!asset?.type) return;
+                                                    downloadAssignmentDocument(assignment.id, asset?.type);
+                                                }">
+                                                    <Download />
+                                                    Activo
+
+                                                    <component
+                                                        :is="asset?.type?.name ? assetTypeOp(asset.type.name as TypeName)?.icon : MonitorSmartphone"
+                                                        class="size-4" />
+                                                </DropdownMenuItem>
+
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button variant="outline" size="sm" :disabled="!assignment.returned_at"
+                                                    class="gap-2">
+                                                    <FileText class="size-4" />
+                                                    Devolución
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent class="w-44" align="end">
+                                                <DropdownMenuItem :disabled="!assignment.return_document" @click="() => {
+                                                    viewDocument(assignment.return_document?.file_url)
+                                                }">
+                                                    <Eye />
+                                                    Ver
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuItem @click="() => {
+                                                    openUploadDialog = true, type = DeliveryRecordType.DEVOLUTION,
+                                                        assignmentId = assignment.id, url = assignment.return_document?.file_url || ''
+                                                }">
+                                                    <Upload />
+                                                    Cargar
+                                                </DropdownMenuItem>
+
+
+                                                <DropdownMenuItem
+                                                    @click="() => downloadReturnAssignmentDocument(assignment.id)">
+                                                    <Download />
+                                                    Activo
+                                                    <MonitorSmartphone />
+                                                </DropdownMenuItem>
+
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+
+                                    </div>
                                 </div>
-                            </div>
-                            
-
-                            <div class="flex max-md:justify-end max-md:w-full  items-start gap-2 shrink-0">
 
 
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger as-child>
-                                        <Button variant="outline" size="sm" :disabled="!assignment" class="gap-2">
-                                            <FileText class="size-4" />
-                                            Entrega
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent class="w-44" align="end">
+                                <Accordion v-if="assignment.children_assignments?.length" type="single" collapsible
+                                    class="mt-3 w-full">
+                                    <AccordionItem :value="`children-${assignment.id}`" class="border-0">
+                                        <AccordionTrigger class="py-1.5 hover:no-underline">
+                                            <div class="flex items-center gap-2 text-xs font-semibold">
+                                                <component :is="assetTypeOp(TypeName.ACCESSORY)?.icon" class="size-3" />
+                                                Accesorios ({{ assignment.children_assignments.length }})
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent class="pt-2">
+                                            <div
+                                                class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
+                                                <div v-for="child in assignment.children_assignments" :key="child.id"
+                                                    class="rounded-lg border bg-muted/30 px-2 py-2">
+                                                    <p class="text-xs font-semibold truncate wrap-break-word">{{
+                                                        child.asset?.full_name
+                                                        || 'Accesorio' }}</p>
 
-                                        <DropdownMenuItem :disabled="!assignment.delivery_document" @click="() => {
-                                            viewDocument(assignment.delivery_document?.file_url)
-                                        }">
-                                            <Eye />
-                                            Ver
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuItem @click="() => {
-                                            openUploadDialog = true; type = DeliveryRecordType.ASSIGNMENT,
-                                                assignmentId = assignment.id, url = assignment.delivery_document?.file_url || ''
-                                        }">
-                                            <Upload />
-                                            Cargar
-                                        </DropdownMenuItem>
-                                                <!-- // TODO: Check this -->
-                                        <DropdownMenuItem @click="() => {
-                                            if (!asset?.type) return;
-                                            downloadAssignmentDocument(assignment.id, asset?.type?.name);
-                                        }">
-                                            <Download />
-                                            Activo
-                                            {{ asset?.type?.name ?? 'DDD' }}
-                                            <component :is="asset?.type?.name ? assetTypeOp(asset.type.name as TypeName)?.icon : MonitorSmartphone" class="size-4" />
-                                        </DropdownMenuItem>
-
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
-
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger as-child>
-                                        <Button variant="outline" size="sm" :disabled="!assignment.returned_at"
-                                            class="gap-2">
-                                            <FileText class="size-4" />
-                                            Devolución
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent class="w-44" align="end">
-                                        <DropdownMenuItem :disabled="!assignment.return_document" @click="() => {
-                                            viewDocument(assignment.return_document?.file_url)
-                                        }">
-                                            <Eye />
-                                            Ver
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuItem @click="() => {
-                                            openUploadDialog = true, type = DeliveryRecordType.DEVOLUTION,
-                                                assignmentId = assignment.id, url = assignment.return_document?.file_url || ''
-                                        }">
-                                            <Upload />
-                                            Cargar
-                                        </DropdownMenuItem>
-
-
-                                        <DropdownMenuItem
-                                            @click="() => downloadReturnAssignmentDocument(assignment.id)">
-                                            <Download />
-                                            Activo
-                                            <MonitorSmartphone />
-                                        </DropdownMenuItem>
-
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
-
-                            </div>
-                            </div>
-
-
-                            <Accordion v-if="assignment.children_assignments?.length" type="single"
-                                        collapsible class="mt-3 w-full">
-                                        <AccordionItem :value="`children-${assignment.id}`" class="border-0">
-                                            <AccordionTrigger class="py-1.5 hover:no-underline">
-                                                <div class="flex items-center gap-2 text-xs font-semibold">
-                                                    <component :is="assetTypeOp(TypeName.ACCESSORY)?.icon" class="size-3" />
-                                                    Accesorios ({{ assignment.children_assignments.length }})
                                                 </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent class="pt-2">
-                                                <div
-                                                    class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
-                                                    <div v-for="child in assignment.children_assignments"
-                                                        :key="child.id"
-                                                        class="rounded-lg border bg-muted/30 px-2 py-2">
-                                                        <p class="text-xs font-semibold truncate wrap-break-word">{{
-                                                            child.asset?.full_name
-                                                            || 'Accesorio' }}</p>
-                                                      
-                                                    </div>
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    </Accordion>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+                            </div>
+
+
                         </div>
 
 
-                    </div>
 
+                    </TabsContent>
 
-
-                </TabsContent>
-                
-            </Tabs>
-        </ScrollArea>
+                </Tabs>
+            </ScrollArea>
 
 
 
@@ -502,6 +559,8 @@ import { toast } from 'vue-sonner';
 import FileUpload from '../FileUpload.vue';
 import { TypeName } from '@/interfaces/assetType.interface';
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
+import { Wrench } from 'lucide-vue-next';
+import { getImageUrl } from '../../lib/utils';
 
 
 const asset = defineModel<Asset | null>('asset');

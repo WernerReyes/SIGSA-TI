@@ -3,6 +3,7 @@ import { type Component } from 'vue';
 import { type AssetAssignment } from './assetAssignment.interface';
 import { type AssetHistory } from './assetHistory.interface';
 import { type AssetType } from './assetType.interface';
+import { type AssetReparation } from './assetReparation.interface';
 
 
 export interface Asset {
@@ -25,6 +26,7 @@ export interface Asset {
     description: string;
     type?: AssetType;
     is_new: boolean;
+    notes?: string;
     invoice_url?: string;
     phone?: string;
     imei?: string;
@@ -33,6 +35,7 @@ export interface Asset {
     // assigned_to_id?: number | null;
     current_assignment?: AssetAssignment;
     assignments?: AssetAssignment[];
+    reparations?: AssetReparation[];
     histories?: AssetHistory[];
 
     

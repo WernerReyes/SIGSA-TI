@@ -1,22 +1,32 @@
-import { Cpu, Headphones, Laptop, Monitor, Smartphone } from 'lucide-vue-next';
+import { Cable, Cpu, HelpCircle, Keyboard, Laptop, Monitor, Mouse, Plug, PlugZap, Smartphone, Tablet } from 'lucide-vue-next';
 import { Component } from 'vue';
 
 export interface AssetType {
     id: number;
     name: TypeName;
+    is_accessory: boolean;
     created_at: Date;
     updated_at: Date;
 }
 
-// TODO: Check the download document functions, maybe we can use a single endpoint for all types and generate the document based on the type in the backend, this way we can avoid the switch case and make it more scalable for future types.
-
 export enum TypeName {
     LAPTOP = 'Laptop',
     PC = 'PC',
-    MINI_PC = 'Mini PC',
     CELL_PHONE = 'Celular',
-    ACCESSORY = 'Accesorio',
+    MINI_PC = 'Mini PC',
+    MONITOR = 'Monitor',
+    TABLET = 'Tablet',
+
+    MOUSE = 'Mouse',
+    KEYBOARD = 'Teclado',
+
+    PATCHCORD = 'Cable de Red',
+    LAPTOP_CHARGER = 'Cargador de Laptop',
+    CELL_PHONE_CHARGER = 'Cargador de Celular',
+    OTHER = 'Otro',
 }
+
+
 
 export interface TypeNameOption {
     value: TypeName;
@@ -40,10 +50,38 @@ export const assetTypeOptions: Record<TypeName, TypeNameOption> = {
         value: TypeName.CELL_PHONE,
         icon: Smartphone,
     },
-    [TypeName.ACCESSORY]: {
-        value: TypeName.ACCESSORY,
-        icon: Headphones,
+    [TypeName.MONITOR]: {
+        value: TypeName.MONITOR,
+        icon: Monitor,
     },
+    [TypeName.TABLET]: {
+        value: TypeName.TABLET,
+        icon: Tablet,
+    },
+    [TypeName.MOUSE]: {
+        value: TypeName.MOUSE,
+        icon: Mouse,
+    },
+    [TypeName.KEYBOARD]: {
+        value: TypeName.KEYBOARD,
+        icon: Keyboard,
+    },
+    [TypeName.PATCHCORD]: {
+        value: TypeName.PATCHCORD,
+        icon:  Cable,
+    },
+    [TypeName.LAPTOP_CHARGER]: {
+        value: TypeName.LAPTOP_CHARGER,
+        icon: Plug,
+    },
+    [TypeName.CELL_PHONE_CHARGER]: {
+        value: TypeName.CELL_PHONE_CHARGER,
+        icon: PlugZap,
+    },
+    [TypeName.OTHER]: {
+        value: TypeName.OTHER,
+        icon: HelpCircle,
+    }
 };
 
 export const assetTypeOp = (type: TypeName): TypeNameOption => {

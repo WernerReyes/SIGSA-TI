@@ -301,7 +301,7 @@ const onSubmit = (values: any) => {
             preserveState: true,
             preserveUrl: true,
             onFlash: (flash) => {
-                if (flash.success) {
+                if (flash.error) return;
                     const devRequest = flash.devRequest as DevelopmentRequest | null;
                     if (devRequest) {
                         router.replaceProp('developmentsByStatus', (oldDevelopments: DevelopmentRequestSection) => {
@@ -319,7 +319,7 @@ const onSubmit = (values: any) => {
 
                     }
                     onReset();
-                }
+                
             },
 
 
@@ -333,7 +333,7 @@ const onSubmit = (values: any) => {
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
-            if (flash.success) {
+            if (flash.error) return;
                 const devRequest = flash.devRequest as DevelopmentRequest | null;
 
                 if (devRequest) {
@@ -357,7 +357,7 @@ const onSubmit = (values: any) => {
                 emit('new-development', devRequest);
 
                 onReset();
-            }
+            
         },
     });
 

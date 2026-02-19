@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\AssetHistory\AssetHistoryAction;
+
+use App\DTOs\Asset\AssetFiltersDto;
+use App\Enums\Asset\AssetTypeEnum;
 use App\Enums\Department\Allowed;
 use DB;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +29,7 @@ class Asset extends Model
         'warranty_expiration',
         'type_id',
         'is_new',
+        'notes',
         'invoice_path',
         'phone',
         'imei',
@@ -93,29 +96,29 @@ class Asset extends Model
 
 
     public function getFullNameAttribute()
-{
-    $parts = [];
+    {
+        $parts = [];
 
-    if ($this->brand) {
-        $parts[] = $this->brand;
+        if ($this->brand) {
+            $parts[] = $this->brand;
+        }
+
+        if ($this->model) {
+            $parts[] = $this->model;
+        }
+
+        if ($this->serial_number) {
+            $parts[] = "S/N: {$this->serial_number}";
+        }
+
+        // Si hay partes adicionales, las concatenamos con espacios y guiones
+        if (!empty($parts)) {
+            return "{$this->name} (" . implode(' - ', $parts) . ")";
+        }
+
+        // Si no hay nada extra, solo devolvemos el nombre
+        return $this->name;
     }
-
-    if ($this->model) {
-        $parts[] = $this->model;
-    }
-
-    if ($this->serial_number) {
-        $parts[] = "S/N: {$this->serial_number}";
-    }
-
-    // Si hay partes adicionales, las concatenamos con espacios y guiones
-    if (!empty($parts)) {
-        return "{$this->name} (" . implode(' - ', $parts) . ")";
-    }
-
-    // Si no hay nada extra, solo devolvemos el nombre
-    return $this->name;
-}
 
 
 
@@ -124,15 +127,131 @@ class Asset extends Model
         $isFromRRHH = auth()->user()->dept_id == Allowed::RRHH->value;
         return $query->when($isFromRRHH, function ($q) {
             $q->whereHas('type', function ($q2) {
-                $q2->where('name', 'Celular');
-            })->orWhereHas('histories', function ($q2) {
-                $q2->
-                    where('action', AssetHistoryAction::CREATED->value)->
-                    whereHas('performer', function ($q3) {
-                        $q3->where('dept_id', Allowed::RRHH->value);
-                    });
+                $q2->whereIn('id', AssetTypeEnum::RRHHTypes());
             });
+            // ->orWhereHas('histories', function ($q2) {
+            //     $q2->
+            //         where('action', AssetHistoryAction::CREATED->value)->
+            //         whereHas('performer', function ($q3) {
+            //             $q3->where('dept_id', Allowed::RRHH->value);
+            //         });
+            // });
         });
+    }
+
+
+    public function scopeFilters($query, AssetFiltersDto $filtersDto)
+    {
+        return $query->where(function ($q) {
+                    $q->whereDoesntHave('currentAssignment')
+                        ->orWhereHas(
+                            'currentAssignment',
+                            fn($q2) =>
+                            $q2->whereNull('parent_assignment_id')
+                        );
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | BÚSQUEDA GENERAL
+                |--------------------------------------------------------------------------
+                */
+                ->when($filtersDto->search, function ($query, $search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('brand', 'like', "%{$search}%")
+                            ->orWhere('model', 'like', "%{$search}%")
+                            ->orWhere('serial_number', 'like', "%{$search}%")
+                            ->orWhereHas(
+                                'currentAssignment.childrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->where('name', 'like', "%{$search}%")
+                                    ->orWhere('brand', 'like', "%{$search}%")
+                                    ->orWhere('model', 'like', "%{$search}%")
+                                    ->orWhere('serial_number', 'like', "%{$search}%")
+                            );
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | STATUS
+                |--------------------------------------------------------------------------
+                */
+                ->when(!empty($filtersDto->status), function ($query) use ($filtersDto) {
+                    $query->where(function ($q) use ($filtersDto) {
+                        $q->whereIn('status', $filtersDto->status)
+                            ->orWhereHas(
+                                'currentAssignment.childrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->whereIn('status', $filtersDto->status)
+                            );
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | TIPO DE ACTIVO
+                |--------------------------------------------------------------------------
+                */
+                ->when($filtersDto->types, function ($query, $typeId) {
+                    $query->where(function ($q) use ($typeId) {
+                        $q->whereIn('type_id', $typeId)
+                            ->orWhereHas(
+                                'currentAssignment.childrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->whereIn('type_id', $typeId)
+                            );
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | ASIGNADO A USUARIO
+                |--------------------------------------------------------------------------
+                */
+                ->when(!empty($filtersDto->assigned_to), function ($query) use ($filtersDto) {
+                    $ids = array_filter($filtersDto->assigned_to, fn($v) => !is_null($v));
+
+                    $query->where(function ($q) use ($ids, $filtersDto) {
+
+                        if (!empty($ids)) {
+                            $q->whereHas(
+                                'currentAssignment',
+                                fn($q2) =>
+                                $q2->whereIn('assigned_to_id', $ids)
+                            );
+                        }
+
+                        if (in_array(null, $filtersDto->assigned_to, true)) {
+                            $q->orWhereDoesntHave('currentAssignment');
+                        }
+                    });
+                })
+
+                /*
+                |--------------------------------------------------------------------------
+                | DEPARTAMENTO
+                |--------------------------------------------------------------------------
+                */
+                ->when(!empty($filtersDto->department_id), function ($query) use ($filtersDto) {
+                    $query->whereHas(
+                        'currentAssignment.assignedTo',
+                        fn($q2) =>
+                        $q2->whereIn('dept_id', $filtersDto->department_id)
+                    );
+                })
+
+
+                /* -------------------------------------------------------------------------
+                | RANGO DE FECHAS DE CREACIÓN
+                ------------------------------------------------------------------------- 
+                */
+                ->when($filtersDto->startDate, function ($query) use ($filtersDto) {
+                    $query->whereDate('created_at', '>=', $filtersDto->startDate);
+                })->when($filtersDto->endDate, function ($query) use ($filtersDto) {
+                    $query->whereDate('created_at', '<=', $filtersDto->endDate);
+                });
     }
 
 
@@ -156,10 +275,17 @@ class Asset extends Model
         return $this->hasMany(AssetAssignment::class, 'asset_id')->orderBy('assigned_at', 'desc');
     }
 
+    public function reparations()
+    {
+        return $this->hasMany(AssetReparation::class, 'asset_id')->orderBy('date', 'desc');
+    }
+
     public function histories()
     {
         return $this->hasMany(AssetHistory::class, 'asset_id')->orderBy('performed_at', 'desc')->orderBy('id', 'desc');
     }
+
+    
 
 
 

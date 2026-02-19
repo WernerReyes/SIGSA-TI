@@ -7,25 +7,25 @@ use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
+use App\DTOs\Asset\UpdateStatusDto;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Alert\AlertType;
 use App\Enums\Alert\EntityType;
 use App\Enums\Asset\AssetStatus;
+use App\Enums\Asset\AssetTypeEnum;
 use App\Enums\AssetAssignment\ReturnReason;
 use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Enums\Company\EmployeeCompany;
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use App\Enums\Department\Allowed;
-use App\Enums\Ticket\TicketHistoryAction;
-use App\Enums\TicketAsset\TicketAssetAction;
 use App\Models\Alert;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
+use App\Models\AssetReparation;
 use App\Models\AssetType;
 
 use App\Models\DeliveryRecord;
-use App\Models\TicketAsset;
 use App\Models\User;
 use App\Models\Ticket;
 
@@ -46,18 +46,19 @@ class AssetService
     }
 
 
+
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
 
             return Asset::query()
                 ->with([
-                    'type:id,name',
+                    'type:id,name,is_accessory',
                     'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                     'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.assignedTo.department:id,name',
                     'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-                    'currentAssignment.childrenAssignments.asset.type:id,name',
+                    'currentAssignment.childrenAssignments.asset.type:id,name,is_accessory',
                     'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
                     'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
@@ -69,116 +70,7 @@ class AssetService
                 |--------------------------------------------------------------------------
                 */
                 isFromRRHH()
-                ->where(function ($q) {
-                    $q->whereDoesntHave('currentAssignment')
-                        ->orWhereHas(
-                            'currentAssignment',
-                            fn($q2) =>
-                            $q2->whereNull('parent_assignment_id')
-                        );
-                })
-
-                /*
-                |--------------------------------------------------------------------------
-                | BÚSQUEDA GENERAL
-                |--------------------------------------------------------------------------
-                */
-                ->when($filtersDto->search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('brand', 'like', "%{$search}%")
-                            ->orWhere('model', 'like', "%{$search}%")
-                            ->orWhere('serial_number', 'like', "%{$search}%")
-                            ->orWhereHas(
-                                'currentAssignment.childrenAssignments.asset',
-                                fn($q2) =>
-                                $q2->where('name', 'like', "%{$search}%")
-                                    ->orWhere('brand', 'like', "%{$search}%")
-                                    ->orWhere('model', 'like', "%{$search}%")
-                                    ->orWhere('serial_number', 'like', "%{$search}%")
-                            );
-                    });
-                })
-
-                /*
-                |--------------------------------------------------------------------------
-                | STATUS
-                |--------------------------------------------------------------------------
-                */
-                ->when(!empty($filtersDto->status), function ($query) use ($filtersDto) {
-                    $query->where(function ($q) use ($filtersDto) {
-                        $q->whereIn('status', $filtersDto->status)
-                            ->orWhereHas(
-                                'currentAssignment.childrenAssignments.asset',
-                                fn($q2) =>
-                                $q2->whereIn('status', $filtersDto->status)
-                            );
-                    });
-                })
-
-                /*
-                |--------------------------------------------------------------------------
-                | TIPO DE ACTIVO
-                |--------------------------------------------------------------------------
-                */
-                ->when($filtersDto->types, function ($query, $typeId) {
-                    $query->where(function ($q) use ($typeId) {
-                        $q->whereIn('type_id', $typeId)
-                            ->orWhereHas(
-                                'currentAssignment.childrenAssignments.asset',
-                                fn($q2) =>
-                                $q2->whereIn('type_id', $typeId)
-                            );
-                    });
-                })
-
-                /*
-                |--------------------------------------------------------------------------
-                | ASIGNADO A USUARIO
-                |--------------------------------------------------------------------------
-                */
-                ->when(!empty($filtersDto->assigned_to), function ($query) use ($filtersDto) {
-                    $ids = array_filter($filtersDto->assigned_to, fn($v) => !is_null($v));
-
-                    $query->where(function ($q) use ($ids, $filtersDto) {
-
-                        if (!empty($ids)) {
-                            $q->whereHas(
-                                'currentAssignment',
-                                fn($q2) =>
-                                $q2->whereIn('assigned_to_id', $ids)
-                            );
-                        }
-
-                        if (in_array(null, $filtersDto->assigned_to, true)) {
-                            $q->orWhereDoesntHave('currentAssignment');
-                        }
-                    });
-                })
-
-                /*
-                |--------------------------------------------------------------------------
-                | DEPARTAMENTO
-                |--------------------------------------------------------------------------
-                */
-                ->when(!empty($filtersDto->department_id), function ($query) use ($filtersDto) {
-                    $query->whereHas(
-                        'currentAssignment.assignedTo',
-                        fn($q2) =>
-                        $q2->whereIn('dept_id', $filtersDto->department_id)
-                    );
-                })
-
-
-                /* -------------------------------------------------------------------------
-                | RANGO DE FECHAS DE CREACIÓN
-                ------------------------------------------------------------------------- 
-                */
-                ->when($filtersDto->startDate, function ($query) use ($filtersDto) {
-                    $query->whereDate('created_at', '>=', $filtersDto->startDate);
-                })->when($filtersDto->endDate, function ($query) use ($filtersDto) {
-                    $query->whereDate('created_at', '<=', $filtersDto->endDate);
-                })
+                ->filters($filtersDto)
                 ->latest()
                 ->orderByDesc('id')
                 ->paginate(10)
@@ -195,27 +87,66 @@ class AssetService
         try {
             return Asset::
                 select('id', 'name', 'model', 'brand', 'status', 'type_id')
-                ->with('type:id,name')
+                ->with('type:id,name,is_accessory')
                 ->where('status', AssetStatus::AVAILABLE->value)->get();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener los equipos disponibles');
         }
     }
 
-    public function getAccessories()
+    public function getAccessories($asset_id = null)
     {
+        $asset = null;
+        if ($asset_id) {
+            $asset = Asset::select('id', 'brand', 'type_id')
+                ->with('type:id,name,is_accessory')
+                ->find($asset_id);
+            if (!$asset) {
+                throw new NotFoundHttpException('Activo no encontrado');
+            }
+        }
         try {
-            return Asset::
-                query()->
-                select('id', 'name', 'model', 'brand', 'serial_number', 'status')
-                ->whereHas('type', function ($query) {
-                    $query->where('name', 'Accesorio');
-                })
+            return Asset::query()
+                ->select('id', 'name', 'model', 'brand', 'serial_number', 'status', 'type_id')
+                ->with('type:id,name')
+                ->isFromRRHH()
                 ->where('status', AssetStatus::AVAILABLE->value)
+
+                // Siempre accesorios
+                ->whereHas('type', function ($q) {
+                    $q->where('is_accessory', true);
+                })
+
+                // 👇 Solo aplica la marca si el tipo es cargador
+                ->where(function ($query) use ($asset) {
+
+                    // Cargadores → filtrar por marca
+                    $query->whereHas('type', function ($q) use ($asset) {
+                        // $chargerFor = $asset->type->name === 'Celular' ? 'Cargador de Celular' : ($asset->type->name === 'Laptop' ? 'Cargador de Laptop' : null);
+                        $chargerFor = match ($asset?->type->id) {
+                            AssetTypeEnum::CELL_PHONE => AssetTypeEnum::CELL_PHONE_CHARGER,
+                            AssetTypeEnum::LAPTOP => AssetTypeEnum::LAPTOP_CHARGER,
+                            default => null,
+                        };
+                        $q->where('id', $chargerFor)
+                            ->when($asset?->brand, fn($qq) => $qq->whereNotNull('id'));
+
+                    })->when($asset?->brand, function ($q) use ($asset) {
+                        $q->where('brand', $asset->brand);
+                    });
+
+                    // Otros accesorios → sin filtro por marca
+                    $query->orWhereHas('type', function ($q) {
+                        $q->where('is_accessory', true)
+                            ->where('name', 'not like', '%cargador%');
+                    });
+                })
+
                 ->get();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener los accesorios');
         }
+
     }
 
     public function getDetails(Asset $asset)
@@ -223,7 +154,7 @@ class AssetService
 
 
         return $asset->load(
-            'type:id,name',
+            'type:id,name,is_accessory',
 
             'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at',
             'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
@@ -231,7 +162,9 @@ class AssetService
             'assignments.returnDocument',
             'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
             'assignments.childrenAssignments.asset:id,name,brand,model,serial_number',
-           
+
+            'reparations:id,asset_id,date,description,image_paths',
+
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
             'currentAssignment.assignedTo.department:id,name',
 
@@ -243,7 +176,7 @@ class AssetService
     {
         try {
             return AssetAssignment::query()
-                ->with('asset:id,name,brand,model,serial_number,type_id', 'asset.type:id,name', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,serial_number,type_id', 'childrenAssignments.asset.type:id,name')
+                ->with('asset:id,name,brand,model,serial_number,type_id', 'asset.type:id,name,is_accessory', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,serial_number,type_id', 'childrenAssignments.asset.type:id,name,is_accessory')
                 ->where('assigned_to_id', $user_id)
                 // ->whereNull('returned_at')
                 ->where('parent_assignment_id', null)
@@ -284,20 +217,21 @@ class AssetService
         }
     }
 
-    public function getStats()
+    public function getStats(AssetFiltersDto $filtersDto)
     {
 
         try {
-            $totalAssets = Asset::isFromRRHH()->count();
+            $totalAssets = Asset::isFromRRHH()->filters($filtersDto)->count();
 
             $statuses = Asset::isFromRRHH()
                 ->selectRaw('status, COUNT(*) as count')
+                ->filters($filtersDto)
                 ->groupBy('status')
                 ->pluck('count', 'status');
 
 
-            $notExpiredWarrantyAssets = Asset::isFromRRHH()->whereDate('warranty_expiration', '>=', now()->toDateString())->count();
-            $expiredWarrantyAssets = Asset::isFromRRHH()->whereDate('warranty_expiration', '<', now()->toDateString())->count();
+            $notExpiredWarrantyAssets = Asset::isFromRRHH()->filters($filtersDto)->whereDate('warranty_expiration', '>=', now()->toDateString())->count();
+            $expiredWarrantyAssets = Asset::isFromRRHH()->filters($filtersDto)->whereDate('warranty_expiration', '<', now()->toDateString())->count();
 
             return [
                 'total' => $totalAssets,
@@ -396,7 +330,7 @@ class AssetService
 
             return $asset;
         } catch (\Exception $e) {
-            if ($e->getCode() === '23000') { 
+            if ($e->getCode() === '23000') {
                 throw new BadRequestException('El número de serie o IMEI ya existe en el sistema.');
             }
 
@@ -410,8 +344,8 @@ class AssetService
 
         if ($this->isFromRRHH() && $dto->type_id) {
             $type = AssetType::find($dto->type_id);
-            if ($type && !in_array($type->name, ['Celular', 'Accesorio'])) {
-                throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Accesorio');
+            if ($type && !in_array($type->name, ['Celular', 'Cargador de Celular'])) {
+                throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Cargador de Celular');
             }
         }
 
@@ -564,15 +498,15 @@ class AssetService
     }
 
 
-    public function changeAssetStatus(Asset $asset, string $newStatus)
+    public function changeAssetStatus(Asset $asset, UpdateStatusDto $dto)
     {
         try {
 
-            if ($asset->status === $newStatus) {
+            if ($asset->status === $dto->status) {
                 throw new BadRequestException('El activo ya tiene el estado proporcionado.');
             }
 
-            if ($newStatus === AssetStatus::ASSIGNED->value) {
+            if ($dto->status === AssetStatus::ASSIGNED->value) {
                 throw new BadRequestException('No se puede cambiar el estado a ASIGNADO directamente. Use la función de asignación.');
             }
 
@@ -582,14 +516,43 @@ class AssetService
 
             $oldStatus = $asset->status;
 
-            DB::transaction(function () use ($asset, $newStatus, $oldStatus) {
+            DB::transaction(function () use ($asset, $oldStatus, $dto) {
                 $asset->update([
-                    'status' => $newStatus,
+                    'status' => $dto->status,
+                    'notes' => AssetStatus::DECOMMISSIONED->value ? $dto->description : null,
                 ]);
+
+                $description = "Estado cambiado de '" . $this->fromStatusToLabel($oldStatus) . "' a '" . $this->fromStatusToLabel($dto->status) . "'";
+
+
+                if ($dto->description) {
+                    $description .= " por motivo de '" . $dto->description . "'";
+                }
+
+                if ($dto->status === AssetStatus::IN_REPAIR->value) {
+
+                    $images = [];
+                    if ($dto->images) {
+                        foreach ($dto->images as $image) {
+                            $path = Storage::disk('public')->putFile('asset_reparations', $image);
+                            $images[] = $path;
+                        }
+                    }
+
+                    AssetReparation::create([
+                        'asset_id' => $asset->id,
+                        'date' => Carbon::parse($dto->date)->startOfDay(),
+                        'description' => $dto->description,
+                        'image_paths' => $images,
+                    ]);
+
+                    $stringImage = count($images) > 0 ? implode(',', $images) : '';
+                    $description .= " con fecha de inicio '" . date('Y-m-d', strtotime($dto->date)) . "'" . " '" . $stringImage . "'";
+                }
 
                 AssetHistory::create([
                     'action' => AssetHistoryAction::STATUS_CHANGED->value,
-                    'description' => "Estado cambiado de '" . $this->fromStatusToLabel($oldStatus) . "' a '" . $this->fromStatusToLabel($newStatus) . "'",
+                    'description' => $description,
                     'asset_id' => $asset->id,
                     'performed_by' => auth()->user()->staff_id,
                     // 'performed_at' => now()->utc(),
@@ -599,6 +562,7 @@ class AssetService
             });
 
         } catch (\Exception $e) {
+            ds($e->getMessage());
             if ($e instanceof BadRequestException) {
                 throw $e;
             }
@@ -777,11 +741,11 @@ class AssetService
 
                     // TODO: Ticket history log
                     // if ($dto->ticket_id) {
-                        // app(abstract: TicketService::class)->logHistory(
-                        //     $dto->ticket_id,
-                        //     TicketHistoryAction::ASSET_ASSIGNED,
-                        //     $description . " para el equipo {$asset->full_name}",
-                        // );
+                    // app(abstract: TicketService::class)->logHistory(
+                    //     $dto->ticket_id,
+                    //     TicketHistoryAction::ASSET_ASSIGNED,
+                    //     $description . " para el equipo {$asset->full_name}",
+                    // );
 
 
                     // }
@@ -856,8 +820,6 @@ class AssetService
 
                 }
 
-
-
                 $this->logHistory(
                     $asset,
                     AssetHistoryAction::ASSIGNED,
@@ -865,94 +827,6 @@ class AssetService
                     null
                 );
 
-                // TODO: Ticket history log
-                // if ($dto->ticket_id) {
-
-
-                //     $existingTicketAsset = TicketAsset::where('ticket_id', $dto->ticket_id)->whereNot('action', TicketAssetAction::RETURNED->value)
-                //         ->first();
-
-                //     $originalAsset = $existingTicketAsset?->asset;
-                //     $originalAssignment = $existingTicketAsset?->assetAssignment;
-
-
-                //     app(TicketService::class)->attachAssetToTicket(
-                //         $dto->ticket_id,
-                //         $asset->id,
-                //         TicketAssetAction::ASSIGNED,
-                //         $assigned->id
-                //     );
-
-
-                //     if ($existingTicketAsset) {
-
-                //         $ticketDescription = "La asignación del activo '{$originalAsset->type->name} {$originalAsset->full_name}' ha sido actualizada. Nuevo activo asignado: '{$asset->type->name} {$asset->full_name}'";
-
-
-                //         $existingTicketAsset->update([
-                //             'action' => TicketAssetAction::CHANGED->value,
-                //             'notes' => "El activo fue reasignado a {$asset->full_name}",
-                //             'asset_assignment_id' => $assigned->id,
-                //             'asset_id' => $asset->id,
-                //         ]);
-
-                //         if ($originalAssignment->childrenAssignments()->count() > 0) {
-                //             // $originalAssignment->childrenAssignments->delete();
-
-                //             AssetAssignment::whereIn('id', $originalAssignment->childrenAssignments->pluck('id'))->update([
-                //                 // 'parent_assignment_id' => null,
-                //                 'returned_at' => now()->toDateTimeString(),
-                //                 'return_comment' => "Liberado junto a la reasignación del equipo principal {$asset->full_name}",
-                //                 'responsible_id' => auth()->user()->staff_id,
-                //                 'return_reason' => ReturnReason::WRONG_ASSIGNMENT
-                //             ]);
-
-                //             Asset::whereIn('id', $originalAssignment->childrenAssignments->pluck('asset_id'))->update([
-                //                 'status' => AssetStatus::AVAILABLE->value,
-                //             ]);
-                //         }
-
-                //         $originalAssignment->update([
-                //             // 'parent_assignment_id' => null,
-                //             'returned_at' => now()->toDateTimeString(),
-                //             'return_comment' => "Reasignación del equipo a {$asset->full_name}",
-                //             'responsible_id' => auth()->user()->staff_id,
-                //             'return_reason' => ReturnReason::WRONG_ASSIGNMENT
-                //         ]);
-
-                //         $originalAsset->update([
-                //             'status' => AssetStatus::AVAILABLE->value,
-                //         ]);
-
-
-
-
-                //         // $existingTicketAsset->assetAssignment->delete();
-
-                //     }
-
-                //     app(TicketService::class)->logHistory(
-                //         $dto->ticket_id,
-                //         TicketHistoryAction::ASSET_ASSIGNED,
-                //         $ticketDescription,
-                //     );
-
-                //     // app(TicketService::class)->attachAssetToTicket(
-                //     //     $dto->ticket_id,
-                //     //     $asset->id,
-                //     //     TicketAssetAction::ASSIGNED,
-                //     //     $assigned->id
-                //     // );
-                // }
-
-                // $this->logTicketHistory(
-                //     $asset,
-                //     TicketHistoryAction::ASSET_ASSIGNED,
-                //     $ticketDescription,
-                //     $assigned,
-                //     TicketAssetAction::ASSIGNED,
-                //     $dto->ticket_id
-                // );
 
                 return $assigned;
 

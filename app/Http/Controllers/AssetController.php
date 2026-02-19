@@ -8,13 +8,15 @@ use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\DevolveAssetDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
+use App\DTOs\Asset\UpdateStatusDto;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Asset\AssetStatus;
 use App\Http\Requests\Asset\AssignAssetRequest;
 use App\Http\Requests\Asset\DevolveAssetRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
-use App\Http\Requests\asset\UploadDeliveryRecordRequest;
+use App\Http\Requests\asset\UpdateStatusRequest;
+use App\Http\Requests\Asset\UploadDeliveryRecordRequest;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Services\AssetService;
@@ -28,7 +30,7 @@ class AssetController extends Controller
 {
     //
 
-    
+
     public function renderView(
         AssetService $assetService,
         AssetTypeService $assetTypeService,
@@ -39,8 +41,9 @@ class AssetController extends Controller
         $filters = AssetFiltersDto::fromArray($request->all());
         $assetId = $request->input('asset_id');
         $assignmentId = $request->input('assignment_id');
+        // $brand = $request->input('brand');
 
-        
+
 
         return Inertia::render('Assets', [
             'filters' => $filters,
@@ -48,9 +51,9 @@ class AssetController extends Controller
             'users' => Inertia::optional(fn() => $userService->getAllBasicInfo())->once(),
             'departments' => Inertia::optional(fn() => $departmentService->getBasicInfo())->once(),
             'types' => Inertia::optional(fn() => $assetTypeService->getTypes())->once(),
-            'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
+            'accessories' => Inertia::optional(fn() => $assetService->getAccessories($assetId))->once(),
             'assetsPaginated' => Inertia::once(fn() => $assetService->getPaginated($filters)),
-            'stats' => fn() => Inertia::once(fn() => $assetService->getStats()),
+            'stats' => fn() => Inertia::once(fn() => $assetService->getStats($filters)),
             'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
@@ -88,9 +91,9 @@ class AssetController extends Controller
 
     public function storeAsset(StoreAssetRequest $request, AssetService $assetService)
     {
-            
-    $validated = $request->validated();
-        
+
+        $validated = $request->validated();
+
         $dto = StoreAssetDto::fromArray($validated);
         try {
             $asset = $assetService->storeAsset($dto);
@@ -156,19 +159,16 @@ class AssetController extends Controller
         return back();
     }
 
-    public function changeAssetStatus(Request $request, Asset $asset, AssetService $assetService)
+    public function changeAssetStatus(UpdateStatusRequest $request, Asset $asset, AssetService $assetService)
     {
-        $newStatus = $request->input('status');
-        if (!in_array($newStatus, AssetStatus::values())) {
-            Inertia::flash([
-                'error' => 'Estado de activo inválido proporcionado.',
-                'timestamp' => now()->timestamp,
-            ]);
-            return back();
-        }
+        ds("llegue al controller", $request->all());
+
+        $validated = $request->validated();
+        $dto = UpdateStatusDto::fromArray($validated);
 
         try {
-            $assetService->changeAssetStatus($asset, $newStatus);
+            $assetService->changeAssetStatus($asset, $dto);
+
 
             Inertia::flash([
                 'success' => 'Estado de activo actualizado correctamente: ' . $asset->name,
@@ -223,8 +223,8 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
                 'error' => null,
             ]);
-            
-            } catch (\Exception $e) {
+
+        } catch (\Exception $e) {
             Inertia::flash([
                 'success' => null,
                 'error' => $e->getMessage(),
@@ -234,8 +234,8 @@ class AssetController extends Controller
             return back()->withErrors(['devolution_error' => $e->getMessage()]);
 
 
-            }
-            return back();
+        }
+        return back();
     }
 
     public function generateLaptopAssignmentDocument(AssetAssignment $assignment, AssetService $assetService)
@@ -248,7 +248,7 @@ class AssetController extends Controller
             Inertia::flash([
                 'error' => $e->getMessage(),
                 'timestamp' => now()->timestamp,
-                
+
             ]);
             return back();
         }

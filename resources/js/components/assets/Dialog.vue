@@ -35,302 +35,327 @@
             </DialogHeader>
 
             <ScrollArea class="dialog-content">
-            <form id="dialogForm" @submit.prevent=" 
-                handleSubmit(onSubmit)()
-                " class="space-y-5 py-4">
+                <form id="dialogForm" @submit.prevent=" 
+                    handleSubmit(onSubmit)()
+                    " class="space-y-5 py-4">
 
-                <Accordion :unmountOnHide="false" type="multiple" :default-value="['info', 'specs', 'dates']"
-                    class="w-full space-y-3">
-                    <!-- Sección: Información Básica -->
-                    <AccordionItem value="info" class="border rounded-lg px-4">
-                        <AccordionTrigger class="hover:no-underline">
-                            <div class="flex items-center gap-2">
-                                <div
-                                    class="size-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                    <Laptop class="size-4 text-blue-600 dark:text-blue-400" />
+                    <Accordion :unmountOnHide="false" type="multiple" :default-value="['info', 'specs', 'dates']"
+                        class="w-full space-y-3">
+                        <!-- Sección: Información Básica -->
+                        <AccordionItem value="info" class="border rounded-lg px-4">
+                            <AccordionTrigger class="hover:no-underline">
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="size-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                        <Laptop class="size-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <span class="font-semibold">Información Básica</span>
                                 </div>
-                                <span class="font-semibold">Información Básica</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent class="space-y-4 pt-4">
-                            <!-- NOMBRE -->
-                            <FieldGroup>
-                                <VeeField name="name" v-slot="{ componentField, errors }">
-
-                                    <Field :data-invalid="!!errors.length">
-                                        <FieldLabel for="name">Nombre del Activo</FieldLabel>
-                                        <Input id="name" placeholder="EJ: Laptop de Desarrollo"
-                                            v-bind="componentField" />
-                                        <FieldError v-if="errors.length" :errors="errors" />
-                                    </Field>
-                                </VeeField>
-                            </FieldGroup>
-                            <div class="grid gap-4 items-center md:grid-cols-2">
+                            </AccordionTrigger>
+                            <AccordionContent class="space-y-4 pt-4">
+                                <!-- NOMBRE -->
                                 <FieldGroup>
-                                    <VeeField name="type_id" v-slot="{ componentField, errors }">
+                                    <VeeField name="name" v-slot="{ componentField, errors }">
+
                                         <Field :data-invalid="!!errors.length">
-                                            <FieldLabel>Tipo</FieldLabel>
-
-                                    
-                                            <SelectFilters label="Tipo de Activo" :items="assetTypes" data-key="types"
-                                                item-label="name" item-value="id"
-                                                :default-value="componentField.modelValue" :selected-as-label="true"
-                                                :show-refresh="false" :show-selected-focus="false"
-                                                @select="(value) => setFieldValue('type_id', value)"
-                                                filter-placeholder="Buscar tipo..."
-                                                empty-text="No se encontraron tipos de activos">
-                                                <template #item="{ item }">
-                                                    <component :is="assetTypeOp(item.name)?.icon"
-                                                        class="inline size-4" />
-                                                    {{ item.name }}
-                                                </template>
-                                            </SelectFilters>
-
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-
-                                </FieldGroup>
-
-                                <FieldGroup>
-                                    <VeeField name="color" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel>Color</FieldLabel>
-                                            <Input id="color" placeholder="Ingresa un color (EJ: Rojo, Azul)"
+                                            <FieldLabel for="name">Nombre del Activo</FieldLabel>
+                                            <Input id="name" placeholder="EJ: Laptop de Desarrollo"
                                                 v-bind="componentField" />
                                             <FieldError v-if="errors.length" :errors="errors" />
                                         </Field>
                                     </VeeField>
                                 </FieldGroup>
-                            </div>
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+                                    <FieldGroup>
+                                        <VeeField name="type_id" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel>Tipo</FieldLabel>
 
-                            <div class="grid gap-4 items-center md:grid-cols-2">
-                                <FieldGroup>
-                                    <VeeField name="brand" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="brand">Marca</FieldLabel>
-                                            <Input id="brand" placeholder="EJ: Dell, HP, Lenovo"
-                                                v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
 
-                                <FieldGroup>
-                                    <VeeField name="model" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="model">Modelo</FieldLabel>
-                                            <Input id="model" placeholder="EJ: Inspiron 15 3000"
-                                                v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
+                                                <SelectFilters label="Tipo de Activo" :items="assetTypes"
+                                                    data-key="types" item-label="name" item-value="id"
+                                                    :default-value="componentField.modelValue" :selected-as-label="true"
+                                                    :show-refresh="false" :show-selected-focus="false"
+                                                    @select="(value) => setFieldValue('type_id', value)"
+                                                    filter-placeholder="Buscar tipo..."
+                                                    empty-text="No se encontraron tipos de activos">
+                                                    <template #item="{ item }">
+                                                        <component :is="assetTypeOp(item.name)?.icon"
+                                                            class="inline size-4" />
+                                                        {{ item.name }}
+                                                    </template>
+                                                </SelectFilters>
 
-                    <!-- Sección: Especificaciones Técnicas -->
-                    <AccordionItem value="specs" class="border rounded-lg px-4">
-                        <AccordionTrigger class="hover:no-underline">
-                            <div class="flex items-center gap-2">
-                                <div
-                                    class="size-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="size-4 text-purple-600 dark:text-purple-400" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                                    </svg>
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+
+                                    </FieldGroup>
+
+                                    <FieldGroup>
+                                        <VeeField name="color" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel>Color</FieldLabel>
+                                                <Input id="color" placeholder="Ingresa un color (EJ: Rojo, Azul)"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
                                 </div>
-                                <span class="font-semibold">Especificaciones Técnicas</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent class="space-y-4 pt-4">
-                            <div class="grid gap-4 items-center md:grid-cols-2">
-                                <FieldGroup>
-                                    <VeeField name="serial_number" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="serial_number">Número de Serie</FieldLabel>
-                                            <Input id="serial_number" placeholder="EJ: SN1234567890"
-                                                v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
 
-                                <FieldGroup>
-                                    <VeeField name="processor" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="processor">Procesador</FieldLabel>
-                                            <Input id="processor" placeholder="EJ: Intel Core i7-10750H"
-                                                v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
-                            </div>
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+                                    <FieldGroup>
+                                        <VeeField name="brand" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="brand">Marca</FieldLabel>
+                                                <Input id="brand" placeholder="EJ: Dell, HP, Lenovo"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
 
-
-                            <div class="grid gap-4 items-center md:grid-cols-2">
-                                <FieldGroup>
-                                    <VeeField name="ram" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="ram">Memoria RAM</FieldLabel>
-                                            <Input id="ram" placeholder="EJ: 16GB DDR4" v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
-
-                                <FieldGroup>
-                                    <VeeField name="storage" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="storage">Almacenamiento</FieldLabel>
-                                            <Input id="storage" placeholder="EJ: 512GB SSD" v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
-                            </div>
-
-
-                            <div class="grid gap-4 items-center md:grid-cols-2">
-                                <FieldGroup>
-                                    <VeeField name="phone" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="phone">Número de Teléfono</FieldLabel>
-                                            <Input id="phone" placeholder="EJ: +1234567890" v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
-
-                                <FieldGroup>
-                                    <VeeField name="imei" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="imei">IMEI</FieldLabel>
-                                            <Input id="imei" placeholder="EJ: 356789012345678"
-                                                v-bind="componentField" />
-                                            <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-
-                    <!-- Sección: Fechas y Garantía -->
-                    <AccordionItem value="dates" class="border rounded-lg px-4">
-                        <AccordionTrigger class="hover:no-underline">
-                            <div class="flex items-center gap-2">
-                                <div
-                                    class="size-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="size-4 text-green-600 dark:text-green-400" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
+                                    <FieldGroup>
+                                        <VeeField name="model" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="model">Modelo</FieldLabel>
+                                                <Input id="model" placeholder="EJ: Inspiron 15 3000"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
                                 </div>
-                                <span class="font-semibold">Fechas y Garantía</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent class="space-y-4 pt-4">
-                            <div class="grid gap-4 items-center md:grid-cols-2">
 
-                                <FieldGroup>
-                                    <VeeField name="purchase_date" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="purchase_date">Fecha de Compra</FieldLabel>
-                                            <Popover v-slot="{ close }">
-                                                <PopoverTrigger as-child>
-                                                    <Button variant="outline" class="w-48 justify-between font-normal">
-                                                        {{ componentField.modelValue
-                                                            ?
-                                                            componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
-                                                            : 'Seleccionar fecha' }}
 
-                                                        <ChevronDownIcon />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent class="w-auto overflow-hidden p-0" align="start">
-                                                    <Calendar v-bind="componentField" locale="es"
-                                                        layout="month-and-year" selection-mode="single"
-                                                        @update:model-value="(value) => {
-                                                            if (value) {
-                                                                componentField.onChange(value)
-                                                                close()
-                                                            }
-                                                        }" />
-                                                </PopoverContent>
-                                            </Popover>
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+                                    <FieldGroup>
+                                        <VeeField name="is_new" v-slot="{ value, setValue, errors }">
+
+
+                                            <div class="flex items-center gap-3">
+                                                <Checkbox :model-value="value" @update:model-value="setValue($event)" />
+                                                <FieldLabel for="terms">¿Es nuevo?</FieldLabel>
+                                            </div>
                                             <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
+
+                                        </VeeField>
+                                    </FieldGroup>
+<!-- 
+                                    <FieldGroup>
+                                        <VeeField name="is_accessory" v-slot="{ value, setValue, errors }">
 
 
-                                <FieldGroup>
-                                    <VeeField name="warranty_expiration" v-slot="{ componentField, errors }">
-                                        <Field :data-invalid="!!errors.length">
-                                            <FieldLabel for="warranty_expiration">Vencimiento de Garantía</FieldLabel>
-                                            <Popover v-slot="{ close }">
-                                                <PopoverTrigger as-child>
-                                                    <Button variant="outline" class="w-48 justify-between font-normal">
-                                                        {{ componentField.modelValue
-                                                            ?
-                                                            componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
-                                                            : 'Seleccionar fecha' }}
-
-                                                        <ChevronDownIcon />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent class="w-auto overflow-hidden p-0" align="start">
-                                                    <Calendar v-bind="componentField" locale="es"
-                                                        layout="month-and-year" selection-mode="single"
-                                                        @update:model-value="(value) => {
-                                                            if (value) {
-                                                                componentField.onChange(value)
-                                                                close()
-                                                            }
-                                                        }" />
-                                                </PopoverContent>
-                                            </Popover>
+                                            <div class="flex items-center gap-3">
+                                                <Checkbox :model-value="value" @update:model-value="setValue($event)" />
+                                                <FieldLabel for="terms">¿Es Accesorio?</FieldLabel>
+                                            </div>
                                             <FieldError v-if="errors.length" :errors="errors" />
-                                        </Field>
-                                    </VeeField>
-                                </FieldGroup>
+
+                                        </VeeField>
+                                    </FieldGroup> -->
 
 
-                                <FieldGroup>
-                                    <VeeField name="is_new" v-slot="{ value, setValue, errors }">
+                                </div>
+
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        <!-- Sección: Especificaciones Técnicas -->
+                        <AccordionItem value="specs" class="border rounded-lg px-4">
+                            <AccordionTrigger class="hover:no-underline">
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="size-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="size-4 text-purple-600 dark:text-purple-400" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold">Especificaciones Técnicas</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent class="space-y-4 pt-4">
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+                                    <FieldGroup>
+                                        <VeeField name="serial_number" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="serial_number">Número de Serie</FieldLabel>
+                                                <Input id="serial_number" placeholder="EJ: SN1234567890"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+
+                                    <FieldGroup>
+                                        <VeeField name="processor" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="processor">Procesador</FieldLabel>
+                                                <Input id="processor" placeholder="EJ: Intel Core i7-10750H"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+                                </div>
 
 
-                                        <div class="flex items-center gap-3">
-                                            <Checkbox :model-value="value" @update:model-value="setValue($event)" />
-                                            <FieldLabel for="terms">¿Es un activo nuevo?</FieldLabel>
-                                        </div>
-                                        <FieldError v-if="errors.length" :errors="errors" />
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+                                    <FieldGroup>
+                                        <VeeField name="ram" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="ram">Memoria RAM</FieldLabel>
+                                                <Input id="ram" placeholder="EJ: 16GB DDR4" v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
 
-                                    </VeeField>
-                                </FieldGroup>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
+                                    <FieldGroup>
+                                        <VeeField name="storage" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="storage">Almacenamiento</FieldLabel>
+                                                <Input id="storage" placeholder="EJ: 512GB SSD"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+                                </div>
 
-                </Accordion>
 
-            </form>
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+                                    <FieldGroup>
+                                        <VeeField name="phone" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="phone">Número de Teléfono</FieldLabel>
+                                                <Input id="phone" placeholder="EJ: +1234567890"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+
+                                    <FieldGroup>
+                                        <VeeField name="imei" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="imei">IMEI</FieldLabel>
+                                                <Input id="imei" placeholder="EJ: 356789012345678"
+                                                    v-bind="componentField" />
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        <!-- Sección: Fechas y Garantía -->
+                        <AccordionItem value="dates" class="border rounded-lg px-4">
+                            <AccordionTrigger class="hover:no-underline">
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="size-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="size-4 text-green-600 dark:text-green-400" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold">Fechas y Garantía</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent class="space-y-4 pt-4">
+                                <div class="grid gap-4 items-center md:grid-cols-2">
+
+                                    <FieldGroup>
+                                        <VeeField name="purchase_date" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="purchase_date">Fecha de Compra</FieldLabel>
+                                                <Popover v-slot="{ close }">
+                                                    <PopoverTrigger as-child>
+                                                        <Button variant="outline"
+                                                            class="w-48 justify-between font-normal">
+                                                            {{ componentField.modelValue
+                                                                ?
+                                                                componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
+                                                                : 'Seleccionar fecha' }}
+
+                                                            <ChevronDownIcon />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+                                                        <Calendar v-bind="componentField" locale="es"
+                                                            layout="month-and-year" selection-mode="single"
+                                                            @update:model-value="(value) => {
+                                                                if (value) {
+                                                                    componentField.onChange(value)
+                                                                    close()
+                                                                }
+                                                            }" />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+
+
+                                    <FieldGroup>
+                                        <VeeField name="warranty_expiration" v-slot="{ componentField, errors }">
+                                            <Field :data-invalid="!!errors.length">
+                                                <FieldLabel for="warranty_expiration">Vencimiento de Garantía
+                                                </FieldLabel>
+                                                <Popover v-slot="{ close }">
+                                                    <PopoverTrigger as-child>
+                                                        <Button variant="outline"
+                                                            class="w-48 justify-between font-normal">
+                                                            {{ componentField.modelValue
+                                                                ?
+                                                                componentField.modelValue.toDate(getLocalTimeZone()).toLocaleDateString()
+                                                                : 'Seleccionar fecha' }}
+
+                                                            <ChevronDownIcon />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent class="w-auto overflow-hidden p-0" align="start">
+                                                        <Calendar v-bind="componentField" locale="es"
+                                                            layout="month-and-year" selection-mode="single"
+                                                            @update:model-value="(value) => {
+                                                                if (value) {
+                                                                    componentField.onChange(value)
+                                                                    close()
+                                                                }
+                                                            }" />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FieldError v-if="errors.length" :errors="errors" />
+                                            </Field>
+                                        </VeeField>
+                                    </FieldGroup>
+
+
+
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                    </Accordion>
+
+                </form>
             </ScrollArea>
 
             <DialogFooter class="gap-2 pt-4 border-t">
                 <Button variant="outline" @click="() => { open = false; handleResetForm(); }" :disabled="isLoading">
                     Cancelar
                 </Button>
-                <Button :disabled="disabledForm" type="submit" form="dialogForm"
-                    class="min-w-32">
-                    
+                <Button :disabled="disabledForm" type="submit" form="dialogForm" class="min-w-32">
+
                     {{ currentAsset ? 'Actualizar Activo' : 'Crear Activo' }}
                 </Button>
             </DialogFooter>
@@ -440,8 +465,8 @@ const formSchema = toTypedSchema(z.object({
     purchase_date: z.instanceof(CalendarDate, {
         message: 'La fecha de compra es obligatoria'
     }).
-    nullable().
-    transform((date: CalendarDate | null) => date?.toDate(getLocalTimeZone()) || null),
+        nullable().
+        transform((date: CalendarDate | null) => date?.toDate(getLocalTimeZone()) || null),
     warranty_expiration: z.instanceof(CalendarDate, {
         message: 'La fecha de vencimiento de la garantía es obligatoria'
     }).nullable().transform((date: CalendarDate | null) => date?.toDate(getLocalTimeZone()) || null).refine((date) => {
@@ -537,7 +562,7 @@ function onSubmit(values: any) {
             open.value = false;
             handleResetForm();
         }
-       
+
 
 
     })
@@ -547,7 +572,7 @@ const handleResetForm = () => {
     handleReset();
     currentAsset.value = null;
     openEditor.value = false;
-   
+
 
 
 }

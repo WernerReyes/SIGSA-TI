@@ -604,7 +604,7 @@ const formSchema = toTypedSchema(
             message: 'Selecciona la fecha del próximo cobro.',
             path: ['next_billing_date'],
         }).refine((data) => {
-            // TODO: Check why 
+          
             if (data.period === ContractPeriod.RECURRING) {
                 const start = new Date();
                 const end = parseISO(data.next_billing_date || '');

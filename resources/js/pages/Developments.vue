@@ -25,7 +25,7 @@
 
             <!-- Board Kanban -->
             <div class="grid grid-flow-col max-h-[calc(100vh-200px)] auto-cols-[minmax(240px,1fr)] w-full overflow-x-auto gap-4 kanban-board-scroll">
-                <!-- // TODO: Check why it doesn't show the toast error message  -->
+            
                 <KanbanColumn v-model:dev-requests="registeredRequests" title="Registrados" header-color="#64748b"
                     v-model:developments-by-status="originalDevelopmentsByStatus" @deleted="(id: number) => {
                         alertDialogInfo = {

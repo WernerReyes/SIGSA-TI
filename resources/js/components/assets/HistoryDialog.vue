@@ -171,7 +171,7 @@
                                     </Badge>
                                 </template>
 
-                                <!-- TODO: Some cases haven't been parsed yet -->
+                             
                                 <template v-else-if="history.action === AssetHistoryAction.ASSIGNED">
                                     <template v-if="includes(history.description, ['junto con los accesorios'])"
                                         v-for="(part, index) in parsedAssignmentWithAccessories(history.description)"
@@ -467,6 +467,7 @@ const parsedStatusChange = (description: string): Array<(Partial<AssetStatusOpti
         }
     });
     if (parsed.length !== 5) {
+        console.log('Error parsing status change description:', parsed);
         return [{ type: 'text' as const, content: description }];
     }
 

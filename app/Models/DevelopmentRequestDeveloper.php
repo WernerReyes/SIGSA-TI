@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DevelopmentRequestDeveloper extends Model
 {
-    // TODO: Change the name of the model to development_request_developers
+
     protected $table = 'development_request_developers';
 
     protected $fillable = [

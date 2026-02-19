@@ -392,12 +392,12 @@ watch(currentAssetAssignment, (assignment) => {
 const onSubmit = async (values: Record<string, any>) => {
 
     const accessoriesIds = values.accessories || [];
-    const type = selectedAsset.value?.type?.name || null;
+    const type = selectedAsset.value?.type;
 
     const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
 
     const only: string[] = [];
-    if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type as TypeName)) {
+    if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type?.name as TypeName)) {
         // only.push('accessories');
         const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
         if (!includeCharger) {
@@ -414,7 +414,7 @@ const onSubmit = async (values: Record<string, any>) => {
         responsible_id: ticket.value?.responsible_id,
         assigned_to_id: ticket.value?.requester_id,
         assign_date: values.assign_date.toDateString(),
-        comment: type === TypeName.ACCESSORY ? null : values.comment,
+        comment: type?.is_accessory ? null : values.comment,
         accessories: values.accessories,
     }, {
         only: ['availableAssets', 'accessories'],
@@ -426,7 +426,7 @@ const onSubmit = async (values: Record<string, any>) => {
 
             if (flash.success) {
                 if (flash.assignment_id) {
-                    const type = currentAssetAssignment.value?.asset?.type?.name || null;
+                    const type = currentAssetAssignment.value?.asset?.type;
                     if (type) {
                         downloadAssignmentDocument(flash.assignment_id as number, type);
                     }

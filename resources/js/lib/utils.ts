@@ -80,3 +80,10 @@ export const formatMinutes = (minutes: number): string => {
     if (hrs) return `${hrs}h`;
     return `${mins}m`;
 };
+
+
+export const getImageUrl = (path: string) => {
+    if (!path) return undefined;
+    const baseUrl = window.location.origin; 
+    return `${baseUrl}/storage/${path}`;
+};

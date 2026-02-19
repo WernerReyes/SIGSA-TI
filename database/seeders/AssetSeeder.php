@@ -26,6 +26,10 @@ class AssetSeeder extends Seeder
         AssetAssignment::truncate();
         Asset::truncate();
 
+        
+        Schema::enableForeignKeyConstraints(); // Eliminar esta línea para ejecutar el seeder con los datos del Excel
+        return ;
+
         $filePath = storage_path('app/assets.xlsx');
 
         // Convertir el Excel a un Array
@@ -113,16 +117,6 @@ class AssetSeeder extends Seeder
                     'performed_at' => Carbon::now(),
                 ]);
 
-                // AssetHistory::create([
-                //     'action' => AssetHistoryAction::CREATED->value,
-                //     'description' => 'Equipo registrado en el sistema',
-                //     'asset_id' => $charger->id,
-                //     'performed_by' => $user?->staff_id ?? null,
-                //     'performed_at' => Carbon::now(),
-                // ]);
-
-
-
                 //* Assign Asset and Charger
                 if ($assignedTo) {
                     $parent = AssetAssignment::create([
@@ -130,7 +124,7 @@ class AssetSeeder extends Seeder
                         'assigned_to_id' => $assignedTo->staff_id,
                         'assigned_at' => $registeredAssigmentsDates[$assignedTo->staff_id] ?? Carbon::now(),
                         'returned_at' => null,
-                        'comment' => 'Asignación inicial durante la importación',
+                        'comment' => null,
                         'return_comment' => null,
                         'responsible_id' => null,
                         'return_reason' => null,
@@ -153,7 +147,7 @@ class AssetSeeder extends Seeder
                                 'assigned_to_id' => $assignedTo->staff_id,
                                 'assigned_at' => $registeredAssigmentsDates[$assignedTo->staff_id] ?? Carbon::now(),
                                 'returned_at' => null,
-                                'comment' => 'Asignación inicial durante la importación',
+                                'comment' => null,
                                 'return_comment' => null,
                                 'responsible_id' => null,
                                 'return_reason' => null,
@@ -228,7 +222,7 @@ class AssetSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
                 'assigned_to' => User::select('staff_id', 'firstname', 'lastname')->where('firstname', trim($row[0]))->where('lastname', trim($row[1]))->first(),
-                'accessories' => array_map(function ($accesory) {
+                'accessories' => array_map(function ($accesory) use ($row) {
                     return [
                         'name' => strtoupper($accesory),
                         'status' => AssetStatus::AVAILABLE->value,
@@ -241,7 +235,13 @@ class AssetSeeder extends Seeder
                         'storage' => null,
                         'purchase_date' => null,
                         'warranty_expiration' => null,
-                        'type_id' => 4,
+                        'type_id' => match (strtolower($accesory . " " . $row[2])) {
+                            'mouse' => 7,
+                            'teclado' => 8,
+                            'cargador laptop' => 10,
+                            'cargador celular' => 11,
+                            default => 12, // Otro
+                        },
                         'is_new' => false,
                         'invoice_path' => null,
                         'phone' => null,
@@ -306,7 +306,7 @@ class AssetSeeder extends Seeder
                             'storage' => null,
                             'purchase_date' => null,
                             'warranty_expiration' => null,
-                            'type_id' => 4, // Accesorio
+                            'type_id' => 7, // Accesorio
                             'is_new' => false,
                             'invoice_path' => null,
                             'phone' => null,
@@ -326,7 +326,7 @@ class AssetSeeder extends Seeder
                             'storage' => null,
                             'purchase_date' => null,
                             'warranty_expiration' => null,
-                            'type_id' => 4, // Accesorio
+                            'type_id' => 8, // Accesorio
                             'is_new' => false,
                             'invoice_path' => null,
                             'phone' => null,
@@ -340,7 +340,7 @@ class AssetSeeder extends Seeder
                                 'status' => AssetStatus::AVAILABLE->value,
                                 'brand' => strtoupper($monitor ?? null),
                                 'is_new' => false,
-                                'type_id' => 4, // Accesorio
+                                'type_id' => 5, // Accesorio
                                 // ... resto de tus campos
                                 'created_at' => now(),
                                 'updated_at' => now(),

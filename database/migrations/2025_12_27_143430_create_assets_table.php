@@ -27,7 +27,10 @@ return new class extends Migration {
             $table->date('purchase_date')->nullable();
             $table->date('warranty_expiration')->nullable();
             $table->string('invoice_path')->nullable();
+            $table->text('notes')->nullable();
             $table->boolean('is_new')->default(true);
+
+            // $table->boolean('is_accessory')->default(false);
 
             $table->unsignedBigInteger('type_id')->nullable();
             $table->foreign('type_id')->references('id')->on('assets_type');

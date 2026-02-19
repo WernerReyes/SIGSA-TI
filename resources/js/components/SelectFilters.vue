@@ -30,8 +30,11 @@
 
                 <CommandList class="max-h-60">
                     <!-- SOPORTE WhenVisible -->
-                     
-                    <WhenVisible v-if="dataKey" :data="dataKey">
+                    <WhenVisible v-if="dataKey" :data="dataKey" :params="params ? {
+                        preserveUrl: true,
+
+                            data: params
+                    } : undefined" :always="always">
                         <template #fallback>
                             <!-- <CommandGroup> -->
                                 <!-- <CommandItem v-for="n in skeletonCount" :key="n" :value="`skeleton-${n}`">  -->
@@ -130,11 +133,14 @@ const props = withDefaults(
         emptyText?: string
         fullWidth?: boolean
         disabled?: boolean
+        always?: boolean
+        params?: Record<string, any>
     }>(),
     {
         label: 'Seleccionar',
         multiple: false,
         allowNull: false,
+        always: false,
         nullLabel: 'Sin asignar',
         showRefresh: true,
         showSelectedFocus: true,

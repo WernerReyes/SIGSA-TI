@@ -537,7 +537,7 @@ const applyFilters = () => {
             endDate: endDate || undefined,
         },
         {
-            only: ['assetsPaginated', 'filters'],
+            only: ['assetsPaginated', 'filters', 'stats'],
             preserveState: true,
             replace: true,
         }

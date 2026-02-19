@@ -15,6 +15,11 @@ enum AssetStatus: string
             fn (string $value) => !in_array($value, $exclude)
         );
     }
+
+    public static function implode(string $separator = ','): string
+    {
+        return implode($separator, self::values());
+    }
 }
 
 

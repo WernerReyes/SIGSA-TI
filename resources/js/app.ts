@@ -23,6 +23,9 @@ configureEcho({
 
 });
 
+// const currentDomain = window.location.hostname;
+// console.log('Current domain:', currentDomain);
+
 const page = usePage();
 
 watch(

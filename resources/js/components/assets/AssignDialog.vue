@@ -132,23 +132,25 @@
                             </VeeField>
                         </FieldGroup>
 
-
-                        <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
+                           
+                        <FieldGroup v-if="!asset?.type?.is_accessory">
                             <VeeField name="accessories" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel for="accessories">Accesorios</FieldLabel>
 
-                                    <SelectFilters :items="assetAccessories" data-key="accessories"
-                                        :show-selected-focus="false" :show-refresh="false"
-                                        :label="selectLabels(componentField.modelValue)" item-label="name"
+                                    <SelectFilters :params="{ asset_id: asset?.id }" always :items="assetAccessories"
+                                        data-key="accessories" :show-selected-focus="false" :show-refresh="false"
+                                        :label="selectLabels(componentField.modelValue)" item-label="full_name"
                                         item-value="id" :multiple="true" selected-as-label
                                         :default-value="componentField.modelValue"
                                         @select="(values) => setFieldValue('accessories', values)"
                                         filter-placeholder="Buscar accesorio..."
                                         empty-text="No se encontraron accesorios">
-                                         <template #item="{ item }">
-                                            {{item.full_name}}
-                                         </template>
+                                        <template #item="{ item }">
+                                            
+                                            <component :is="assetTypeOp(item?.type?.name)?.icon"  />
+                                            {{ item.full_name }}
+                                        </template>
                                     </SelectFilters>
 
                                     <FieldError v-if="errors.length" :errors="errors" />
@@ -158,7 +160,7 @@
 
 
 
-                        <FieldGroup v-if="asset?.type?.name !== TypeName.ACCESSORY">
+                        <FieldGroup v-if="!asset?.type?.is_accessory">
                             <VeeField name="comment" v-slot="{ componentField, errors }">
                                 <Field :data-invalid="!!errors.length">
                                     <FieldLabel for="comment">Observaciones</FieldLabel>
@@ -350,11 +352,11 @@ const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
     const accessoriesIds = values.accessories || [];
-    const type = asset.value?.type?.name;
+    const type = asset.value?.type;
 
     const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
-    if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type as TypeName)) {
-        const includeCharger = accessories.some(acc => acc.name.toLowerCase().trim().includes('cargador'));
+    if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type?.name as TypeName)) {
+        const includeCharger = accessories.some(acc => [TypeName.CELL_PHONE_CHARGER, TypeName.LAPTOP_CHARGER].includes(acc.type.name));
         if (!includeCharger) {
             toast.error('Debe incluir el cargador en los accesorios del equipo.');
             isSubmitting.value = false;
@@ -363,15 +365,15 @@ const onSubmit = async (values: Record<string, any>) => {
     }
 
     const only = ['assetsPaginated', 'stats'];
-    if (type === TypeName.ACCESSORY || accessories.find(acc => accessoriesIds.includes(acc.id))) {
-        only.push('accessories');
-    }
+    // if (type?.is_accessory || accessories.find(acc => accessoriesIds.includes(acc.id))) {
+    //     // only.push('accessories');
+    // }
 
     router.post('/assets/assign', {
         asset_id: asset.value?.id,
         assigned_to_id: values.assigned_to_id,
         assign_date: values.assign_date.toDateString(),
-        comment: type === TypeName.ACCESSORY ? null : values.comment,
+        comment: type?.is_accessory ? null : values.comment,
         accessories: values.accessories,
     }, {
         only,
@@ -382,7 +384,7 @@ const onSubmit = async (values: Record<string, any>) => {
         onFlash: (flash) => {
             if (flash.error) return;
             if (flash.assignment_id) {
-                const type = asset.value?.type?.name;
+                const type = asset.value?.type;
                 if (type) {
                     downloadAssignmentDocument(flash.assignment_id as number, type);
                 }
@@ -447,4 +449,3 @@ const selectLabels = (modelValue: Array<number>) => {
 
 
 </script>
-
