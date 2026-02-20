@@ -18,14 +18,14 @@
                         />
 
                         <VisAxis
-                            type="x"
+                            type="y"
                             :tick-line="false"
                             :domain-line="false"
                             :grid-line="true"
-                            :tick-values="[100, 200, 300, 400, 500]"
+                            :tick-values="[1, 2, 3, 4, 5]"
                         />
                         <VisAxis
-                            type="y"
+                            type="x"
                             :tick-line="false"
                             :domain-line="false"
                             :grid-line="true"
