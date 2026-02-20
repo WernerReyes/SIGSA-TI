@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useApp } from '@/composables/useApp';
 import { type NavItem } from '@/types';
-import { Code, CodeXml, FileText, Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
+import { CodeXml, FileText, Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -22,18 +22,24 @@ const { isFromTI, isFromRRHH } = useApp();
 
 
 const mainNavItems = computed<NavItem[]>(() => {
-    const items: NavItem[] = [
-        {
+    const items: NavItem[] = [];
+
+    // if (!isFromRRHH.value) { // SYSTEM_TI
+        items.push({
             title: 'Dashboard',
-            href: "/dashboard",
+            href:  isFromRRHH ? "/dashboard-rrhh" : "/dashboard",
             icon: LayoutGrid,
-        },
-        {
+        });
+    // }
+
+    if (isFromTI.value) { // SYSTEM_TI or RRHH
+        items.push({
             title: 'Tickets',
             href: "/tickets",
             icon: Tag,
-        },
-    ];
+        });
+
+    }
 
     if (isFromTI.value || isFromRRHH.value) { // SYSTEM_TI or RRHH
         items.push({

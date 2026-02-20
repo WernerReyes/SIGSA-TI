@@ -12,6 +12,7 @@ use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Enums\Alert\AlertType;
 use App\Enums\Alert\EntityType;
 use App\Enums\Asset\AssetStatus;
+use App\Enums\Asset\AssetTypeCategory;
 use App\Enums\Asset\AssetTypeEnum;
 use App\Enums\AssetAssignment\ReturnReason;
 use App\Enums\AssetHistory\AssetHistoryAction;
@@ -53,12 +54,12 @@ class AssetService
 
             return Asset::query()
                 ->with([
-                    'type:id,name,is_accessory',
+                    'type:id,name,doc_category',
                     'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                     'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.assignedTo.department:id,name',
                     'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-                    'currentAssignment.childrenAssignments.asset.type:id,name,is_accessory',
+                    'currentAssignment.childrenAssignments.asset.type:id,name,doc_category',
                     'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
                     'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
@@ -87,7 +88,7 @@ class AssetService
         try {
             return Asset::
                 select('id', 'name', 'model', 'brand', 'status', 'type_id')
-                ->with('type:id,name,is_accessory')
+                ->with('type:id,name,doc_category')
                 ->where('status', AssetStatus::AVAILABLE->value)->get();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener los equipos disponibles');
@@ -99,7 +100,7 @@ class AssetService
         $asset = null;
         if ($asset_id) {
             $asset = Asset::select('id', 'brand', 'type_id')
-                ->with('type:id,name,is_accessory')
+                ->with('type:id,name,doc_category')
                 ->find($asset_id);
             if (!$asset) {
                 throw new NotFoundHttpException('Activo no encontrado');
@@ -108,13 +109,13 @@ class AssetService
         try {
             return Asset::query()
                 ->select('id', 'name', 'model', 'brand', 'serial_number', 'status', 'type_id')
-                ->with('type:id,name')
+                ->with('type:id,name,doc_category')
                 ->isFromRRHH()
                 ->where('status', AssetStatus::AVAILABLE->value)
 
                 // Siempre accesorios
                 ->whereHas('type', function ($q) {
-                    $q->where('is_accessory', true);
+                    $q->where('doc_category', AssetTypeCategory::ACCESSORY->value);
                 })
 
                 // 👇 Solo aplica la marca si el tipo es cargador
@@ -137,7 +138,7 @@ class AssetService
 
                     // Otros accesorios → sin filtro por marca
                     $query->orWhereHas('type', function ($q) {
-                        $q->where('is_accessory', true)
+                        $q->where('doc_category', AssetTypeCategory::ACCESSORY->value)
                             ->where('name', 'not like', '%cargador%');
                     });
                 })
@@ -154,7 +155,7 @@ class AssetService
 
 
         return $asset->load(
-            'type:id,name,is_accessory',
+            'type:id,name,doc_category',
 
             'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at',
             'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
@@ -176,7 +177,7 @@ class AssetService
     {
         try {
             return AssetAssignment::query()
-                ->with('asset:id,name,brand,model,serial_number,type_id', 'asset.type:id,name,is_accessory', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,serial_number,type_id', 'childrenAssignments.asset.type:id,name,is_accessory')
+                ->with('asset:id,name,brand,model,serial_number,type_id', 'asset.type:id,name,doc_category', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,serial_number,type_id', 'childrenAssignments.asset.type:id,name,doc_category')
                 ->where('assigned_to_id', $user_id)
                 // ->whereNull('returned_at')
                 ->where('parent_assignment_id', null)
@@ -290,9 +291,8 @@ class AssetService
     {
 
 
-        if ($this->isFromRRHH() && $dto->type_id) {
-            $type = AssetType::find($dto->type_id);
-            if ($type && !in_array($type->name, ['Celular', 'Accesorio'])) {
+        if ($this->isFromRRHH()) {
+            if (!in_array($dto->type_id, AssetTypeEnum::RRHHTypes())) {
                 throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Accesorio');
             }
         }
@@ -547,7 +547,10 @@ class AssetService
                     ]);
 
                     $stringImage = count($images) > 0 ? implode(',', $images) : '';
-                    $description .= " con fecha de inicio '" . date('Y-m-d', strtotime($dto->date)) . "'" . " '" . $stringImage . "'";
+                    $description .= " con fecha de inicio '" . date('Y-m-d', strtotime($dto->date)) . "'";
+                    if ($stringImage) {
+                        $description .= "'" . $stringImage . "'";
+                    }
                 }
 
                 AssetHistory::create([
@@ -1051,7 +1054,7 @@ class AssetService
             $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
-            $template->setValue('department', strtoupper($assignment->assignedTo->department->name ?? 'N/A'));
+            $template->setValue('department', strtoupper($assignment->assignedTo->charge->descripcion_cargo ?? 'N/A'));
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
             $template->setValue('brand', $asset->brand);
             $template->setValue('model', $asset->model);

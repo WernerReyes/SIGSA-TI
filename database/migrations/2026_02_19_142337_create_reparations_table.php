@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('asset_reparations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('asset_id');
-            $table->foreign('asset_id')->references('id')->on('assets')->onDelete('cascade');
+            $table->foreign('asset_id')->references('id')->on('assets');
             
             $table->text('description');
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reparations');
+        Schema::dropIfExists('asset_reparations');
     }
 };

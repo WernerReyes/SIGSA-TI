@@ -80,12 +80,14 @@
                                         <div v-if="repair.image_paths && repair.image_paths.length > 0" class="flex md:flex-row flex-col gap-2 mt-2">
                                             <img v-for="img in repair.image_paths" :key="img" :src="getImageUrl(img)" class="w-20 h-20 object-cover rounded border cursor-pointer hover:ring-2 hover:ring-yellow-400 transition" :alt="'Imagen reparación ' + repair.id"
                                               @click="() => {
-                                                  const imageUrl = getImageUrl(img);
-                                                  if (imageUrl) {
-                                                      viewDocument(imageUrl);
-                                                  } else {
-                                                      toast.error('No se pudo cargar la imagen.');
-                                                  }
+                                                console.log(repair.image_paths.map(getImageUrl));
+                                                  images = repair.image_paths.map(getImageUrl);
+                                                //   const imageUrl = getImageUrl(img);
+                                                //   if (imageUrl) {
+                                                //       viewDocument(imageUrl);
+                                                //   } else {
+                                                //       toast.error('No se pudo cargar la imagen.');
+                                                //   }
                                               }"
                                             />
                                         </div>
@@ -480,7 +482,7 @@
             </ScrollArea>
 
 
-
+                
         </DialogContent>
     </Dialog>
 
@@ -509,6 +511,14 @@
 
     </Dialog>
 
+    <Carousel  type="dialog" :items="images" @close="images = []" >
+        <template #item="{ item }">
+           <div class="w-full h-11/12! flex items-center justify-center">
+
+               <img :src="item" class="m-auto max-h-200 object-contain" />
+            </div>
+        </template>
+    </Carousel>
 </template>
 
 <script setup lang="ts">
@@ -561,10 +571,12 @@ import { TypeName } from '@/interfaces/assetType.interface';
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 import { Wrench } from 'lucide-vue-next';
 import { getImageUrl } from '../../lib/utils';
+import Carousel from '../Carousel.vue';
 
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
+    const images = ref<string[]>([]);
 
 const { downloadAssignmentDocument, downloadReturnAssignmentDocument } = useAsset();
 

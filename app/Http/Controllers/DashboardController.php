@@ -23,6 +23,18 @@ class DashboardController extends Controller
             'recent_contract_notifications' => Inertia::once(fn() => $dashboardService->recentContractNotifications())
         ]);
     }
+
+
+    public function renderRRHHView(Request $request)
+    {
+        $service = new \App\Services\RRHHAssetsService();
+        $assets = $service->getRRHHAssets();
+        $stats = $service->getStats();
+        return Inertia::render('DashboardRRHH', [
+            'assets' => $assets,
+            'stats' => $stats
+        ]);
+    }
 }
 
 

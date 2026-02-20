@@ -74,7 +74,7 @@
                                                     ? ' - ' :
                                                     ''}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
                                                     || ''}`
-                                            : 'Seleccionar rango de fechas' }}
+                                                : 'Seleccionar rango de fechas' }}
 
 
                                             <ChevronDownIcon />
@@ -165,13 +165,29 @@
                                     v-for="(part, index) in parsedStatusChange(history.description)">
                                     <span v-if="part.type === 'text'" class="text-xs text-muted-foreground mt-2">{{
                                         part.content }}</span>
-                                    <Badge v-else :class="part.bg" class="mx-1">
+                                    <Badge v-else-if="part.type === 'badge'" :class="part.bg" class="mx-1">
                                         <component :is="part.icon" class="size-4" />
                                         {{ part.label }}
                                     </Badge>
+                                    <div v-else-if="part.type === 'images'" class="flex flex-wrap gap-2 mt-2">
+                                        <div v-for="(img, imgIndex) in part.list" :key="imgIndex"
+                                            class="flex flex-col gap-2">
+                                            <!-- Solo se muestra la imagen si NO ha tenido error -->
+                                            <img v-if="img && !imageErrors[`${history.id}-${imgIndex}`]" :src="img"
+                                                alt="Evidencia" class="h-20 object-cover rounded-md border"
+                                                @error="handleImgError(`${history.id}-${imgIndex}`)" />
+
+                                            <!-- Solo se muestra el Badge si ha ocurrido un error -->
+                                            <div v-else
+                                                class="h-20 w-32 flex items-center justify-center rounded-md border bg-muted/40 text-muted-foreground flex-col">
+                                                <ImageOff  />
+                                                <span class="text-xs">No disponible</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </template>
 
-                             
+
                                 <template v-else-if="history.action === AssetHistoryAction.ASSIGNED">
                                     <template v-if="includes(history.description, ['junto con los accesorios'])"
                                         v-for="(part, index) in parsedAssignmentWithAccessories(history.description)"
@@ -408,9 +424,10 @@ import type { Paginated, Variant } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone } from '@internationalized/date';
 import { format } from 'date-fns';
-import { DownloadIcon, History, MonitorSmartphone, Pencil, RefreshCcw, User, XCircle } from 'lucide-vue-next';
+import { Calendar, DownloadIcon, History, ImageOff, MonitorSmartphone, Pencil, RefreshCcw, User, XCircle } from 'lucide-vue-next';
 import type { DateRange } from 'reka-ui';
 import { computed, ref, watch, type Component } from 'vue';
+import { getImageUrl } from '@/lib/utils';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -421,6 +438,8 @@ const { isLoading } = useApp();
 const actions = ref<Array<AssetHistoryAction>>([]);
 
 const dateRange = ref<DateRange | undefined>(undefined);
+
+const imageErrors = ref<Record<string, boolean>>({});
 
 const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
 
@@ -435,6 +454,9 @@ const historiesPaginated = computed<Paginated<AssetHistory>>(() => {
 });
 
 
+const handleImgError = (index: string) => {
+    imageErrors.value[index] = true;
+};
 
 const parsedUpdateAction = (description: string) => {
     const parts = description.split(`'`);
@@ -454,10 +476,11 @@ const parsedUpdateAction = (description: string) => {
 };
 
 const parsedStatusChange = (description: string): Array<(Partial<AssetStatusOption> & {
-    type: 'badge' | 'text';
+    type: 'badge' | 'text' | 'images';
     content?: string;
+    list?: string[];
 })> => {
-    const parts = description.split(`'`);
+    const parts = description.split(`'`).filter(part => part.trim() !== '');
     const parsed = parts.map((part) => {
         const statusOpt = Object.values(assetStatusOptions).find(opt => opt.label.trim().toLowerCase() === part.trim().toLowerCase());
         if (statusOpt) {
@@ -466,13 +489,44 @@ const parsedStatusChange = (description: string): Array<(Partial<AssetStatusOpti
             return { type: 'text' as const, content: part };
         }
     });
-    if (parsed.length !== 5) {
-        console.log('Error parsing status change description:', parsed);
+    if (parsed.length !== 4) {
+        // console.log(parsed);
+        const approved = parsed.slice(0, 4);
+
+        const keepParsed = parsed.slice(4, parsed.length).map((p, i) => {
+            if (i == 1 || i == 3) {
+                return { type: 'badge' as const, label: p.content, bg: 'bg-secondary/10 text-secondary', icon: i == 1 ? Pencil : Calendar };
+            }
+
+            if (i == 4) {
+                const images = p.content?.split(',').map((img: string) => getImageUrl(img.trim()) || '').filter((img: string) => img !== '');
+                if (images?.length) {
+                    return { type: 'images' as const, list: images };
+                }
+
+            }
+
+            return p;
+        });
+        
+        const merged = [...approved, ...keepParsed];
+    
+
+        if (merged.length === 9 || merged.length === 6) {
+            return merged as Array<(Partial<AssetStatusOption> & {
+                type: 'badge' | 'text' | 'images';
+                content?: string;
+                list?: string[];
+            })>;
+        }
+
+
+
         return [{ type: 'text' as const, content: description }];
     }
 
     return parsed as Array<(Partial<AssetStatusOption> & {
-        type: 'badge' | 'text';
+        type: 'badge' | 'text' | 'images';
         content?: string;
     })>;
 

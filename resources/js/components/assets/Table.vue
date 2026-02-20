@@ -674,6 +674,7 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'type.name',
         id: 'type',
         header: 'Tipo',
+        size: 200,
         cell: info => h(
             'div',
             { class: 'flex items-center gap-2' },

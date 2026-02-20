@@ -277,7 +277,7 @@ class Asset extends Model
 
     public function reparations()
     {
-        return $this->hasMany(AssetReparation::class, 'asset_id')->orderBy('date', 'desc');
+        return $this->hasMany(AssetReparation::class, 'asset_id')->orderBy('date', 'desc')->orderBy('id', 'desc');
     }
 
     public function histories()

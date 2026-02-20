@@ -6,6 +6,8 @@ use App\Models\AssetType;
 use App\Services\AssetTypeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\CssSelector\Exception\InternalErrorException;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AssetTypeController extends Controller
 {
@@ -35,6 +37,8 @@ class AssetTypeController extends Controller
                 'assetType' => null,
                 'error' => 'Error al crear el tipo de activo: ' . $e->getMessage(),
             ]);
+
+            throw new InternalErrorException('Error al crear el tipo de activo: ' . $e->getMessage());
         }
 
         return back();
@@ -58,6 +62,8 @@ class AssetTypeController extends Controller
                 'assetType' => null,
                 'error' => 'Error al actualizar el tipo de activo: ' . $e->getMessage(),
             ]);
+
+            throw new InternalErrorException('Error al actualizar el tipo de activo: ' . $e->getMessage());
         }
 
         return back();
@@ -65,6 +71,10 @@ class AssetTypeController extends Controller
 
     public function destroy(AssetType $type)
     {
+        if (!$type->is_deletable) {
+            throw new BadRequestException('Este tipo de activo no se puede eliminar');
+        }
+
         try {
             $type->delete();
             Inertia::flash([
@@ -74,6 +84,8 @@ class AssetTypeController extends Controller
             Inertia::flash([
                 'error' => 'Error al eliminar el tipo de activo: ' . $e->getMessage(),
             ]);
+
+            throw new InternalErrorException('Error al eliminar el tipo de activo: ' . $e->getMessage());
         }
         return back();
 

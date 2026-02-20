@@ -50,7 +50,7 @@ class AssetController extends Controller
             'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
             'users' => Inertia::optional(fn() => $userService->getAllBasicInfo())->once(),
             'departments' => Inertia::optional(fn() => $departmentService->getBasicInfo())->once(),
-            'types' => Inertia::optional(fn() => $assetTypeService->getTypes())->once(),
+            'types' => Inertia::optional(fn() => $assetTypeService->getBasicTypes())->once(),
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories($assetId))->once(),
             'assetsPaginated' => Inertia::once(fn() => $assetService->getPaginated($filters)),
             'stats' => fn() => Inertia::once(fn() => $assetService->getStats($filters)),

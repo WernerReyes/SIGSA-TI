@@ -235,28 +235,17 @@ import {
 } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { useAsset } from '@/composables/useAsset';
+import { type Alert } from '@/interfaces/alert.interface';
 import { type Asset } from '@/interfaces/asset.interface';
 import { ReturnReason, returnReasonOp, returnReasonOptions, type AssetAssignment } from '@/interfaces/assetAssignment.interface';
-import { type User } from '@/interfaces/user.interface';
-import { router, usePage, WhenVisible } from '@inertiajs/vue3';
-import { CalendarDateTime, DateValue, getLocalTimeZone, today, toLocalTimeZone } from '@internationalized/date';
+import { assetTypeOp } from '@/interfaces/assetType.interface';
+import { router, usePage } from '@inertiajs/vue3';
+import { CalendarDateTime, DateValue, getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
-import { Check, ChevronDownIcon, Info, RefreshCcw, Undo2 } from 'lucide-vue-next';
-import { useAsset } from '@/composables/useAsset';
-import { assetTypeOp } from '@/interfaces/assetType.interface';
-import { type Alert } from '@/interfaces/alert.interface';
+import { Check, ChevronDownIcon, RefreshCcw } from 'lucide-vue-next';
 
 
 const asset = defineModel<Asset | null>('asset');

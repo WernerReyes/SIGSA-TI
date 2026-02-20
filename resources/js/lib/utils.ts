@@ -87,3 +87,4 @@ export const getImageUrl = (path: string) => {
     const baseUrl = window.location.origin; 
     return `${baseUrl}/storage/${path}`;
 };
+

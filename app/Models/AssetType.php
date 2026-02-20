@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Asset\AssetTypeCategory;
 use App\Enums\Asset\AssetTypeEnum;
 use App\Enums\Department\Allowed;
 use Illuminate\Database\Eloquent\Model;
@@ -13,10 +14,14 @@ class AssetType extends Model
 
     protected $fillable = [
         'name',
-        'is_accessory',
+        // 'is_accessory',
+        'doc_category',
         'created_at',
         'updated_at',
+        'is_deletable'
     ];
+
+    protected $appends = ['is_accessory'];
 
     public function scopeIsFromRRHH($query)
     {
@@ -24,5 +29,10 @@ class AssetType extends Model
         return $query->when($isFromRRHH, function ($q) {
             $q->whereIn('id', AssetTypeEnum::RRHHTypes());
         });
+    }
+
+    public function getIsAccessoryAttribute()
+    {
+        return $this->doc_category === AssetTypeCategory::ACCESSORY->value;
     }
 }

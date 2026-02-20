@@ -1,4 +1,5 @@
 <?php
+use App\Enums\Department\Allowed;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
@@ -12,6 +13,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     //
     Route::get('/dashboard', [DashboardController::class, 'renderView'])->name('dashboard');
+
+    Route::middleware('department:' . Allowed::RRHH->value)->group(function () {
+        Route::get('/dashboard-rrhh', [DashboardController::class, 'renderRRHHView'])->name('dashboard.rrhh');
+    });
 
     require __DIR__ . '/ticket.php';
     require __DIR__ . '/assets.php';
