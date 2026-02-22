@@ -43,6 +43,17 @@ return new class extends Migration {
             // $table->foreign('assigned_to_id')->references('staff_id')->on('ost_staff');
 
             $table->timestamps();
+
+            $table->index(['type_id', 'status']);
+            $table->index(['type_id', 'warranty_expiration']);
+            $table->index(['type_id', 'brand']);
+            
+
+
+//             CREATE INDEX idx_assets_type_status ON assets(type_id, status);
+// CREATE INDEX idx_assets_warranty ON assets(type_id, warranty_expiration);
+// CREATE INDEX idx_assets_brand ON assets(type_id, brand);
+// CREATE INDEX idx_assignments_active ON assets_assignments(asset_id, returned_at);
         });
     }
 

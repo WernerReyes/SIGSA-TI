@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import type {
-    ChartConfig,
-} from "@/components/ui/chart"
-// import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import type { ChartConfig } from "@/components/ui/chart"
 import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue"
-
-import { TrendingUp } from "lucide-vue-next"
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -21,53 +14,49 @@ import {
     ChartTooltipContent,
     componentToString,
 } from "@/components/ui/chart"
+import { type RRHHDashboard } from "@/interfaces/dashboard.interface"
 
-const description = "An area chart with axes"
+const { monthlyAssignments } = defineProps<{
+    title: string;
+  
+    monthlyAssignments: RRHHDashboard['monthlyAssignments'];
+}>()
 
-const chartData = [
-    { month: 1, monthLabel: "January", desktop: 186, mobile: 80 },
-    { month: 2, monthLabel: "February", desktop: 305, mobile: 200 },
-    { month: 3, monthLabel: "March", desktop: 237, mobile: 120 },
-    { month: 4, monthLabel: "April", desktop: 73, mobile: 190 },
-    { month: 5, monthLabel: "May", desktop: 209, mobile: 130 },
-    { month: 6, monthLabel: "June", desktop: 214, mobile: 140 },
-]
-
-type Data = typeof chartData[number]
+type Data = typeof monthlyAssignments[number]
 
 const chartConfig = {
-    desktop: {
-        label: "Desktop",
+    smartphones: {
+        label: "Teléfonos",
         color: "var(--chart-1)",
     },
-    mobile: {
-        label: "Mobile",
+    chargers: {
+        label: "Cargadores",
         color: "var(--chart-2)",
     },
 } satisfies ChartConfig
 
 const svgDefs = `
-  <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
+  <linearGradient id="fillSmartphones" x1="0" y1="0" x2="0" y2="1">
     <stop
       offset="5%"
-      stop-color="var(--color-desktop)"
+            stop-color="var(--color-smartphones)"
       stop-opacity="0.8"
     />
     <stop
       offset="95%"
-      stop-color="var(--color-desktop)"
+            stop-color="var(--color-smartphones)"
       stop-opacity="0.1"
     />
   </linearGradient>
-  <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
+  <linearGradient id="fillChargers" x1="0" y1="0" x2="0" y2="1">
     <stop
       offset="5%"
-      stop-color="var(--color-mobile)"
+            stop-color="var(--color-chargers)"
       stop-opacity="0.8"
     />
     <stop
       offset="95%"
-      stop-color="var(--color-mobile)"
+            stop-color="var(--color-chargers)"
       stop-opacity="0.1"
     />
   </linearGradient>
@@ -77,30 +66,30 @@ const svgDefs = `
 <template>
     <Card>
         <CardHeader>
-            <CardTitle>Area Chart - Gradient</CardTitle>
+            <CardTitle>{{ title }}</CardTitle>
 
         </CardHeader>
         <CardContent>
-            <ChartContainer :config="chartConfig">
-                <VisXYContainer :data="chartData" :svg-defs="svgDefs">
-                    <VisArea :x="(d: Data) => d.month" :y="[(d: Data) => d.mobile, (d: Data) => d.desktop]"
-                        :color="(d: Data, i: number) => ['url(#fillMobile)', 'url(#fillDesktop)'][i]" :opacity="0.4" />
-                    <VisLine :x="(d: Data) => d.month" :y="[(d: Data) => d.mobile, (d: Data) => d.mobile + d.desktop]"
-                        :color="(d: Data, i: number) => [chartConfig.mobile.color, chartConfig.desktop.color][i]"
+            <ChartContainer :config="chartConfig" class="h-72 w-full">
+                <VisXYContainer :data="monthlyAssignments" :svg-defs="svgDefs">
+                    <VisArea :x="(d: Data) => d.month" :y="[(d: Data) => d.chargers, (d: Data) => d.smartphones]"
+                        :color="(d: Data, i: number) => ['url(#fillChargers)', 'url(#fillSmartphones)'][i]" :opacity="0.4" />
+                    <VisLine :x="(d: Data) => d.month" :y="[(d: Data) => d.chargers, (d: Data) => d.smartphones]"
+                        :color="(d: Data, i: number) => [chartConfig.chargers.color, chartConfig.smartphones.color][i]"
                         :line-width="1" />
                     <VisAxis type="x" :x="(d: Data) => d.month" :tick-line="false" :domain-line="false"
-                        :grid-line="false" :num-ticks="6" :tick-format="(d: number, index: number) => {
-                            return chartData[index].monthLabel.slice(0, 3)
-                        }" />
+                        :grid-line="false" :num-ticks="monthlyAssignments.length"
+                        :tick-format="(value: number) => monthlyAssignments.find((d) => d.month === value)?.label || ''" />
                     <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false"
                         :tick-format="(d: number, index: number) => ''" />
                     <ChartTooltip />
                     <ChartCrosshair
-                        :template="componentToString(chartConfig, ChartTooltipContent, { labelKey: 'monthLabel' })"
-                        :color="(d: Data, i: number) => [chartConfig.mobile.color, chartConfig.desktop.color][i % 2]" />
+                        :template="componentToString(chartConfig, ChartTooltipContent, { labelKey: 'label' })"
+                        :color="(d: Data, i: number) => [chartConfig.chargers.color, chartConfig.smartphones.color][i % 2]" />
                 </VisXYContainer>
             </ChartContainer>
         </CardContent>
 
     </Card>
 </template>
+

@@ -2,11 +2,12 @@
     <Dialog v-if="type === 'dialog'" v-model:open="open" @update:open="
         if (!open) {
             $emit('close');
+            currentIndex = 0;
         }
     ">
         <DialogContent class="sm:max-w-11/12 flex items-center justify-center bg-transparent dialog-content border-0 h-fit">
          
-             <Carousel class="w-full">
+             <Carousel :key="`dialog-${currentIndex}-${items.length}`" :opts="carouselOptions" class="w-full">
         <CarouselContent>
             <CarouselItem v-for="(item, i) in items" :key="i">
                 <div class="h-full w-full">
@@ -28,7 +29,7 @@
     </Dialog>
 
 
-    <Carousel v-else class="w-full max-w-xs">
+    <Carousel v-else :key="`default-${currentIndex}-${items.length}`" :opts="carouselOptions" class="w-full max-w-xs">
         <CarouselContent>
             <CarouselItem v-for="(item, i) in items" :key="i">
                 <div class="p-1">
@@ -58,7 +59,14 @@ import {
     CarouselPrevious,
 } from '@/components/ui/carousel'
 import { Dialog, DialogContent } from './ui/dialog';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+
+
+const currentIndex = defineModel<number>('current-index',{
+    default: 0,
+    required: false,
+})
+
 
 const { type, items } = defineProps<{
     type: 'default' | 'dialog';
@@ -71,6 +79,12 @@ defineEmits<{
     (e: 'close'): void;
 }>()
 const open = ref(false);
+
+
+
+const carouselOptions = computed(() => ({
+    startIndex: currentIndex.value,
+}));
 
 watch(() => items, (items) => {
     if (type === 'dialog' && items.length) {

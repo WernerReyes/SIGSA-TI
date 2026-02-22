@@ -29,7 +29,7 @@
             </div>
         </CardHeader>
         <CardContent class="pt-0">
-            <ChartContainer :config="chartConfig" class="h-[20rem] aspect-auto">
+            <ChartContainer :config="chartConfig" class="h-80 aspect-auto">
                 <template #default>
                     <div class="flex-1">
                         <VisXYContainer :data="dailySlaData" :margin="{ top: 12, bottom: 32, left: 40, right: 16 }"
@@ -72,6 +72,7 @@ import { VisAxis, VisLine, VisScatter, VisScatterSelectors, VisTooltip, VisXYCon
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DateRange } from 'reka-ui';
+import { parseDateOnly } from '@/lib/utils'
 import { computed, ref, watch } from 'vue';
 
 const { slaCompliance } = defineProps<{
@@ -105,7 +106,7 @@ watch(dateRange, (newRange) => {
 
 const dailySlaData = computed(() => {
     return slaCompliance.daily.map(d => ({
-        date: format(d.date, 'eee MMM dd yyyy', {
+        date: format(parseDateOnly(d.date), 'eee MMM dd yyyy', {
             locale: es
         }),
         complied: d.complied,

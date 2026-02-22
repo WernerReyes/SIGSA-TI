@@ -190,7 +190,7 @@ class DashboardService
         ")
             ->whereBetween('resolved_at', [$startDate, $endDate])
             ->whereNotNull('sla_resolution_due_at')
-            ->where('status', TicketStatus::CLOSED->value)
+            ->where('status', TicketStatus::RESOLVED->value)
             ->groupByRaw("DATE(resolved_at)")
             ->orderBy("day")
             ->get();
@@ -200,6 +200,7 @@ class DashboardService
         // Fill in missing dates with 0 compliance
         $period = Carbon::parse($from)->daysUntil(Carbon::parse($to));
         foreach ($period as $date) {
+            
             $dayData = $data->firstWhere('day', $date->toDateString());
 
             $complied = $dayData ? (int) $dayData->complied : 0;
@@ -214,6 +215,8 @@ class DashboardService
                 'breach_rate' => $total > 0 ? round(($breached / $total) * 100, 1) : 0,
             ];
         }
+
+        ds($result);
 
         return [
             'range' => [

@@ -37,6 +37,8 @@ return new class extends Migration {
             $table->index('assigned_to_id');
             
             $table->timestamps();
+
+            $table->index(['asset_id', 'returned_at']);
         });
     }
 

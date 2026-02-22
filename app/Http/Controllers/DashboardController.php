@@ -1,9 +1,10 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Enums\Department\Allowed;
 use App\Http\Controllers\Controller;
 use App\Services\DashboardService;
-use App\Services\SlaMetricsService;
+use App\Services\RRHHDashBoardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -11,6 +12,10 @@ class DashboardController extends Controller
 {
     public function renderView(Request $request, DashboardService $dashboardService)
     {
+        $isFromRRHH = auth()->user()->dept_id === Allowed::RRHH->value;
+        if ($isFromRRHH) {
+            return redirect()->route('dashboard.rrhh');
+        }
 
         $start = $request->input('start_date', now()->startOfWeek()->toDateString());
         $end = $request->input('end_date', now()->endOfWeek()->toDateString());
@@ -25,14 +30,20 @@ class DashboardController extends Controller
     }
 
 
-    public function renderRRHHView(Request $request)
+    public function renderRRHHView(RRHHDashBoardService $service)
     {
-        $service = new \App\Services\RRHHAssetsService();
-        $assets = $service->getRRHHAssets();
-        $stats = $service->getStats();
+    
         return Inertia::render('DashboardRRHH', [
-            'assets' => $assets,
-            'stats' => $stats
+            'stats' => Inertia::once(fn() => $service->getStats()),
+            'assetsByBrand' => Inertia::once(fn() => $service->getSmartphonesByBrand()),
+            'assetsByStatus' => Inertia::once(fn() => $service->getAssetByStatus()),
+            'smartphonesWarrantyStatus' => Inertia::once(fn() => $service->getSmartphonesWarrantyStatus()),
+            'assignedProfiRate' => Inertia::once(fn() => $service->getAssignedProfiRate()),
+            'monthlyAssignments' => Inertia::once(fn() => $service->getMonthlyAssignments()),
+            'monthlyAcquisitions' => Inertia::once(fn() => $service->getMonthlyAcquisitions()),
+            'assetsByDepartment' => Inertia::once(fn() => $service->getAssetsByDepartment()),
+            'recentAssets' => Inertia::once(fn() => $service->getRecentAssets()),
+
         ]);
     }
 }

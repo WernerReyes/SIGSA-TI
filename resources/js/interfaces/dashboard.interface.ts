@@ -1,7 +1,8 @@
-import { type TicketPriority } from "./ticket.interface";
+import { type AssetStatus } from './asset.interface';
+import { type TicketPriority } from './ticket.interface';
 
 export interface DashboardStats {
-    open_tickets:{
+    open_tickets: {
         total: number;
         unassigned: number;
         trend_percentage: number;
@@ -28,7 +29,10 @@ export interface DashboardStats {
     };
 }
 
-export interface DashboardTicketsByPriority extends Record<TicketPriority, number> {}
+export interface DashboardTicketsByPriority extends Record<
+    TicketPriority,
+    number
+> {}
 
 export interface DashboardSLACompliance {
     range: {
@@ -42,4 +46,47 @@ export interface DashboardSLACompliance {
         compliance_rate: number;
         breach_rate: number;
     }>;
+}
+
+export interface RRHHDashboard {
+    stats: {
+        total: number;
+        smartphones: number;
+        chargers: number;
+        decommissioned: number;
+        expired_warranty: number;
+        assigned: number;
+        under_maintenance: number;
+    };
+    assetsByBrand: Array<{
+        brand: string;
+        total: number;
+    }>;
+    assetsByStatus: Record<AssetStatus, {
+        smartphones: number;
+        chargers: number;
+        total: number;
+       
+    }>;
+    smartphonesWarrantyStatus: Record<'in_warranty' | 'expiring_soon' | 'expired' | 'unknown', number>;
+    assignedProfiRate: number;
+    monthlyAssignments: Array<{
+        month: number;
+        label: string;
+        smartphones: number;
+        chargers: number;
+    }>;
+    monthlyAcquisitions: Array<{
+        month: number;
+        label: string;
+        smartphones: number;
+        chargers: number;
+    }>;
+    assetsByDepartment: Array<{
+        department: string;
+        smartphones: number;
+        chargers: number;
+    }>;
+    recentAssets: Asset[];
+
 }

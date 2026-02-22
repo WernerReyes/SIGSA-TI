@@ -22,7 +22,6 @@ class UpdateStatusRequest extends FormRequest
      */
     public function rules(): array
     {
-        ds("llegue al request", $this->all());
         return [
             'status' => 'required|string|in:'. AssetStatus::implode(),
             'description' => 'required_if:status,'.AssetStatus::IN_REPAIR->value.'|string|min:3|max:400',

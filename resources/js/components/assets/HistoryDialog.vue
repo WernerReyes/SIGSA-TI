@@ -174,8 +174,14 @@
                                             class="flex flex-col gap-2">
                                             <!-- Solo se muestra la imagen si NO ha tenido error -->
                                             <img v-if="img && !imageErrors[`${history.id}-${imgIndex}`]" :src="img"
-                                                alt="Evidencia" class="h-20 object-cover rounded-md border"
-                                                @error="handleImgError(`${history.id}-${imgIndex}`)" />
+                                                alt="Evidencia" class="h-20 object-cover rounded-md border cursor-pointer hover:ring-2 hover:ring-primary transition"
+                                                @error="handleImgError(`${history.id}-${imgIndex}`)" 
+                                                
+                                                 @click="() => {
+                                                     images = part.list as string[];
+                                                     currentIndex = imgIndex;
+                                                 }"
+                                                />
 
                                             <!-- Solo se muestra el Badge si ha ocurrido un error -->
                                             <div v-else
@@ -382,7 +388,15 @@
 
     </Dialog>
 
+  <Carousel type="dialog" :items="images" v-model:current-index="currentIndex"
+        @close="() => { images = []; currentIndex = 0; }">
+        <template #item="{ item }">
+            <div class="w-full h-11/12! flex items-center justify-center">
 
+                <img :src="item" class="m-auto max-h-200 object-contain" />
+            </div>
+        </template>
+    </Carousel>
 </template>
 
 <script setup lang="ts">
@@ -428,6 +442,7 @@ import { Calendar, DownloadIcon, History, ImageOff, MonitorSmartphone, Pencil, R
 import type { DateRange } from 'reka-ui';
 import { computed, ref, watch, type Component } from 'vue';
 import { getImageUrl } from '@/lib/utils';
+import Carousel from '../Carousel.vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
@@ -438,6 +453,9 @@ const { isLoading } = useApp();
 const actions = ref<Array<AssetHistoryAction>>([]);
 
 const dateRange = ref<DateRange | undefined>(undefined);
+
+    const images = ref<string[]>([]);
+    const currentIndex = ref(0);
 
 const imageErrors = ref<Record<string, boolean>>({});
 

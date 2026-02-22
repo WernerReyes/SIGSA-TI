@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\Auth\LoginDto;
 use App\Models\User;
+use App\Utils\UserNavigation;
 use Illuminate\Support\Facades\Auth;
 class AuthService
 {
@@ -26,6 +27,7 @@ class AuthService
 
         Auth::login($user);
 
-        return redirect()->intended('/dashboard');
+        // return redirect()->intended('/dashboard');
+        return UserNavigation::redirectBasedOnDepartment($user, true);
     }
 }

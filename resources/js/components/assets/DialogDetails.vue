@@ -67,29 +67,37 @@
                                 </EmptyHeader>
                             </Empty>
                             <div v-else>
-                                <div v-for="repair in asset.reparations" :key="repair.id" class="rounded-lg border bg-yellow-50 dark:bg-yellow-950/10 border-yellow-200 dark:border-yellow-800 mb-2 px-4 py-2 flex md:flex-row flex-col items-center md:items-stretch gap-4 w-full">
+                                <div v-for="repair in asset.reparations" :key="repair.id"
+                                    class="rounded-lg border bg-yellow-50 dark:bg-yellow-950/10 border-yellow-200 dark:border-yellow-800 mb-2 px-4 py-2 flex md:flex-row flex-col items-center md:items-stretch gap-4 w-full">
                                     <div class="flex flex-col items-center justify-center md:mr-4 mr-0 md:w-24 w-full">
                                         <Wrench class="size-6 text-yellow-600 dark:text-yellow-400 mb-1" />
-                                        <span class="text-xs font-mono text-muted-foreground">{{ format(parseISO(repair.date), 'dd-MM-yyyy') }}</span>
+                                        <span class="text-xs font-mono text-muted-foreground">{{
+                                            format(parseISO(repair.date),
+                                            'dd-MM-yyyy') }}</span>
                                     </div>
                                     <div class="flex-1 min-w-0 w-full flex">
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Descripción</p>
+                                            <p
+                                                class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
+                                                Descripción</p>
                                             <p class="text-sm font-semibold truncate">{{ repair.description }}</p>
                                         </div>
-                                        <div v-if="repair.image_paths && repair.image_paths.length > 0" class="flex md:flex-row flex-col gap-2 mt-2">
-                                            <img v-for="img in repair.image_paths" :key="img" :src="getImageUrl(img)" class="w-20 h-20 object-cover rounded border cursor-pointer hover:ring-2 hover:ring-yellow-400 transition" :alt="'Imagen reparación ' + repair.id"
-                                              @click="() => {
-                                                console.log(repair.image_paths.map(getImageUrl));
-                                                  images = repair.image_paths.map(getImageUrl);
-                                                //   const imageUrl = getImageUrl(img);
-                                                //   if (imageUrl) {
-                                                //       viewDocument(imageUrl);
-                                                //   } else {
-                                                //       toast.error('No se pudo cargar la imagen.');
-                                                //   }
-                                              }"
-                                            />
+                                        <div v-if="repair.image_paths && repair.image_paths.length > 0"
+                                            class="flex md:flex-row flex-col gap-2 mt-2">
+                                            <img v-for="(img, index) in repair.image_paths" :key="img" :src="getImageUrl(img)"
+                                                class="w-20 h-20 object-cover rounded border cursor-pointer hover:ring-2 hover:ring-yellow-400 transition"
+                                                :alt="'Imagen reparación ' + repair.id" @click="() => {
+                                                    const mappedImages = repair.image_paths.map(getImageUrl).filter(Boolean) as string[];
+                                                    images = mappedImages;
+                                                    currentIndex = index
+                                                   
+                                                    //   const imageUrl = getImageUrl(img);
+                                                    //   if (imageUrl) {
+                                                    //       viewDocument(imageUrl);
+                                                    //   } else {
+                                                    //       toast.error('No se pudo cargar la imagen.');
+                                                    //   }
+                                                }" />
                                         </div>
                                     </div>
                                 </div>
@@ -451,7 +459,7 @@
                                     <AccordionItem :value="`children-${assignment.id}`" class="border-0">
                                         <AccordionTrigger class="py-1.5 hover:no-underline">
                                             <div class="flex items-center gap-2 text-xs font-semibold">
-                                                <component :is="assetTypeOp(TypeName.ACCESSORY)?.icon" class="size-3" />
+
                                                 Accesorios ({{ assignment.children_assignments.length }})
                                             </div>
                                         </AccordionTrigger>
@@ -459,7 +467,10 @@
                                             <div
                                                 class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
                                                 <div v-for="child in assignment.children_assignments" :key="child.id"
-                                                    class="rounded-lg border bg-muted/30 px-2 py-2">
+                                                    class="rounded-lg border bg-muted/30 px-2 py-2 flex items-center gap-2">
+                                                    <component
+                                                        :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon"
+                                                        class="size-3 text-muted-foreground" />
                                                     <p class="text-xs font-semibold truncate wrap-break-word">{{
                                                         child.asset?.full_name
                                                         || 'Accesorio' }}</p>
@@ -482,7 +493,7 @@
             </ScrollArea>
 
 
-                
+
         </DialogContent>
     </Dialog>
 
@@ -511,11 +522,12 @@
 
     </Dialog>
 
-    <Carousel  type="dialog" :items="images" @close="images = []" >
+    <Carousel type="dialog" :items="images" v-model:current-index="currentIndex"
+        @close="() => { images = []; currentIndex = 0; }">
         <template #item="{ item }">
-           <div class="w-full h-11/12! flex items-center justify-center">
+            <div class="w-full h-11/12! flex items-center justify-center">
 
-               <img :src="item" class="m-auto max-h-200 object-contain" />
+                <img :src="item" class="m-auto max-h-200 object-contain" />
             </div>
         </template>
     </Carousel>
@@ -576,7 +588,8 @@ import Carousel from '../Carousel.vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
-    const images = ref<string[]>([]);
+const images = ref<string[]>([]);
+const currentIndex = ref(0);
 
 const { downloadAssignmentDocument, downloadReturnAssignmentDocument } = useAsset();
 

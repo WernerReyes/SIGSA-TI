@@ -249,11 +249,10 @@
                         Evidencias
                     </div>
                     <div v-if="imageUrls.length" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <a v-for="(img, idx) in imageUrls" :key="`${img}-${idx}`" :href="img" target="_blank"
-                            rel="noreferrer" class="group block overflow-hidden rounded-lg border bg-muted/30">
-                            <img :src="img" alt="Evidencia"
-                                class="h-28 w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
-                        </a>
+                        <img @click="() => { images = imageUrls; currentIndex = idx }" v-for="(img, idx) in imageUrls"
+                            :key="`${img}-${idx}`" :src="img" alt="Evidencia"
+                            class="h-28 w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]" />
+                       
                     </div>
                     <div v-else class="mt-3 text-xs text-muted-foreground">No hay imagenes registradas.</div>
                 </div>
@@ -264,6 +263,15 @@
     </Dialog>
 
     <RequesterAssetsSheet v-model:open="openRequesterAssets" :requester-id="ticket?.requester_id" />
+    <Carousel type="dialog" :items="images" v-model:current-index="currentIndex"
+        @close="() => { images = []; currentIndex = 0 }">
+        <template #item="{ item }">
+            <div class="w-full h-11/12! flex items-center justify-center">
+
+                <img :src="item" class="m-auto max-h-200 object-contain" />
+            </div>
+        </template>
+    </Carousel>
 </template>
 
 <script setup lang="ts">
@@ -283,6 +291,7 @@ import RequesterAssetsSheet from './RequesterAssetsSheet.vue';
 import { Button } from '@/components/ui/button';
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 import { formatMinutes } from '@/lib/utils';
+import Carousel from '../Carousel.vue';
 
 const open = defineModel<boolean>('open');
 
@@ -291,6 +300,10 @@ const openRequesterAssets = ref(false);
 const { ticket } = defineProps<{
     ticket: Ticket | null,
 }>();
+
+
+const images = ref<string[]>([]);
+const currentIndex = ref(0);
 
 const imageUrls = computed(() => {
     const urls = ticket?.images_urls ?? ticket?.images ?? [];

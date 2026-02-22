@@ -161,8 +161,6 @@ class AssetController extends Controller
 
     public function changeAssetStatus(UpdateStatusRequest $request, Asset $asset, AssetService $assetService)
     {
-        ds("llegue al controller", $request->all());
-
         $validated = $request->validated();
         $dto = UpdateStatusDto::fromArray($validated);
 

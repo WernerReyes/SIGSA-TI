@@ -222,17 +222,17 @@ class AssetService
     {
 
         try {
-            $totalAssets = Asset::isFromRRHH()->filters($filtersDto)->count();
+            $totalAssets = Asset::isFromRRHH()->filters($filtersDto, true)->count();
 
             $statuses = Asset::isFromRRHH()
                 ->selectRaw('status, COUNT(*) as count')
-                ->filters($filtersDto)
+                ->filters($filtersDto, true)
                 ->groupBy('status')
                 ->pluck('count', 'status');
 
 
-            $notExpiredWarrantyAssets = Asset::isFromRRHH()->filters($filtersDto)->whereDate('warranty_expiration', '>=', now()->toDateString())->count();
-            $expiredWarrantyAssets = Asset::isFromRRHH()->filters($filtersDto)->whereDate('warranty_expiration', '<', now()->toDateString())->count();
+            $notExpiredWarrantyAssets = Asset::isFromRRHH()->filters($filtersDto, true)->whereDate('warranty_expiration', '>=', now()->toDateString())->count();
+            $expiredWarrantyAssets = Asset::isFromRRHH()->filters($filtersDto, true)->whereDate('warranty_expiration', '<', now()->toDateString())->count();
 
             return [
                 'total' => $totalAssets,
@@ -565,7 +565,6 @@ class AssetService
             });
 
         } catch (\Exception $e) {
-            ds($e->getMessage());
             if ($e instanceof BadRequestException) {
                 throw $e;
             }
@@ -849,15 +848,7 @@ class AssetService
     {
 
         $responsible = auth()->user();
-        if ($dto->ticket_id) {
-            $ticket = Ticket::select(
-                'id',
-                'responsible_id'
-            )->find($dto->ticket_id);
-            if ($ticket->responsible_id !== $responsible->staff_id) {
-                throw new BadRequestException('Solo el responsable del ticket puede asignar activos al mismo.');
-            }
-        }
+       
         try {
             // DB::transaction(function () use ($assignment, $dto) {
             if ($assignment->returned_at) {
@@ -866,9 +857,9 @@ class AssetService
 
             // $responsible = auth()->user();
 
-            if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
-                throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
-            }
+            // if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
+            //     throw new BadRequestException('El usuario responsable debe pertenecer al departamento de SISTEMAS / TI.');
+            // }
 
             DB::transaction(function () use ($dto, $assignment, $responsible) {
                 Asset::where('id', $assignment->asset_id)->update([

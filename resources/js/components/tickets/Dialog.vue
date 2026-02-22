@@ -197,7 +197,7 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm, Field as VeeField } from 'vee-validate'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -216,7 +216,7 @@ import {
     FieldLabel
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Spinner } from '@/components/ui/spinner'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useApp } from '@/composables/useApp'
@@ -227,8 +227,7 @@ import { router, usePage } from '@inertiajs/vue3'
 import { Check, MonitorSmartphone, Tag } from 'lucide-vue-next'
 import * as z from 'zod'
 import SelectFilters from '../SelectFilters.vue'
-import { ScrollArea } from '@/components/ui/scroll-area';
-import RequesterAssetsSheet from './RequesterAssetsSheet.vue';
+import RequesterAssetsSheet from './RequesterAssetsSheet.vue'
 
 
 const { isLoading, users, userAuth } = useApp();
@@ -253,14 +252,6 @@ defineProps({
 });
 
 
-// const currentValues = computed<StoreTicket>(() => ({
-//     title: ticket.value?.title,
-//     description: ticket.value?.description,
-//     type: ticket.value?.type,
-//     priority: ticket.value?.priority,
-//     request_type: ticket.value?.request_type,
-//     requester_id: ticket.value?.requester_id || userAuth.value?.staff_id || null,
-// }));
 
 const disableForm = computed(() => {
     return isLoading.value || Object.keys(errors.value).length > 0 || isEqual(initialValues.value, values);
@@ -338,16 +329,6 @@ const { handleSubmit, errors, setValues, values, setFieldValue, resetForm } = us
 
 type StoreTicket = typeof values;
 
-// watch(() => ticket?.value, (newTicket) => {
-//     if (newTicket) {
-//         open.value = true;
-//         setValues(currentValues.value);
-//     } else {
-//         open.value = false;
-//         resetForm();
-
-//     }
-// }, { immediate: true });
 
 watch(values, (values) => {
     if (values.type === TicketType.INCIDENT) {
@@ -355,9 +336,6 @@ watch(values, (values) => {
     }
 }, { deep: true })
 
-// watch(() => userAuth.value, (newUser) => {
-//     setFieldValue('requester_id', newUser?.staff_id || null);
-// }, { immediate: true })
 
 
 const handleReset = () => {

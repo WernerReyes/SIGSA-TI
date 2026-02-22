@@ -27,7 +27,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     // if (!isFromRRHH.value) { // SYSTEM_TI
         items.push({
             title: 'Dashboard',
-            href:  isFromRRHH ? "/dashboard-rrhh" : "/dashboard",
+            href:  isFromRRHH.value ? "/dashboard-rrhh" : "/dashboard",
             icon: LayoutGrid,
         });
     // }

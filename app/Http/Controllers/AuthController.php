@@ -6,6 +6,7 @@ use App\DTOs\Auth\LoginDto;
 use App\Http\Requests\Auth\LoginRequest;
 
 use App\Services\AuthService;
+use App\Utils\UserNavigation;
 use Auth;
 use Inertia\Inertia;
 
@@ -15,8 +16,9 @@ class AuthController extends Controller
     
     function renderLoginView()
     {
+        
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return UserNavigation::redirectBasedOnDepartment(auth()->user());
         }
         return Inertia::render('auth/Login');
     }

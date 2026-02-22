@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Utils\UserNavigation;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,9 +24,11 @@ class CheckDepartment
             return redirect()->route('login');
         }
 
+        
+
         if (!in_array($user->dept_id, $departments)) {
             Inertia::flash('error', 'No tienes permiso para acceder a esta sección.');
-            return redirect()->route('dashboard');
+            return UserNavigation::redirectBasedOnDepartment($user);
         }
 
         return $next($request);

@@ -128,8 +128,8 @@
                                 <label class="text-xs font-medium text-muted-foreground">
                                     A cuantas personas afecta
                                 </label>
-                                <VeeField name="impact" v-slot="{ componentField, errors }">
-                                    {{ values.impact }}
+                                <VeeField name="impact" v-slot="{ errors }">
+                                 
                                     <div class="grid gap-2">
                                         <div v-for="option in impactOptions" :key="option.value"
                                             @click="setFieldValue('impact', option.value)"

@@ -83,7 +83,6 @@ class AssetSeeder extends Seeder
 
         DB::transaction(function () use ($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $user, $registeredAssigmentsDates, $extraOutSideAssigments) {
             $array = array_merge($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $extraOutSideAssigments);
-            // ds($array);
             array_map(function ($data) use ($user, $registeredAssigmentsDates) {
                 $accessories = $data['accessories'] ?? [];
                 $assignedTo = $data['assigned_to'];
