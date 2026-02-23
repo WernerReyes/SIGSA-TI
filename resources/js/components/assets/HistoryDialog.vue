@@ -128,7 +128,7 @@
                                     </Badge>
 
 
-                                    <span class="text-xs text-muted-foreground">{{ format(new
+                                    <span class="text-xs ml-auto text-muted-foreground">{{ format(new
                                         Date(history.performed_at),
                                         'dd/MM/yyyy HH:mm') }}</span>
                                 </div>

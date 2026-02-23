@@ -515,11 +515,11 @@ class AssetService
                 throw new BadRequestException('El activo ya tiene el estado proporcionado.');
             }
 
-            if ($dto->status === AssetStatus::ASSIGNED->value) {
+            if ($dto->status === AssetStatus::ASSIGNED->value && !$asset->currentAssignment) {
                 throw new BadRequestException('No se puede cambiar el estado a ASIGNADO directamente. Use la función de asignación.');
             }
 
-            if ($asset->currentAssignment) {
+            if (  array_search($dto->status, [AssetStatus::DECOMMISSIONED->value, AssetStatus::AVAILABLE->value]) && $asset->currentAssignment) {
                 throw new BadRequestException('No se puede cambiar el estado de un activo asignado. Primero debe devolverlo.');
             }
 

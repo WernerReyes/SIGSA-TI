@@ -56,9 +56,7 @@
                             Elige el estado al que deseas cambiar este activo
                         </p>
 
-                        <SelectFilters :items="Object.values(assetStatusOptions).filter(
-                            (status) => status.value !== AssetStatus.ASSIGNED
-                        )" :show-selected-focus="false" :show-refresh="false" :label="'Selecciona un nuevo estado'"
+                        <SelectFilters :items="options" :show-selected-focus="false" :show-refresh="false" :label="'Selecciona un nuevo estado'"
                             item-label="label" item-value="value" selected-as-label
                             :default-value="componentField.modelValue"
                             @select="(value) => setFieldValue('status', value)" filter-placeholder="Buscar estado..."
@@ -109,7 +107,7 @@
                 <MultiUploader v-if="values.status === AssetStatus.IN_REPAIR" @error="(msg) => toast.error(msg)"
                     :max-files="5"
                     @update:file="(files) => setFieldValue('images', files)" accept="image/*"
-                    label="Adjuntar imagen (opcional)" />
+                    label="Adjuntar imagen" />
                     <FieldError v-if="errors.images" :errors="[errors.images]" class="mt-2" />
             </div>
    </ScrollArea>
@@ -144,6 +142,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useApp } from '@/composables/useApp';
@@ -151,17 +151,14 @@ import { Asset, AssetStatus, assetStatusOptions } from '@/interfaces/asset.inter
 import { isEqual, parseDateOnly } from '@/lib/utils';
 import { router } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
+import { isBefore } from 'date-fns';
 import { Check } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
 import { watch } from 'vue';
 import { toast } from 'vue-sonner';
 import z from 'zod';
-import FileUpload from '../FileUpload.vue';
-import SelectFilters from '../SelectFilters.vue';
-import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
-import { isAfter, isBefore } from 'date-fns';
-import { Input } from '@/components/ui/input';
 import MultiUploader from '../MultiUploader.vue';
+import SelectFilters from '../SelectFilters.vue';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -222,6 +219,32 @@ const { handleSubmit, errors, handleReset, setFieldValue, values } = useForm({
       
     }
 
+});
+
+const options = computed(() => {
+    if (asset?.value?.status === AssetStatus.ASSIGNED) {
+        return Object.values(assetStatusOptions).filter(
+            (status) => [AssetStatus.IN_REPAIR].includes(status.value)
+        );
+    }
+
+    if (asset?.value?.status === AssetStatus.IN_REPAIR && asset.value?.current_assignment) {
+        return Object.values(assetStatusOptions).filter(
+            (status) => [AssetStatus.DECOMMISSIONED, AssetStatus.AVAILABLE, AssetStatus.ASSIGNED].includes(status.value)
+        );
+    }
+
+    if (asset?.value?.status === AssetStatus.IN_REPAIR) {
+        return Object.values(assetStatusOptions).filter(
+            (status) => [AssetStatus.DECOMMISSIONED, AssetStatus.AVAILABLE].includes(status.value)
+        );
+    }
+
+    
+
+    return Object.values(assetStatusOptions).filter(
+        (status) => status.value !== AssetStatus.ASSIGNED
+    );
 });
 
 

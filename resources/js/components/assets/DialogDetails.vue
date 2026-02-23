@@ -79,7 +79,7 @@
                                         <div class="flex-1 min-w-0">
                                             <p
                                                 class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
-                                                Descripción</p>
+                                                Mótivo</p>
                                             <p class="text-sm font-semibold truncate">{{ repair.description }}</p>
                                         </div>
                                         <div v-if="repair.image_paths && repair.image_paths.length > 0"
