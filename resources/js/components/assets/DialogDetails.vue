@@ -92,12 +92,7 @@
                                                     images = mappedImages;
                                                     currentIndex = index
 
-                                                    //   const imageUrl = getImageUrl(img);
-                                                    //   if (imageUrl) {
-                                                    //       viewDocument(imageUrl);
-                                                    //   } else {
-                                                    //       toast.error('No se pudo cargar la imagen.');
-                                                    //   }
+                        
                                                 }" />
                                         </div>
                                     </div>
@@ -462,11 +457,16 @@
                                                 {{ getDocumentName(getDeliveryUrl(assignment)) }}
                                             </p>
                                         </template>
+                                        <p 
+                                          v-else
+                                             class="text-xs text-muted-foreground">Sin documento cargado.</p>
+                                             
+
                                         <Badge v-if="isInheritedDeliveryDocument(assignment)" variant="outline"
                                             class="w-fit text-[10px]">
                                             Documento tomado del equipo principal
                                         </Badge>
-                                        <p v-else class="text-xs text-muted-foreground">Sin documento cargado.</p>
+                                
                                     </div>
 
                                     <div class="rounded-lg border bg-background/70 p-3 space-y-2">
@@ -490,7 +490,15 @@
                                                 {{ getDocumentName(getReturnUrl(assignment)) }}
                                             </p>
                                         </template>
-                                        <p v-else class="text-xs text-muted-foreground">Sin documento cargado.</p>
+                                          <p 
+                                          v-else
+                                             class="text-xs text-muted-foreground">Sin documento cargado.</p>
+
+                                        <Badge v-if="isInheritedDeliveryDocument(assignment)" variant="outline"
+                                            class="w-fit text-[10px]">
+                                            Documento tomado del equipo principal
+                                        </Badge>
+                                     
                                     </div>
                                 </div>
 
@@ -669,11 +677,12 @@ const getAsset = (assignment: AssetAssignment) => {
     }
 }
 const getDeliveryUrl = (assignment: AssetAssignment): string => {
+   
     return assignment.delivery_document?.file_url || assignment.parent_assignment?.delivery_document?.file_url || '';
 };
 
 const getReturnUrl = (assignment: AssetAssignment): string => {
-    return assignment.return_document?.file_url || '';
+    return assignment.return_document?.file_url || assignment.parent_assignment?.return_document?.file_url || '';
 };
 
 const isInheritedDeliveryDocument = (assignment: AssetAssignment): boolean => {

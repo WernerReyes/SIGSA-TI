@@ -150,7 +150,6 @@ class AssetService
     public function getDetails(Asset $asset)
     {
 
-
         return $asset->load(
             'type:id,name,doc_category',
 
@@ -161,7 +160,7 @@ class AssetService
             'assignments.deliveryDocument',
             'assignments.returnDocument',
 
-            'assignments.parentAssignment:id,asset_id,assigned_to_id,assigned_at,returned_at',
+            'assignments.parentAssignment:id,asset_id,assigned_to_id,assigned_at,returned_at,parent_assignment_id',
             'assignments.parentAssignment.asset:id,name,brand,model,serial_number,type_id',
             'assignments.parentAssignment.asset.type:id,name,doc_category',
             'assignments.parentAssignment.deliveryDocument',

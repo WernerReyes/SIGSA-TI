@@ -50,14 +50,25 @@ class AssetAssignment extends Model
 
     public function deliveryDocument()
     {
-        return $this->hasOne(DeliveryRecord::class, 'assignment_id')->where('type', DeliveryRecordType::ASSIGNMENT->value)->latestOfMany();
+        return $this->hasOne(DeliveryRecord::class, 'assignment_id')
+            ->ofMany(
+                ['created_at' => 'max'], // columna para elegir el último
+                function ($query) {
+                    $query->where('type', DeliveryRecordType::ASSIGNMENT->value);
+                }
+            );
     }
 
     public function returnDocument()
     {
-        return $this->hasOne(DeliveryRecord::class, 'assignment_id')->where('type', DeliveryRecordType::DEVOLUTION->value)->latestOfMany();
+        return $this->hasOne(DeliveryRecord::class, 'assignment_id')
+            ->ofMany(
+                ['created_at' => 'max'],
+                function ($query) {
+                    $query->where('type', DeliveryRecordType::DEVOLUTION->value);
+                }
+            );
     }
-
     public function responsible()
     {
         return $this->belongsTo(User::class, 'responsible_id');
