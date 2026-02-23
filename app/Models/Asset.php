@@ -84,6 +84,7 @@ class Asset extends Model
                 }
 
                 $asset->assignments()->delete();
+                $asset->reparations()->delete();
 
             });
 
