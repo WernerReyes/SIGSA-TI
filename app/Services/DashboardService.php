@@ -216,8 +216,6 @@ class DashboardService
             ];
         }
 
-        ds($result);
-
         return [
             'range' => [
                 'from' => $startDate->toDateString(),
