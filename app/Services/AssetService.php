@@ -162,7 +162,7 @@ class AssetService
             'assignments.returnDocument',
 
             'assignments.parentAssignment:id,asset_id,assigned_to_id,assigned_at,returned_at',
-            'assignments.parentAssignment.asset:id,type_id',
+            'assignments.parentAssignment.asset:id,name,brand,model,serial_number,type_id',
             'assignments.parentAssignment.asset.type:id,name,doc_category',
             'assignments.parentAssignment.deliveryDocument',
             'assignments.parentAssignment.returnDocument',
@@ -500,6 +500,9 @@ class AssetService
         try {
             $asset->delete();
         } catch (\Exception $e) {
+            if ($e->getCode() === '23000') {
+                throw new BadRequestException('No se puede eliminar el activo porque tiene relaciones con otros activos, asignaciones o reparaciones. Por favor, elimine primero esas relaciones.');
+            }
             throw new InternalErrorException('Error al eliminar el activo: ' . $e->getMessage());
         }
     }
