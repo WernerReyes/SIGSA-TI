@@ -6,7 +6,6 @@ use App\Models\AssetType;
 use App\Services\AssetTypeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AssetTypeController extends Controller
@@ -31,14 +30,16 @@ class AssetTypeController extends Controller
             Inertia::flash([
                 'assetType' => $assetType,
                 'success' => 'Tipo de activo creado exitosamente',
+                'error' => null
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
                 'assetType' => null,
                 'error' => 'Error al crear el tipo de activo: ' . $e->getMessage(),
+                'success' => null
             ]);
 
-            throw new InternalErrorException('Error al crear el tipo de activo: ' . $e->getMessage());
+
         }
 
         return back();
@@ -56,14 +57,16 @@ class AssetTypeController extends Controller
             Inertia::flash([
                 'assetType' => $type,
                 'success' => 'Tipo de activo actualizado exitosamente',
+                'error' => null
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
                 'assetType' => null,
                 'error' => 'Error al actualizar el tipo de activo: ' . $e->getMessage(),
+                'success' => null
             ]);
 
-            throw new InternalErrorException('Error al actualizar el tipo de activo: ' . $e->getMessage());
+
         }
 
         return back();
@@ -79,14 +82,21 @@ class AssetTypeController extends Controller
             $type->delete();
             Inertia::flash([
                 'success' => 'Tipo de activo eliminado exitosamente',
+                'error' => null
             ]);
         } catch (\Exception $e) {
+            if ($e->getCode() === '23000') { // Código de error de integridad referencial
+                $errorMessage = 'No se puede eliminar este tipo de activo porque hay activos asociados a él.';
+            } else {
+                $errorMessage = 'Error al eliminar el tipo de activo: ' . $e->getMessage();
+            }
             Inertia::flash([
-                'error' => 'Error al eliminar el tipo de activo: ' . $e->getMessage(),
+                'error' => $errorMessage,
+                'success' => null
             ]);
 
-            throw new InternalErrorException('Error al eliminar el tipo de activo: ' . $e->getMessage());
         }
+
         return back();
 
     }

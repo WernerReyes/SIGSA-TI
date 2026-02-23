@@ -162,7 +162,7 @@ function onSubmit(values: FormValues) {
             preserveUrl: true,
             onFlash: (flash) => {
                 if (flash.error) return;
-                router.replaceProp('assetTypes', (types: AssetType[]) => {
+                router.replaceProp('types', (types: AssetType[]) => {
                     return types.map(type => type.id === currentType.value?.id ? { ...type, ...values } : type);
                 });
                 onClose();
@@ -176,7 +176,7 @@ function onSubmit(values: FormValues) {
             preserveUrl: true,
             onFlash: (flash) => {
                 if (flash.error) return;
-                router.replaceProp('assetTypes', (types: AssetType[]) => [...types, flash.assetType]);
+                router.replaceProp('types', (types: AssetType[]) => [...types, flash.assetType]);
                 onClose();
             }
         });
