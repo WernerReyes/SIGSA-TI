@@ -35,12 +35,12 @@ class RRHHDashboardService
         $total = $stats->smartphones + $stats->chargers;
         return [
             'total' => $total,
-            'smartphones' => $stats->smartphones,
-            'chargers' => $stats->chargers,
-            'decommissioned' => $stats->decommissioned,
+            'smartphones' => $stats->smartphones ?? 0,
+            'chargers' => $stats->chargers ?? 0,
+            'decommissioned' => $stats->decommissioned ?? 0,
             'expired_warranty' => $stats->expired_warranty ?? 0,
-            'under_maintenance' => $stats->under_maintenance,
-            'assigned' => $stats->assigned,
+            'under_maintenance' => $stats->under_maintenance ?? 0,
+            'assigned' => $stats->assigned ?? 0,
             'profi_rate' => $this->getAssignedProfiRate(),
         ];
     }
