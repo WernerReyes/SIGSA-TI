@@ -153,7 +153,7 @@
             </div>
 
             <DialogDetails v-model:open="showDetailModal" v-model:current-development="selectedRequirement" />
-            <UpsertDialog @new-development="originalDevelopmentsByStatus[DevelopmentRequestStatus.REGISTERED].push($event)"
+            <UpsertDialog @new-development="originalDevelopmentsByStatus[DevelopmentRequestStatus.REGISTERED]?.push($event)"
                 v-model:open="showNewRequirementModal" v-model:current-development="selectedRequirement" />
 
             <EstimationDialog v-model:open="showEstimateModal" v-model:current-development="selectedRequirement" />
@@ -262,7 +262,15 @@ const showProgressModal = ref(false);
 const showAssignDevelopersModal = ref(false);
 const showAlertDialog = ref(false);
 
-const originalDevelopmentsByStatus = ref<DevelopmentRequestSection>({ ...developmentsByStatus });
+const originalDevelopmentsByStatus = ref<DevelopmentRequestSection>({ 
+    [DevelopmentRequestStatus.REGISTERED]: developmentsByStatus[DevelopmentRequestStatus.REGISTERED] || [],
+    [DevelopmentRequestStatus.IN_ANALYSIS]: developmentsByStatus[DevelopmentRequestStatus.IN_ANALYSIS] || [],
+    [DevelopmentRequestStatus.APPROVED]: developmentsByStatus[DevelopmentRequestStatus.APPROVED] || [],
+    [DevelopmentRequestStatus.IN_DEVELOPMENT]: developmentsByStatus[DevelopmentRequestStatus.IN_DEVELOPMENT] || [],
+    [DevelopmentRequestStatus.IN_TESTING]: developmentsByStatus[DevelopmentRequestStatus.IN_TESTING] || [],
+    [DevelopmentRequestStatus.COMPLETED]: developmentsByStatus[DevelopmentRequestStatus.COMPLETED] || [],
+    [DevelopmentRequestStatus.REJECTED]: developmentsByStatus[DevelopmentRequestStatus.REJECTED] || [],
+});
 
 const selectedRequirement = ref<DevelopmentRequest | null>(null);
 
