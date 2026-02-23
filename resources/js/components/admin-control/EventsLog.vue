@@ -151,6 +151,7 @@ const handleDeleteInfrastructureEvent = (eventId: number) => {
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
+        
             if (flash.error) return;
             router.replaceProp('infrastructureEvents', (events: InfrastructureEvent[]) => {
                 return events.filter(event => event.id !== eventId);

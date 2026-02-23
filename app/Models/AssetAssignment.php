@@ -69,6 +69,10 @@ class AssetAssignment extends Model
     }
 
 
+    public function parentAssignment()
+    {
+        return $this->belongsTo(AssetAssignment::class, foreignKey: 'parent_assignment_id');
+    }
 
     public function asset()
     {

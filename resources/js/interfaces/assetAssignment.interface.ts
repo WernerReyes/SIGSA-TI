@@ -22,6 +22,7 @@ export interface AssetAssignment {
     parent_assignment_id?: number | null;
     assigned_to?: User;
     asset?: Asset,
+      parent_assignment?: AssetAssignment;
     delivery_document?: DeliveryRecord | null;
     return_document?: DeliveryRecord | null;
     children_assignments?: AssetAssignment[];

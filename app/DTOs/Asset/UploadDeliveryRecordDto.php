@@ -1,22 +1,22 @@
 <?php
 namespace App\DTOs\Asset;
 
-use App\Models\AssetAssignment;
+
 class UploadDeliveryRecordDto
 {
     private function __construct(
         public readonly string $file,
-        public AssetAssignment $assignment,
+     
         public string $type,
 
     ) {
     }
 
-    public static function fromArray(array $data, AssetAssignment $assignment): self
+    public static function fromArray(array $data): self
     {
         return new self(
             file: $data['file'],
-            assignment: $assignment,
+          
             type: $data['type'],
         );
     }

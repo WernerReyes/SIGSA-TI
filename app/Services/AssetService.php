@@ -45,9 +45,6 @@ class AssetService
     {
         return auth()->user()->dept_id == Allowed::RRHH->value;
     }
-
-
-
     public function getPaginated(AssetFiltersDto $filtersDto)
     {
         try {
@@ -157,13 +154,23 @@ class AssetService
         return $asset->load(
             'type:id,name,doc_category',
 
-            'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at',
+            'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at,parent_assignment_id',
+            // 'assignments.asset:id,type_id',
+            // 'assignments.asset.type:id,name,doc_category',
             'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
             'assignments.deliveryDocument',
             'assignments.returnDocument',
-            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-            'assignments.childrenAssignments.asset:id,name,brand,model,serial_number',
 
+            'assignments.parentAssignment:id,asset_id,assigned_to_id,assigned_at,returned_at',
+            'assignments.parentAssignment.asset:id,type_id',
+            'assignments.parentAssignment.asset.type:id,name,doc_category',
+            'assignments.parentAssignment.deliveryDocument',
+            'assignments.parentAssignment.returnDocument',
+
+            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+            'assignments.childrenAssignments.asset:id,name,brand,model,serial_number,type_id',
+            'assignments.childrenAssignments.asset.type:id,name',
+       
             'reparations:id,asset_id,date,description,image_paths',
 
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
@@ -262,7 +269,7 @@ class AssetService
             throw new BadRequestException('No tienes permiso para reenviar esta alerta');
         }
 
-        if (!Asset::whereHas('type', fn($q) => $q->where('name', 'Accesorio'))->whereNot('status', AssetStatus::AVAILABLE->value)->exists()) {
+        if (!Asset::whereHas('type', fn($q) => $q->where('doc_category', AssetTypeCategory::ACCESSORY->value))->whereNot('status', AssetStatus::AVAILABLE->value)->exists()) {
             throw new BadRequestException('No hay accesorios agotados actualmente, no se puede reenviar la alerta');
         }
 
@@ -848,7 +855,7 @@ class AssetService
     {
 
         $responsible = auth()->user();
-       
+
         try {
             // DB::transaction(function () use ($assignment, $dto) {
             if ($assignment->returned_at) {
@@ -1165,36 +1172,38 @@ class AssetService
         }
     }
 
-    public function uploadDeliveryRecord(UploadDeliveryRecordDto $dto)
+    public function uploadDeliveryRecord(AssetAssignment $assignment, UploadDeliveryRecordDto $dto)
     {
         try {
-            if (!$dto->assignment) {
-                throw new NotFoundHttpException('No se encontró la asignación del activo');
+            $current = $assignment;
+
+            if ($assignment->parent_assignment_id) {
+                $current = $assignment->parentAssignment;
             }
 
             $recordType = $dto->type === DeliveryRecordType::ASSIGNMENT->value ? 'asignación' : 'devolución';
-            $description = "Constancia de {$recordType} subida para '{$dto->assignment->assignedTo->full_name}'";
+            $description = "Constancia de {$recordType} subida para '{$current->assignedTo->full_name}'";
 
-            if ($dto->assignment->deliveryRecords()->where('type', $dto->type)->exists()) {
-                $description = "Constancia de {$recordType} actualizada para '{$dto->assignment->assignedTo->full_name}'";
+            if ($current->deliveryRecords()->where('type', $dto->type)->exists()) {
+                $description = "Constancia de {$recordType} actualizada para '{$current->assignedTo->full_name}'";
             }
             // $path = '';
             $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
 
-            DB::transaction(function () use ($dto, $path, $description) {
+            DB::transaction(function () use ($dto, $path, $description, $current) {
 
                 $deliveryRecord = DeliveryRecord::create([
                     'file_path' => $path,
-                    'assignment_id' => $dto->assignment->id,
+                    'assignment_id' => $current->id,
                     'type' => $dto->type,
                 ]);
 
-                $dto->assignment->deliveryRecords()->save($deliveryRecord);
+                $current->deliveryRecords()->save($deliveryRecord);
 
                 AssetHistory::create([
                     'action' => AssetHistoryAction::DELIVERY_RECORD_UPLOADED->value,
                     'description' => $description,
-                    'asset_id' => $dto->assignment->asset_id,
+                    'asset_id' => $current->asset_id,
                     'performed_by' => auth()->user()->staff_id,
                     // 'performed_at' => now()->utc(),
                     'related_delivery_record_id' => $deliveryRecord->id,

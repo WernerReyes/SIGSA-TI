@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Enums\Asset\AssetStatus;
+use App\Enums\Asset\AssetTypeCategory;
 use App\Models\Asset;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -23,14 +24,20 @@ class AccessoryOutOfStockMail extends Mailable
     }
 
     private function getAccessories()
-    {
-        return Asset::
-            select('id', 'name', 'brand', 'model')
-            ->whereNot('status', AssetStatus::AVAILABLE)
-            ->whereHas('type', fn($q) => $q->where('name', 'Accesorio'))
-            ->get()->unique(fn($item) => strtolower($item->full_name));
-
-    }
+{
+    return Asset::select('id', 'type_id')
+        ->with('type:id,name')
+        ->whereNot('status', AssetStatus::AVAILABLE) // solo los no disponibles
+        ->whereHas('type', fn($q) => 
+            $q->where('doc_category', AssetTypeCategory::ACCESSORY->value)
+        )
+        // excluir tipos que tengan al menos un disponible
+        ->whereDoesntHave('type.assets', fn($q) => 
+            $q->where('status', AssetStatus::AVAILABLE)
+        )
+        ->get()
+        ->unique(fn($item) => strtolower($item->type->name));
+}
 
     /**
      * Get the message envelope.

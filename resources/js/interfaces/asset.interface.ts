@@ -31,7 +31,7 @@ export interface Asset {
     phone?: string;
     imei?: string;
 
-
+  
     // assigned_to_id?: number | null;
     current_assignment?: AssetAssignment;
     assignments?: AssetAssignment[];

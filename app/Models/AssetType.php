@@ -31,6 +31,11 @@ class AssetType extends Model
         });
     }
 
+    public function assets()
+    {
+        return $this->hasMany(Asset::class, 'type_id');
+    }
+
     public function getIsAccessoryAttribute()
     {
         return $this->doc_category === AssetTypeCategory::ACCESSORY->value;

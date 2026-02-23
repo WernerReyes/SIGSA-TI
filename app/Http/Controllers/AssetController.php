@@ -29,7 +29,6 @@ class AssetController extends Controller
 {
     //
 
-
     public function renderView(
         AssetService $assetService,
         AssetTypeService $assetTypeService,
@@ -301,9 +300,9 @@ class AssetController extends Controller
     public function uploadDeliveryRecord(UploadDeliveryRecordRequest $request, AssetAssignment $assignment, AssetService $assetService)
     {
         $validated = $request->validated();
-        $dto = UploadDeliveryRecordDto::fromArray($validated, $assignment);
+        $dto = UploadDeliveryRecordDto::fromArray($validated);
         try {
-            $file_url = $assetService->uploadDeliveryRecord($dto);
+            $file_url = $assetService->uploadDeliveryRecord($assignment,$dto);
             Inertia::flash([
                 'success' => 'Registro de entrega subido correctamente.',
                 'file_url' => $file_url,

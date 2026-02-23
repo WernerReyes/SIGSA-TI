@@ -123,6 +123,7 @@
         <div class="rounded-xl border bg-card/70 shadow-sm backdrop-blur overflow-hidden">
 
             <div class="overflow-x-auto">
+
                 <Table class="min-w-full">
                     <TableHeader class="bg-muted/70 backdrop-blur sticky top-0 z-10">
                         <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -143,11 +144,21 @@
                                     <TableRow @contextmenu="() => {
                                         activeRow = row.original
                                     }" :key="row.id" v-for="row in table.getRowModel().rows"
-                                        :data-state="row.getIsSelected() ? 'selected' : undefined"
-                                        class="cursor-context-menu transition hover:bg-muted/60 odd:bg-muted/30">
-                                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id"
-                                            class="pl-5 align-middle"
-                                            :style="{ maxWidth: cell.column.getSize() + 'px' }">
+                                        :data-state="row.getIsSelected() ? 'selected' : undefined" :class="[
+                                            'cursor-context-menu transition hover:bg-muted/60',
+                                            row.depth > 0
+                                                ? 'bg-muted/15 text-muted-foreground border-l-2 border-primary/40'
+                                                : 'odd:bg-muted/30',
+                                            lastSelected === row.original.id
+                                                ? 'bg-primary/15! border-l-4 border-primary/70 shadow-sm hover:bg-primary/20!'
+                                                : '',
+                                        ]">
+                                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="[
+                                            'align-middle truncate whitespace-nowrap',
+                                            cell.column.id === 'name'
+                                                ? (row.depth > 0 ? 'pl-14' : 'pl-5')
+                                                : 'pl-5'
+                                        ]" :style="{ maxWidth: cell.column.getSize() + 'px' }">
                                             <FlexRender :render="cell.column.columnDef.cell"
                                                 :props="cell.getContext()" />
                                         </TableCell>
@@ -183,8 +194,8 @@
                                     <MonitorSmartphone />
                                     Asignar
                                 </ContextMenuItem>
-                                <ContextMenuItem :disabled="!activeRow?.current_assignment"
-                                    @click="openDevolution = true">
+                                <ContextMenuItem v-if="!activeRow?.current_assignment?.parent_assignment_id"
+                                    :disabled="!activeRow?.current_assignment" @click="openDevolution = true">
                                     <MonitorSmartphone />
                                     Devolver
                                 </ContextMenuItem>
@@ -298,7 +309,6 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
     Pagination,
     PaginationContent,
@@ -325,11 +335,17 @@ import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
-import { Building, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, UploadCloud, UserIcon, Users, X, XCircle, CalendarSearch, Search } from 'lucide-vue-next';
+import { Building, CalendarSearch, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, Search, UploadCloud, UserIcon, Users, X, XCircle } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
 
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { RangeCalendar } from '@/components/ui/range-calendar';
 import { useApp } from '@/composables/useApp';
 import type { Paginated } from '@/types';
+import { getLocalTimeZone, parseDate } from '@internationalized/date';
+import { type DateRange } from 'reka-ui';
+import AlertDialog from '../AlertDialog.vue';
 import SelectFilters from '../SelectFilters.vue';
 import AssignDialog from './AssignDialog.vue';
 import DevolutionDialog from './DevolutionDialog.vue';
@@ -338,12 +354,6 @@ import DialogDetails from './DialogDetails.vue';
 import HistoryDialog from './HistoryDialog.vue';
 import InvoiceDialog from './InvoiceDialog.vue';
 import StatusDialog from './StatusDialog.vue';
-import AlertDialog from '../AlertDialog.vue';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { RangeCalendar } from '@/components/ui/range-calendar';
-import { CalendarDate, getLocalTimeZone, parseDate } from '@internationalized/date';
-import { type DateRange } from 'reka-ui';
-import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
 
 
 const { assets } = defineProps<{ assets: Paginated<Asset> }>()
@@ -352,7 +362,7 @@ const page = usePage();
 const { isLoading, users, departments, assetTypes, assetAccessories } = useApp();
 
 
-const activeRow = ref<Asset | null>(null)
+const activeRow = ref<Asset | null>(null);
 
 const openDetails = ref(false);
 const openEdit = ref(false);
@@ -365,11 +375,17 @@ const openDelete = ref(false);
 
 const sorting = ref<SortingState>([])
 
-
+const lastSelected = ref<Asset['id'] | null>(null);
 
 const filters = computed(() => page.props.filters as Record<string, any>);
 
 const assetId = computed(() => activeRow.value?.id || null);
+
+watch(() => activeRow.value, (asset) => {
+    if (asset) {
+        lastSelected.value = asset.id;
+    }
+})
 
 const form = reactive<{
     search: string;
@@ -515,7 +531,7 @@ const handleOpenHistories = () => {
         only: ['historiesPaginated'],
         data: { asset_id: assetId.value },
         preserveUrl: true,
-        onSuccess: () => {  
+        onSuccess: () => {
             openHistory.value = true;
         }
     });
@@ -571,7 +587,6 @@ const handleDeleteAsset = () => {
     if (assetAccessories.value.some(acc => acc.id === assetId.value)) {
         only.push('accessories');
     }
-
 
     router.delete(`
                      /assets/${assetId.value}
@@ -716,7 +731,7 @@ const columns: ColumnDef<Asset>[] = [
         accessorKey: 'purchase_date',
         id: 'purchase_date',
         header: 'Fecha de compra',
-        cell: info =>  info.getValue() ? format(info.getValue() as string, 'dd/MM/yyyy') : h(Badge, { variant: 'secondary' }, () => 'Sin fecha'),
+        cell: info => info.getValue() ? format(info.getValue() as string, 'dd/MM/yyyy') : h(Badge, { variant: 'secondary' }, () => 'Sin fecha'),
     }, {
         accessorKey: 'warranty_expiration',
         id: 'warranty_expiration',

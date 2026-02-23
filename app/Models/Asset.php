@@ -280,7 +280,7 @@ class Asset extends Model
 
     public function assignments()
     {
-        return $this->hasMany(AssetAssignment::class, 'asset_id')->orderBy('assigned_at', 'desc');
+        return $this->hasMany(AssetAssignment::class, 'asset_id')->orderBy('assigned_at', 'desc')->orderBy('id', 'desc');
     }
 
     public function reparations()

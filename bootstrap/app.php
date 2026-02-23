@@ -45,8 +45,9 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($previous instanceof ModelNotFoundException) {
                 $modelClass = $previous->getModel();
                 $message = match ($modelClass) {
-                    \App\Models\Ticket::class => 'El ticket solictado',
-                    \App\Models\Asset::class => 'El equipo solictado',
+                    \App\Models\Ticket::class => 'El ticket solicitado',
+                    \App\Models\Asset::class => 'El equipo solicitado',
+                    \App\Models\AssetType::class => 'El tipo de equipo solicitado',
                     \App\Models\AssetAssignment::class => 'La asignación de equipo solicitada',
                     \App\Models\Service::class => 'La solicitud de servicio solicitada',
                     \App\Models\Contract::class => 'El contrato solicitado',
