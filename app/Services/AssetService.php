@@ -26,6 +26,8 @@ use App\Models\AssetHistory;
 use App\Models\AssetReparation;
 use App\Models\AssetType;
 
+use App\Utils\CompressImage;
+use Intervention\Image\Facades\Image;
 use App\Models\DeliveryRecord;
 use App\Models\User;
 use App\Models\Ticket;
@@ -169,7 +171,7 @@ class AssetService
             'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
             'assignments.childrenAssignments.asset:id,name,brand,model,serial_number,type_id',
             'assignments.childrenAssignments.asset.type:id,name',
-       
+
             'reparations:id,asset_id,date,description,image_paths',
 
             'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
@@ -519,7 +521,7 @@ class AssetService
                 throw new BadRequestException('No se puede cambiar el estado a ASIGNADO directamente. Use la función de asignación.');
             }
 
-            if (  array_search($dto->status, [AssetStatus::DECOMMISSIONED->value, AssetStatus::AVAILABLE->value]) && $asset->currentAssignment) {
+            if (array_search($dto->status, [AssetStatus::DECOMMISSIONED->value, AssetStatus::AVAILABLE->value]) && $asset->currentAssignment) {
                 throw new BadRequestException('No se puede cambiar el estado de un activo asignado. Primero debe devolverlo.');
             }
 
@@ -543,7 +545,7 @@ class AssetService
                     $images = [];
                     if ($dto->images) {
                         foreach ($dto->images as $image) {
-                            $path = Storage::disk('public')->putFile('asset_reparations', $image);
+                            $path = CompressImage::save($image, 'asset_reparations');
                             $images[] = $path;
                         }
                     }
@@ -1190,7 +1192,8 @@ class AssetService
                 $description = "Constancia de {$recordType} actualizada para '{$current->assignedTo->full_name}'";
             }
             // $path = '';
-            $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
+            // $path = Storage::disk('public')->putFile('delivery_records', $dto->file);
+            $path = CompressImage::save($dto->file, 'delivery_records');
 
             DB::transaction(function () use ($dto, $path, $description, $current) {
 
@@ -1229,7 +1232,8 @@ class AssetService
     {
 
         try {
-            $filePath = Storage::disk('public')->putFile('invoices', $file);
+            // $filePath = Storage::disk('public')->putFile('invoices', $file);
+            $filePath = CompressImage::save($file, 'invoices');
 
 
             $description = "Documento de factura subido correctamente.";

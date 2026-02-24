@@ -19,6 +19,7 @@ use App\Models\Ticket;
 use App\Models\TicketAsset;
 use App\Models\TicketHistory;
 use App\Models\User;
+use App\Utils\CompressImage;
 use Auth;
 use Carbon\Carbon;
 use DB;
@@ -177,7 +178,8 @@ class TicketService
 
                 if ($dto->images) {
                     foreach ($dto->images as $image) {
-                        $path = Storage::disk('public')->putFile('ticket_images', $image);
+                        // $path = Storage::disk('public')->putFile('ticket_images', $image);
+                        $path = CompressImage::save($image, 'ticket_images');
                         $images[] = $path;
                     }
                 }
@@ -247,7 +249,7 @@ class TicketService
 
                     $images = [];
                     foreach ($dto->images as $image) {
-                        $path = Storage::disk('public')->putFile('ticket_images', $image);
+                        $path = CompressImage::save($image, 'ticket_images');
                         $images[] = $path;
                     }
                     $ticket->images = $images;

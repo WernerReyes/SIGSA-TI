@@ -14,6 +14,7 @@ use App\Models\DevelopmentApproval;
 use App\Models\DevelopmentProgress;
 use App\Models\DevelopmentRequest;
 // use Illuminate\Container\Attributes\Storage;
+use App\Utils\CompressImage;
 use DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -64,7 +65,8 @@ class DevelopmentRequestService
 
         try {
             if ($dto->requirement_file) {
-                $path = Storage::disk('public')->putFile('delivery_records', $dto->requirement_file);
+                // $path = Storage::disk('public')->putFile('delivery_records', $dto->requirement_file);
+                $path = CompressImage::save($dto->requirement_file, 'delivery_records');
             }
 
             $maxPosition = DevelopmentRequest::where('status', DevelopmentRequestStatus::REGISTERED->value)->max('position')
@@ -105,7 +107,8 @@ class DevelopmentRequestService
                 if ($path) {
                     Storage::disk('public')->delete($path);
                 }
-                $path = Storage::disk('public')->putFile('delivery_records', $dto->requirement_file);
+                // $path = Storage::disk('public')->putFile('delivery_records', $dto->requirement_file);
+                $path = CompressImage::save($dto->requirement_file, 'delivery_records');
             }
 
             $developmentRequest->update([
