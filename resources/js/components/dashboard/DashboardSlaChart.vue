@@ -132,14 +132,14 @@ const buildTooltipContent = (d: SlaDatum): HTMLElement => {
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="h-2.5 w-2.5 rounded-full ring-2 ring-background" style="background:${chartConfig.compliance.color}"></span>
-                    <span class="text-[11px] uppercase tracking-wide text-muted-foreground">Cumplido</span>
+                    <span class="text-[11px] uppercase tracking-wide text-muted-foreground">${d.complied} Cumplido${d.complied !== 1 ? 's' : ''}</span>
                 </div>
                 <span class="rounded-full border border-border/40 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-foreground/80">${d.compliance_rate}%</span>
             </div>
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="h-2.5 w-2.5 rounded-full ring-2 ring-background" style="background:${chartConfig.breach.color}"></span>
-                    <span class="text-[11px] uppercase tracking-wide text-muted-foreground">Incumplido</span>
+                    <span class="text-[11px] uppercase tracking-wide text-muted-foreground">${d.breached} Incumplido${d.breached !== 1 ? 's' : ''}</span>
                 </div>
                 <span class="rounded-full border border-border/40 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-foreground/80">${d.breach_rate}%</span>
             </div>
