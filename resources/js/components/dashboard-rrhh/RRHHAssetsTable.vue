@@ -39,9 +39,9 @@
                     </TableRow>
           <TableRow v-else v-for="asset in recentAssets" :key="asset.id">
             <TableCell>{{ asset.name }}</TableCell>
-            <TableCell>{{ asset.brand }}</TableCell>
+            <TableCell>{{ asset.brand?.name }}</TableCell>
             <TableCell>
-              <template v-if="asset.model">{{ asset.model }}</template>
+              <template v-if="asset.model">{{ asset.model?.name  }}</template>
               <Badge v-else variant="secondary">N/A</Badge>
 
             </TableCell>

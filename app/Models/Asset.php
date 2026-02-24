@@ -102,16 +102,30 @@ class Asset extends EloquentModel
     {
         $parts = [];
 
-        $brandName = $this->brand?->name;
-        $modelName = $this->model?->name;
+        ds($this->brand);
 
-        if ($brandName) {
-            $parts[] = $brandName;
+        if (is_string($this->brand)) {
+            $parts[] = $this->brand;
+        } elseif (is_object($this->brand) && isset($this->brand->name)) {
+            $parts[] = $this->brand->name;
         }
 
-        if ($modelName) {
-            $parts[] = $modelName;
+        if (is_string($this->model)) {
+            $parts[] = $this->model;
+        } elseif (is_object($this->model) && isset($this->model->name)) {
+            $parts[] = $this->model->name;
         }
+
+        // $brandName = $this->brand?->name;
+        // $modelName = $this->model?->name;
+
+        // if ($brandName) {
+        //     $parts[] = $brandName;
+        // }
+
+        // if ($modelName) {
+        //     $parts[] = $modelName;
+        // }
 
         if ($this->serial_number) {
             $parts[] = "S/N: {$this->serial_number}";

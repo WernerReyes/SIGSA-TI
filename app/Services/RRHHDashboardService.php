@@ -49,8 +49,11 @@ class RRHHDashboardService
     {
         return Asset::isFromRRHH()
             ->where('type_id', AssetTypeEnum::CELL_PHONE)
-            ->selectRaw('brand, COUNT(*) as total')
-            ->groupBy('brand')
+            ->join('brands', 'assets.brand_id', '=', 'brands.id')
+            ->selectRaw('brands.name as brand, COUNT(*) as total')
+            ->groupBy('brands.name')
+            // ->selectRaw('brand, COUNT(*) as total')
+            // ->groupBy('brand')
             ->orderByDesc('total')
             ->get();
     }
@@ -259,8 +262,8 @@ class RRHHDashboardService
     public function getRecentAssets()
     {
         return Asset::isFromRRHH()
-        ->select('id', 'name', 'brand', 'model', 'type_id', 'status', 'created_at')
-        ->with('type')
+        ->select('id', 'name', 'brand_id', 'model_id', 'type_id', 'status', 'created_at')
+        ->with('type', 'brand:id,name', 'model:id,name')
             ->orderByDesc('created_at')
             ->limit(8)
             ->get();

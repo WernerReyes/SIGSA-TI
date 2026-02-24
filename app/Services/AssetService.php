@@ -29,7 +29,6 @@ use App\Models\AssetType;
 
 use App\Models\Brand;
 use App\Utils\CompressImage;
-use Intervention\Image\Facades\Image;
 use App\Models\DeliveryRecord;
 use App\Models\User;
 use App\Models\Ticket;
@@ -144,7 +143,7 @@ class AssetService
                     // Otros accesorios → sin filtro por marca
                     $query->orWhereHas('type', function ($q) {
                         $q->where('doc_category', AssetTypeCategory::ACCESSORY->value)
-                            ->where('name', 'not like', '%cargador%');
+                            ->whereNotIn('id', [AssetTypeEnum::CELL_PHONE_CHARGER, AssetTypeEnum::LAPTOP_CHARGER]);
                     });
                 })
 
