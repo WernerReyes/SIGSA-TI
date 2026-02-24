@@ -5,6 +5,7 @@
             currentIndex = 0;
         }
     ">
+     
         <DialogContent class="sm:max-w-11/12 flex items-center justify-center bg-transparent dialog-content border-0 h-fit">
          
              <Carousel :key="`dialog-${currentIndex}-${items.length}`" :opts="carouselOptions" class="w-full">
@@ -50,16 +51,16 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Carousel,
     CarouselContent,
     CarouselItem,
     CarouselNext,
     CarouselPrevious,
-} from '@/components/ui/carousel'
-import { Dialog, DialogContent } from './ui/dialog';
+} from '@/components/ui/carousel';
 import { computed, ref, watch } from 'vue';
+import { Dialog, DialogContent } from './ui/dialog';
 
 
 const currentIndex = defineModel<number>('current-index',{

@@ -23,9 +23,11 @@ use App\Models\Alert;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
+use App\Models\AssetModel;
 use App\Models\AssetReparation;
 use App\Models\AssetType;
 
+use App\Models\Brand;
 use App\Utils\CompressImage;
 use Intervention\Image\Facades\Image;
 use App\Models\DeliveryRecord;
@@ -54,6 +56,8 @@ class AssetService
             return Asset::query()
                 ->with([
                     'type:id,name,doc_category',
+                    'brand:id,name',
+                    'model:id,name',
                     'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                     'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.assignedTo.department:id,name',
@@ -77,6 +81,7 @@ class AssetService
                 ->withQueryString();
 
         } catch (\Throwable $e) {
+            ds($e->getMessage());
             throw new InternalErrorException('Error al obtener los activos' . $e->getMessage());
         }
     }
@@ -86,8 +91,9 @@ class AssetService
     {
         try {
             return Asset::
-                select('id', 'name', 'model', 'brand', 'status', 'type_id')
-                ->with('type:id,name,doc_category')
+                select('id', 'name', 'model_id', 'brand_id', 'status', 'type_id')
+                ->with('type:id,name,doc_category', 'brand:id,name', 'model:id,name')
+                
                 ->where('status', AssetStatus::AVAILABLE->value)->get();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener los equipos disponibles');
@@ -98,8 +104,8 @@ class AssetService
     {
         $asset = null;
         if ($asset_id) {
-            $asset = Asset::select('id', 'brand', 'type_id')
-                ->with('type:id,name,doc_category')
+            $asset = Asset::select('id', 'brand_id', 'type_id')
+                ->with('type:id,name,doc_category', 'brand:id,name')
                 ->find($asset_id);
             if (!$asset) {
                 throw new NotFoundHttpException('Activo no encontrado');
@@ -107,8 +113,8 @@ class AssetService
         }
         try {
             return Asset::query()
-                ->select('id', 'name', 'model', 'brand', 'serial_number', 'status', 'type_id')
-                ->with('type:id,name,doc_category')
+                ->select('id', 'name', 'model_id', 'brand_id', 'serial_number', 'status', 'type_id')
+                ->with('type:id,name,doc_category', 'brand:id,name', 'model:id,name')
                 ->isFromRRHH()
                 ->where('status', AssetStatus::AVAILABLE->value)
 
@@ -129,10 +135,10 @@ class AssetService
                             default => null,
                         };
                         $q->where('id', $chargerFor)
-                            ->when($asset?->brand, fn($qq) => $qq->whereNotNull('id'));
+                            ->when($asset?->brand_id, fn($qq) => $qq->where('brand_id', $asset->brand_id));
 
-                    })->when($asset?->brand, function ($q) use ($asset) {
-                        $q->where('brand', $asset->brand);
+                    })->when($asset?->brand_id, function ($q) use ($asset) {
+                        $q->where('brand_id', $asset->brand_id);
                     });
 
                     // Otros accesorios → sin filtro por marca
@@ -163,14 +169,18 @@ class AssetService
             'assignments.returnDocument',
 
             'assignments.parentAssignment:id,asset_id,assigned_to_id,assigned_at,returned_at,parent_assignment_id',
-            'assignments.parentAssignment.asset:id,name,brand,model,serial_number,type_id',
+            'assignments.parentAssignment.asset:id,name,brand_id,model_id,serial_number,type_id',
             'assignments.parentAssignment.asset.type:id,name,doc_category',
+            'assignments.parentAssignment.asset.brand:id,name',
+            'assignments.parentAssignment.asset.model:id,name',
             'assignments.parentAssignment.deliveryDocument',
             'assignments.parentAssignment.returnDocument',
 
             'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-            'assignments.childrenAssignments.asset:id,name,brand,model,serial_number,type_id',
+            'assignments.childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id',
             'assignments.childrenAssignments.asset.type:id,name',
+            'assignments.childrenAssignments.asset.brand:id,name',
+            'assignments.childrenAssignments.asset.model:id,name',
 
             'reparations:id,asset_id,date,description,image_paths',
 
@@ -185,7 +195,10 @@ class AssetService
     {
         try {
             return AssetAssignment::query()
-                ->with('asset:id,name,brand,model,serial_number,type_id', 'asset.type:id,name,doc_category', 'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand,model,serial_number,type_id', 'childrenAssignments.asset.type:id,name,doc_category')
+                ->with('asset:id,name,brand_id,model_id,serial_number,type_id', 'asset.type:id,name,doc_category', 
+                'asset.brand:id,name',
+                'asset.model:id,name',
+                'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id', 'childrenAssignments.asset.type:id,name,doc_category')
                 ->where('assigned_to_id', $user_id)
                 // ->whereNull('returned_at')
                 ->where('parent_assignment_id', null)
@@ -315,8 +328,8 @@ class AssetService
                     // 'status' => $dto->status,
                     'color' => $dto->color,
                     'status' => AssetStatus::AVAILABLE->value,
-                    'brand' => $dto->brand,
-                    'model' => $dto->model,
+                    'brand_id' => $dto->brand_id,
+                    'model_id' => $dto->model_id,
                     'serial_number' => $dto->serial_number,
                     'processor' => $dto->processor,
                     'ram' => $dto->ram,
@@ -367,8 +380,8 @@ class AssetService
                     'type_id' => $dto->type_id ?? $asset->type_id,
                     // 'status' => $dto->status ?? $asset->status,
                     'color' => $dto->color ?? $asset->color,
-                    'brand' => $dto->brand ?? $asset->brand,
-                    'model' => $dto->model ?? $asset->model,
+                    'brand_id' => $dto->brand_id ?? $asset->brand_id,
+                    'model_id' => $dto->model_id ?? $asset->model_id,
                     'serial_number' => $dto->serial_number ?? $asset->serial_number,
                     'processor' => $dto->processor ?? $asset->processor,
                     'ram' => $dto->ram ?? $asset->ram,
@@ -408,6 +421,7 @@ class AssetService
             if ($key === 'id') {
                 continue;
             }
+
             $formatDateFields = ['purchase_date', 'warranty_expiration'];
             if (in_array($key, $formatDateFields)) {
                 $value = $value ? date('Y-m-d', strtotime($value)) : null;
@@ -418,7 +432,6 @@ class AssetService
                 continue;
             }
 
-
             if ($key === 'is_new') {
                 $newValueLabel = $value ? 'Sí' : 'No';
                 $assetValueLabel = $asset->$key ? 'Sí' : 'No';
@@ -428,6 +441,7 @@ class AssetService
                 continue;
             }
 
+
             if ($key === 'type_id') {
                 $newType = AssetType::find($value);
                 $oldType = AssetType::find($asset->$key);
@@ -435,6 +449,17 @@ class AssetService
                 $oldTypeName = $oldType ? $oldType->name : 'N/A';
                 if ($value !== null && $asset->$key != $value) {
                     $fieldChanges[] = $this->messageChange($key, $oldTypeName, $newTypeName);
+                }
+                continue;
+            }
+
+            if (in_array($key, ['brand_id', 'model_id'])) {
+                $newBrandOrModel = $key === 'brand_id' ? Brand::find($value) : AssetModel::find($value);
+                $oldBrandOrModel = $key === 'brand_id' ? Brand::find($asset->$key) : AssetModel::find($asset->$key);
+                $newName = $newBrandOrModel ? $newBrandOrModel->name : 'N/A';
+                $oldName = $oldBrandOrModel ? $oldBrandOrModel->name : 'N/A';
+                if ($value !== null && $asset->$key != $value) {
+                    $fieldChanges[] = $this->messageChange($key, $oldName, $newName);
                 }
                 continue;
             }
@@ -462,9 +487,11 @@ class AssetService
         $mapping = [
             'name' => 'Nombre',
             'type_id' => 'Tipo',
+            'color' => 'Color',
+            
             'status' => 'Estado',
-            'brand' => 'Marca',
-            'model' => 'Modelo',
+            'brand_id' => 'Marca',
+            'model_id' => 'Modelo',
             'serial_number' => 'Número de serie',
             'processor' => 'Procesador',
             'ram' => 'RAM',
@@ -670,7 +697,7 @@ class AssetService
                     if ($accessoriesChanged) {
                         $assetsToReleaseIds = array_diff($assetsIds, $dto->accessories ?? []);
                         $assets = Asset::whereIn('id', $assetsToReleaseIds)
-                            ->select('id', 'name', 'brand', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
+                            ->select('id', 'name', 'brand_id', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
                             ->get();
 
 
@@ -680,7 +707,7 @@ class AssetService
                             . "," .
                             (count($dto->accessories ?? []) > 0 ?
                                 implode(',', Asset::whereIn('id', $dto->accessories ?? [])
-                                    ->select('id', 'name', 'brand', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
+                                    ->select('id', 'name', 'brand_id', 'model', 'serial_number') // Incluir todas las columnas que usa getFullNameAttribute
                                     ->get()
                                     ->pluck('full_name')
                                     ->map(fn($name) => "{$name} asignado")
@@ -898,7 +925,7 @@ class AssetService
                         AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
                             // 'parent_assignment_id' => null,
                             'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
-                            'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand} {$asset->model})",
+                            'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand->name} {$asset->model->name}) por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
                             'responsible_id' => $responsible->staff_id,
                             'return_reason' => $dto->return_reason,
                         ]);
@@ -998,9 +1025,9 @@ class AssetService
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
-            $template->setValue('brand', $asset->brand);
-            $template->setValue('model', $asset->model);
-            $template->setValue('serial_number', $asset->serial_number);
+            $template->setValue('brand', $asset->brand->name ?? 'N/A');
+            $template->setValue('model', $asset->model->name ?? 'N/A');
+            $template->setValue('serial_number', $asset->serial_number ?? 'N/A');
             $template->setValue('processor', strtoupper($asset->processor ?? 'N/A'));
             $template->setValue('ram', strtoupper($asset->ram ?? 'N/A'));
             $template->setValue('storage', strtoupper($asset->storage ?? 'N/A'));
@@ -1058,8 +1085,8 @@ class AssetService
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('department', strtoupper($assignment->assignedTo->charge->descripcion_cargo ?? 'N/A'));
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
-            $template->setValue('brand', $asset->brand);
-            $template->setValue('model', $asset->model);
+            $template->setValue('brand', $asset->brand->name ?? 'N/A');
+            $template->setValue('model', $asset->model->name ?? 'N/A');
             $template->setValue('accessories', $accessories);
             $template->setValue('phone', $asset->phone ?? 'N/A');
             $template->setValue('imei', $asset->imei ?? 'N/A');
@@ -1099,7 +1126,7 @@ class AssetService
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('name', $asset->name);
-            $template->setValue('brand', $asset->brand);
+            $template->setValue('brand', $asset->brand->name ?? 'N/A');
             $template->setValue('model', $asset->model ?? 'N/A');
             $template->setValue('serial_number', $asset->serial_number ?? 'N/A');
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
@@ -1152,8 +1179,8 @@ class AssetService
             $template->setValue('is_termination', $assignment->return_reason === ReturnReason::TERMINATION_EMPLOYMENT->value ? 'X' : '');
             $template->setValue('is_technical', $assignment->return_reason === ReturnReason::TECHNICAL_ISSUES->value ? 'X' : '');
             $template->setValue('is_renovation', $assignment->return_reason === ReturnReason::EQUIPMENT_RENOVATION->value ? 'X' : '');
-            $template->setValue('brand', strtoupper($asset->brand));
-            $template->setValue('model', strtoupper($asset->model));
+            $template->setValue('brand', strtoupper($asset->brand->name ?? 'N/A'));
+            $template->setValue('model', strtoupper($asset->model->name ?? 'N/A'));
             $template->setValue('color', strtoupper($asset->color));
             $template->setValue('serial_number', $asset->serial_number);
             $template->setValue('comments', $assignment->return_comment ?? '');

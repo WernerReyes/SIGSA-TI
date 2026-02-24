@@ -18,8 +18,10 @@ use App\Http\Requests\Asset\UpdateStatusRequest;
 use App\Http\Requests\Asset\UploadDeliveryRecordRequest;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
+use App\Services\AssetModelService;
 use App\Services\AssetService;
 use App\Services\AssetTypeService;
+use App\Services\BrandService;
 use App\Services\DepartmentService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
@@ -34,6 +36,8 @@ class AssetController extends Controller
         AssetTypeService $assetTypeService,
         UserService $userService,
         DepartmentService $departmentService,
+        BrandService $brandService,
+        AssetModelService $assetModelService,
         Request $request
     ) {
         $filters = AssetFiltersDto::fromArray($request->all());
@@ -53,6 +57,9 @@ class AssetController extends Controller
             'assetsPaginated' => Inertia::once(fn() => $assetService->getPaginated($filters)),
             'stats' => fn() => Inertia::once(fn() => $assetService->getStats($filters)),
             'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
+            'brands' => Inertia::optional(fn() => $brandService->getBasicInfo())->once(),
+            'models' => Inertia::optional(fn() => $assetModelService->getBasicInfo())->once(),
+
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
             // 'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),

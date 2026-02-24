@@ -16,8 +16,14 @@ return new class extends Migration {
             $table->string('name');
             $table->string('color')->nullable();
             $table->enum('status', AssetStatus::values());
-            $table->string('brand')->nullable();
-            $table->string('model')->nullable();
+            
+            $table->unsignedBigInteger('brand_id');
+            $table->foreign('brand_id')->references('id')->on('brands');
+
+
+            $table->unsignedBigInteger('model_id')->nullable();
+            $table->foreign('model_id')->references('id')->on('models');
+
             $table->string('serial_number')->nullable();
             $table->string('processor')->nullable();
             $table->string('ram')->nullable();
@@ -46,7 +52,7 @@ return new class extends Migration {
 
             $table->index(['type_id', 'status']);
             $table->index(['type_id', 'warranty_expiration']);
-            $table->index(['type_id', 'brand']);
+            $table->index(['type_id', 'brand_id']);
             
 
 

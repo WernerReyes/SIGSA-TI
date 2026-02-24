@@ -31,6 +31,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     <DialogOverlay />
     <DialogContent
       data-slot="dialog-content"
+      @pointer-down-outside="(event) => event.preventDefault()"
       v-bind="{ ...$attrs, ...forwarded }"
       :class="
         cn(

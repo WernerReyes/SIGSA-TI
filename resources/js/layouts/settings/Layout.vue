@@ -6,7 +6,7 @@ import { useApp } from '@/composables/useApp';
 import { toUrl, urlIsActive } from '@/lib/utils';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Contrast, MonitorSmartphone, Shield } from 'lucide-vue-next';
+import { Box, Contrast, MonitorSmartphone, Shield, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const { isFromTI } = useApp();
@@ -27,6 +27,14 @@ const sidebarNavItems = computed<NavItem[]>(() => {
             title: 'Tipos de activo',
             icon: MonitorSmartphone,
             href: "/settings/asset-types",
+        }, {
+            title: 'Marcas',
+            icon: Tag,
+            href: "/settings/brands",
+        }, {
+            title: 'Modelos',
+            icon: Box,
+            href: "/settings/models",
         });
     }
     return items;

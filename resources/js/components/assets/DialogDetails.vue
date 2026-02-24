@@ -31,7 +31,7 @@
                             </Badge>
                         </div>
                         <h2 class="font-bold tracking-tight text-2xl">{{ asset?.name }}</h2>
-                        <p class="text-sm text-muted-foreground mt-1">{{ asset?.brand }} {{ asset?.model }}</p>
+                        <p class="text-sm text-muted-foreground mt-1">{{ asset?.brand?.name }} {{ asset?.model?.name }}</p>
                     </div>
                 </div>
             </DialogHeader>

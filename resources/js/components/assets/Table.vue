@@ -69,6 +69,16 @@
 
                     </SelectFilters>
 
+                    <SelectFilters label="Marca" :items="brands" data-key="brands" :icon="Tag" show-refresh
+                        show-selected-focus item-value="id" item-label="name" :multiple="true"
+                        :default-value="form.brands" @select="(selects) => form.brands = selects" />
+
+
+                    <SelectFilters label="Modelos" :items="models" data-key="models" :icon="Box" show-refresh
+                        show-selected-focus item-value="id" item-label="name" :multiple="true"
+                        :default-value="form.models" @select="(selects) => form.models = selects" />
+
+
 
                     <SelectFilters label="Estados" :items="Object.values(assetStatusOptions)" :icon="ChartArea"
                         show-refresh show-selected-focus item-value="value" item-label="label" :multiple="true"
@@ -335,7 +345,7 @@ import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
 import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
-import { Building, CalendarSearch, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, Search, UploadCloud, UserIcon, Users, X, XCircle } from 'lucide-vue-next';
+import { Building, CalendarSearch, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Tag, Box, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, Search, UploadCloud, UserIcon, Users, X, XCircle } from 'lucide-vue-next';
 import { computed, h, reactive, ref, watch } from 'vue';
 
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
@@ -359,7 +369,7 @@ import StatusDialog from './StatusDialog.vue';
 const { assets } = defineProps<{ assets: Paginated<Asset> }>()
 
 const page = usePage();
-const { isLoading, users, departments, assetTypes, assetAccessories } = useApp();
+const { isLoading, users, departments, assetTypes, assetAccessories, brands, models } = useApp();
 
 
 const activeRow = ref<Asset | null>(null);
@@ -391,6 +401,8 @@ const form = reactive<{
     search: string;
     status: AssetStatus[];
     types: number[];
+    brands: number[];
+    models: number[];
     assigned_to: (number | null)[];
     department_id: number[];
     dateRange?: DateRange | null;
@@ -398,6 +410,8 @@ const form = reactive<{
     search: filters.value.search || '',
     status: filters.value.status || [],
     types: filters.value.types?.map((id: string) => +id) || [],
+    brands: filters.value.brands?.map((id: string) => +id) || [],
+    models: filters.value.models?.map((id: string) => +id) || [],
     assigned_to: filters.value.assigned_to?.map((id: string | null) => id ? +id : null) || [],
     department_id: filters.value.department_id || [],
     dateRange: filters.value?.startDate || filters.value?.endDate ? {
@@ -442,7 +456,20 @@ const filterstersRenders = computed(() => [{
     value: form.types.length,
     click: (): void => { form.types = [] }
 
+},
+{
+    label: 'Marcas',
+    value: form.brands.length,
+    click: (): void => { form.brands = [] }
+
 }, {
+    label: 'Modelos',
+    value: form.models.length,
+    click: (): void => { form.models = [] }
+
+},
+
+{
     label: 'Asignados',
     value: form.assigned_to.length,
     click: (): void => { form.assigned_to = [] }
@@ -484,6 +511,23 @@ watch(
 )
 
 watch(
+    () => form.brands,
+    () => {
+        applyFilters()
+    },
+    { deep: true }
+)
+
+
+watch(
+    () => form.models,
+    () => {
+        applyFilters()
+    },
+    { deep: true }
+)
+
+watch(
     () => form.assigned_to,
     () => {
         applyFilters()
@@ -506,6 +550,7 @@ watch(
     },
     { deep: true }
 )
+
 
 
 const handleOpenDetails = () => {
@@ -547,6 +592,8 @@ const applyFilters = () => {
             search: form.search || undefined,
             status: form.status.length ? form.status : undefined,
             types: form.types.length ? form.types : undefined,
+            brands: form.brands.length ? form.brands : undefined,
+            models: form.models.length ? form.models : undefined,
             assigned_to: form.assigned_to.length ? form.assigned_to : undefined,
             department_id: form.department_id.length ? form.department_id : undefined,
             startDate: startDate || undefined,
@@ -642,7 +689,7 @@ const columns: ColumnDef<Asset>[] = [
         id: 'brand',
         header: 'Marca',
         size: 150,
-        cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
+        cell: info => info.getValue()?.name || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },
     {
@@ -650,7 +697,7 @@ const columns: ColumnDef<Asset>[] = [
         id: 'model',
         header: 'Modelo',
         size: 200,
-        cell: info => info.getValue() || h(Badge, { variant: 'secondary' }, () => 'N/A'),
+        cell: info => info.getValue()?.name || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },
     {

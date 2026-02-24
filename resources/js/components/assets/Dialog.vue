@@ -7,7 +7,6 @@
         <DialogTrigger v-if="includeButton" as-child>
             <Button class="w-fit ml-auto">
                 <Laptop />
-
                 Nuevo Activo
             </Button>
         </DialogTrigger>
@@ -72,10 +71,12 @@
                                                 <FieldLabel>Tipo</FieldLabel>
 
 
-                                                <SelectFilters label="Tipo de Activo" :items="assetTypes"
-                                                    data-key="types" item-label="name" item-value="id"
-                                                    :default-value="componentField.modelValue" :selected-as-label="true"
-                                                    :show-refresh="false" :show-selected-focus="false"
+                                                <SelectFilters
+                                                    :label="getDefaultLabel(currentAsset?.type, 'Tipo de Activo')"
+                                                    :items="assetTypes" data-key="types" item-label="name"
+                                                    item-value="id" :default-value="componentField.modelValue"
+                                                    :selected-as-label="true" :show-refresh="false"
+                                                    :show-selected-focus="false"
                                                     @select="(value) => setFieldValue('type_id', value)"
                                                     filter-placeholder="Buscar tipo..."
                                                     empty-text="No se encontraron tipos de activos">
@@ -106,22 +107,39 @@
 
                                 <div class="grid gap-4 items-center md:grid-cols-2">
                                     <FieldGroup>
-                                        <VeeField name="brand" v-slot="{ componentField, errors }">
+                                        <VeeField name="brand_id" v-slot="{ componentField, errors }">
                                             <Field :data-invalid="!!errors.length">
-                                                <FieldLabel for="brand">Marca</FieldLabel>
-                                                <Input id="brand" placeholder="EJ: Dell, HP, Lenovo"
-                                                    v-bind="componentField" />
+                                                <FieldLabel for="brand_id">Marca</FieldLabel>
+                                                <!-- <Input id="brand" placeholder="EJ: Dell, HP, Lenovo"
+                                                    v-bind="componentField" /> -->
+
+                                                <SelectFilters :label="getDefaultLabel(currentAsset?.brand, 'Marca')"
+                                                    :items="brands" data-key="brands" item-label="name" item-value="id"
+                                                    :default-value="componentField.modelValue" :selected-as-label="true"
+                                                    :show-refresh="false" :show-selected-focus="false"
+                                                    @select="(value) => setFieldValue('brand_id', value)"
+                                                    filter-placeholder="Buscar marca..."
+                                                    empty-text="No se encontraron marcas" />
+
+
                                                 <FieldError v-if="errors.length" :errors="errors" />
                                             </Field>
                                         </VeeField>
                                     </FieldGroup>
 
                                     <FieldGroup>
-                                        <VeeField name="model" v-slot="{ componentField, errors }">
+                                        <VeeField name="model_id" v-slot="{ componentField, errors }">
                                             <Field :data-invalid="!!errors.length">
-                                                <FieldLabel for="model">Modelo</FieldLabel>
-                                                <Input id="model" placeholder="EJ: Inspiron 15 3000"
-                                                    v-bind="componentField" />
+                                                <FieldLabel for="model_id">Modelo</FieldLabel>
+                                                <!-- <Input id="model" placeholder="EJ: Inspiron 15 3000"
+                                                    v-bind="componentField" /> -->
+                                                <SelectFilters :label="getDefaultLabel(currentAsset?.model, 'Modelo')"
+                                                    :items="models" data-key="models" item-label="name" item-value="id"
+                                                    :default-value="componentField.modelValue" :selected-as-label="true"
+                                                    :show-refresh="false" :show-selected-focus="false"
+                                                    @select="(value) => setFieldValue('model_id', value)"
+                                                    filter-placeholder="Buscar modelo..."
+                                                    empty-text="No se encontraron modelos" />
                                                 <FieldError v-if="errors.length" :errors="errors" />
                                             </Field>
                                         </VeeField>
@@ -142,19 +160,6 @@
 
                                         </VeeField>
                                     </FieldGroup>
-<!-- 
-                                    <FieldGroup>
-                                        <VeeField name="is_accessory" v-slot="{ value, setValue, errors }">
-
-
-                                            <div class="flex items-center gap-3">
-                                                <Checkbox :model-value="value" @update:model-value="setValue($event)" />
-                                                <FieldLabel for="terms">¿Es Accesorio?</FieldLabel>
-                                            </div>
-                                            <FieldError v-if="errors.length" :errors="errors" />
-
-                                        </VeeField>
-                                    </FieldGroup> -->
 
 
                                 </div>
@@ -403,7 +408,7 @@ import {
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
 import { useApp } from '@/composables/useApp'
 import { type Asset } from '@/interfaces/asset.interface'
-import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
+import { AssetTypeDocCategory, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
 import { isEqual } from '@/lib/utils'
 import { router, usePage } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate } from '@internationalized/date'
@@ -419,7 +424,7 @@ defineProps<{
     includeButton?: boolean
 }>();
 
-const { assetTypes, isLoading } = useApp();
+const { assetTypes, isLoading, brands, models } = useApp();
 const page = usePage();
 
 const currentAsset = defineModel<Asset | null>('current-asset', {
@@ -452,10 +457,10 @@ const formSchema = toTypedSchema(z.object({
     type_id: z.number({
         message: 'El tipo de activo es obligatorio'
     }),
-    brand: z.string({
+    brand_id: z.number({
         message: 'La marca es obligatoria'
-    }).min(1, 'La marca es obligatoria'),
-    model: z.string().optional().nullable(),
+    }),
+    model_id: z.number().optional().nullable(),
     serial_number: z.string().optional().nullable(),
     processor: z.string().optional().nullable(),
     ram: z.string().optional().nullable(),
@@ -477,9 +482,6 @@ const formSchema = toTypedSchema(z.object({
         message: 'La fecha de vencimiento de la garantía no puede ser anterior a la fecha de compra'
     }),
     is_new: z.boolean().optional().default(true),
-    // assigned_to: z.number().optional(),
-
-
 }));
 
 const initialValues = computed(() => {
@@ -487,8 +489,8 @@ const initialValues = computed(() => {
     return {
         name: asset?.name || '',
         color: asset?.color || '',
-        brand: asset?.brand || '',
-        model: asset?.model || '',
+        brand_id: asset?.brand_id || undefined,
+        model_id: asset?.model_id || undefined,
         serial_number: asset?.serial_number || '',
         type_id: asset?.type_id,
         purchase_date: asset?.purchase_date ? parseDate(asset.purchase_date.split('T')[0]) : null,
@@ -529,7 +531,7 @@ function onSubmit(values: any) {
 
     const only = ['assetsPaginated', 'stats'];
 
-    if (assetTypes.value.find(type => type.id === values.type_id)?.name === TypeName.ACCESSORY
+    if (assetTypes.value.find(type => type.id === values.type_id)?.doc_category === AssetTypeDocCategory.ACCESSORY
         || assetAccessories.value.find(accessory => accessory.id === currentAsset.value?.id)
     ) {
         only.push('accessories');
@@ -566,6 +568,10 @@ function onSubmit(values: any) {
 
 
     })
+}
+
+const getDefaultLabel = (data?: { name: string }, defaultLabel: string = '') => {
+    return data?.name || defaultLabel;
 }
 
 const handleResetForm = () => {

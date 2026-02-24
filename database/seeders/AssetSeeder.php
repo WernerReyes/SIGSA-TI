@@ -28,8 +28,8 @@ class AssetSeeder extends Seeder
         Asset::truncate();
 
 
-        // Schema::enableForeignKeyConstraints(); // Eliminar esta línea para ejecutar el seeder con los datos del Excel
-        // return;
+        Schema::enableForeignKeyConstraints(); // Eliminar esta línea para ejecutar el seeder con los datos del Excel
+        return;
 
         $filePath = storage_path('app/assets.xlsx');
 

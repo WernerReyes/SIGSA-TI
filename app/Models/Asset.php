@@ -7,10 +7,10 @@ use App\DTOs\Asset\AssetFiltersDto;
 use App\Enums\Asset\AssetTypeEnum;
 use App\Enums\Department\Allowed;
 use DB;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Support\Facades\Storage;
 
-class Asset extends Model
+class Asset extends EloquentModel
 {
     //
     protected $table = 'assets';
@@ -18,8 +18,10 @@ class Asset extends Model
     protected $fillable = [
         'name',
         'status',
-        'brand',
-        'model',
+        // 'brand',
+        // 'model',
+        'brand_id',
+        'model_id',
         'color',
         'serial_number',
         'processor',
@@ -100,12 +102,15 @@ class Asset extends Model
     {
         $parts = [];
 
-        if ($this->brand) {
-            $parts[] = $this->brand;
+        $brandName = $this->brand?->name;
+        $modelName = $this->model?->name;
+
+        if ($brandName) {
+            $parts[] = $brandName;
         }
 
-        if ($this->model) {
-            $parts[] = $this->model;
+        if ($modelName) {
+            $parts[] = $modelName;
         }
 
         if ($this->serial_number) {
@@ -166,15 +171,20 @@ class Asset extends Model
             ->when($filtersDto->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('brand', 'like', "%{$search}%")
-                        ->orWhere('model', 'like', "%{$search}%")
+                    ->orWhereHas('brand', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('model', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                    
+                        // ->orWhere('brand', 'like', "%{$search}%")
+                        // ->orWhere('model', 'like', "%{$search}%")
                         ->orWhere('serial_number', 'like', "%{$search}%")
                         ->orWhereHas(
                             'currentAssignment.childrenAssignments.asset',
                             fn($q2) =>
                             $q2->where('name', 'like', "%{$search}%")
-                                ->orWhere('brand', 'like', "%{$search}%")
-                                ->orWhere('model', 'like', "%{$search}%")
+                                ->orWhereHas('brand', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
+                                // ->orWhere('brand', 'like', "%{$search}%")
+                                    ->orWhereHas('model', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
+                                // ->orWhere('model', 'like', "%{$search}%")
                                 ->orWhere('serial_number', 'like', "%{$search}%")
                         );
                 });
@@ -211,6 +221,45 @@ class Asset extends Model
                         );
                      });
 
+                });
+            })
+
+
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BRANDS
+            |--------------------------------------------------------------------------
+            */
+            ->when($filtersDto->brands, function ($query, $brandIds) use ($stat) {
+                $query->where(function ($q) use ($brandIds, $stat) {
+                    $q->whereIn('brand_id', $brandIds)->when(!$stat, function ($q2) use ($brandIds) {
+                        $q2->orWhereHas(
+                            'currentAssignment.childrenAssignments.asset',
+                            fn($q3) =>
+                            $q3->whereIn('brand_id', $brandIds)
+                        );
+                    });
+                });
+            })
+
+
+            
+            /*
+            |--------------------------------------------------------------------------
+            | MODELS
+            |--------------------------------------------------------------------------
+            */
+            ->when($filtersDto->models, function ($query, $modelIds) use ($stat) {
+                $query->where(function ($q) use ($modelIds, $stat) {
+                    $q->whereIn('model_id', $modelIds)->when(!$stat, function ($q2) use ($modelIds) {
+                        $q2->orWhereHas(
+                            'currentAssignment.childrenAssignments.asset',
+                            fn($q3) =>
+                            $q3->whereIn('model_id', $modelIds)
+                        );
+                    });
                 });
             })
 
@@ -272,6 +321,16 @@ class Asset extends Model
     public function type()
     {
         return $this->belongsTo(AssetType::class, 'type_id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    public function model()
+    {
+        return $this->belongsTo(AssetModel::class, 'model_id');
     }
 
     public function currentAssignment()

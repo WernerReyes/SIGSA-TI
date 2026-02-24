@@ -27,8 +27,11 @@ class UpdateAssetRequest extends FormRequest
             'type_id' => ['nullable', 'exists:assets_type,id'],
             // 'status' => ['nullable', 'in:' . implode(',', AssetStatus::values())],
             'color' => ['nullable', 'string', 'max:100'],
-            'brand' => ['nullable', 'string', 'max:255'],
-            'model' => ['nullable', 'string', 'max:255'],
+            // 'brand' => ['nullable', 'string', 'max:255'],
+            // 'model' => ['nullable', 'string', 'max:255'],
+            'brand_id' => ['nullable', 'exists:brands,id'],
+            'model_id' => ['nullable', 'exists:models,id'],
+            
             'serial_number' => ['nullable', 'string', 'max:255'],
             'processor' => ['nullable', 'string', 'max:255'],
             'ram' => ['nullable', 'string', 'max:255'],

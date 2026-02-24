@@ -4,13 +4,15 @@ import { type AssetAssignment } from './assetAssignment.interface';
 import { type AssetHistory } from './assetHistory.interface';
 import { type AssetType } from './assetType.interface';
 import { type AssetReparation } from './assetReparation.interface';
+import { type Brand } from './brand.interface';
+import { type AssetModel } from './assetModel.interface';
 
 
 export interface Asset {
     id: number;
     type_id: number;
     color?: string;
-    model: string;
+    model_id: number | null;
     serial_number: string;
     processor: string;
     ram: string;
@@ -18,7 +20,7 @@ export interface Asset {
     purchase_date: string;
     warranty_expiration: string;
     status: AssetStatus;
-    brand: string;
+    brand_id: number;
     created_at: Date;
     updated_at: Date;
     name: string;
@@ -31,6 +33,8 @@ export interface Asset {
     phone?: string;
     imei?: string;
 
+    brand?: Brand,
+    model?: AssetModel,
   
     // assigned_to_id?: number | null;
     current_assignment?: AssetAssignment;
