@@ -250,6 +250,11 @@
             </div>
 
             <div class="flex space-x-2 p-4">
+                <div class="text-sm text-muted-foreground">
+        Mostrando <span class="font-medium">{{ assets.from }}</span> a <span class="font-medium">{{ assets.to ||
+          0
+        }}</span> de <span class="font-medium">{{ assets.total }}</span> activos
+      </div>
                 <Pagination class="mx-0  w-fit ml-auto!" :items-per-page="assets.per_page" :total="assets.total"
                     :default-page="assets.current_page">
                     <PaginationContent class="flex-wrap">
