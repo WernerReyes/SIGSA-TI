@@ -86,6 +86,7 @@
                                             class="flex md:flex-row flex-col gap-2 mt-2">
                                             <img v-for="(img, index) in repair.image_paths" :key="img"
                                                 :src="getImageUrl(img)"
+                                                loading="lazy" width="80" height="80"
                                                 class="w-20 h-20 object-cover rounded border cursor-pointer hover:ring-2 hover:ring-yellow-400 transition"
                                                 :alt="'Imagen reparación ' + repair.id" @click="() => {
                                                     const mappedImages = repair.image_paths.map(getImageUrl).filter(Boolean) as string[];
@@ -445,6 +446,7 @@
                                             <button type="button" class="w-full text-left"
                                                 @click="viewDocument(getDeliveryUrl(assignment))">
                                                 <img v-if="isImageDocument(getDeliveryUrl(assignment))"
+                                                    loading="lazy" width="500" height="300"
                                                     :src="getDeliveryUrl(assignment)"
                                                     class="h-28 w-full rounded-md object-cover border" />
                                                 <div v-else
@@ -478,6 +480,8 @@
                                             <button type="button" class="w-full text-left"
                                                 @click="viewDocument(getReturnUrl(assignment))">
                                                 <img v-if="isImageDocument(getReturnUrl(assignment))"
+                                                        loading="lazy" width="500" height="300"
+                                                        
                                                     :src="getReturnUrl(assignment)"
                                                     class="h-28 w-full rounded-md object-cover border" />
                                                 <div v-else
@@ -576,7 +580,7 @@
         <template #item="{ item }">
             <div class="w-full h-11/12! flex items-center justify-center">
 
-                <img :src="item" class="m-auto max-h-200 object-contain" />
+                <img :src="item" class="m-auto max-h-200 object-contain" loading="lazy" />
             </div>
         </template>
     </Carousel>
