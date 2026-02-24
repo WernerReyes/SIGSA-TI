@@ -1126,7 +1126,7 @@ class AssetService
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('name', $asset->name);
             $template->setValue('brand', $asset->brand->name ?? 'N/A');
-            $template->setValue('model', $asset->model ?? 'N/A');
+            $template->setValue('model', $asset->model->name ?? 'N/A');
             $template->setValue('serial_number', $asset->serial_number ?? 'N/A');
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
 
