@@ -174,6 +174,7 @@
                                             class="flex flex-col gap-2">
                                             <!-- Solo se muestra la imagen si NO ha tenido error -->
                                             <img v-if="img && !imageErrors[`${history.id}-${imgIndex}`]" :src="img"
+                                            loading="lazy" width="80" height="80"
                                                 alt="Evidencia" class="h-20 object-cover rounded-md border cursor-pointer hover:ring-2 hover:ring-primary transition"
                                                 @error="handleImgError(`${history.id}-${imgIndex}`)" 
                                                 
@@ -393,7 +394,9 @@
         <template #item="{ item }">
             <div class="w-full h-11/12! flex items-center justify-center">
 
-                <img :src="item" class="m-auto max-h-200 object-contain" />
+                <img :src="item" class="m-auto max-h-200 object-contain"
+                    loading="lazy" />
+                
             </div>
         </template>
     </Carousel>
