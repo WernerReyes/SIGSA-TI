@@ -102,8 +102,6 @@ class Asset extends EloquentModel
     {
         $parts = [];
 
-        ds($this->brand);
-
         if (is_string($this->brand)) {
             $parts[] = $this->brand;
         } elseif (is_object($this->brand) && isset($this->brand->name)) {

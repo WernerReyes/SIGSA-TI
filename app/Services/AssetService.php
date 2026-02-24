@@ -80,7 +80,6 @@ class AssetService
                 ->withQueryString();
 
         } catch (\Throwable $e) {
-            ds($e->getMessage());
             throw new InternalErrorException('Error al obtener los activos' . $e->getMessage());
         }
     }
@@ -363,11 +362,18 @@ class AssetService
     {
 
         if ($this->isFromRRHH() && $dto->type_id) {
-            $type = AssetType::find($dto->type_id);
-            if ($type && !in_array($type->name, ['Celular', 'Cargador de Celular'])) {
-                throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Cargador de Celular');
-            }
+            if (!in_array($dto->type_id, AssetTypeEnum::RRHHTypes())) {
+                throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Accesorio');
+            } 
         }
+
+        //* If it has accesories and the type is being changed to an accessory, prevent the change and ask to first remove the accessories
+        if ($asset->currentAssignment?->childrenAssignments()->exists() && $dto->type_id) {
+            $newType = AssetType::find($dto->type_id);
+            if ($newType && $newType->doc_category === AssetTypeCategory::ACCESSORY->value) {
+                throw new BadRequestException("No se puede cambiar el tipo del activo a {$newType->name} mientras tenga accesorios asignados. Por favor, elimine primero las relaciones con los accesorios.");
+            }
+         }
 
         try {
 
@@ -892,6 +898,10 @@ class AssetService
                 throw new BadRequestException('La asignación ya ha sido devuelta.');
             }
 
+            if ($assignment->asset->status !== AssetStatus::ASSIGNED->value) {
+                throw new BadRequestException('Solo se pueden devolver activos que estén en estado ASIGNADO.');
+            }
+
             // $responsible = auth()->user();
 
             // if ($responsible->dept_id !== Allowed::SYSTEM_TI->value) {
@@ -918,13 +928,10 @@ class AssetService
                             return $asset->full_name;
                         })->implode(', ');
 
-
-
-
                         AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
                             // 'parent_assignment_id' => null,
                             'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
-                            'return_comment' => "Devuelto junto al equipo principal ({$asset->name} - {$asset->brand->name} {$asset->model->name}) por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
+                            'return_comment' => "Devuelto junto al equipo principal {$asset->full_name} por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
                             'responsible_id' => $responsible->staff_id,
                             'return_reason' => $dto->return_reason,
                         ]);

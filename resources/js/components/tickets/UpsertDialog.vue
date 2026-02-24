@@ -106,9 +106,14 @@
                                     <FieldLabel class="text-sm font-medium">
                                         Adjuntar archivos (opcional)
                                     </FieldLabel>
-                                    <Input type="file" multiple accept="image/*"
+                                     <MultiUploader :max-size-mb="2"  @error="(msg) => toast.error(msg)"
+                    :max-files="5"
+                    @update:file="(files) => setFieldValue('images', files)" accept="image/*"
+                    label="Adjuntar imagen" />
+                    <FieldError v-if="errors.images" :errors="[errors.images]" class="mt-2" />
+                                    <!-- <Input type="file" multiple accept="image/*"
                                         @change="(e) => setFieldValue('images', Array.from(e.target.files))" />
-                                    <p class="text-xs text-muted-foreground">Formatos sugeridos: PDF, PNG, JPG.</p>
+                                    <p class="text-xs text-muted-foreground">Formatos sugeridos: PDF, PNG, JPG.</p> -->
                                 </Field>
                             </FieldGroup>
                         </CardContent>
@@ -295,6 +300,8 @@ import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import z from 'zod';
+import MultiUploader from '../MultiUploader.vue';
+import { toast } from 'vue-sonner';
 
 
 

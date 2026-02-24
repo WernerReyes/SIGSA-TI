@@ -47,6 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 $message = match ($modelClass) {
                     \App\Models\Ticket::class => 'El ticket solicitado',
                     \App\Models\Asset::class => 'El equipo solicitado',
+                    \App\Models\Brand::class => 'La marca solicitada',
+                    \App\Models\AssetModel::class => 'El modelo de equipo solicitado',
                     \App\Models\AssetType::class => 'El tipo de equipo solicitado',
                     \App\Models\AssetAssignment::class => 'La asignación de equipo solicitada',
                     \App\Models\Service::class => 'La solicitud de servicio solicitada',

@@ -218,7 +218,6 @@ class AssetSeeder extends Seeder
                 return ["name" => null]; // Saltar esta fila si el motivo es "cambio de equipo"
             }
 
-            ds($row[2]);
 
             if (is_null($row[2])) {
                 return ["name" => null]; // Saltar esta fila si no hay un nombre asignado

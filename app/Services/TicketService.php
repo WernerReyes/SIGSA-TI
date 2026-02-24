@@ -178,7 +178,6 @@ class TicketService
 
                 if ($dto->images) {
                     foreach ($dto->images as $image) {
-                        // $path = Storage::disk('public')->putFile('ticket_images', $image);
                         $path = CompressImage::save($image, 'ticket_images');
                         $images[] = $path;
                     }
@@ -272,6 +271,13 @@ class TicketService
 
 
                 $changes = $ticket->getChanges();
+                if ($changes['priority'] ?? null) {
+                    $sla = SlaPolicy::where('priority', $ticket->priority)->first();
+                    $ticket->sla_response_due_at = $this->businessHoursService->addBusinessMinutes($ticket->created_at, $sla->response_time_minutes);
+                    $ticket->sla_resolution_due_at = $this->businessHoursService->addBusinessMinutes($ticket->created_at, $sla->resolution_time_minutes);
+                    $ticket->save();
+                }
+
                 if (count($changes) > 0) {
                     $changeDetails = [];
                     foreach ($changes as $field => $newValue) {

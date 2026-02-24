@@ -205,7 +205,7 @@
                                     Asignar
                                 </ContextMenuItem>
                                 <ContextMenuItem v-if="!activeRow?.current_assignment?.parent_assignment_id"
-                                    :disabled="!activeRow?.current_assignment" @click="openDevolution = true">
+                                    :disabled="!activeRow?.current_assignment || activeRow?.status !== AssetStatus.ASSIGNED" @click="openDevolution = true">
                                     <MonitorSmartphone />
                                     Devolver
                                 </ContextMenuItem>

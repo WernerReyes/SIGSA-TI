@@ -693,11 +693,7 @@ const parsedReturnWithMainParent = (description: string): Array<{
     const [basePart, restPart] = description.split(separator);
     const baseParsed = parsedAssignmentChange(basePart, 'Accesorio');
     const [mainParentPart, topic] = restPart.split(' por');
-    const mainParent = mainParentPart
-        ?.replace('(', '')
-        .replace(')', '')
-        .trim();
-
+    
     const op = Object.values(returnReasonOptions).find(opt => opt.label.trim().toLowerCase() === topic.trim().toLowerCase());
 
     const parsedMainParent = [
@@ -705,7 +701,7 @@ const parsedReturnWithMainParent = (description: string): Array<{
         { type: 'text' as const, content: separator },
         {
             type: 'badge' as const,
-            content: mainParent,
+            content: mainParentPart,
             variant: 'secondary',
             icon: MonitorSmartphone,
         }

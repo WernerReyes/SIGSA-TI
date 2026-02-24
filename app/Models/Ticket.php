@@ -63,7 +63,7 @@ class Ticket extends Model
     //         $table->timestamp('resolved_at')->nullable();
 
     protected $casts = [
-            'images' => 'array',
+        'images' => 'array',
         // 'opened_at' => 'datetime',
         // 'closed_at' => 'datetime',
         // 'status' => TicketStatus::class,
@@ -90,7 +90,7 @@ class Ticket extends Model
 
     public function getSlaResponseTimeMinutesAttribute()
     {
-        
+
 
         $businessHoursService = app(BusinessHoursService::class);
 
@@ -99,11 +99,11 @@ class Ticket extends Model
                 Carbon::parse($this->sla_response_due_at),
                 Carbon::parse($this->first_response_at)
             ) : null,
-            'before_late_minutes' =>  $this->first_response_at ? $businessHoursService->calculateBusinessMinutesBetween(
+            'before_late_minutes' => $this->first_response_at ? $businessHoursService->calculateBusinessMinutesBetween(
                 Carbon::parse($this->first_response_at),
                 Carbon::parse($this->sla_response_due_at)
             ) : null,
-             'remaining_minutes' => $this->sla_response_due_at ? $businessHoursService->calculateBusinessMinutesBetween(
+            'remaining_minutes' => $this->sla_response_due_at ? $businessHoursService->calculateBusinessMinutesBetween(
                 Carbon::now(),
                 Carbon::parse($this->sla_response_due_at)
             ) : null,
@@ -113,12 +113,12 @@ class Ticket extends Model
 
     public function getSlaResolutionTimeMinutesAttribute()
     {
-       
+
 
         $businessHoursService = app(BusinessHoursService::class);
 
         return [
-            'late_minutes' =>  $this->resolved_at ? $businessHoursService->calculateBusinessMinutesBetween(
+            'late_minutes' => $this->resolved_at ? $businessHoursService->calculateBusinessMinutesBetween(
                 Carbon::parse($this->sla_resolution_due_at),
                 Carbon::parse($this->resolved_at)
             ) : null,
@@ -126,7 +126,7 @@ class Ticket extends Model
                 Carbon::parse($this->resolved_at),
                 Carbon::parse($this->sla_resolution_due_at)
             ) : null,
-             'remaining_minutes' => $this->sla_resolution_due_at ? $businessHoursService->calculateBusinessMinutesBetween(
+            'remaining_minutes' => $this->sla_resolution_due_at ? $businessHoursService->calculateBusinessMinutesBetween(
                 Carbon::now(),
                 Carbon::parse($this->sla_resolution_due_at)
             ) : null,
@@ -134,22 +134,28 @@ class Ticket extends Model
         ];
     }
 
-    
+
     protected static function booted()
     {
         static::deleting(function ($ticket) {
-
-            DB::transaction(function () use ($ticket, &$filesToDelete) {
+            $fieldsToDelete = [];
+            DB::transaction(function () use ($ticket, &$fieldsToDelete) {
                 $ticket->histories()->delete();
+
+                $fieldsToDelete = $ticket->images ?? [];
             });
+
+            foreach ($fieldsToDelete as $filePath) {
+                Storage::disk('public')->delete($filePath);
+            }
         });
     }
 
-    
-    public function assetEvents()
-    {
-        return $this->hasMany(TicketAsset::class, 'ticket_id', 'id');
-    }
+
+    // public function assetEvents()
+    // {
+    //     return $this->hasMany(TicketAsset::class, 'ticket_id', 'id');
+    // }
 
     public function requester()
     {
