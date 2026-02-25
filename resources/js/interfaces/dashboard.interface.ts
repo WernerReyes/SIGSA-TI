@@ -1,4 +1,5 @@
 import { type AssetStatus } from './asset.interface';
+import { type Asset } from './asset.interface';
 import { type TicketPriority } from './ticket.interface';
 
 export interface DashboardStats {
@@ -88,5 +89,17 @@ export interface RRHHDashboard {
         chargers: number;
     }>;
     recentAssets: Asset[];
+    brands: Array<{
+        id: number;
+        name: string;
+    }>;
+    activeFilters: {
+        search: string | null;
+        brand: number | null;
+        status: AssetStatus | null;
+        warranty: 'in_warranty' | 'expiring_soon' | 'expired' | 'unknown' | null;
+        start_date: string | null;
+        end_date: string | null;
+    };
 
 }

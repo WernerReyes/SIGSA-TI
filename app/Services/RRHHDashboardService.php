@@ -5,14 +5,82 @@ use App\Enums\Asset\AssetStatus;
 use App\Models\Asset;
 use App\Enums\Asset\AssetTypeEnum;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class RRHHDashboardService
 {
 
-
-    public function getStats()
+    private function filteredAssetsQuery(array $filters = []): Builder
     {
-        $stats = Asset::isFromRRHH()
+        $search = $filters['search'] ?? null;
+        $brand = $filters['brand'] ?? null;
+        $status = $filters['status'] ?? null;
+        $warranty = $filters['warranty'] ?? null;
+        $startDate = $filters['start_date'] ?? null;
+        $endDate = $filters['end_date'] ?? null;
+
+        return Asset::query()
+            ->isFromRRHH()
+            ->when($search, function (Builder $query) use ($search) {
+                $query->where(function (Builder $q) use ($search) {
+                    $q->where('assets.name', 'like', "%{$search}%")
+                        ->orWhere('assets.id', 'like', "%{$search}%")
+                        ->orWhereHas('currentAssignment.assignedTo', function (Builder $assignedTo) use ($search) {
+                            $assignedTo->where('firstname', 'like', "%{$search}%")
+                                ->orWhere('lastname', 'like', "%{$search}%")
+                                ->orWhereRaw("CONCAT(firstname, ' ', lastname) like ?", ["%{$search}%"])
+                                ->orWhere('staff_id', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($brand, fn(Builder $query) => $query->where('assets.brand_id', $brand))
+            ->when($status, fn(Builder $query) => $query->where('assets.status', $status))
+            ->when($warranty, function (Builder $query) use ($warranty) {
+                $today = now()->toDateString();
+                $soon = now()->addDays(30)->toDateString();
+
+                if ($warranty === 'expired') {
+                    $query->whereNotNull('assets.warranty_expiration')
+                        ->whereDate('assets.warranty_expiration', '<', $today);
+                    return;
+                }
+
+                if ($warranty === 'expiring_soon') {
+                    $query->whereNotNull('assets.warranty_expiration')
+                        ->whereDate('assets.warranty_expiration', '>=', $today)
+                        ->whereDate('assets.warranty_expiration', '<', $soon);
+                    return;
+                }
+
+                if ($warranty === 'in_warranty') {
+                    $query->whereNotNull('assets.warranty_expiration')
+                        ->whereDate('assets.warranty_expiration', '>=', $soon);
+                    return;
+                }
+
+                if ($warranty === 'unknown') {
+                    $query->whereNull('assets.warranty_expiration');
+                }
+            })
+            ->when($startDate, fn(Builder $query) => $query->whereDate('assets.created_at', '>=', $startDate))
+            ->when($endDate, fn(Builder $query) => $query->whereDate('assets.created_at', '<=', $endDate));
+    }
+
+    public function getBrands()
+    {
+        return Asset::query()
+            ->isFromRRHH()
+            ->join('brands', 'assets.brand_id', '=', 'brands.id')
+            ->select('brands.id', 'brands.name')
+            ->distinct()
+            ->orderBy('brands.name')
+            ->get();
+    }
+
+
+    public function getStats(array $filters = [])
+    {
+        $stats = $this->filteredAssetsQuery($filters)
             ->leftJoin('assets_assignments', function ($join) {
                 $join->on('assets.id', '=', 'assets_assignments.asset_id')
                     ->whereNull('assets_assignments.returned_at');
@@ -41,13 +109,13 @@ class RRHHDashboardService
             'expired_warranty' => $stats->expired_warranty ?? 0,
             'under_maintenance' => $stats->under_maintenance ?? 0,
             'assigned' => $stats->assigned ?? 0,
-            'profi_rate' => $this->getAssignedProfiRate(),
+            'profi_rate' => $this->getAssignedProfiRate($filters),
         ];
     }
 
-    public function getSmartphonesByBrand()
+    public function getSmartphonesByBrand(array $filters = [])
     {
-        return Asset::isFromRRHH()
+        return $this->filteredAssetsQuery($filters)
             ->where('type_id', AssetTypeEnum::CELL_PHONE)
             ->join('brands', 'assets.brand_id', '=', 'brands.id')
             ->selectRaw('brands.name as brand, COUNT(*) as total')
@@ -59,9 +127,9 @@ class RRHHDashboardService
     }
 
 
-    public function getAssetByStatus()
+    public function getAssetByStatus(array $filters = [])
     {
-        $assets = Asset::isFromRRHH()
+        $assets = $this->filteredAssetsQuery($filters)
             ->selectRaw("
             status,
             COALESCE(SUM(type_id = ?), 0) as smartphones,
@@ -90,9 +158,9 @@ class RRHHDashboardService
     }
 
 
-    public function getSmartphonesWarrantyStatus()
+    public function getSmartphonesWarrantyStatus(array $filters = [])
     {
-        $data = Asset::isFromRRHH()
+        $data = $this->filteredAssetsQuery($filters)
             ->where('type_id', AssetTypeEnum::CELL_PHONE)
             ->selectRaw("
             CASE 
@@ -119,9 +187,9 @@ class RRHHDashboardService
         }));
     }
 
-    public function getAssignedProfiRate()
+    public function getAssignedProfiRate(array $filters = [])
     {
-        $stats = Asset::isFromRRHH()
+        $stats = $this->filteredAssetsQuery($filters)
             ->leftJoin('assets_assignments', function ($join) {
                 $join->on('assets.id', '=', 'assets_assignments.asset_id')
                     ->whereNull('assets_assignments.returned_at');
@@ -140,12 +208,12 @@ class RRHHDashboardService
         return $utilizationRate;
     }
 
-    public function getMonthlyAssignments()
+    public function getMonthlyAssignments(array $filters = [])
     {
         $currentYear = now()->year;
         $currentMonth = now()->month;
 
-        $data = Asset::isFromRRHH()
+        $data = $this->filteredAssetsQuery($filters)
             ->join('assets_assignments', 'assets.id', '=', 'assets_assignments.asset_id')
             // ->whereIn('assets.type_id', [
             //     AssetTypeEnum::CELL_PHONE,
@@ -180,12 +248,12 @@ class RRHHDashboardService
     }
 
 
-    public function getMonthlyAcquisitions()
+    public function getMonthlyAcquisitions(array $filters = [])
     {
         $currentYear = now()->year;
         $currentMonth = now()->month;
 
-        $data = Asset::isFromRRHH()
+        $data = $this->filteredAssetsQuery($filters)
             // ->whereIn('type_id', [
             //     AssetTypeEnum::CELL_PHONE,
             //     AssetTypeEnum::CELL_PHONE_CHARGER
@@ -217,9 +285,9 @@ class RRHHDashboardService
         })->values();
     }
 
-    public function getAssetsByDepartment()
+    public function getAssetsByDepartment(array $filters = [])
     {
-        $assets = Asset::isFromRRHH()
+        $assets = $this->filteredAssetsQuery($filters)
             ->where('assets.status', AssetStatus::ASSIGNED->value)
             // ->whereIn('assets.type_id', [
             //     AssetTypeEnum::CELL_PHONE,
@@ -259,9 +327,9 @@ class RRHHDashboardService
         })->values(); // opcional
     }
 
-    public function getRecentAssets()
+    public function getRecentAssets(array $filters = [])
     {
-        return Asset::isFromRRHH()
+        return $this->filteredAssetsQuery($filters)
         ->select('id', 'name', 'brand_id', 'model_id', 'type_id', 'status', 'created_at')
         ->with('type', 'brand:id,name', 'model:id,name')
             ->orderByDesc('created_at')
