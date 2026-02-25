@@ -1170,12 +1170,12 @@ class AssetService
             $dayMonth = $assignment->returned_at->translatedFormat('d \d\e F');
             $year = $assignment->returned_at->translatedFormat('Y');
 
-            $type = $asset->type->name;
-            if ($type === 'Accesorio') {
-                $type = 'Accesorio de ' . $asset->full_name;
-            }
+            
+            // if ($type === 'Accesorio') {
+            //     $type = 'Accesorio de ' . $asset->full_name;
+            // }
 
-            $template->setValue('type', strtoupper($type));
+            $template->setValue('type', mb_strtoupper($asset->type->name));
             $template->setValue('hour', $hour);
             $template->setValue('day_month', $dayMonth);
             $template->setValue('year', $year);
@@ -1185,15 +1185,15 @@ class AssetService
             $template->setValue('is_termination', $assignment->return_reason === ReturnReason::TERMINATION_EMPLOYMENT->value ? 'X' : '');
             $template->setValue('is_technical', $assignment->return_reason === ReturnReason::TECHNICAL_ISSUES->value ? 'X' : '');
             $template->setValue('is_renovation', $assignment->return_reason === ReturnReason::EQUIPMENT_RENOVATION->value ? 'X' : '');
-            $template->setValue('brand', strtoupper($asset->brand->name ?? 'N/A'));
-            $template->setValue('model', strtoupper($asset->model->name ?? 'N/A'));
-            $template->setValue('color', strtoupper($asset->color));
+            $template->setValue('brand', mb_strtoupper($asset->brand->name ?? 'N/A'));
+            $template->setValue('model', mb_strtoupper($asset->model->name ?? 'N/A'));
+            $template->setValue('color', mb_strtoupper($asset->color));
             $template->setValue('serial_number', $asset->serial_number);
             $template->setValue('comments', $assignment->return_comment ?? '');
             $template->setValue('has_charger', $assignment->childrenAssignments->filter(function ($child) {
                 return stripos($child->asset->name, 'cargador') !== null;
             })->count() > 0 ? 'X' : '');
-            $template->setValue('responsible', strtoupper($assignment->responsible->full_name ?? 'N/A'));
+            $template->setValue('responsible', mb_strtoupper($assignment->responsible->full_name ?? 'N/A'));
 
             $fileName = 'devolucion_equipo_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
             $path = storage_path('app/public/documents/' . $fileName);
