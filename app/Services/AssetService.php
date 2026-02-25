@@ -1179,7 +1179,7 @@ class AssetService
             $template->setValue('hour', $hour);
             $template->setValue('day_month', $dayMonth);
             $template->setValue('year', $year);
-            $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+            $template->setValue('fullname', mb_strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('charge', $assignment->assignedTo->charge->descripcion_cargo ?? 'N/A');
             $template->setValue('is_termination', $assignment->return_reason === ReturnReason::TERMINATION_EMPLOYMENT->value ? 'X' : '');

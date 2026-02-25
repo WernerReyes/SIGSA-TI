@@ -5,8 +5,9 @@ import DashboardRecentTickets from '@/components/dashboard/DashboardRecentTicket
 import DashboardSlaChart from '@/components/dashboard/DashboardSlaChart.vue';
 import DashboardStats from '@/components/dashboard/DashboardStats.vue';
 import { useApp } from '@/composables/useApp';
+import { type NotificationContract } from '@/interfaces/contract.interface';
 import type { DashboardSLACompliance, DashboardTicketsByPriority, DashboardStats as IDashboardStats } from '@/interfaces/dashboard.interface';
-import { Ticket } from '@/interfaces/ticket.interface';
+import { type Ticket } from '@/interfaces/ticket.interface';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -16,7 +17,7 @@ defineProps<{
     tickets_by_priority: DashboardTicketsByPriority,
     recent_tickets: Ticket[],
     sla_compliance: DashboardSLACompliance,
-    recent_contract_notifications: any[],
+    recent_contract_notifications: NotificationContract[],
 
 }>();
 
@@ -32,7 +33,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 <template>
     <Head title="Dashboard" />
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout :breadcrumbs="breadcrumbs" >
+            <template #actions>
+                <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+            </template>
+
         <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-6">
            
             <DashboardStats :stats="stats" />

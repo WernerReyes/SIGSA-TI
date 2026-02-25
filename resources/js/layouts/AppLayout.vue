@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { Toaster, toast } from 'vue-sonner';
-import 'vue-sonner/style.css'
+import { useApp } from '@/composables/useApp';
+import { useAppearance } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/app/AppSidebarLayout.vue';
 import type { BreadcrumbItemType } from '@/types';
-import { useAppearance } from '@/composables/useAppearance';
-import { useEchoModel } from '@laravel/echo-vue';
 import { onMounted } from 'vue';
-import { useApp } from '@/composables/useApp';
+import { Toaster, toast } from 'vue-sonner';
+import 'vue-sonner/style.css';
 const { appearance } = useAppearance();
 
 interface Props {
     breadcrumbs?: BreadcrumbItemType[];
 }
 
-const { userAuth, echo } = useApp();
+const { echo } = useApp();
 
 
 onMounted(() => {

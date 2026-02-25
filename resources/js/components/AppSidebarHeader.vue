@@ -25,7 +25,5 @@ withDefaults(
             </template>
             
         </div>
-
-        
     </header>
 </template>
