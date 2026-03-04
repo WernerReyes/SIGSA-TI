@@ -1131,7 +1131,7 @@ class AssetService
             $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
             $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
-            $template->setValue('name', $asset->name);
+            $template->setValue('name', $asset->type->name);
             $template->setValue('brand', $asset->brand->name ?? 'N/A');
             $template->setValue('model', $asset->model->name ?? 'N/A');
             $template->setValue('serial_number', $asset->serial_number ?? 'N/A');
