@@ -113,7 +113,12 @@
                                                 <!-- <Input id="brand" placeholder="EJ: Dell, HP, Lenovo"
                                                     v-bind="componentField" /> -->
 
-                                                <SelectFilters :label="getDefaultLabel(currentAsset?.brand, 'Marca')"
+                                                <SelectFilters :disabled="!values.type_id"
+                                                :params="{
+                                                    'type_id': values.type_id
+                                                }"
+                                                always
+                                                    :label="getDefaultLabel(currentAsset?.brand, 'Marca')"
                                                     :items="brands" data-key="brands" item-label="name" item-value="id"
                                                     :default-value="componentField.modelValue" :selected-as-label="true"
                                                     :show-refresh="false" :show-selected-focus="false"
@@ -133,7 +138,14 @@
                                                 <FieldLabel for="model_id">Modelo</FieldLabel>
                                                 <!-- <Input id="model" placeholder="EJ: Inspiron 15 3000"
                                                     v-bind="componentField" /> -->
-                                                <SelectFilters :label="getDefaultLabel(currentAsset?.model, 'Modelo')"
+                                                <SelectFilters :disabled="!values.brand_id"
+                                                :params="{
+                                                    'brand_id': values.brand_id,
+                                                    'type_id': values.type_id
+                                                }"
+                                                                                                always
+
+                                                    :label="getDefaultLabel(currentAsset?.model, 'Modelo')"
                                                     :items="models" data-key="models" item-label="name" item-value="id"
                                                     :default-value="componentField.modelValue" :selected-as-label="true"
                                                     :show-refresh="false" :show-selected-focus="false"

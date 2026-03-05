@@ -36,6 +36,11 @@ class AssetType extends Model
         return $this->hasMany(Asset::class, 'type_id');
     }
 
+    public function models()
+    {
+        return $this->hasMany(AssetModel::class, 'asset_type_id');
+    }
+
     public function getIsAccessoryAttribute()
     {
         return $this->doc_category === AssetTypeCategory::ACCESSORY->value;

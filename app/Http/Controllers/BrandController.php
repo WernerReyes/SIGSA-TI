@@ -79,7 +79,7 @@ class BrandController extends Controller
             ]);
         } catch (\Exception $e) {
             $errorMessage = $e->getCode() === '23000'
-                ? 'No se puede eliminar esta marca porque hay activos asociados a ella.'
+                ? 'No se puede eliminar esta marca porque hay modelos asociados a ella.'
                 : 'Error al eliminar la marca: ' . $e->getMessage();
 
             Inertia::flash([

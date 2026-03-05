@@ -8,6 +8,8 @@ use App\Enums\AssetHistory\AssetHistoryAction;
 use App\Imports\AssetsImport;
 use App\Models\AssetAssignment;
 use App\Models\AssetHistory;
+use App\Models\AssetModel;
+use App\Models\Brand;
 use App\Models\User;
 use Carbon\Carbon;
 use DB;
@@ -28,10 +30,11 @@ class AssetSeeder extends Seeder
         Asset::truncate();
 
 
-        Schema::enableForeignKeyConstraints(); // Eliminar esta línea para ejecutar el seeder con los datos del Excel
-        return;
+        // Schema::enableForeignKeyConstraints(); // Eliminar esta línea para ejecutar el seeder con los datos del Excel
+        // return;
 
-        $filePath = storage_path('app/assets.xlsx');
+        $filePath = 'C:\Users\Cechriza\Documents\Inventario de Activos.xlsx';
+        // storage_path('app/assets.xlsx');
 
         // Convertir el Excel a un Array
         $rows = Excel::toArray(new AssetsImport, $filePath);
@@ -40,13 +43,14 @@ class AssetSeeder extends Seeder
         $cechProvince = $this->getTechAssigned($rows[1], 39); //* Cechriza Technical Province
         $ydieza = $this->getTechAssigned($rows[2], 9); //* Ydieza Technical
 
-        $administrativeAssigned = $this->getAdministrativeAssigned($rows[3], 22); //* Administrative Assets
+        // $administrativeAssigned = $this->getAdministrativeAssigned($rows[3], 22); //* Administrative Assets
+        $administrativeAssigned = [];
 
         // $decommissioned = $this->getAvailable($rows[4], 3); //* Decommissioned Assets
         // $inRepair = $this->getAvailable($rows[5], 3); //* In repair Assets
         // $available = $this->getAvailable($rows[6], 3); //* Available
 
-        $user = User::select('staff_id')->where('email', 'werner.reyes@cechriza.com')->first();
+        $user = User::select('staff_id')->where('email', 'isaac.ramos@cechriza.net')->first();
 
         $registeredAssigmentsDates = [
             72 => Carbon::parse('2025-12-17'), // SEGUNDO MARCELO TIMANÁ,
@@ -62,8 +66,8 @@ class AssetSeeder extends Seeder
             [
                 'name' => 'Teclado + Mouse Inalambrico',
                 'status' => AssetStatus::AVAILABLE->value,
-                'brand' => 'Logitech',
-                'model' => 'MK235',
+                'brand_id' => Brand::where('name', 'Logitech')->first()->id,
+                'model_id' => AssetModel::where('name', 'MK235')->first()->id,
                 'color' => null,
                 'serial_number' => strtoupper('2518mr21b7g9'),
                 'processor' => null,
@@ -111,10 +115,10 @@ class AssetSeeder extends Seeder
                         'performed_at' => Carbon::now(),
                     ]);
 
-                
-                       
-                        $accesoriesCreated[] = $accessoryAsset;
-                    
+
+
+                    $accesoriesCreated[] = $accessoryAsset;
+
                 }
 
                 AssetHistory::create([
@@ -169,7 +173,7 @@ class AssetSeeder extends Seeder
                                 ? "Equipo asignado a {$assignedTo->full_name}"
                                 : "Accesorio asignado a {$assignedTo->full_name} junto al equipo principal ({$asset->full_name})";
 
-                
+
                             AssetHistory::create([
                                 'action' => AssetHistoryAction::ASSIGNED->value,
                                 'description' => $description,
@@ -214,6 +218,9 @@ class AssetSeeder extends Seeder
         $data = function ($row) {
             $accesories = array_filter(explode(',', $row[9] ?? ''), fn($item) => !empty(trim($item)) && trim($item) !== '');
 
+            ds($accesories);
+
+
             if ($row[10] && trim($row[10]) === 'cambio de equipo') {
                 return ["name" => null]; // Saltar esta fila si el motivo es "cambio de equipo"
             }
@@ -226,8 +233,8 @@ class AssetSeeder extends Seeder
             return [
                 'name' => $row[2],
                 'status' => AssetStatus::AVAILABLE->value,
-                'brand' => $row[3],
-                'model' => $row[4],
+                'brand_id' => Brand::where('name', $row[3])->first()?->id ?? null,
+                'model_id' => AssetModel::where('name', $row[4])->first()?->id ?? null,
                 'color' => null,
                 'serial_number' => $row[5],
                 'processor' => $row[6],
@@ -237,11 +244,11 @@ class AssetSeeder extends Seeder
                 'warranty_expiration' => null,
                 // 'type_id' => ($row[2] === 'TABLET TECLADO' || $row[2] === 'CELULAR') ? 3 : 1,
                 'type_id' => match (strtoupper($row[2])) {
-                    
+
                     'TABLET TECLADO' => AssetTypeEnum::TABLET,
                     'CELULAR' => AssetTypeEnum::CELL_PHONE,
                     'LAPTOP', 'LATOP' => AssetTypeEnum::LAPTOP,
-                    // default => AssetTypeEnum::PC, // Por defecto, si no es ni laptop ni celular ni tablet teclado, se asume que es PC
+                // default => AssetTypeEnum::PC, // Por defecto, si no es ni laptop ni celular ni tablet teclado, se asume que es PC
                 },
                 'is_new' => false,
                 'invoice_path' => null,
@@ -254,8 +261,8 @@ class AssetSeeder extends Seeder
                     return [
                         'name' => strtoupper($accesory),
                         'status' => AssetStatus::AVAILABLE->value,
-                        'brand' => $row[3], // Asumir que el accesorio tiene la misma marca que el equipo principal
-                        'model' => null,
+                        'brand_id' => Brand::where('name', $row[3])->first()?->id ?? null, // Asumir que el accesorio tiene la misma marca que el equipo principal
+                        'model_id' => null,
                         'color' => null,
                         'serial_number' => null,
                         'processor' => null,
@@ -267,7 +274,7 @@ class AssetSeeder extends Seeder
                             // "MOUSE {$row[2]}" => 7,
                             // "TECLADO {$row[2]}" => 8,
                             // 'TABLET TECLADO' => 6,
-                            "PATCHCOARD {$row[2]}" => AssetTypeEnum::PATCH_CABLE,
+                            "PATCHCORD {$row[2]}" => AssetTypeEnum::PATCH_CABLE,
                             "CARGADOR LAPTOP" => AssetTypeEnum::LAPTOP_CHARGER,
                             // "CARGADOR {$row[2]}" => AssetTypeEnum::CHARGER_PHONE,
                             default => null, // Otro
@@ -303,13 +310,13 @@ class AssetSeeder extends Seeder
                 $monitors = $row[30] && trim(strtolower($row[30])) !== 'no aplica' ? explode(',', $row[30]) : [];
 
                 $type = match (strtoupper($row[7])) {
-                        'MINI PC' => AssetTypeEnum::MINI_PC,
-                        'PC' => AssetTypeEnum::PC,
-                        // 'CELULAR' => 3,
-                        'LAPTOP' => AssetTypeEnum::LAPTOP,
-                    };
+                    'MINI PC' => AssetTypeEnum::MINI_PC,
+                    'PC' => AssetTypeEnum::PC,
+                    // 'CELULAR' => 3,
+                    'LAPTOP' => AssetTypeEnum::LAPTOP,
+                };
 
-                $charger = $type ===  AssetTypeEnum::LAPTOP ? [ // Si es laptop, asignar cargador de laptop
+                $charger = $type === AssetTypeEnum::LAPTOP ? [ // Si es laptop, asignar cargador de laptop
                     'name' => 'CARGADOR',
                     'status' => AssetStatus::AVAILABLE->value,
                     'brand' => strtoupper($row[8]) ?? null,
@@ -329,7 +336,7 @@ class AssetSeeder extends Seeder
                     'created_at' => now(),
                     'updated_at' => now(),
                 ] : null; // Si no es ni laptop ni celular, no asignar cargador
-
+    
                 return [
                     'name' => strtoupper($row[7]),
                     'status' => AssetStatus::AVAILABLE->value,
@@ -442,6 +449,9 @@ class AssetSeeder extends Seeder
                 fn($asset) => !is_null($asset['name'])
             ); // Filtrar solo los activos con nombre no nulo
     }
+
+
+
 
 
 

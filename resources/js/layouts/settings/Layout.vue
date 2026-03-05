@@ -9,36 +9,50 @@ import { Link } from '@inertiajs/vue3';
 import { Box, Contrast, MonitorSmartphone, Shield, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 
-const { isFromTI } = useApp();
+const { isFromTI, isFromRRHH } = useApp();
 
 const sidebarNavItems = computed<NavItem[]>(() => {
+     console.log(isFromTI.value, isFromRRHH.value);
     const items = [{
         title: 'Apariencia',
         icon: Contrast,
         href: "/settings/appearance",
     }]
 
+    if (isFromTI.value || isFromRRHH.value) {
+        items.unshift({
+            title: 'Tipos de activo',
+            icon: MonitorSmartphone,
+            href: "/settings/asset-types",
+        }, 
+        
+        // {
+        //     title: 'Marcas',
+        //     icon: Tag,
+        //     href: "/settings/brands",
+        // }, {
+        //     title: 'Modelos',
+        //     icon: Box,
+        //     href: "/settings/models",
+        // }
+    
+        );
+
+        console.log(isFromTI.value, isFromRRHH.value);
+    }
+
     if (isFromTI.value) {
         items.unshift({
             title: 'SLA',
             icon: Shield,
             href: "/settings/sla",
-        }, {
-            title: 'Tipos de activo',
-            icon: MonitorSmartphone,
-            href: "/settings/asset-types",
-        }, {
-            title: 'Marcas',
-            icon: Tag,
-            href: "/settings/brands",
-        }, {
-            title: 'Modelos',
-            icon: Box,
-            href: "/settings/models",
         });
     }
+    
     return items;
 });
+
+
 
 
 const currentPath = typeof window !== undefined ? window.location.pathname : '';

@@ -12,7 +12,8 @@
                     class="flex items-start gap-4 p-4 rounded-xl bg-linear-to-br from-muted/40 via-background to-background border">
                     <div
                         class="size-16 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/20 shadow-sm">
-                        <Laptop class="size-8 text-primary" />
+                        <!-- <Laptop class="size-8 text-primary" /> -->
+                         <component :is="assetTypeOp(asset?.type?.name)?.icon" class="size-8 text-primary" />
                     </div>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">

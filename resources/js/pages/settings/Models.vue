@@ -4,7 +4,7 @@
         <SettingsLayout>
             <div class="space-y-6">
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <DialogModel v-model:current-model="currentModel" v-model:open="openEditor" :models="models" />
+                    <DialogModel v-model:current-model="currentModel" v-model:open="openEditor" :models="models" :brands="brands" :types="types" />
                 </div>
 
                 <div class="space-y-4">
@@ -28,11 +28,15 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 import AlertDialog from '@/components/AlertDialog.vue';
 import { type BreadcrumbItem } from '@/types';
 import { AssetModel } from '@/interfaces/assetModel.interface';
+import { Brand } from '@/interfaces/brand.interface';
+import { AssetType } from '@/interfaces/assetType.interface';
 import ModelsTable from '@/components/models/Table.vue';
 import DialogModel from '@/components/models/DialogModel.vue';
 
 defineProps<{
     models: AssetModel[];
+    brands: Brand[];
+    types: AssetType[];
 }>();
 
 const breadcrumbItems: BreadcrumbItem[] = [

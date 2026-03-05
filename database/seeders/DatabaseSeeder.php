@@ -17,10 +17,10 @@ class DatabaseSeeder extends Seeder
             $this->call([
                 AssetTypeSeeder::class,
                 InfrastructureEventSeeder::class,
-                AssetSeeder::class,
-                SlaPolicySeeder::class,
                 BrandSeeder::class,
                 AssetModelSeeder::class,
+                AssetSeeder::class,
+                SlaPolicySeeder::class,
             ]);
 
         } else {

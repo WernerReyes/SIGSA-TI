@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('models', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name');
+            $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete();
+            $table->foreignId('asset_type_id')->constrained('assets_type')->cascadeOnDelete();
             $table->timestamps();
+
+            $table->unique(['name', 'brand_id', 'asset_type_id']);
         });
     }
 

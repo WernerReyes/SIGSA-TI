@@ -43,8 +43,10 @@ class AssetController extends Controller
         $filters = AssetFiltersDto::fromArray($request->all());
         $assetId = $request->input('asset_id');
         $assignmentId = $request->input('assignment_id');
+        $typeId = $request->input('type_id');
+        $brandId = $request->input('brand_id');
         // $brand = $request->input('brand');
-
+        
 
 
         return Inertia::render('Assets', [
@@ -57,8 +59,8 @@ class AssetController extends Controller
             'assetsPaginated' => Inertia::once(fn() => $assetService->getPaginated($filters)),
             'stats' => fn() => Inertia::once(fn() => $assetService->getStats($filters)),
             'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
-            'brands' => Inertia::optional(fn() => $brandService->getBasicInfo())->once(),
-            'models' => Inertia::optional(fn() => $assetModelService->getBasicInfo())->once(),
+            'brands' => Inertia::optional(fn() => $assetTypeService->getBrandsForType($typeId))->once(),
+            'models' => Inertia::optional(fn() => $brandService->getBrandModels($brandId, $typeId))->once(),
 
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),

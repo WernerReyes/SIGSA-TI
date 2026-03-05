@@ -30,6 +30,7 @@
 
                 <CommandList class="max-h-60">
                     <!-- SOPORTE WhenVisible -->
+                     <!-- {{params}} -->
                     <WhenVisible v-if="dataKey" :data="dataKey" :params="params ? {
                         preserveUrl: true,
 

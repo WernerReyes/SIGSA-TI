@@ -18,7 +18,8 @@ enum AssetStatus: string
 
     public static function implode(string $separator = ','): string
     {
-        return implode($separator, self::values());
+        
+        return implode($separator, self::values()); // 'AVAILABLE,ASSIGNED,IN_REPAIR,DECOMMISSIONED';
     }
 }
 

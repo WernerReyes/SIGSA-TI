@@ -176,7 +176,11 @@ function onSubmit(values: FormValues) {
             preserveUrl: true,
             onFlash: (flash) => {
                 if (flash.error) return;
-                router.replaceProp('types', (types: AssetType[]) => [...types, flash.assetType]);
+              
+                router.replaceProp('types', (types: AssetType[]) => [{
+                    ...flash.assetType as AssetType,
+                    is_deletable: true
+                }, ...types]);
                 onClose();
             }
         });

@@ -2,31 +2,47 @@
 namespace App\Http\Controllers;
 
 
+use App\Enums\Asset\AssetTypeCategory;
+use App\Enums\Department\Allowed;
+use App\Services\AssetModelService;
 use App\Models\AssetType;
 use App\Services\AssetTypeService;
+use App\Services\BrandService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
 class AssetTypeController extends Controller
 {
 
-    public function renderTypes(Request $request, AssetTypeService $assetTypeService)
-    {
+    public function renderTypes(
+        Request $request,
+        AssetTypeService $assetTypeService,
+        BrandService $brandService,
+        AssetModelService $assetModelService,
+    ) {
         $component = $request->input('component', 'settings/AssetTypes');
         return Inertia::render($component, [
-            'types' => $assetTypeService->getTypes(),
+            'types' => Inertia::once(fn() => $assetTypeService->getTypes()),
+            'brands' => Inertia::once(fn() => $brandService->getBrands()),
+            'models' => Inertia::once(fn() => $assetModelService->getModels()),
         ]);
     }
 
     public function store(Request $request)
     {
+        try {
+        if (auth()->user()->dept_id != Allowed::SYSTEM_TI->value) {
+            throw new BadRequestException('No tienes permiso para crear tipos de activos');
+        }
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'is_accessory' => 'boolean',
+            'doc_category' => ['required', Rule::in(AssetTypeCategory::values())],
         ]);
-        try {
             $assetType = AssetType::create($data);
+            ds($assetType);
             Inertia::flash([
                 'assetType' => $assetType,
                 'success' => 'Tipo de activo creado exitosamente',
@@ -35,7 +51,7 @@ class AssetTypeController extends Controller
         } catch (\Exception $e) {
             Inertia::flash([
                 'assetType' => null,
-                'error' => 'Error al crear el tipo de activo: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
                 'success' => null
             ]);
 
@@ -47,22 +63,27 @@ class AssetTypeController extends Controller
 
     public function update(Request $request, AssetType $type)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'is_accessory' => 'boolean',
-        ]);
         try {
+            if (auth()->user()->dept_id != Allowed::SYSTEM_TI->value) {
+                throw new BadRequestException('No tienes permiso para editar tipos de activos');
+            }
 
-            $type = $type->update($data);
+
+            $data = $request->validate([
+                'name' => 'required|string|max:255',
+                'doc_category' => ['required', Rule::in(AssetTypeCategory::values())],
+            ]);
+
+            $type->update($data);
             Inertia::flash([
-                'assetType' => $type,
+                'assetType' => $type->fresh(),
                 'success' => 'Tipo de activo actualizado exitosamente',
                 'error' => null
             ]);
         } catch (\Exception $e) {
             Inertia::flash([
                 'assetType' => null,
-                'error' => 'Error al actualizar el tipo de activo: ' . $e->getMessage(),
+                'error' =>  $e->getMessage(),
                 'success' => null
             ]);
 
@@ -74,11 +95,25 @@ class AssetTypeController extends Controller
 
     public function destroy(AssetType $type)
     {
-        if (!$type->is_deletable) {
-            throw new BadRequestException('Este tipo de activo no se puede eliminar');
-        }
 
         try {
+            if (auth()->user()->dept_id != Allowed::SYSTEM_TI->value) {
+                throw new BadRequestException('No tienes permiso para eliminar tipos de activos');
+            }
+
+
+            if (!$type->is_deletable) {
+                throw new BadRequestException('Este tipo de activo no se puede eliminar');
+            }
+
+            if ($type->assets()->exists()) {
+                throw new BadRequestException('No se puede eliminar este tipo de activo porque hay activos asociados a él.');
+            }
+
+            if ($type->models()->exists()) {
+                throw new BadRequestException('No se puede eliminar este tipo de activo porque hay modelos asociados a él.');
+            }
+
             $type->delete();
             Inertia::flash([
                 'success' => 'Tipo de activo eliminado exitosamente',

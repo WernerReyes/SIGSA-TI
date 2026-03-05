@@ -39,6 +39,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { FieldError } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
+import { useApp } from '@/composables/useApp';
 import { Brand } from '@/interfaces/brand.interface';
 import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/core';
@@ -52,6 +53,7 @@ const props = defineProps<{
     brands: Brand[];
 }>();
 
+
 const open = defineModel<boolean>('open');
 
 const currentBrand = defineModel('currentBrand', {
@@ -59,6 +61,8 @@ const currentBrand = defineModel('currentBrand', {
     required: false,
     default: null,
 });
+
+const { isLoading } = useApp();
 
 const schema = toTypedSchema(z.object({
     name: z.string({
@@ -89,7 +93,7 @@ const { handleSubmit, setValues, resetForm, values, errors } = useForm({
 type FormValues = typeof values;
 
 const disabledForm = computed(() => {
-    return Object.keys(errors.value).length > 0 || isEqual(values, initialValues.value);
+    return Object.keys(errors.value).length > 0 || isEqual(values, initialValues.value) || isLoading.value;
 });
 
 watch(currentBrand, (value) => {
