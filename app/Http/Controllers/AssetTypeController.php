@@ -135,4 +135,37 @@ class AssetTypeController extends Controller
         return back();
 
     }
+
+    public function syncBrands(Request $request, AssetType $type)
+    {
+        try {
+            if (auth()->user()->dept_id != Allowed::SYSTEM_TI->value) {
+                throw new BadRequestException('No tienes permiso para asociar marcas al tipo');
+            }
+
+            $data = $request->validate([
+                'brand_ids' => ['array'],
+                'brand_ids.*' => ['integer', 'exists:brands,id'],
+            ]);
+
+            $type->brands()->sync($data['brand_ids'] ?? []);
+            $type->load('brands:id');
+
+            Inertia::flash([
+                'typeBrands' => [
+                    'id' => $type->id,
+                    'brand_ids' => $type->brands->pluck('id')->values()->all(),
+                ],
+                'success' => 'Marcas asociadas al tipo exitosamente',
+                'error' => null,
+            ]);
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return back();
+    }
 }

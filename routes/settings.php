@@ -18,6 +18,7 @@ Route::prefix('settings')->group(function () {
             
                 Route::post('/', [AssetTypeController::class, 'store'])->name('asset-types.store');
                 Route::put('/{type}', [AssetTypeController::class, 'update'])->name('asset-types.update');
+            Route::put('/{type}/brands', [AssetTypeController::class, 'syncBrands'])->name('asset-types.sync-brands');
          
             Route::delete('/{type}', [AssetTypeController::class, 'destroy'])->name('asset-types.delete');
         });

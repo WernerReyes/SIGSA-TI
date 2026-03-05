@@ -128,13 +128,12 @@ const rows = computed<NestedTableRow[]>(() => {
   }
 
   const typeRows = typeList.map((type) => {
-    const modelsForType = modelList.filter(model => model.asset_type_id === type.id && !!model.brand_id);
-    const brandIdsForType = [...new Set(modelsForType.map(model => model.brand_id).filter((id): id is number => !!id))];
+    const brandIdsForType = (type.brand_ids ?? []).filter((id): id is number => Number.isInteger(id));
 
     const brandRows = brandList
       .filter(brand => brandIdsForType.includes(brand.id))
       .map((brand) => {
-        const linkedModels = modelsForType.filter(model => model.brand_id === brand.id);
+        const linkedModels = modelList.filter(model => model.brand_id === brand.id && (model.asset_type_id === type.id || model.asset_type_id == null));
 
       return {
         id: `brand-${type.id}-${brand.id}`,

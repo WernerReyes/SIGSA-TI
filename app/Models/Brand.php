@@ -16,4 +16,9 @@ class Brand extends Model
     {
         return $this->hasMany(AssetModel::class, 'brand_id');
     }
+
+    public function types()
+    {
+        return $this->belongsToMany(AssetType::class, 'asset_type_brand', 'brand_id', 'asset_type_id')->withTimestamps();
+    }
 }

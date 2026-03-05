@@ -41,6 +41,11 @@ class AssetType extends Model
         return $this->hasMany(AssetModel::class, 'asset_type_id');
     }
 
+    public function brands()
+    {
+        return $this->belongsToMany(Brand::class, 'asset_type_brand', 'asset_type_id', 'brand_id')->withTimestamps();
+    }
+
     public function getIsAccessoryAttribute()
     {
         return $this->doc_category === AssetTypeCategory::ACCESSORY->value;

@@ -47,6 +47,8 @@
                                                  
                     <SelectFilters label="Marca" :items="brands" :selected-as-label="true" :icon="Tag" :full-width="true" :show-refresh="false"
                         :show-selected-focus="false" item-value="id" item-label="name" 
+                        :default-value="componentField.modelValue"
+                        :disabled="!!props.lockContext && !currentModel"
                          @select="(selected) => setFieldValue('brand_id', selected)"  />
                                                 
                                 <FieldError v-if="errors.length" :errors="errors" />
@@ -59,6 +61,8 @@
                                 
                                 <SelectFilters label="Tipo" :items="types" :selected-as-label="true" :icon="MonitorSmartphone" :full-width="true" :show-refresh="false"
                                     :show-selected-focus="false" item-value="id" item-label="name" 
+                                    :default-value="componentField.modelValue"
+                                    :disabled="!!props.lockContext && !currentModel"
                                      @select="(selected) => setFieldValue('asset_type_id', selected)"  />
 
                                 <FieldError v-if="errors.length" :errors="errors" />
@@ -98,6 +102,9 @@ const props = defineProps<{
     models: AssetModel[];
     brands: Brand[];
     types: AssetType[];
+    initialBrandId?: number | null;
+    initialTypeId?: number | null;
+    lockContext?: boolean;
 }>();
 
 const brands = computed(() => props.brands ?? []);
@@ -140,8 +147,8 @@ const schema = toTypedSchema(z.object({
 
 const initialValues = computed(() => ({
     name: currentModel.value?.name || '',
-    brand_id: currentModel.value?.brand_id ?? undefined,
-    asset_type_id: currentModel.value?.asset_type_id ?? undefined,
+    brand_id: currentModel.value?.brand_id ?? props.initialBrandId ?? undefined,
+    asset_type_id: currentModel.value?.asset_type_id ?? props.initialTypeId ?? undefined,
 }));
 
 const { handleSubmit, setValues, resetForm, values, errors, setFieldValue } = useForm({
@@ -155,13 +162,17 @@ const disabledForm = computed(() => {
     return Object.keys(errors.value).length > 0 || isEqual(values, initialValues.value);
 });
 
-watch(currentModel, (value) => {
-    if (value) {
-        setValues(initialValues.value);
-    } else {
-        resetForm();
-    }
-}, { immediate: true });
+watch(
+    [currentModel, () => props.initialBrandId, () => props.initialTypeId],
+    ([value]) => {
+        if (value) {
+            setValues(initialValues.value);
+        } else {
+            resetForm({ values: initialValues.value as any });
+        }
+    },
+    { immediate: true },
+);
 
 function onClose() {
     currentModel.value = null;

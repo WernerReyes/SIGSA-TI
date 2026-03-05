@@ -66,8 +66,8 @@ class AssetSeeder extends Seeder
             [
                 'name' => 'Teclado + Mouse Inalambrico',
                 'status' => AssetStatus::AVAILABLE->value,
-                'brand_id' => Brand::where('name', 'Logitech')->first()->id,
-                'model_id' => AssetModel::where('name', 'MK235')->first()->id,
+                'brand_id' => Brand::where('name', 'Logitech')->first()?->id,
+                'model_id' => AssetModel::where('name', 'MK235')->first()?->id,
                 'color' => null,
                 'serial_number' => strtoupper('2518mr21b7g9'),
                 'processor' => null,
@@ -87,7 +87,7 @@ class AssetSeeder extends Seeder
         ];
 
         DB::transaction(function () use ($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $user, $registeredAssigmentsDates, $extraOutSideAssigments) {
-            $array = array_merge($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $extraOutSideAssigments);
+            $array = array_merge($cechLima, $cechProvince, $ydieza, $administrativeAssigned, []);
             array_map(function ($data) use ($user, $registeredAssigmentsDates) {
                 $accessories = $data['accessories'] ?? [];
                 $assignedTo = $data['assigned_to'];

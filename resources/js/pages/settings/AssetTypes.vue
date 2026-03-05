@@ -12,20 +12,57 @@
                             <MonitorSmartphone />
                             Nuevo tipo
                         </Button>
-                        <Button variant="outline" @click="openBrandEditor = true">
+                        <Button variant="outline" :disabled="!selectedTypeId" @click="openBrandEditor = true">
                             <Tag />
                             Nueva marca
                         </Button>
-                        <Button variant="outline" @click="openModelEditor = true">
+                        <Button variant="outline" :disabled="!selectedTypeId || !selectedBrandForModelId" @click="openNewModelFromFlow">
                             <Boxes />
-                            Nuevo modelo
+                            Nuevo modelo (opcional)
                         </Button>
                     </div>
                 </div>
 
                 <div class="rounded-xl border bg-card p-4 shadow-sm text-sm text-muted-foreground">
-                    La asociacion ahora se define directamente al crear/editar cada modelo, seleccionando su marca y su
-                    tipo.
+                    Flujo recomendado: 1) crea/selecciona tipo, 2) asocia marcas al tipo, 3) crea modelos para una marca (opcional).
+                </div>
+
+                <div class="rounded-xl border bg-card p-4 shadow-sm space-y-3">
+                    <h3 class="text-sm font-semibold">Paso 1 y 2: Tipo y Marcas</h3>
+
+                    <div class="grid gap-2 md:grid-cols-2">
+                        <SelectFilters full-width :items="types" item-value="id" item-label="name"
+                            label="Selecciona tipo" data-key="types" :icon="MonitorSmartphone" :show-refresh="false"
+                            :show-selected-focus="false" :selected-as-label="true"
+                            :default-value="selectedTypeId ?? undefined"
+                            @select="(value) => selectedTypeId = value" />
+
+                        <SelectFilters full-width :multiple="true" :items="brands" item-value="id" item-label="name"
+                            label="Selecciona marcas" data-key="brands" :icon="Tag" :show-refresh="false"
+                            :show-selected-focus="false" :selected-as-label="true" :default-value="selectedBrandIds"
+                            @select="(values) => selectedBrandIds = values" :max-label-length="1" />
+                    </div>
+
+                    <Button class="w-full" :disabled="!selectedTypeId" @click="syncTypeBrands">
+                        Guardar marcas del tipo
+                    </Button>
+                </div>
+
+                <div class="rounded-xl border bg-card p-4 shadow-sm space-y-3">
+                    <h3 class="text-sm font-semibold">Paso 3 (Opcional): Modelo</h3>
+                    <p class="text-xs text-muted-foreground">
+                        Selecciona una marca ya asociada al tipo para crear un modelo especifico. Puedes omitir este paso.
+                    </p>
+
+                    <SelectFilters full-width :items="brandsForSelectedType" item-value="id" item-label="name"
+                        label="Marca para el modelo" data-key="brands" :icon="Tag" :show-refresh="false"
+                        :show-selected-focus="false" :selected-as-label="true" :default-value="selectedBrandForModelId ?? undefined"
+                        @select="(value) => selectedBrandForModelId = value" />
+
+                    <Button class="w-full" variant="outline" :disabled="!selectedTypeId || !selectedBrandForModelId"
+                        @click="openNewModelFromFlow">
+                        Crear modelo (opcional)
+                    </Button>
                 </div>
 
                 <div class="space-y-4">
@@ -49,7 +86,8 @@
         <DialogType v-model:current-type="currentType" v-model:open="openEditor" />
         <DialogBrand :brands="brands" v-model:current-brand="currentBrand" v-model:open="openBrandEditor" />
         <DialogModel :models="models" :brands="brands" :types="types" v-model:current-model="currentModel"
-            v-model:open="openModelEditor" />
+            v-model:open="openModelEditor" :initial-brand-id="selectedBrandForModelId"
+            :initial-type-id="selectedTypeId" :lock-context="true" />
 
         <AlertDialog title="Confirmar eliminación" :description="deleteInfo?.description" @confirm="() => {
             deleteInfo?.confirm();
@@ -62,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import TypesTable from '@/components/types/Table.vue';
@@ -75,6 +113,7 @@ import { type Brand } from '@/interfaces/brand.interface';
 import { AssetModel } from '@/interfaces/assetModel.interface';
 import DialogBrand from '@/components/brands/DialogBrand.vue';
 import DialogModel from '@/components/models/DialogModel.vue';
+import SelectFilters from '@/components/SelectFilters.vue';
 import { Button } from '@/components/ui/button';
 import { Boxes, Tag, MonitorSmartphone } from 'lucide-vue-next';
 import { useApp } from '@/composables/useApp';
@@ -98,6 +137,27 @@ const currentModel = ref<AssetModel | null>(null);
 const openEditor = ref(false);
 const openBrandEditor = ref(false);
 const openModelEditor = ref(false);
+
+const selectedTypeId = ref<number | null>(null);
+const selectedBrandIds = ref<number[]>([]);
+const selectedBrandForModelId = ref<number | null>(null);
+
+const brandsForSelectedType = computed(() => {
+    return brands.value.filter(brand => selectedBrandIds.value.includes(brand.id));
+});
+
+watch(selectedTypeId, (typeId) => {
+    const selectedType = types.value.find(type => type.id === typeId);
+    selectedBrandIds.value = selectedType?.brand_ids ?? [];
+    selectedBrandForModelId.value = null;
+});
+
+watch(selectedBrandIds, (brandIds) => {
+    if (!selectedBrandForModelId.value) return;
+    if (!brandIds.includes(selectedBrandForModelId.value)) {
+        selectedBrandForModelId.value = null;
+    }
+});
 
 const deleteInfo = ref<{ description: string, confirm: () => void, cancel: () => void } | null>(null);
 
@@ -210,5 +270,32 @@ const handleDeleteModel = (model: AssetModel) => {
         }
     });
 };
+
+function syncTypeBrands() {
+    if (!selectedTypeId.value) return;
+
+    router.put(`/settings/asset-types/${selectedTypeId.value}/brands`, {
+        brand_ids: selectedBrandIds.value,
+    }, {
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            const relationPayload = (flash as { typeBrands?: { id: number; brand_ids: number[] } }).typeBrands;
+            if (flash.error || !relationPayload) return;
+            router.replaceProp('types', (items: AssetType[]) =>
+                items.map(type => type.id === relationPayload.id
+                    ? { ...type, brand_ids: relationPayload.brand_ids }
+                    : type),
+            );
+        },
+    });
+}
+
+function openNewModelFromFlow() {
+    if (!selectedTypeId.value || !selectedBrandForModelId.value) return;
+    currentModel.value = null;
+    openModelEditor.value = true;
+}
 
 </script>

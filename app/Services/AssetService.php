@@ -56,7 +56,10 @@ class AssetService
                 ->with([
                     'type:id,name,doc_category',
                     'brand:id,name',
+                    // 'brand.models:id,name,brand_id,asset_type_id',
                     'model:id,name',
+                    // 'model.type:id,name,doc_category',
+                    // 'model.brand:id,name',
                     'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                     'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.assignedTo.department:id,name',
