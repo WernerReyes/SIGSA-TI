@@ -63,11 +63,11 @@ class AssetService
                     'currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id,created_at',
                     'currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
                     'currentAssignment.assignedTo.department:id,name',
-                    'currentAssignment.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
-                    'currentAssignment.childrenAssignments.asset.type:id,name,doc_category',
-                    'currentAssignment.childrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
-                    'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
-                    'currentAssignment.childrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
+                    'currentAssignment.activeChildrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+                    'currentAssignment.activeChildrenAssignments.asset.type:id,name,doc_category',
+                    'currentAssignment.activeChildrenAssignments.asset.currentAssignment:id,asset_id,assigned_to_id,assigned_at,parent_assignment_id',
+                    'currentAssignment.activeChildrenAssignments.asset.currentAssignment.assignedTo:staff_id,firstname,lastname,dept_id',
+                    'currentAssignment.activeChildrenAssignments.asset.currentAssignment.assignedTo.department:id,name',
                 ])->
 
                 /*
@@ -94,7 +94,7 @@ class AssetService
             return Asset::
                 select('id', 'name', 'model_id', 'brand_id', 'status', 'type_id')
                 ->with('type:id,name,doc_category', 'brand:id,name', 'model:id,name')
-                
+
                 ->where('status', AssetStatus::AVAILABLE->value)->get();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener los equipos disponibles');
@@ -177,7 +177,7 @@ class AssetService
             'assignments.parentAssignment.deliveryDocument',
             'assignments.parentAssignment.returnDocument',
 
-            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id,returned_at',
             'assignments.childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id',
             'assignments.childrenAssignments.asset.type:id,name',
             'assignments.childrenAssignments.asset.brand:id,name',
@@ -196,10 +196,15 @@ class AssetService
     {
         try {
             return AssetAssignment::query()
-                ->with('asset:id,name,brand_id,model_id,serial_number,type_id', 'asset.type:id,name,doc_category', 
-                'asset.brand:id,name',
-                'asset.model:id,name',
-                'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id', 'childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id', 'childrenAssignments.asset.type:id,name,doc_category')
+                ->with(
+                    'asset:id,name,brand_id,model_id,serial_number,type_id',
+                    'asset.type:id,name,doc_category',
+                    'asset.brand:id,name',
+                    'asset.model:id,name',
+                    'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+                    'childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id',
+                    'childrenAssignments.asset.type:id,name,doc_category'
+                )
                 ->where('assigned_to_id', $user_id)
                 // ->whereNull('returned_at')
                 ->where('parent_assignment_id', null)
@@ -367,7 +372,7 @@ class AssetService
         if ($this->isFromRRHH() && $dto->type_id) {
             if (!in_array($dto->type_id, AssetTypeEnum::RRHHTypes())) {
                 throw new BadRequestException('Los usuarios de RRHH solo pueden registrar activos de tipo Celular o Accesorio');
-            } 
+            }
         }
 
         //* If it has accesories and the type is being changed to an accessory, prevent the change and ask to first remove the accessories
@@ -376,7 +381,7 @@ class AssetService
             if ($newType && $newType->doc_category === AssetTypeCategory::ACCESSORY->value) {
                 throw new BadRequestException("No se puede cambiar el tipo del activo a {$newType->name} mientras tenga accesorios asignados. Por favor, elimine primero las relaciones con los accesorios.");
             }
-         }
+        }
 
         try {
 
@@ -496,7 +501,7 @@ class AssetService
             'name' => 'Nombre',
             'type_id' => 'Tipo',
             'color' => 'Color',
-            
+
             'status' => 'Estado',
             'brand_id' => 'Marca',
             'model_id' => 'Modelo',
@@ -959,7 +964,7 @@ class AssetService
                 }
 
                 $assignment->update([
-                    'parent_assignment_id' => null,
+                    // 'parent_assignment_id' => null,
                     'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                     'return_comment' => $dto->return_comment,
                     'responsible_id' => $responsible->staff_id,
@@ -1173,7 +1178,7 @@ class AssetService
             $dayMonth = $assignment->returned_at->translatedFormat('d \d\e F');
             $year = $assignment->returned_at->translatedFormat('Y');
 
-            
+
             // if ($type === 'Accesorio') {
             //     $type = 'Accesorio de ' . $asset->full_name;
             // }
@@ -1218,7 +1223,9 @@ class AssetService
             $current = $assignment;
 
             if ($assignment->parent_assignment_id) {
-                $current = $assignment->parentAssignment;
+                if ($assignment->parentAssignment->asset->status !== AssetStatus::ASSIGNED->value && $dto->type === DeliveryRecordType::ASSIGNMENT->value) {
+                    $current = $assignment->parentAssignment;
+                }
             }
 
             $recordType = $dto->type === DeliveryRecordType::ASSIGNMENT->value ? 'asignación' : 'devolución';

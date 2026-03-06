@@ -165,7 +165,7 @@
                                         ]">
                                         <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="[
                                             'align-middle truncate whitespace-nowrap',
-                                            cell.column.id === 'name'
+                                            cell.column.id === 'id'
                                                 ? (row.depth > 0 ? 'pl-14' : 'pl-5')
                                                 : 'pl-5'
                                         ]" :style="{ maxWidth: cell.column.getSize() + 'px' }">
@@ -204,7 +204,7 @@
                                     <MonitorSmartphone />
                                     Asignar
                                 </ContextMenuItem>
-                                <ContextMenuItem v-if="!activeRow?.current_assignment?.parent_assignment_id"
+                                <ContextMenuItem 
                                     :disabled="!activeRow?.current_assignment || activeRow?.status !== AssetStatus.ASSIGNED" @click="openDevolution = true">
                                     <MonitorSmartphone />
                                     Devolver
@@ -657,16 +657,14 @@ const handleDeleteAsset = () => {
 
 const columns: ColumnDef<Asset>[] = [
     {
-
-        accessorKey: 'full_name',
-        id: 'name',
-        header: 'Nombre',
-        size: 300,
-        enableGlobalFilter: true,
-
-        cell: ({ row }) => {
+        accessorKey: 'id',
+        id: 'id',
+        header: '#',
+        size: 150,
+         cell: ({ row }) => {
+            const id = row.getValue('id')?.toString()?.padStart(3, '0');
             return row.getCanExpand() ? (
-                h('div', { class: 'flex items-center gap-2 truncate' }, [
+                h('div', { class: 'flex items-center justify-start truncate' }, [
                     h(
                         Button,
                         {
@@ -679,12 +677,26 @@ const columns: ColumnDef<Asset>[] = [
                                 ? h(ChevronDown)
                                 : h(ChevronRight)
                     ),
-                    row.original.name || h(Badge, { variant: 'secondary' }, () => 'N/A')
+                    id
                 ])
             ) : (
                 h('div', { class: 'truncate' },
-                    row.original.name) || h(Badge, { variant: 'secondary' }, () => 'N/A')
+                   id)
             );
+        }
+    },
+    {
+
+        accessorKey: 'full_name',
+        id: 'name',
+        header: 'Nombre',
+        size: 300,
+        enableGlobalFilter: true,
+
+        cell: ({ row }) => {
+            return  h('div', { class: 'truncate' },
+                    row.original.name) || h(Badge, { variant: 'secondary' }, () => 'N/A')
+            
         }
 
 
@@ -833,7 +845,7 @@ const expanded = ref<ExpandedState>({})
 const table = useVueTable({
     get data() { return assets.data },
     get columns() { return columns },
-    getSubRows: row => row.current_assignment?.children_assignments?.map(child => child.asset!) || [],
+    getSubRows: row => row.current_assignment?.active_children_assignments?.map(child => child.asset!) || [],
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: 'includesString',

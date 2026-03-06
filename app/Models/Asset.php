@@ -155,25 +155,25 @@ class Asset extends EloquentModel
     {
         return $query
 
-        ->when(!$stat, function ($q) {
-            $q->where(function ($q2) {
-                $q2->whereDoesntHave('currentAssignment')
-                    ->orWhereHas(
-                        'currentAssignment',
-                        fn($q3) =>
-                        $q3->whereNull('parent_assignment_id')
-                    );
-            });
-        })
-        
-        // ->where(function ($q) {
-        //     $q->whereDoesntHave('currentAssignment')
-        //         ->orWhereHas(
-        //             'currentAssignment',
-        //             fn($q2) =>
-        //             $q2->whereNull('parent_assignment_id')
-        //         );
-        // })
+            ->when(!$stat, function ($q) {
+                $q->where(function ($q2) {
+                    $q2->whereDoesntHave('currentAssignment')
+                        ->orWhereHas(
+                            'currentAssignment',
+                            fn($q3) =>
+                            $q3->whereNull('parent_assignment_id')
+                        );
+                });
+            })
+
+            // ->where(function ($q) {
+            //     $q->whereDoesntHave('currentAssignment')
+            //         ->orWhereHas(
+            //             'currentAssignment',
+            //             fn($q2) =>
+            //             $q2->whereNull('parent_assignment_id')
+            //         );
+            // })
 
             /*
             |--------------------------------------------------------------------------
@@ -181,25 +181,32 @@ class Asset extends EloquentModel
             |--------------------------------------------------------------------------
             */
             ->when($filtersDto->search, function ($query, $search) {
+               
+    
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                    ->orWhereHas('brand', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('model', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-                    
-                        // ->orWhere('brand', 'like', "%{$search}%")
-                        // ->orWhere('model', 'like', "%{$search}%")
-                        ->orWhere('serial_number', 'like', "%{$search}%")
-                        ->orWhereHas(
-                            'currentAssignment.childrenAssignments.asset',
-                            fn($q2) =>
-                            $q2->where('name', 'like', "%{$search}%")
-                                ->orWhereHas('brand', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
-                                // ->orWhere('brand', 'like', "%{$search}%")
+                    if (is_numeric($search)) {
+                        $q->where('id', (int) $search)
+                            ->orWhereHas(
+                                'currentAssignment.activeChildrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->where('id', (int) $search)
+                            );
+                    } else {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('serial_number', 'like', "%{$search}%")
+                            ->orWhereHas('brand', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('model', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas(
+                                'currentAssignment.activeChildrenAssignments.asset',
+                                fn($q2) =>
+                                $q2->where('name', 'like', "%{$search}%")
+                                    ->orWhere('serial_number', 'like', "%{$search}%")
+                                    ->orWhereHas('brand', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
                                     ->orWhereHas('model', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
-                                // ->orWhere('model', 'like', "%{$search}%")
-                                ->orWhere('serial_number', 'like', "%{$search}%")
-                        );
+                            );
+                    }
                 });
+
             })
 
             /*
@@ -211,7 +218,7 @@ class Asset extends EloquentModel
                 $query->where(function ($q) use ($filtersDto) {
                     $q->whereIn('status', $filtersDto->status)
                         ->orWhereHas(
-                            'currentAssignment.childrenAssignments.asset',
+                            'currentAssignment.activeChildrenAssignments.asset',
                             fn($q2) =>
                             $q2->whereIn('status', $filtersDto->status)
                         );
@@ -225,13 +232,13 @@ class Asset extends EloquentModel
             */
             ->when($filtersDto->types, function ($query, $typeId) use ($stat) {
                 $query->where(function ($q) use ($typeId, $stat) {
-                     $q->whereIn('type_id', $typeId)->when(!$stat, function ($q2) use ($typeId) {
+                    $q->whereIn('type_id', $typeId)->when(!$stat, function ($q2) use ($typeId) {
                         $q2->orWhereHas(
-                            'currentAssignment.childrenAssignments.asset',
+                            'currentAssignment.activeChildrenAssignments.asset',
                             fn($q3) =>
                             $q3->whereIn('type_id', $typeId)
                         );
-                     });
+                    });
 
                 });
             })
@@ -248,7 +255,7 @@ class Asset extends EloquentModel
                 $query->where(function ($q) use ($brandIds, $stat) {
                     $q->whereIn('brand_id', $brandIds)->when(!$stat, function ($q2) use ($brandIds) {
                         $q2->orWhereHas(
-                            'currentAssignment.childrenAssignments.asset',
+                            'currentAssignment.activeChildrenAssignments.asset',
                             fn($q3) =>
                             $q3->whereIn('brand_id', $brandIds)
                         );
@@ -257,7 +264,7 @@ class Asset extends EloquentModel
             })
 
 
-            
+
             /*
             |--------------------------------------------------------------------------
             | MODELS
@@ -267,7 +274,7 @@ class Asset extends EloquentModel
                 $query->where(function ($q) use ($modelIds, $stat) {
                     $q->whereIn('model_id', $modelIds)->when(!$stat, function ($q2) use ($modelIds) {
                         $q2->orWhereHas(
-                            'currentAssignment.childrenAssignments.asset',
+                            'currentAssignment.activeChildrenAssignments.asset',
                             fn($q3) =>
                             $q3->whereIn('model_id', $modelIds)
                         );

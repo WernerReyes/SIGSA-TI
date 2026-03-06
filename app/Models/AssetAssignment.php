@@ -79,6 +79,11 @@ class AssetAssignment extends Model
         return $this->hasMany(AssetAssignment::class, 'parent_assignment_id');
     }
 
+    public function activeChildrenAssignments()
+    {
+        return $this->hasMany(AssetAssignment::class, 'parent_assignment_id')
+            ->whereNull('returned_at');
+    }
 
     public function parentAssignment()
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Asset;
 use App\Enums\Asset\AssetStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 
 class UpdateAssetRequest extends FormRequest
 {
@@ -46,5 +47,39 @@ class UpdateAssetRequest extends FormRequest
         ];
 
         
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $asset = $this->route('asset');
+
+            $typeId = $this->input('type_id') ?? $asset?->type_id;
+            $brandId = $this->input('brand_id') ?? $asset?->brand_id;
+            $modelId = $this->input('model_id') ?? $asset?->model_id;
+
+            if ($typeId && $brandId) {
+                $brandBelongsToType = DB::table('asset_type_brand')
+                    ->where('asset_type_id', $typeId)
+                    ->where('brand_id', $brandId)
+                    ->exists();
+
+                if (!$brandBelongsToType) {
+                    $validator->errors()->add('brand_id', 'La marca seleccionada no está asociada al tipo elegido.');
+                }
+            }
+
+            if ($modelId) {
+                $modelBelongsToSelection = DB::table('models')
+                    ->where('id', $modelId)
+                    ->where('brand_id', $brandId)
+                    ->where('asset_type_id', $typeId)
+                    ->exists();
+
+                if (!$modelBelongsToSelection) {
+                    $validator->errors()->add('model_id', 'El modelo seleccionado no corresponde al tipo y marca elegidos.');
+                }
+            }
+        });
     }
 }

@@ -46,8 +46,7 @@ class AssetController extends Controller
         $typeId = $request->input('type_id');
         $brandId = $request->input('brand_id');
         // $brand = $request->input('brand');
-        
-
+    
 
         return Inertia::render('Assets', [
             'filters' => $filters,

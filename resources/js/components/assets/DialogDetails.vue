@@ -13,7 +13,7 @@
                     <div
                         class="size-16 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/20 shadow-sm">
                         <!-- <Laptop class="size-8 text-primary" /> -->
-                         <component :is="assetTypeOp(asset?.type?.name)?.icon" class="size-8 text-primary" />
+                         <component :is="assetTypeOp(asset?.type?.name as TypeName)?.icon" class="size-8 text-primary" />
                     </div>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
@@ -350,13 +350,21 @@
                                                 {{ assignment?.assigned_to?.full_name }}
                                             </p>
                                             <div v-if="assignment.parent_assignment_id || assignment.parent_assignment"
-                                                class="mt-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2">
+                                                class="mt-2 rounded-md px-2.5 py-2"
+                                                :class="assignment.returned_at
+                                                    ? 'border border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/20'
+                                                    : 'border border-primary/30 bg-primary/5'">
                                                 <div class="flex items-start gap-2">
-                                                    <Badge class="h-5 px-2 text-[10px] bg-primary text-primary-foreground">
-                                                        Accesorio
+                                                    <Badge class="h-5 px-2 text-[10px]"
+                                                        :class="assignment.returned_at
+                                                            ? 'bg-amber-600 text-white'
+                                                            : 'bg-primary text-primary-foreground'">
+                                                        {{ assignment.returned_at ? 'Accesorio devuelto' : 'Accesorio' }}
                                                     </Badge>
                                                     <p class="text-xs leading-relaxed text-foreground/90">
-                                                        Asignado junto al equipo principal:
+                                                        {{ assignment.returned_at
+                                                            ? 'Fue asignado junto al equipo principal:'
+                                                            : 'Asignado junto al equipo principal:' }}
                                                         <span class="font-semibold text-foreground">
                                                             {{ assignment.parent_assignment?.asset?.full_name || `AST-${assignment.parent_assignment_id}` }}
                                                         </span>
@@ -378,6 +386,10 @@
                                                 </span>
                                                 <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente
                                                     asignado
+                                                </Badge>
+                                                <Badge v-if="hasPartialChildrenReturns(assignment)" variant="outline"
+                                                    class="w-fit border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
+                                                    Devolución parcial: accesorios devueltos antes del equipo principal
                                                 </Badge>
                                             </div>
 
@@ -403,6 +415,7 @@
                                         <Button variant="outline" size="sm" class="gap-2" @click="() => {
                                             if (!asset?.type) return;
                                             const conAssignment = getAsset(assignment);
+                                            if (!conAssignment.asset?.type) return;
                                           
                                             downloadAssignmentDocument(conAssignment.id, conAssignment.asset?.type);
                                         }">
@@ -410,7 +423,7 @@
                                          
                                             Activo
                                             <component
-                                                :is=" assetTypeOp(getAsset(assignment)?.asset?.type?.name)?.icon"
+                                                :is="assetTypeOp(getAsset(assignment)?.asset?.type?.name as TypeName)?.icon"
                                                 class="size-4" />
                                         </Button>
 
@@ -499,7 +512,7 @@
                                           v-else
                                              class="text-xs text-muted-foreground">Sin documento cargado.</p>
 
-                                        <Badge v-if="isInheritedDeliveryDocument(assignment)" variant="outline"
+                                        <Badge v-if="isInheritedReturnDocument(assignment)" variant="outline"
                                             class="w-fit text-[10px]">
                                             Documento tomado del equipo principal
                                         </Badge>
@@ -515,19 +528,38 @@
                                             <div class="flex items-center gap-2 text-xs font-semibold">
 
                                                 Accesorios ({{ assignment.children_assignments.length }})
+                                                <Badge
+                                                    v-if="returnedChildrenCount(assignment) > 0"
+                                                    variant="outline"
+                                                    class="h-5 px-2 text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
+                                                    {{ returnedChildrenCount(assignment) }} devuelto(s)
+                                                </Badge>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent class="pt-2">
                                             <div
                                                 class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
                                                 <div v-for="child in assignment.children_assignments" :key="child.id"
-                                                    class="rounded-lg border bg-muted/30 px-2 py-2 flex items-center gap-2">
-                                                    <component
-                                                        :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon"
-                                                        class="size-3 text-muted-foreground" />
-                                                    <p class="text-xs font-semibold truncate wrap-break-word">{{
-                                                        child.asset?.full_name
-                                                        || 'Accesorio' }}</p>
+                                                    class="rounded-lg border px-2 py-2 flex items-start gap-2"
+                                                    :class="child.returned_at
+                                                        ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
+                                                        : 'bg-muted/30'">
+                                                    <component :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon"
+                                                        class="size-3 mt-0.5"
+                                                        :class="child.returned_at ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'" />
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="text-xs font-semibold truncate wrap-break-word">{{
+                                                            child.asset?.full_name
+                                                            || 'Accesorio' }}</p>
+                                                        <p v-if="child.returned_at" class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
+                                                            Devuelto el {{ formatDate(child.returned_at, 'dd/MM/yyyy HH:mm') }}
+                                                        </p>
+                                                    </div>
+                                                    <Badge v-if="child.returned_at" variant="outline"
+                                                 
+                                                        class="h-5 px-2 text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 shrink-0">
+                                                        Devuelto
+                                                    </Badge>
 
                                                 </div>
                                             </div>
@@ -661,6 +693,29 @@ const assignments = computed({
     }
 });
 
+const latestAssignment = computed<AssetAssignment | null>(() => {
+    const list = asset.value?.assignments;
+    if (!list?.length) return null;
+
+    return [...list].sort((a, b) => {
+        const aDate = new Date(a.assigned_at).getTime();
+        const bDate = new Date(b.assigned_at).getTime();
+        return bDate - aDate;
+    })[0] || null;
+});
+
+const hasCurrentAssignment = computed(() => {
+    return !!asset.value?.current_assignment && !asset.value.current_assignment?.returned_at;
+});
+
+const displayAssignment = computed<AssetAssignment | null>(() => {
+    return asset.value?.current_assignment || latestAssignment.value || null;
+});
+
+const isReturnedAssignmentContext = computed(() => {
+    return !!displayAssignment.value?.returned_at && !hasCurrentAssignment.value;
+});
+
 const isCellPhone = computed(() => {
     return asset.value?.type?.name === TypeName.CELL_PHONE || asset.value?.type_id === 3;
 });
@@ -692,6 +747,29 @@ const getReturnUrl = (assignment: AssetAssignment): string => {
 
 const isInheritedDeliveryDocument = (assignment: AssetAssignment): boolean => {
     return !assignment.delivery_document?.file_url && !!assignment.parent_assignment?.delivery_document?.file_url;
+};
+
+const isInheritedReturnDocument = (assignment: AssetAssignment): boolean => {
+    console.log(assignment);
+    return !assignment.return_document?.file_url && !!assignment.parent_assignment?.return_document?.file_url;
+};
+
+const returnedChildrenCount = (assignment: AssetAssignment): number => {
+    return assignment.children_assignments?.filter(child => !!child.returned_at).length || 0;
+};
+
+const hasPartialChildrenReturns = (assignment: AssetAssignment): boolean => {
+    return !assignment.returned_at && returnedChildrenCount(assignment) > 0;
+};
+
+const formatDate = (value?: string | null, pattern = 'dd/MM/yyyy'): string => {
+    if (!value) return '-';
+
+    try {
+        return format(parseISO(value), pattern);
+    } catch {
+        return value;
+    }
 };
 
 const isImageDocument = (url?: string): boolean => {
