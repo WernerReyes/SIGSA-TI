@@ -13,7 +13,7 @@
                     <div
                         class="size-16 rounded-xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-2 ring-primary/20 shadow-sm">
                         <!-- <Laptop class="size-8 text-primary" /> -->
-                         <component :is="assetTypeOp(asset?.type?.name as TypeName)?.icon" class="size-8 text-primary" />
+                        <component :is="assetTypeOp(asset?.type?.name as TypeName)?.icon" class="size-8 text-primary" />
                     </div>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
@@ -32,7 +32,8 @@
                             </Badge>
                         </div>
                         <h2 class="font-bold tracking-tight text-2xl">{{ asset?.name }}</h2>
-                        <p class="text-sm text-muted-foreground mt-1">{{ asset?.brand?.name }} {{ asset?.model?.name }}</p>
+                        <p class="text-sm text-muted-foreground mt-1">{{ asset?.brand?.name }} {{ asset?.model?.name }}
+                        </p>
                     </div>
                 </div>
             </DialogHeader>
@@ -86,15 +87,14 @@
                                         <div v-if="repair.image_paths && repair.image_paths.length > 0"
                                             class="flex md:flex-row flex-col gap-2 mt-2">
                                             <img v-for="(img, index) in repair.image_paths" :key="img"
-                                                :src="getImageUrl(img)"
-                                                loading="lazy" width="80" height="80"
+                                                :src="getImageUrl(img)" loading="lazy" width="80" height="80"
                                                 class="w-20 h-20 object-cover rounded border cursor-pointer hover:ring-2 hover:ring-yellow-400 transition"
                                                 :alt="'Imagen reparación ' + repair.id" @click="() => {
                                                     const mappedImages = repair.image_paths.map(getImageUrl).filter(Boolean) as string[];
                                                     images = mappedImages;
                                                     currentIndex = index
 
-                        
+
                                                 }" />
                                         </div>
                                     </div>
@@ -350,38 +350,55 @@
                                                 {{ assignment?.assigned_to?.full_name }}
                                             </p>
                                             <div v-if="assignment.parent_assignment_id || assignment.parent_assignment"
-                                                class="mt-2 rounded-md px-2.5 py-2"
-                                                :class="assignment.returned_at
+                                                class="mt-2 rounded-md px-2.5 py-2" :class="assignment.returned_at
                                                     ? 'border border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/20'
                                                     : 'border border-primary/30 bg-primary/5'">
-                                                <div class="flex items-start gap-2">
-                                                    <Badge class="h-5 px-2 text-[10px]"
-                                                        :class="assignment.returned_at
-                                                            ? 'bg-amber-600 text-white'
-                                                            : 'bg-primary text-primary-foreground'">
-                                                        {{ assignment.returned_at ? 'Accesorio devuelto' : 'Accesorio' }}
-                                                    </Badge>
-                                                    <p class="text-xs leading-relaxed text-foreground/90">
-                                                        {{ assignment.returned_at
-                                                            ? 'Fue asignado junto al equipo principal:'
-                                                            : 'Asignado junto al equipo principal:' }}
-                                                        <span class="font-semibold text-foreground">
-                                                            {{ assignment.parent_assignment?.asset?.full_name || `AST-${assignment.parent_assignment_id}` }}
-                                                        </span>
-                                                    </p>
-                                                </div>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger as-child>
+                                                            <div class="flex items-start gap-2 cursor-pointer"
+                                                                @click.stop="() => {
+                                                                    getDetails(assignment?.parent_assignment?.asset_id);
+                                                                }">
+                                                                <Badge class="h-5 px-2 text-[10px]" :class="assignment.returned_at
+                                                                    ? 'bg-amber-600 text-white'
+                                                                    : 'bg-primary text-primary-foreground'">
+                                                                    {{ assignment.returned_at ? 'Accesorio devuelto' :
+                                                                        'Accesorio'
+                                                                    }}
+                                                                </Badge>
+                                                                <p class="text-xs leading-relaxed text-foreground/90">
+                                                                    {{ assignment.returned_at
+                                                                        ? 'Fue asignado junto al equipo principal:'
+                                                                        : 'Asignado junto al equipo principal:' }}
+                                                                    <span class="font-semibold text-foreground">
+                                                                        {{
+                                                                            assignment.parent_assignment?.asset?.full_name
+                                                                            ||
+                                                                            `AST-${assignment.parent_assignment_id}` }}
+                                                                    </span>
+                                                                </p>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Click para ver el detalle del equipo principal</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                             </div>
-                                            <div class="mt-1.5 flex flex-col space-y-2.5 text-xs text-muted-foreground gap-2">
-                                                <p class="text-xs text-muted-foreground flex items-center gap-1  my-auto">
-                                            
+                                            <div
+                                                class="mt-1.5 flex flex-col space-y-2.5 text-xs text-muted-foreground gap-2">
+                                                <p
+                                                    class="text-xs text-muted-foreground flex items-center gap-1  my-auto">
+
                                                     <Calendar class="size-3" />
                                                     Fecha de asignación:
                                                     {{ format(assignment.assigned_at, 'dd/MM/yyyy') }}
                                                 </p>
                                                 <span v-if="assignment.returned_at"
                                                     class="text-xs text-muted-foreground">
-                                                    → 
-                                                     Fecha de devolución:
+                                                    →
+                                                    Fecha de devolución:
                                                     {{ format(assignment.returned_at, 'dd/MM/yyyy HH:mm') }}
                                                 </span>
                                                 <Badge v-else class="bg-emerald-600 text-white text-xs">✓ Actualmente
@@ -416,11 +433,11 @@
                                             if (!asset?.type) return;
                                             const conAssignment = getAsset(assignment);
                                             if (!conAssignment.asset?.type) return;
-                                          
+
                                             downloadAssignmentDocument(conAssignment.id, conAssignment.asset?.type);
                                         }">
                                             <Download class="size-4" />
-                                         
+
                                             Activo
                                             <component
                                                 :is="assetTypeOp(getAsset(assignment)?.asset?.type?.name as TypeName)?.icon"
@@ -459,9 +476,8 @@
                                         <template v-if="getDeliveryUrl(assignment)">
                                             <button type="button" class="w-full text-left"
                                                 @click="viewDocument(getDeliveryUrl(assignment))">
-                                                <img v-if="isImageDocument(getDeliveryUrl(assignment))"
-                                                    loading="lazy" width="500" height="300"
-                                                    :src="getDeliveryUrl(assignment)"
+                                                <img v-if="isImageDocument(getDeliveryUrl(assignment))" loading="lazy"
+                                                    width="500" height="300" :src="getDeliveryUrl(assignment)"
                                                     class="h-28 w-full rounded-md object-cover border" />
                                                 <div v-else
                                                     class="h-28 w-full rounded-md border bg-muted/40 flex flex-col items-center justify-center gap-1">
@@ -473,16 +489,14 @@
                                                 {{ getDocumentName(getDeliveryUrl(assignment)) }}
                                             </p>
                                         </template>
-                                        <p 
-                                          v-else
-                                             class="text-xs text-muted-foreground">Sin documento cargado.</p>
-                                             
+                                        <p v-else class="text-xs text-muted-foreground">Sin documento cargado.</p>
+
 
                                         <Badge v-if="isInheritedDeliveryDocument(assignment)" variant="outline"
                                             class="w-fit text-[10px]">
                                             Documento tomado del equipo principal
                                         </Badge>
-                                
+
                                     </div>
 
                                     <div class="rounded-lg border bg-background/70 p-3 space-y-2">
@@ -493,10 +507,8 @@
                                         <template v-if="getReturnUrl(assignment)">
                                             <button type="button" class="w-full text-left"
                                                 @click="viewDocument(getReturnUrl(assignment))">
-                                                <img v-if="isImageDocument(getReturnUrl(assignment))"
-                                                        loading="lazy" width="500" height="300"
-                                                        
-                                                    :src="getReturnUrl(assignment)"
+                                                <img v-if="isImageDocument(getReturnUrl(assignment))" loading="lazy"
+                                                    width="500" height="300" :src="getReturnUrl(assignment)"
                                                     class="h-28 w-full rounded-md object-cover border" />
                                                 <div v-else
                                                     class="h-28 w-full rounded-md border bg-muted/40 flex flex-col items-center justify-center gap-1">
@@ -508,15 +520,13 @@
                                                 {{ getDocumentName(getReturnUrl(assignment)) }}
                                             </p>
                                         </template>
-                                          <p 
-                                          v-else
-                                             class="text-xs text-muted-foreground">Sin documento cargado.</p>
+                                        <p v-else class="text-xs text-muted-foreground">Sin documento cargado.</p>
 
                                         <Badge v-if="isInheritedReturnDocument(assignment)" variant="outline"
                                             class="w-fit text-[10px]">
                                             Documento tomado del equipo principal
                                         </Badge>
-                                     
+
                                     </div>
                                 </div>
 
@@ -528,9 +538,7 @@
                                             <div class="flex items-center gap-2 text-xs font-semibold">
 
                                                 Accesorios ({{ assignment.children_assignments.length }})
-                                                <Badge
-                                                    v-if="returnedChildrenCount(assignment) > 0"
-                                                    variant="outline"
+                                                <Badge v-if="returnedChildrenCount(assignment) > 0" variant="outline"
                                                     class="h-5 px-2 text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
                                                     {{ returnedChildrenCount(assignment) }} devuelto(s)
                                                 </Badge>
@@ -539,29 +547,47 @@
                                         <AccordionContent class="pt-2">
                                             <div
                                                 class="mt-2 grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
-                                                <div v-for="child in assignment.children_assignments" :key="child.id"
-                                                    class="rounded-lg border px-2 py-2 flex items-start gap-2"
-                                                    :class="child.returned_at
-                                                        ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
-                                                        : 'bg-muted/30'">
-                                                    <component :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon"
-                                                        class="size-3 mt-0.5"
-                                                        :class="child.returned_at ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'" />
-                                                    <div class="min-w-0 flex-1">
-                                                        <p class="text-xs font-semibold truncate wrap-break-word">{{
-                                                            child.asset?.full_name
-                                                            || 'Accesorio' }}</p>
-                                                        <p v-if="child.returned_at" class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
-                                                            Devuelto el {{ formatDate(child.returned_at, 'dd/MM/yyyy HH:mm') }}
-                                                        </p>
-                                                    </div>
-                                                    <Badge v-if="child.returned_at" variant="outline"
-                                                 
-                                                        class="h-5 px-2 text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 shrink-0">
-                                                        Devuelto
-                                                    </Badge>
+                                                <TooltipProvider v-for="child in assignment.children_assignments"
+                                                    :key="child.id">
+                                                    <Tooltip>
+                                                        <TooltipTrigger as-child>
+                                                            <div class="rounded-lg border px-2 py-2 flex items-start gap-2 cursor-pointer"
+                                                                :class="child.returned_at
+                                                                    ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
+                                                                    : 'bg-muted/30'" @click.stop="() => {
+                                                                        getDetails(child.asset_id);
+                                                                    }">
+                                                                <component
+                                                                    :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon"
+                                                                    class="size-3 mt-0.5"
+                                                                    :class="child.returned_at ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'" />
+                                                                <div class="min-w-0 flex-1">
+                                                                    <p
+                                                                        class="text-xs font-semibold truncate wrap-break-word">
+                                                                        {{
+                                                                            child.asset?.full_name
+                                                                            || 'Accesorio' }}</p>
+                                                                    <p v-if="child.returned_at"
+                                                                        class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
+                                                                        Devuelto el
+                                                                        {{
+                                                                            formatDate(child.returned_at,
+                                                                                'dd/MM/yyyy HH:mm')
+                                                                        }}
+                                                                    </p>
+                                                                </div>
+                                                                <Badge v-if="child.returned_at" variant="outline"
+                                                                    class="h-5 px-2 text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300 shrink-0">
+                                                                    Devuelto
+                                                                </Badge>
 
-                                                </div>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Click para ver el detalle del accesorio</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                             </div>
                                         </AccordionContent>
                                     </AccordionItem>
@@ -642,6 +668,12 @@ import {
     TabsList,
     TabsTrigger
 } from '@/components/ui/tabs';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAsset } from '@/composables/useAsset';
 import { type Asset, statusOp } from '@/interfaces/asset.interface';
 import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
@@ -650,7 +682,7 @@ import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 import { TypeName, assetTypeOp } from '@/interfaces/assetType.interface';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { getImageUrl } from '@/lib/utils';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { format, isAfter, isSameDay, parseISO, startOfDay } from 'date-fns';
 import {
     Calendar,
@@ -659,11 +691,12 @@ import {
     FileText,
     HardDrive,
     History,
-    Laptop, MemoryStick, Monitor, MonitorSmartphone, Palette, Phone, Receipt, Shield, Smartphone,
+    MemoryStick, Monitor, MonitorSmartphone, Palette, Phone, Receipt, Shield, Smartphone,
     Sparkles,
     Upload, User,
     Wrench
 } from 'lucide-vue-next';
+// import { router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import Carousel from '../Carousel.vue';
@@ -675,6 +708,7 @@ const open = defineModel<boolean>('open');
 const images = ref<string[]>([]);
 const currentIndex = ref(0);
 
+const page = usePage();
 const { downloadAssignmentDocument, downloadReturnAssignmentDocument } = useAsset();
 
 const openUploadDialog = ref(false);
@@ -693,28 +727,6 @@ const assignments = computed({
     }
 });
 
-const latestAssignment = computed<AssetAssignment | null>(() => {
-    const list = asset.value?.assignments;
-    if (!list?.length) return null;
-
-    return [...list].sort((a, b) => {
-        const aDate = new Date(a.assigned_at).getTime();
-        const bDate = new Date(b.assigned_at).getTime();
-        return bDate - aDate;
-    })[0] || null;
-});
-
-const hasCurrentAssignment = computed(() => {
-    return !!asset.value?.current_assignment && !asset.value.current_assignment?.returned_at;
-});
-
-const displayAssignment = computed<AssetAssignment | null>(() => {
-    return asset.value?.current_assignment || latestAssignment.value || null;
-});
-
-const isReturnedAssignmentContext = computed(() => {
-    return !!displayAssignment.value?.returned_at && !hasCurrentAssignment.value;
-});
 
 const isCellPhone = computed(() => {
     return asset.value?.type?.name === TypeName.CELL_PHONE || asset.value?.type_id === 3;
@@ -737,7 +749,7 @@ const getAsset = (assignment: AssetAssignment) => {
     }
 }
 const getDeliveryUrl = (assignment: AssetAssignment): string => {
-   
+
     return assignment.delivery_document?.file_url || assignment.parent_assignment?.delivery_document?.file_url || '';
 };
 
@@ -771,6 +783,22 @@ const formatDate = (value?: string | null, pattern = 'dd/MM/yyyy'): string => {
         return value;
     }
 };
+
+const getDetails = (assetId?: number) => {
+    router.reload({
+        only: ['details'],
+        data: { asset_id: assetId },
+        preserveUrl: true,
+        viewTransition: true,
+        onSuccess: () => {
+            asset.value = {
+                ...asset.value!,
+                ...page.props.details as Asset,
+            }
+        }
+
+    });
+}
 
 const isImageDocument = (url?: string): boolean => {
     if (!url) return false;
