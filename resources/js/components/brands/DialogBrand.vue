@@ -22,6 +22,26 @@
                             <FieldError v-if="errors.length" :errors="errors" />
                         </div>
                     </VeeField>
+
+                    <VeeField name="type_id" v-slot="{ componentField, errors }">
+                        <div class="space-y-2">
+                            <Label :for="componentField.name">Tipo *</Label>
+                            <SelectFilters
+                                label="Tipo"
+                                :items="types"
+                                :selected-as-label="true"
+                                :icon="MonitorSmartphone"
+                                :full-width="true"
+                                :show-refresh="false"
+                                :show-selected-focus="false"
+                                item-value="id"
+                                item-label="name"
+                                :default-value="componentField.modelValue"
+                                @select="(selected) => setFieldValue('type_id', selected)"
+                            />
+                            <FieldError v-if="errors.length" :errors="errors" />
+                        </div>
+                    </VeeField>
                 </div>
 
                 <div class="flex justify-end gap-2 mt-6">
@@ -40,17 +60,20 @@ import { FieldError } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { useApp } from '@/composables/useApp';
+import { AssetType } from '@/interfaces/assetType.interface';
 import { Brand } from '@/interfaces/brand.interface';
 import { isEqual } from '@/lib/utils';
 import { router } from '@inertiajs/core';
 import { toTypedSchema } from '@vee-validate/zod';
-import { Tag } from 'lucide-vue-next';
+import { MonitorSmartphone, Tag } from 'lucide-vue-next';
 import { Field as VeeField, useForm } from 'vee-validate';
 import { computed, watch } from 'vue';
 import { z } from 'zod';
+import SelectFilters from '../SelectFilters.vue';
 
 const props = defineProps<{
     brands: Brand[];
+    types: AssetType[];
 }>();
 
 
@@ -69,9 +92,14 @@ const schema = toTypedSchema(z.object({
         required_error: 'El nombre es obligatorio',
         invalid_type_error: 'El nombre debe ser una cadena de texto',
     }).min(2, 'El nombre es obligatorio'),
+    type_id: z.number({
+        required_error: 'El tipo es obligatorio',
+        invalid_type_error: 'Selecciona un tipo valido',
+    }),
 }).refine((data) => {
     const duplicate = (props.brands || []).find(brand =>
         brand.name.trim().toLowerCase() === data.name.trim().toLowerCase() &&
+        brand.type_id === data.type_id &&
         brand.id !== currentBrand.value?.id,
     );
 
@@ -83,9 +111,12 @@ const schema = toTypedSchema(z.object({
 
 const initialValues = computed(() => ({
     name: currentBrand.value?.name || '',
+    type_id: currentBrand.value?.type_id ?? undefined,
 }));
 
-const { handleSubmit, setValues, resetForm, values, errors } = useForm({
+const types = computed(() => props.types ?? []);
+
+const { handleSubmit, setValues, resetForm, values, errors, setFieldValue } = useForm({
     validationSchema: schema,
     initialValues: initialValues.value,
 });
@@ -119,7 +150,7 @@ function onSubmit(values: FormValues) {
             onFlash: (flash) => {
                 if (flash.error) return;
                 router.replaceProp('brands', (brands: Brand[]) => {
-                    return brands.map((brand) => brand.id === currentBrand.value?.id ? { ...brand, ...values } : brand);
+                    return brands.map((brand) => brand.id === currentBrand.value?.id ? flash.brand : brand);
                 });
                 onClose();
             },

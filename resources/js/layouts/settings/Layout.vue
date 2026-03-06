@@ -12,7 +12,7 @@ import { computed } from 'vue';
 const { isFromTI, isFromRRHH } = useApp();
 
 const sidebarNavItems = computed<NavItem[]>(() => {
-     console.log(isFromTI.value, isFromRRHH.value);
+   
     const items = [{
         title: 'Apariencia',
         icon: Contrast,
@@ -26,19 +26,11 @@ const sidebarNavItems = computed<NavItem[]>(() => {
             href: "/settings/asset-types",
         }, 
         
-        // {
-        //     title: 'Marcas',
-        //     icon: Tag,
-        //     href: "/settings/brands",
-        // }, {
-        //     title: 'Modelos',
-        //     icon: Box,
-        //     href: "/settings/models",
-        // }
+
     
         );
 
-        console.log(isFromTI.value, isFromRRHH.value);
+       
     }
 
     if (isFromTI.value) {

@@ -37,15 +37,31 @@ class AssetModelSeeder extends Seeder
         $extraModels = [
             [
                 'name' => 'MK235',
-                'brand' => 'Logitech',
-                'type' => 'TECLADO',
+                'brand_id' => Brand::where('name', 'Logitech')->where('type_id', AssetTypeEnum::KEYBOARD)->value('id'),
+                'created_at' => now(),
+                'updated_at' => now(),
+                // 'brand' => 'Logitech',
+                // 'type' => 'TECLADO',
             ],
+            [
+                'name' => 'SlimStar Q200',
+                'brand_id' => Brand::where('name', 'Genius')->where('type_id', AssetTypeEnum::KEYBOARD)->value('id'),
+                'created_at' => now(),
+                'updated_at' => now(),
+                
+            ], 
+            [
+                'name' => 'ERGO KB-700',
+                'brand_id' => Brand::where('name', 'Genius')->where('type_id', AssetTypeEnum::KEYBOARD)->value('id'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
         ];
 
-        $models = $this->getUniqueModels(array_merge($cechLimaModels, $cechProvModels, $ydiezaModels, $extraModels));
+        $models = $this->getUniqueModels(array_merge($cechLimaModels, $cechProvModels, $ydiezaModels));
 
         if (!empty($models)) {
-            AssetModel::insert($models);
+            AssetModel::insert([...$models, ...$extraModels]);
         }
 
         Schema::enableForeignKeyConstraints();
@@ -73,18 +89,17 @@ class AssetModelSeeder extends Seeder
     {
         $unique = [];
         foreach ($models as $model) {
-            $brandId = $this->resolveBrandId($model['brand'] ?? null);
             $typeId = $this->resolveTypeId($model['type'] ?? null);
+            $brandId = $this->resolveBrandId($model['brand'] ?? null, $typeId);
 
-            if (!$brandId || !$typeId || empty($model['model'])) {
+            if (!$brandId || empty($model['model'])) {
                 continue;
             }
 
-            $key = mb_strtolower(trim((string) $model['model'])) . '|' . $brandId . '|' . $typeId;
+            $key = mb_strtolower(trim((string) $model['model'])) . '|' . $brandId;
             $unique[$key] = [
                 'name' => trim((string) $model['model']),
                 'brand_id' => $brandId,
-                'asset_type_id' => $typeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -93,14 +108,15 @@ class AssetModelSeeder extends Seeder
         return array_values($unique);
     }
 
-    private function resolveBrandId(?string $brandName): ?int
+    private function resolveBrandId(?string $brandName, ?int $typeId): ?int
     {
-        if (!$brandName) {
+        if (!$brandName || !$typeId) {
             return null;
         }
 
         return Brand::query()
             ->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($brandName))])
+            ->where('type_id', $typeId)
             ->value('id');
     }
 

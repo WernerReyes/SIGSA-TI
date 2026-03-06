@@ -39,7 +39,7 @@ class AssetSeeder extends Seeder
         // Convertir el Excel a un Array
         $rows = Excel::toArray(new AssetsImport, $filePath);
 
-        $cechLima = $this->getTechAssigned($rows[0], 42); //* Cechriza Technical Lima
+        $cechLima = $this->getTechAssigned($rows[0], 43); //* Cechriza Technical Lima
         $cechProvince = $this->getTechAssigned($rows[1], 39); //* Cechriza Technical Province
         $ydieza = $this->getTechAssigned($rows[2], 9); //* Ydieza Technical
 
@@ -59,6 +59,7 @@ class AssetSeeder extends Seeder
             21 => Carbon::parse('2026-01-09'), // JOSE ANDRES CARHUAS QUISPE 
             143 => Carbon::parse('2026-01-12'), // RUBÉN ALEJANDRO ZÁRATE RÍOS
             146 => Carbon::parse('2026-01-30'), // TATIANA YASMIN ODALIS VERA FLORES
+            8 => Carbon::parse('2026-03-04'), // JOEL RONALD COLQUE FUENTES
 
         ];
 
@@ -68,7 +69,7 @@ class AssetSeeder extends Seeder
                 'status' => AssetStatus::AVAILABLE->value,
                 'brand_id' => Brand::where('name', 'Logitech')->first()?->id,
                 'model_id' => AssetModel::where('name', 'MK235')->first()?->id,
-                'color' => null,
+                'color' => 'Negro',
                 'serial_number' => strtoupper('2518mr21b7g9'),
                 'processor' => null,
                 'ram' => null,
@@ -83,11 +84,53 @@ class AssetSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
                 'assigned_to' => User::select('staff_id', 'firstname', 'lastname')->find(146), // TATIANA YASMIN ODALIS VERA FLORES
+            ], 
+             [
+                'name' => 'TECLADO',
+                'status' => AssetStatus::AVAILABLE->value,
+                'brand_id' => Brand::where('name', 'Genius')->first()?->id,
+                'model_id' => AssetModel::where('name', 'SlimStar Q200')->first()?->id,
+                'color' => 'Blanco',
+                'serial_number' => strtoupper('xp23q2c0502b'),
+                'processor' => null,
+                'ram' => null,
+                'storage' => null,
+                'purchase_date' => null,
+                'warranty_expiration' => null,
+                'type_id' => AssetTypeEnum::KEYBOARD,
+                'is_new' => true,
+                'invoice_path' => null,
+                'phone' => null,
+                'imei' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'assigned_to' => null
+            ], 
+            [
+                'name' => 'TECLADO',
+                'status' => AssetStatus::AVAILABLE->value,
+                'brand_id' => Brand::where('name', 'Genius')->first()?->id,
+                'model_id' => AssetModel::where('name', 'ERGO KB-700')->first()?->id,
+                'color' => 'Negro',
+                'serial_number' => null,
+                'processor' => null,
+                'ram' => null,
+                'storage' => null,
+                'purchase_date' => null,
+                'warranty_expiration' => null,
+                'type_id' => AssetTypeEnum::KEYBOARD,
+                'is_new' => true,
+                'invoice_path' => null,
+                'phone' => null,
+                'imei' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'assigned_to' => User::select('staff_id', 'firstname', 'lastname')->find(8) // JOEL RONALD COLQUE FUENTES
             ]
         ];
 
         DB::transaction(function () use ($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $user, $registeredAssigmentsDates, $extraOutSideAssigments) {
-            $array = array_merge($cechLima, $cechProvince, $ydieza, $administrativeAssigned, []);
+            $array = array_merge($cechLima, $cechProvince, $ydieza, $administrativeAssigned, $extraOutSideAssigments);
             array_map(function ($data) use ($user, $registeredAssigmentsDates) {
                 $accessories = $data['accessories'] ?? [];
                 $assignedTo = $data['assigned_to'];

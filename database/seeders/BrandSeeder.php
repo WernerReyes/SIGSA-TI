@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Asset\AssetTypeEnum;
 use App\Imports\AssetsImport;
 use App\Models\Brand;
 use Illuminate\Database\Seeder;
@@ -29,7 +30,8 @@ class BrandSeeder extends Seeder
         $ydiezaBrands = $this->getBrands($rows[2], 9); //* Brands
 
         $extraBrands = [
-            ['brand' => 'Logitech']
+            ['name' => 'Logitech', 'type_id' =>AssetTypeEnum::KEYBOARD, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Genius', 'type_id' =>AssetTypeEnum::KEYBOARD, 'created_at' => now(), 'updated_at' => now()],
         ];
 
         Brand::insert(
@@ -53,6 +55,7 @@ class BrandSeeder extends Seeder
             return [
                 'name' => $row[2] ? trim($row[2]) : null, // Asegurarse de que el nombre no sea nulo y eliminar espacios
                 'brand' => $this->capitalizeBrand($row[3] ? trim($row[3]) : null),
+                'type' => $row[2] ? trim((string) $row[2]) : null,
             ];
         };
 
@@ -71,11 +74,20 @@ class BrandSeeder extends Seeder
     {
         $unique = [];
         foreach ($brands as $brand) {
-            if (!in_array($brand['brand'], array_column($unique, 'brand'), true)) {
-                $unique[] = $brand;
+            $typeId = $this->resolveTypeId($brand['type'] ?? null);
+            if (!$typeId || empty($brand['brand'])) {
+                continue;
             }
+
+            $key = mb_strtolower(trim((string) $brand['brand'])) . '|' . $typeId;
+            $unique[$key] = [
+                'name' => trim((string) $brand['brand']),
+                'type_id' => $typeId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
-        return array_map(fn($brand) => ['name' => $brand['brand']], $unique);
+        return array_values($unique);
     }
 
     private function capitalizeBrand($brand, array $exceptions = ['HP', 'IBM', 'ASUS'])
@@ -86,6 +98,29 @@ class BrandSeeder extends Seeder
         }
         return ucwords(strtolower($brand));
 
+    }
+
+    private function resolveTypeId(?string $typeName): ?int
+    {
+        if (!$typeName) {
+            return null;
+        }
+
+        return match (mb_strtoupper(trim($typeName))) {
+            'LAPTOP', 'LATOP' => AssetTypeEnum::LAPTOP,
+            'PC' => AssetTypeEnum::PC,
+            'MINI PC' => AssetTypeEnum::MINI_PC,
+            'CELULAR' => AssetTypeEnum::CELL_PHONE,
+            'MONITOR' => AssetTypeEnum::MONITOR,
+            'TABLET', 'TABLET TECLADO' => AssetTypeEnum::TABLET,
+            'MOUSE' => AssetTypeEnum::MOUSE,
+            'TECLADO' => AssetTypeEnum::KEYBOARD,
+            'AUDIFONOS', 'AUDIFONOS USB', 'AURICULARES' => AssetTypeEnum::HEADPHONES,
+            'PATCHCORD', 'PATCHCOARD' => AssetTypeEnum::PATCH_CABLE,
+            'CARGADOR LAPTOP', 'CARGADOR' => AssetTypeEnum::LAPTOP_CHARGER,
+            'CARGADOR CELULAR' => AssetTypeEnum::CELL_PHONE_CHARGER,
+            default => null,
+        };
     }
 
 }

@@ -8,26 +8,26 @@ class BrandService
 {
     public function getBrands()
     {
-        return Brand::select('id', 'name', 'created_at', 'updated_at')->latest()->get();
+        return Brand::select('id', 'name', 'type_id', 'created_at', 'updated_at')
+            ->with('type:id,name')
+            ->latest()
+            ->get();
     }
 
     public function getBasicInfo()
     {
-        return Brand::select('id', 'name')->latest()->get();
+        return Brand::select('id', 'name', 'type_id')->latest()->get();
     }
 
-    public function getBrandModels(?int $brand_id, ?int $type_id = null)
+    public function getBrandModels(?int $brand_id)
     {
         if (!$brand_id) {
             return collect();
         }
 
-        ds($brand_id, $type_id);
-
         return Brand::findOrFail($brand_id)
             ->models()
-            ->select('models.id', 'models.name', 'models.brand_id', 'models.asset_type_id')
-            ->when($type_id, fn($query) => $query->where('asset_type_id', $type_id))
+            ->select('models.id', 'models.name', 'models.brand_id')
             ->orderBy('models.created_at', 'desc')
             ->get();
     }

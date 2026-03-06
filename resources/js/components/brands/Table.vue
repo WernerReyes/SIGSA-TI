@@ -29,6 +29,8 @@
               <TableHead class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Nombre</TableHead>
               <TableHead class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Tipo</TableHead>
+              <TableHead class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Creado</TableHead>
               <TableHead class="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Actualizado</TableHead>
@@ -43,6 +45,9 @@
               <TableCell class="px-4 py-2 whitespace-nowrap flex items-center gap-2">
                 <Tag class="size-4 text-muted-foreground" />
                 {{ brand.name }}
+              </TableCell>
+              <TableCell class="px-4 py-2 whitespace-nowrap text-sm text-muted-foreground">
+                {{ brand.type?.name || 'Sin tipo' }}
               </TableCell>
               <TableCell class="px-4 py-2 whitespace-nowrap text-sm text-muted-foreground">
                 {{ format(new Date(brand.created_at), 'dd/MM/yyyy HH:mm') }}

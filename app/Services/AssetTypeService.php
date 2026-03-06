@@ -8,14 +8,9 @@ class AssetTypeService
     public function getTypes()
     {
         return AssetType::select('id', 'name', 'doc_category', 'created_at', 'updated_at', 'is_deletable')
-            ->with('brands:id')
             ->isFromRRHH()
             ->latest()
-            ->get()
-            ->map(function (AssetType $type) {
-                $type->setAttribute('brand_ids', $type->brands->pluck('id')->values()->all());
-                return $type;
-            });
+            ->get();
     }
 
     public function getBasicTypes()
@@ -30,11 +25,9 @@ class AssetTypeService
             return Brand::select('id', 'name')->orderByDesc('created_at')->get();
         }
 
-        return Brand::select('brands.id', 'brands.name')
-            ->whereHas('types', function ($query) use ($type_id) {
-                $query->where('assets_type.id', $type_id);
-            })
-            ->orderByDesc('brands.created_at')
+        return Brand::select('id', 'name', 'type_id')
+            ->where('type_id', $type_id)
+            ->orderByDesc('created_at')
             ->get();
     }
 

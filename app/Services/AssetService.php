@@ -928,7 +928,7 @@ class AssetService
                 // }
 
                 if (!$assignment->parent_assignment_id) {
-                    $childAssignments = $assignment->childrenAssignments()->select('id', 'asset_id')->get();
+                    $childAssignments = $assignment->activeChildrenAssignments()->select('id', 'asset_id')->get();
                     if (!$childAssignments->isEmpty()) {
                         $asset = $assignment->asset;
                         $description .= " junto con los accesorios: " . $childAssignments->map(function ($childAssignment) {

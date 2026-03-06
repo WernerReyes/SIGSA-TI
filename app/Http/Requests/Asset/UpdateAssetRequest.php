@@ -59,9 +59,9 @@ class UpdateAssetRequest extends FormRequest
             $modelId = $this->input('model_id') ?? $asset?->model_id;
 
             if ($typeId && $brandId) {
-                $brandBelongsToType = DB::table('asset_type_brand')
-                    ->where('asset_type_id', $typeId)
-                    ->where('brand_id', $brandId)
+                $brandBelongsToType = DB::table('brands')
+                    ->where('id', $brandId)
+                    ->where('type_id', $typeId)
                     ->exists();
 
                 if (!$brandBelongsToType) {
@@ -73,7 +73,6 @@ class UpdateAssetRequest extends FormRequest
                 $modelBelongsToSelection = DB::table('models')
                     ->where('id', $modelId)
                     ->where('brand_id', $brandId)
-                    ->where('asset_type_id', $typeId)
                     ->exists();
 
                 if (!$modelBelongsToSelection) {

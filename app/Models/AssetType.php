@@ -38,12 +38,12 @@ class AssetType extends Model
 
     public function models()
     {
-        return $this->hasMany(AssetModel::class, 'asset_type_id');
+        return $this->hasManyThrough(AssetModel::class, Brand::class, 'type_id', 'brand_id', 'id', 'id');
     }
 
     public function brands()
     {
-        return $this->belongsToMany(Brand::class, 'asset_type_brand', 'asset_type_id', 'brand_id')->withTimestamps();
+        return $this->hasMany(Brand::class, 'type_id');
     }
 
     public function getIsAccessoryAttribute()

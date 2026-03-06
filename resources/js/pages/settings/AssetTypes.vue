@@ -1,101 +1,122 @@
 <template>
-
     <Head title="Tipos de Activos" />
     <AppLayout :breadcrumbs="breadcrumbItems">
-
         <SettingsLayout>
             <div class="space-y-6">
-
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div class="flex flex-wrap items-center gap-2">
                         <Button v-if="isFromTI" @click="onEditType(null)">
                             <MonitorSmartphone />
                             Nuevo tipo
                         </Button>
-                        <Button variant="outline" :disabled="!selectedTypeId" @click="openBrandEditor = true">
+                        <Button variant="outline" @click="openBrandEditor = true">
                             <Tag />
                             Nueva marca
                         </Button>
-                        <Button variant="outline" :disabled="!selectedTypeId || !selectedBrandForModelId" @click="openNewModelFromFlow">
+                        <Button variant="outline" @click="openModelIndependent">
                             <Boxes />
-                            Nuevo modelo (opcional)
+                            Nuevo modelo
                         </Button>
                     </div>
                 </div>
 
-                <div class="rounded-xl border bg-card p-4 shadow-sm text-sm text-muted-foreground">
-                    Flujo recomendado: 1) crea/selecciona tipo, 2) asocia marcas al tipo, 3) crea modelos para una marca (opcional).
-                </div>
+                <!-- <div class="rounded-xl border bg-card p-4 shadow-sm text-sm text-muted-foreground">
+                    Puedes crear Tipo, Marca y Modelo de forma independiente. Luego, en la asignacion flexible, eliges Tipo, Marca y Modelo (opcional).
+                </div> -->
 
-                <div class="rounded-xl border bg-card p-4 shadow-sm space-y-3">
-                    <h3 class="text-sm font-semibold">Paso 1 y 2: Tipo y Marcas</h3>
-
-                    <div class="grid gap-2 md:grid-cols-2">
+                <!-- <div class="rounded-xl border bg-card p-4 shadow-sm space-y-3">
+                    <h3 class="text-sm font-semibold">Asignacion flexible</h3>
+                    <div class="grid gap-2 md:grid-cols-4">
                         <SelectFilters full-width :items="types" item-value="id" item-label="name"
-                            label="Selecciona tipo" data-key="types" :icon="MonitorSmartphone" :show-refresh="false"
+                            label="Tipo" data-key="types" :icon="MonitorSmartphone" :show-refresh="false"
                             :show-selected-focus="false" :selected-as-label="true"
-                            :default-value="selectedTypeId ?? undefined"
-                            @select="(value) => selectedTypeId = value" />
+                            :default-value="assignmentTypeId ?? undefined"
+                            @select="(value) => assignmentTypeId = value" />
 
-                        <SelectFilters full-width :multiple="true" :items="brands" item-value="id" item-label="name"
-                            label="Selecciona marcas" data-key="brands" :icon="Tag" :show-refresh="false"
-                            :show-selected-focus="false" :selected-as-label="true" :default-value="selectedBrandIds"
-                            @select="(values) => selectedBrandIds = values" :max-label-length="1" />
+                        <SelectFilters full-width :items="assignableBrands" item-value="id" item-label="name"
+                            label="Marca" data-key="brands" :icon="Tag" :show-refresh="false"
+                            :show-selected-focus="false" :selected-as-label="true"
+                            :default-value="assignmentBrandId ?? undefined"
+                            @select="(value) => assignmentBrandId = value" />
+
+                        <SelectFilters full-width :items="assignableModels" item-value="id" item-label="name"
+                            label="Modelo (opcional)" data-key="models" :icon="Boxes" :show-refresh="false"
+                            :show-selected-focus="false" :selected-as-label="true"
+                            :allow-null="true" null-label="Sin modelo"
+                            :default-value="assignmentModelId ?? undefined"
+                            @select="(value) => assignmentModelId = value" />
+                        
+                        <Button class="w-full" :disabled="!assignmentTypeId || !assignmentBrandId" @click="openNewModelFromFlow">
+                            <Network />
+                            Crear modelo con seleccion
+                        </Button>
+                    </div>
+                    <div class="text-xs text-muted-foreground">
+                        Esta seleccion simula el flujo de activos: Tipo y Marca obligatorios, Modelo opcional.
+                    </div>
+                </div> -->
+
+                <!-- <div class="grid gap-4 lg:grid-cols-3">
+                    
+                    <div class="rounded-xl border bg-card p-4 shadow-sm">
+                        <div class="mb-2 text-sm font-semibold">Lista de tipos</div>
+                        <div class="text-xs text-muted-foreground mb-2">{{ types.length }} registrados</div>
+                        <ul class="space-y-1 max-h-40 overflow-auto text-sm">
+                            <li v-for="type in types" :key="`quick-type-${type.id}`" class="truncate">{{ type.name }}</li>
+                        </ul>
                     </div>
 
-                    <Button class="w-full" :disabled="!selectedTypeId" @click="syncTypeBrands">
-                        Guardar marcas del tipo
-                    </Button>
-                </div>
+                    <div class="rounded-xl border bg-card p-4 shadow-sm">
+                        <div class="mb-2 text-sm font-semibold">Lista de marcas</div>
+                        <div class="text-xs text-muted-foreground mb-2">{{ brands.length }} registradas</div>
+                        <ul class="space-y-1 max-h-40 overflow-auto text-sm">
+                            <li v-for="brand in brands" :key="`quick-brand-${brand.id}`" class="truncate">{{ brand.name }}</li>
+                        </ul>
+                    </div>
 
-                <div class="rounded-xl border bg-card p-4 shadow-sm space-y-3">
-                    <h3 class="text-sm font-semibold">Paso 3 (Opcional): Modelo</h3>
-                    <p class="text-xs text-muted-foreground">
-                        Selecciona una marca ya asociada al tipo para crear un modelo especifico. Puedes omitir este paso.
-                    </p>
-
-                    <SelectFilters full-width :items="brandsForSelectedType" item-value="id" item-label="name"
-                        label="Marca para el modelo" data-key="brands" :icon="Tag" :show-refresh="false"
-                        :show-selected-focus="false" :selected-as-label="true" :default-value="selectedBrandForModelId ?? undefined"
-                        @select="(value) => selectedBrandForModelId = value" />
-
-                    <Button class="w-full" variant="outline" :disabled="!selectedTypeId || !selectedBrandForModelId"
-                        @click="openNewModelFromFlow">
-                        Crear modelo (opcional)
-                    </Button>
-                </div>
+                    <div class="rounded-xl border bg-card p-4 shadow-sm">
+                        <div class="mb-2 text-sm font-semibold">Lista de modelos</div>
+                        <div class="text-xs text-muted-foreground mb-2">{{ models.length }} registrados</div>
+                        <ul class="space-y-1 max-h-40 overflow-auto text-sm">
+                            <li v-for="model in models" :key="`quick-model-${model.id}`" class="truncate">{{ model.name }}</li>
+                        </ul>
+                    </div>
+                </div> -->
 
                 <div class="space-y-4">
-                    <TypesTable :types="types" @edit="onEditType" @delete="onDeleteType" @edit-brand="(brand) => {
-                        currentBrand = brand;
-                        openBrandEditor = true;
-                    }" 
-
-                    @delete-brand="onDeleteBrand" @delete-model="onDeleteModel"
-                    
-
-                    @edit-model="(model) => {
-                        currentModel = model;
-                        openModelEditor = true;
-                    }" />
+                    <TypesTable
+                        :types="types"
+                        @edit="onEditType"
+                        @delete="onDeleteType"
+                        @edit-brand="onEditBrand"
+                        @delete-brand="onDeleteBrand"
+                        @delete-model="onDeleteModel"
+                        @edit-model="onEditModel"
+                    />
                 </div>
-
             </div>
         </SettingsLayout>
 
         <DialogType v-model:current-type="currentType" v-model:open="openEditor" />
-        <DialogBrand :brands="brands" v-model:current-brand="currentBrand" v-model:open="openBrandEditor" />
-        <DialogModel :models="models" :brands="brands" :types="types" v-model:current-model="currentModel"
-            v-model:open="openModelEditor" :initial-brand-id="selectedBrandForModelId"
-            :initial-type-id="selectedTypeId" :lock-context="true" />
+        <DialogBrand :brands="brands" :types="types" v-model:current-brand="currentBrand" v-model:open="openBrandEditor" />
+        <DialogModel
+            :models="models"
+            :brands="brands"
+            :types="types"
+            v-model:current-model="currentModel"
+            v-model:open="openModelEditor"
+            :initial-brand-id="modelFlowContext ? assignmentBrandId : null"
+            :initial-type-id="modelFlowContext ? assignmentTypeId : null"
+            :lock-context="modelFlowContext"
+        />
 
-        <AlertDialog title="Confirmar eliminación" :description="deleteInfo?.description" @confirm="() => {
-            deleteInfo?.confirm();
-            deleteInfo = null;
-        }" @cancel="() => {
-                deleteInfo?.cancel();
-                deleteInfo = null;
-            }" v-model:open="openDeleteDialog"></AlertDialog>
+        <AlertDialog
+            title="Confirmar eliminación"
+            :description="deleteInfo?.description"
+            @confirm="() => { deleteInfo?.confirm(); deleteInfo = null; }"
+            @cancel="() => { deleteInfo?.cancel(); deleteInfo = null; }"
+            v-model:open="openDeleteDialog"
+        />
     </AppLayout>
 </template>
 
@@ -115,7 +136,7 @@ import DialogBrand from '@/components/brands/DialogBrand.vue';
 import DialogModel from '@/components/models/DialogModel.vue';
 import SelectFilters from '@/components/SelectFilters.vue';
 import { Button } from '@/components/ui/button';
-import { Boxes, Tag, MonitorSmartphone } from 'lucide-vue-next';
+import { Boxes, Tag, MonitorSmartphone, Network } from 'lucide-vue-next';
 import { useApp } from '@/composables/useApp';
 
 const props = defineProps<{
@@ -137,57 +158,63 @@ const currentModel = ref<AssetModel | null>(null);
 const openEditor = ref(false);
 const openBrandEditor = ref(false);
 const openModelEditor = ref(false);
-
-const selectedTypeId = ref<number | null>(null);
-const selectedBrandIds = ref<number[]>([]);
-const selectedBrandForModelId = ref<number | null>(null);
-
-const brandsForSelectedType = computed(() => {
-    return brands.value.filter(brand => selectedBrandIds.value.includes(brand.id));
-});
-
-watch(selectedTypeId, (typeId) => {
-    const selectedType = types.value.find(type => type.id === typeId);
-    selectedBrandIds.value = selectedType?.brand_ids ?? [];
-    selectedBrandForModelId.value = null;
-});
-
-watch(selectedBrandIds, (brandIds) => {
-    if (!selectedBrandForModelId.value) return;
-    if (!brandIds.includes(selectedBrandForModelId.value)) {
-        selectedBrandForModelId.value = null;
-    }
-});
-
-const deleteInfo = ref<{ description: string, confirm: () => void, cancel: () => void } | null>(null);
-
-
-
-
 const openDeleteDialog = ref(false);
+const modelFlowContext = ref(false);
+
+const assignmentTypeId = ref<number | null>(null);
+const assignmentBrandId = ref<number | null>(null);
+const assignmentModelId = ref<number | null>(null);
+
+const assignableBrands = computed(() => {
+    if (!assignmentTypeId.value) return [];
+    return brands.value.filter(brand => brand.type_id === assignmentTypeId.value);
+});
+const assignableModels = computed(() => {
+    if (!assignmentBrandId.value) return [];
+    return models.value.filter(model => model.brand_id === assignmentBrandId.value);
+});
+
+watch(assignmentTypeId, () => {
+    assignmentBrandId.value = null;
+    assignmentModelId.value = null;
+});
+
+watch(assignmentBrandId, () => {
+    assignmentModelId.value = null;
+});
+
+const deleteInfo = ref<{ description: string; confirm: () => void; cancel: () => void } | null>(null);
 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
         title: 'Configuración de Tipo de Activo',
-        href: "#",
+        href: '#',
     },
 ];
-
 
 function onEditType(type: AssetType | null) {
     currentType.value = type;
     openEditor.value = true;
 }
 
+function onEditBrand(brand: Brand | null) {
+    currentBrand.value = brand;
+    openBrandEditor.value = true;
+}
+
+function onEditModel(model: AssetModel | null) {
+    modelFlowContext.value = false;
+    currentModel.value = model;
+    openModelEditor.value = true;
+}
+
 function onDeleteType(type: AssetType) {
     deleteInfo.value = {
         description: '¿Estás seguro de que deseas eliminar este tipo de activo? Esta acción no se puede deshacer.',
-        confirm: () => {
-            handleDeleteType();
-        },
+        confirm: () => handleDeleteType(),
         cancel: () => {
             currentType.value = null;
-        }
+        },
     };
     currentType.value = type;
     openDeleteDialog.value = true;
@@ -196,12 +223,10 @@ function onDeleteType(type: AssetType) {
 function onDeleteBrand(brand: Brand) {
     deleteInfo.value = {
         description: '¿Estás seguro de que deseas eliminar esta marca? Esta acción no se puede deshacer.',
-        confirm: () => {
-            handleDeleteBrand(brand);
-        },
+        confirm: () => handleDeleteBrand(brand),
         cancel: () => {
             currentBrand.value = null;
-        }
+        },
     };
     currentBrand.value = brand;
     openDeleteDialog.value = true;
@@ -210,92 +235,66 @@ function onDeleteBrand(brand: Brand) {
 function onDeleteModel(model: AssetModel) {
     deleteInfo.value = {
         description: '¿Estás seguro de que deseas eliminar este modelo? Esta acción no se puede deshacer.',
-        confirm: () => {
-            handleDeleteModel(model);
-        },
+        confirm: () => handleDeleteModel(model),
         cancel: () => {
             currentModel.value = null;
-        }
+        },
     };
     currentModel.value = model;
     openDeleteDialog.value = true;
 }
 
+function handleDeleteType() {
+    if (!currentType.value) return;
+    router.delete('/settings/asset-types/' + currentType.value.id, {
+        preserveScroll: true,
+        preserveState: true,
+        preserveUrl: true,
+        onFlash: (flash) => {
+            if (flash.error) return;
+            openDeleteDialog.value = false;
+            router.replaceProp('types', (items: AssetType[]) => items.filter(type => type.id !== currentType.value?.id));
+            currentType.value = null;
+        },
+    });
+}
 
-const handleDeleteType = () => {
-    if (currentType.value) {
-        router.delete('/settings/asset-types/' + currentType.value.id, {
-            preserveScroll: true,
-            preserveState: true,
-            preserveUrl: true,
-            onFlash: (flash) => {
-                if (flash.error) return;
-                openDeleteDialog.value = false;
-                router.replaceProp('types', (types: AssetType[]) => {
-                    return types.filter(type => type.id !== currentType.value?.id);
-                });
-                currentType.value = null;
-            }
-        });
-    }
-};
-
-const handleDeleteBrand = (brand: Brand) => {
+function handleDeleteBrand(brand: Brand) {
     router.delete('/settings/brands/' + brand.id, {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
             if (flash.error) return;
-            router.replaceProp('brands', (brands: Brand[]) => {
-                return brands.filter(b => b.id !== brand.id);
-            });
-
+            router.replaceProp('brands', (items: Brand[]) => items.filter(item => item.id !== brand.id));
             currentBrand.value = null;
-        }
+        },
     });
-};
+}
 
-const handleDeleteModel = (model: AssetModel) => {
+function handleDeleteModel(model: AssetModel) {
     router.delete('/settings/models/' + model.id, {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,
         onFlash: (flash) => {
             if (flash.error) return;
-            router.replaceProp('models', (models: AssetModel[]) => {
-                return models.filter(m => m.id !== model.id);
-            });
+            router.replaceProp('models', (items: AssetModel[]) => items.filter(item => item.id !== model.id));
             currentModel.value = null;
-        }
-    });
-};
-
-function syncTypeBrands() {
-    if (!selectedTypeId.value) return;
-
-    router.put(`/settings/asset-types/${selectedTypeId.value}/brands`, {
-        brand_ids: selectedBrandIds.value,
-    }, {
-        preserveScroll: true,
-        preserveState: true,
-        preserveUrl: true,
-        onFlash: (flash) => {
-            const relationPayload = (flash as { typeBrands?: { id: number; brand_ids: number[] } }).typeBrands;
-            if (flash.error || !relationPayload) return;
-            router.replaceProp('types', (items: AssetType[]) =>
-                items.map(type => type.id === relationPayload.id
-                    ? { ...type, brand_ids: relationPayload.brand_ids }
-                    : type),
-            );
         },
     });
 }
 
 function openNewModelFromFlow() {
-    if (!selectedTypeId.value || !selectedBrandForModelId.value) return;
+    if (!assignmentTypeId.value || !assignmentBrandId.value) return;
+    modelFlowContext.value = true;
     currentModel.value = null;
     openModelEditor.value = true;
 }
 
+function openModelIndependent() {
+    modelFlowContext.value = false;
+    currentModel.value = null;
+    openModelEditor.value = true;
+}
 </script>

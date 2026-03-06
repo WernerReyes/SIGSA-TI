@@ -25,11 +25,11 @@ class StoreAssetRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'type_id' => ['exists:assets_type,id'],
+            'type_id' => ['required', 'exists:assets_type,id'],
             // 'status' => ['required', 'in:' . implode(',', AssetStatus::values([AssetStatus::ASSIGNED->value]))],
             'color' => ['nullable', 'string', 'max:100'],
             // 'brand' => ['nullable', 'string', 'max:255'],
-            'brand_id' => ['exists:brands,id'],
+            'brand_id' => ['required', 'exists:brands,id'],
             // 'model' => ['nullable', 'string', 'max:255'],
             'model_id' => ['nullable', 'exists:models,id'],
             'serial_number' => ['nullable', 'string', 'max:255'],
@@ -70,9 +70,9 @@ class StoreAssetRequest extends FormRequest
             $modelId = $this->input('model_id');
 
             if ($typeId && $brandId) {
-                $brandBelongsToType = DB::table('asset_type_brand')
-                    ->where('asset_type_id', $typeId)
-                    ->where('brand_id', $brandId)
+                $brandBelongsToType = DB::table('brands')
+                    ->where('id', $brandId)
+                    ->where('type_id', $typeId)
                     ->exists();
 
                 if (!$brandBelongsToType) {
@@ -84,7 +84,6 @@ class StoreAssetRequest extends FormRequest
                 $modelBelongsToSelection = DB::table('models')
                     ->where('id', $modelId)
                     ->where('brand_id', $brandId)
-                    ->where('asset_type_id', $typeId)
                     ->exists();
 
                 if (!$modelBelongsToSelection) {

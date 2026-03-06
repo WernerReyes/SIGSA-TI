@@ -144,7 +144,7 @@ class Asset extends EloquentModel
     {
         $isFromRRHH = auth()->user()->dept_id == Allowed::RRHH->value;
         return $query->when($isFromRRHH, function ($q) {
-            $q->whereIn('type_id', AssetTypeEnum::RRHHTypes())
+            $q->whereIn('assets.type_id', AssetTypeEnum::RRHHTypes())
 
             ;
         });

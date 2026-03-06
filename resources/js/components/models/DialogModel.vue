@@ -23,7 +23,28 @@
                         </div>
                     </VeeField>
 
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid gap-4 md:grid-cols-1">
+                        <VeeField name="type_id" v-slot="{ componentField, errors }">
+                            <div class="space-y-2">
+                                <Label :for="componentField.name">Tipo *</Label>
+                                <SelectFilters
+                                    label="Tipo"
+                                    :items="types"
+                                    :selected-as-label="true"
+                                    :icon="MonitorSmartphone"
+                                    :full-width="true"
+                                    :show-refresh="false"
+                                    :show-selected-focus="false"
+                                    item-value="id"
+                                    item-label="name"
+                                    :default-value="componentField.modelValue"
+                                    :disabled="!!props.lockContext && !currentModel"
+                                    @select="(selected) => setFieldValue('type_id', selected)"
+                                />
+                                <FieldError v-if="errors.length" :errors="errors" />
+                            </div>
+                        </VeeField>
+
                         <VeeField name="brand_id" v-slot="{ componentField, errors }">
                             <div class="space-y-2">
                                 <Label :for="componentField.name">Marca *</Label>
@@ -45,26 +66,16 @@
                                                  :icon="Box" -->
 
                                                  
-                    <SelectFilters label="Marca" :items="brands" :selected-as-label="true" :icon="Tag" :full-width="true" :show-refresh="false"
+                    <SelectFilters label="Marca" :items="availableBrands" :selected-as-label="true" :icon="Tag" :full-width="true" :show-refresh="false"
                         :show-selected-focus="false" item-value="id" item-label="name" 
                         :default-value="componentField.modelValue"
-                        :disabled="!!props.lockContext && !currentModel"
-                         @select="(selected) => setFieldValue('brand_id', selected)"  />
+                        :disabled="(!values.type_id) || (!!props.lockContext && !currentModel)"
+                         @select="(selected) => setFieldValue('brand_id', selected)"  >
+                        <template #item="{ item }">
+                            {{ item.name }}
+                        </template>
+                    </SelectFilters>
                                                 
-                                <FieldError v-if="errors.length" :errors="errors" />
-                            </div>
-                        </VeeField>
-
-                        <VeeField name="asset_type_id" v-slot="{ componentField, errors }">
-                            <div class="space-y-2">
-                                <Label :for="componentField.name">Tipo *</Label>
-                                
-                                <SelectFilters label="Tipo" :items="types" :selected-as-label="true" :icon="MonitorSmartphone" :full-width="true" :show-refresh="false"
-                                    :show-selected-focus="false" item-value="id" item-label="name" 
-                                    :default-value="componentField.modelValue"
-                                    :disabled="!!props.lockContext && !currentModel"
-                                     @select="(selected) => setFieldValue('asset_type_id', selected)"  />
-
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </div>
                         </VeeField>
@@ -109,6 +120,10 @@ const props = defineProps<{
 
 const brands = computed(() => props.brands ?? []);
 const types = computed(() => props.types ?? []);
+const availableBrands = computed(() => {
+    if (!values.type_id) return [];
+    return brands.value.filter(brand => brand.type_id === values.type_id);
+});
 
 const open = defineModel<boolean>('open');
 
@@ -127,7 +142,7 @@ const schema = toTypedSchema(z.object({
         required_error: 'La marca es obligatoria',
         invalid_type_error: 'Selecciona una marca valida',
     }),
-    asset_type_id: z.number({
+    type_id: z.number({
         required_error: 'El tipo es obligatorio',
         invalid_type_error: 'Selecciona un tipo valido',
     }),
@@ -135,7 +150,6 @@ const schema = toTypedSchema(z.object({
     const duplicate = (props.models || []).find(model =>
         model.name.trim().toLowerCase() === data.name.trim().toLowerCase() &&
         model.brand_id === data.brand_id &&
-        model.asset_type_id === data.asset_type_id &&
         model.id !== currentModel.value?.id,
     );
 
@@ -148,7 +162,7 @@ const schema = toTypedSchema(z.object({
 const initialValues = computed(() => ({
     name: currentModel.value?.name || '',
     brand_id: currentModel.value?.brand_id ?? props.initialBrandId ?? undefined,
-    asset_type_id: currentModel.value?.asset_type_id ?? props.initialTypeId ?? undefined,
+    type_id: currentModel.value?.brand?.type_id ?? props.initialTypeId ?? undefined,
 }));
 
 const { handleSubmit, setValues, resetForm, values, errors, setFieldValue } = useForm({
@@ -174,6 +188,17 @@ watch(
     { immediate: true },
 );
 
+watch(
+    () => values.type_id,
+    (typeId) => {
+        if (!values.brand_id) return;
+        const brand = brands.value.find(item => item.id === values.brand_id);
+        if (brand && brand.type_id !== typeId) {
+            setFieldValue('brand_id', undefined as unknown as number);
+        }
+    },
+);
+
 function onClose() {
     currentModel.value = null;
     open.value = false;
@@ -181,15 +206,20 @@ function onClose() {
 }
 
 function onSubmit(values: FormValues) {
+    const payload = {
+        name: values.name,
+        brand_id: values.brand_id,
+    };
+
     if (currentModel.value) {
-        router.put(`/settings/models/${currentModel.value.id}`, values, {
+        router.put(`/settings/models/${currentModel.value.id}`, payload, {
             preserveScroll: true,
             preserveState: true,
             preserveUrl: true,
             onFlash: (flash) => {
                 if (flash.error) return;
                 router.replaceProp('models', (models: AssetModel[]) => {
-                    return models.map((model) => model.id === currentModel.value?.id ? { ...model, ...values } : model);
+                    return models.map((model) => model.id === currentModel.value?.id ? flash.model : model);
                 });
                 onClose();
             },
@@ -197,7 +227,7 @@ function onSubmit(values: FormValues) {
         return;
     }
 
-    router.post('/settings/models', values, {
+    router.post('/settings/models', payload, {
         preserveScroll: true,
         preserveState: true,
         preserveUrl: true,

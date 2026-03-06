@@ -59,7 +59,7 @@ class AssetController extends Controller
             'stats' => fn() => Inertia::once(fn() => $assetService->getStats($filters)),
             'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
             'brands' => Inertia::optional(fn() => $assetTypeService->getBrandsForType($typeId))->once(),
-            'models' => Inertia::optional(fn() => $brandService->getBrandModels($brandId, $typeId))->once(),
+            'models' => Inertia::optional(fn() => $brandService->getBrandModels($brandId))->once(),
 
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),

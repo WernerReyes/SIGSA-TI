@@ -11,7 +11,6 @@ class AssetModel extends Model
     protected $fillable = [
         'name',
         'brand_id',
-        'asset_type_id',
     ];
 
     public function brand()
@@ -19,8 +18,8 @@ class AssetModel extends Model
         return $this->belongsTo(Brand::class, 'brand_id');
     }
 
-    public function type()
+    public function assets()
     {
-        return $this->belongsTo(AssetType::class, 'asset_type_id');
+        return $this->hasMany(Asset::class, 'model_id');
     }
 }

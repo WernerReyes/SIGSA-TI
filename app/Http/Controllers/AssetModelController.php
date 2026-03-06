@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\AssetTypeService;
 use App\Services\BrandService;
+use App\Services\AssetTypeService;
 use App\Models\AssetModel;
 use App\Services\AssetModelService;
 use Illuminate\Http\Request;
@@ -31,15 +31,13 @@ class AssetModelController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'brand_id' => ['required', 'integer', 'exists:brands,id'],
-            'asset_type_id' => ['required', 'integer', 'exists:assets_type,id'],
         ]);
 
         $request->validate([
             'name' => [
                 Rule::unique('models', 'name')->where(function ($query) use ($data) {
                     return $query
-                        ->where('brand_id', $data['brand_id'])
-                        ->where('asset_type_id', $data['asset_type_id']);
+                        ->where('brand_id', $data['brand_id']);
                 }),
             ],
         ]);
@@ -48,7 +46,7 @@ class AssetModelController extends Controller
             $model = AssetModel::create($data);
 
             Inertia::flash([
-                'model' => $model->load(['brand:id,name', 'type:id,name']),
+                'model' => $model->load(['brand:id,name,type_id', 'brand.type:id,name']),
                 'success' => 'Modelo creado exitosamente',
                 'error' => null,
             ]);
@@ -65,10 +63,15 @@ class AssetModelController extends Controller
 
     public function update(Request $request, AssetModel $model)
     {
+        if ($model->assets()->exists()) {
+            return back()->withErrors([
+                'brand_id' => 'No puedes editar este modelo porque tiene activos asociados.',
+            ]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'brand_id' => ['required', 'integer', 'exists:brands,id'],
-            'asset_type_id' => ['required', 'integer', 'exists:assets_type,id'],
         ]);
 
         $request->validate([
@@ -77,17 +80,22 @@ class AssetModelController extends Controller
                     ->ignore($model->id)
                     ->where(function ($query) use ($data) {
                         return $query
-                            ->where('brand_id', $data['brand_id'])
-                            ->where('asset_type_id', $data['asset_type_id']);
+                            ->where('brand_id', $data['brand_id']);
                     }),
             ],
         ]);
+
+        if ((int) $model->brand_id !== (int) $data['brand_id'] && $model->assets()->exists()) {
+            return back()->withErrors([
+                'brand_id' => 'No puedes cambiar la marca de este modelo porque está asociado a activos.',
+            ]);
+        }
 
         try {
             $model->update($data);
 
             Inertia::flash([
-                'model' => $model->fresh()->load(['brand:id,name', 'type:id,name']),
+                'model' => $model->fresh()->load(['brand:id,name,type_id', 'brand.type:id,name']),
                 'success' => 'Modelo actualizado exitosamente',
                 'error' => null,
             ]);
@@ -114,7 +122,6 @@ class AssetModelController extends Controller
                 'error' => null,
             ]);
         } catch (\Exception $e) {
-       ds($e->getMessage());
             $errorMessage = $e->getCode() === '23000'
                 ? 'No se puede eliminar este modelo porque hay activos asociados a él.'
                 : 'Error al eliminar el modelo: ' . $e->getMessage();

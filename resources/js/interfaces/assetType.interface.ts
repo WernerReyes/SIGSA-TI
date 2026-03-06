@@ -27,7 +27,6 @@ export interface AssetType {
     name: TypeName;
     is_accessory: boolean;
     is_deletable: boolean;
-    brand_ids?: number[];
     doc_category: AssetTypeDocCategory;
     created_at: Date;
     updated_at: Date;

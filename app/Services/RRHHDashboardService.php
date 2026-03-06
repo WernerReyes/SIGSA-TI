@@ -116,7 +116,7 @@ class RRHHDashboardService
     public function getSmartphonesByBrand(array $filters = [])
     {
         return $this->filteredAssetsQuery($filters)
-            ->where('type_id', AssetTypeEnum::CELL_PHONE)
+            ->where('assets.type_id', AssetTypeEnum::CELL_PHONE)
             ->join('brands', 'assets.brand_id', '=', 'brands.id')
             ->selectRaw('brands.name as brand, COUNT(*) as total')
             ->groupBy('brands.name')

@@ -28,8 +28,8 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 import AlertDialog from '@/components/AlertDialog.vue';
 import { type BreadcrumbItem } from '@/types';
 import { AssetModel } from '@/interfaces/assetModel.interface';
-import { Brand } from '@/interfaces/brand.interface';
 import { AssetType } from '@/interfaces/assetType.interface';
+import { Brand } from '@/interfaces/brand.interface';
 import ModelsTable from '@/components/models/Table.vue';
 import DialogModel from '@/components/models/DialogModel.vue';
 

@@ -53,7 +53,7 @@
                 {{ model.brand?.name || 'Sin marca' }}
               </TableCell>
               <TableCell class="px-4 py-2 whitespace-nowrap text-sm text-muted-foreground">
-                {{ model.type?.name || 'Sin tipo' }}
+                {{ model.brand?.type?.name || 'Sin tipo' }}
               </TableCell>
               <TableCell class="px-4 py-2 whitespace-nowrap text-sm text-muted-foreground">
                 {{ format(new Date(model.created_at), 'dd/MM/yyyy HH:mm') }}
