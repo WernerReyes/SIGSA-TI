@@ -55,6 +55,12 @@ class AssetModelSeeder extends Seeder
                 'brand_id' => Brand::where('name', 'Genius')->where('type_id', AssetTypeEnum::KEYBOARD)->value('id'),
                 'created_at' => now(),
                 'updated_at' => now(),
+            ], 
+            [
+                'name' => 'HA65NM130',
+                'brand_id' => Brand::where('name', 'Dell')->where('type_id', AssetTypeEnum::LAPTOP_CHARGER)->value('id'),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
         ];
 

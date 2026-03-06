@@ -32,6 +32,7 @@ class BrandSeeder extends Seeder
         $extraBrands = [
             ['name' => 'Logitech', 'type_id' =>AssetTypeEnum::KEYBOARD, 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Genius', 'type_id' =>AssetTypeEnum::KEYBOARD, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Dell', 'type_id' =>AssetTypeEnum::LAPTOP_CHARGER, 'created_at' => now(), 'updated_at' => now()],
         ];
 
         Brand::insert(

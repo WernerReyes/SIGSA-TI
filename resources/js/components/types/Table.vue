@@ -5,7 +5,9 @@
         <div class="flex flex-col gap-2 w-full ">
           <div class="flex w-full items-center gap-2">
             <InputGroup>
-              <InputGroupInput class="w-full" placeholder="Buscar tipo, marca o modelo..." v-model="search" />
+              <InputGroupInput class="w-full" placeholder="Buscar tipo, marca o modelo..." v-model="search" 
+               @update:model-value="(value: string) => search = value.trim()"
+              />
               <InputGroupAddon>
                 <Search />
               </InputGroupAddon>

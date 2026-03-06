@@ -77,7 +77,17 @@
                                                     item-value="id" :default-value="componentField.modelValue"
                                                     :selected-as-label="true" :show-refresh="false"
                                                     :show-selected-focus="false"
-                                                    @select="(value) => setFieldValue('type_id', value)"
+                                                    @select="(value) => {
+                                                        const selectedTypeId = Number(value)
+                                                        const previousTypeId = values.type_id
+
+                                                        setFieldValue('type_id', selectedTypeId)
+
+                                                        if (previousTypeId !== selectedTypeId) {
+                                                            setFieldValue('brand_id', undefined)
+                                                            setFieldValue('model_id', undefined)
+                                                        }
+                                                    }"
                                                     filter-placeholder="Buscar tipo..."
                                                     empty-text="No se encontraron tipos de activos">
                                                     <template #item="{ item }">
@@ -118,11 +128,20 @@
                                                     'type_id': values.type_id
                                                 }"
                                                 always
-                                                    :label="getDefaultLabel(currentAsset?.brand, 'Marca')"
+                                                    :label="brandSelectLabel"
                                                     :items="brands" data-key="brands" item-label="name" item-value="id"
                                                     :default-value="componentField.modelValue" :selected-as-label="true"
                                                     :show-refresh="false" :show-selected-focus="false"
-                                                    @select="(value) => setFieldValue('brand_id', value)"
+                                                    @select="(value) => {
+                                                        const selectedBrandId = value ? Number(value) : undefined
+                                                        const previousBrandId = values.brand_id
+
+                                                        setFieldValue('brand_id', selectedBrandId)
+
+                                                        if (previousBrandId !== selectedBrandId) {
+                                                            setFieldValue('model_id', undefined)
+                                                        }
+                                                    }"
                                                     filter-placeholder="Buscar marca..."
                                                     empty-text="No se encontraron marcas" />
 
@@ -145,7 +164,7 @@
                                                 }"
                                                                                                 always
 
-                                                    :label="getDefaultLabel(currentAsset?.model, 'Modelo')"
+                                                    :label="modelSelectLabel"
                                                     :items="models" data-key="models" item-label="name" item-value="id"
                                                     :default-value="componentField.modelValue" :selected-as-label="true"
                                                     :show-refresh="false" :show-selected-focus="false"
@@ -420,7 +439,7 @@ import {
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue'
 import { useApp } from '@/composables/useApp'
 import { type Asset } from '@/interfaces/asset.interface'
-import { AssetTypeDocCategory, assetTypeOp, TypeName } from '@/interfaces/assetType.interface'
+import { AssetTypeDocCategory, assetTypeOp } from '@/interfaces/assetType.interface'
 import { isEqual } from '@/lib/utils'
 import { router, usePage } from '@inertiajs/vue3'
 import { CalendarDate, getLocalTimeZone, parseDate } from '@internationalized/date'
@@ -443,6 +462,7 @@ const currentAsset = defineModel<Asset | null>('current-asset', {
     type: Object as () => Asset | null,
     required: false
 })
+
 
 const openEditor = defineModel<boolean>('open-editor', {
     type: Boolean,
@@ -524,6 +544,7 @@ const { handleSubmit, handleReset, errors, setValues, values, setFieldValue } = 
 })
 
 
+
 watch(() => openEditor.value, (editor) => {
     const newAsset = currentAsset.value;
     if (editor && newAsset) {
@@ -585,6 +606,57 @@ function onSubmit(values: any) {
 const getDefaultLabel = (data?: { name: string }, defaultLabel: string = '') => {
     return data?.name || defaultLabel;
 }
+
+// TODO: Fix the select Labels not updating when the current asset has a type, brand or model that no longer exists in the system.
+const brandSelectLabel = computed(() => {
+    const asset = currentAsset.value
+
+    const shouldKeepAssetBrandLabel = Boolean(
+        asset?.brand &&
+        asset.brand_id === values.brand_id &&
+        asset.type_id === values.type_id
+    )
+
+    return shouldKeepAssetBrandLabel
+        ? getDefaultLabel(asset?.brand, 'Marca')
+        : 'Marca'
+})
+
+const modelSelectLabel = computed(() => {
+    const asset = currentAsset.value
+
+    const shouldKeepAssetModelLabel = Boolean(
+        asset?.model &&
+        asset.model_id === values.model_id &&
+        asset.brand_id === values.brand_id &&
+        asset.type_id === values.type_id
+    )
+
+    return shouldKeepAssetModelLabel
+        ? getDefaultLabel(asset?.model, 'Modelo')
+        : 'Modelo'
+})
+
+watch([() => values.type_id, () => brands.value], () => {
+    if (!values.brand_id) return
+
+    const brandStillValid = brands.value?.some((brand: any) => brand.id === values.brand_id)
+
+    if (!brandStillValid) {
+        setFieldValue('brand_id', undefined)
+        setFieldValue('model_id', undefined)
+    }
+})
+
+watch([() => values.brand_id, () => models.value], () => {
+    if (!values.model_id) return
+
+    const modelStillValid = models.value?.some((model: any) => model.id === values.model_id)
+
+    if (!modelStillValid) {
+        setFieldValue('model_id', undefined)
+    }
+})
 
 const handleResetForm = () => {
     handleReset();

@@ -60,6 +60,8 @@ class AssetSeeder extends Seeder
             143 => Carbon::parse('2026-01-12'), // RUBÉN ALEJANDRO ZÁRATE RÍOS
             146 => Carbon::parse('2026-01-30'), // TATIANA YASMIN ODALIS VERA FLORES
             8 => Carbon::parse('2026-03-04'), // JOEL RONALD COLQUE FUENTES
+            116 => Carbon::parse('2026-02-25'), // JHOSSEP BRUNO SANCHEZ LANDA
+            38 => Carbon::parse('2026-03-02'), // JROBERT HEREDIO CASTILLA SORIA
 
         ];
 

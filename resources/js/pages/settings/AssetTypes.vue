@@ -20,68 +20,6 @@
                     </div>
                 </div>
 
-                <!-- <div class="rounded-xl border bg-card p-4 shadow-sm text-sm text-muted-foreground">
-                    Puedes crear Tipo, Marca y Modelo de forma independiente. Luego, en la asignacion flexible, eliges Tipo, Marca y Modelo (opcional).
-                </div> -->
-
-                <!-- <div class="rounded-xl border bg-card p-4 shadow-sm space-y-3">
-                    <h3 class="text-sm font-semibold">Asignacion flexible</h3>
-                    <div class="grid gap-2 md:grid-cols-4">
-                        <SelectFilters full-width :items="types" item-value="id" item-label="name"
-                            label="Tipo" data-key="types" :icon="MonitorSmartphone" :show-refresh="false"
-                            :show-selected-focus="false" :selected-as-label="true"
-                            :default-value="assignmentTypeId ?? undefined"
-                            @select="(value) => assignmentTypeId = value" />
-
-                        <SelectFilters full-width :items="assignableBrands" item-value="id" item-label="name"
-                            label="Marca" data-key="brands" :icon="Tag" :show-refresh="false"
-                            :show-selected-focus="false" :selected-as-label="true"
-                            :default-value="assignmentBrandId ?? undefined"
-                            @select="(value) => assignmentBrandId = value" />
-
-                        <SelectFilters full-width :items="assignableModels" item-value="id" item-label="name"
-                            label="Modelo (opcional)" data-key="models" :icon="Boxes" :show-refresh="false"
-                            :show-selected-focus="false" :selected-as-label="true"
-                            :allow-null="true" null-label="Sin modelo"
-                            :default-value="assignmentModelId ?? undefined"
-                            @select="(value) => assignmentModelId = value" />
-                        
-                        <Button class="w-full" :disabled="!assignmentTypeId || !assignmentBrandId" @click="openNewModelFromFlow">
-                            <Network />
-                            Crear modelo con seleccion
-                        </Button>
-                    </div>
-                    <div class="text-xs text-muted-foreground">
-                        Esta seleccion simula el flujo de activos: Tipo y Marca obligatorios, Modelo opcional.
-                    </div>
-                </div> -->
-
-                <!-- <div class="grid gap-4 lg:grid-cols-3">
-                    
-                    <div class="rounded-xl border bg-card p-4 shadow-sm">
-                        <div class="mb-2 text-sm font-semibold">Lista de tipos</div>
-                        <div class="text-xs text-muted-foreground mb-2">{{ types.length }} registrados</div>
-                        <ul class="space-y-1 max-h-40 overflow-auto text-sm">
-                            <li v-for="type in types" :key="`quick-type-${type.id}`" class="truncate">{{ type.name }}</li>
-                        </ul>
-                    </div>
-
-                    <div class="rounded-xl border bg-card p-4 shadow-sm">
-                        <div class="mb-2 text-sm font-semibold">Lista de marcas</div>
-                        <div class="text-xs text-muted-foreground mb-2">{{ brands.length }} registradas</div>
-                        <ul class="space-y-1 max-h-40 overflow-auto text-sm">
-                            <li v-for="brand in brands" :key="`quick-brand-${brand.id}`" class="truncate">{{ brand.name }}</li>
-                        </ul>
-                    </div>
-
-                    <div class="rounded-xl border bg-card p-4 shadow-sm">
-                        <div class="mb-2 text-sm font-semibold">Lista de modelos</div>
-                        <div class="text-xs text-muted-foreground mb-2">{{ models.length }} registrados</div>
-                        <ul class="space-y-1 max-h-40 overflow-auto text-sm">
-                            <li v-for="model in models" :key="`quick-model-${model.id}`" class="truncate">{{ model.name }}</li>
-                        </ul>
-                    </div>
-                </div> -->
 
                 <div class="space-y-4">
                     <TypesTable

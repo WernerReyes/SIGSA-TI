@@ -26,10 +26,10 @@ class DatabaseSeeder extends Seeder
         } else {
             $this->call([
                 AssetTypeSeeder::class,
-                AssetSeeder::class,
-                SlaPolicySeeder::class,
                 BrandSeeder::class,
                 AssetModelSeeder::class,
+                AssetSeeder::class,
+                SlaPolicySeeder::class,
             ]);
 
         }
