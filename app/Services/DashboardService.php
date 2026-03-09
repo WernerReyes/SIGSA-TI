@@ -15,17 +15,17 @@ use Carbon\Carbon;
 
 class DashboardService
 {
-    public function stats()
+    public function stats(string $from, string $to): array
     {
         return [
-            'open_tickets' => $this->getOpenTicketStats(),
-            'sla_breaches' => $this->getSlaBreachStats(),
-            'assets_at_risk' => $this->getAssetsAtRiskStats(),
-            'active_projects' => $this->getActiveProjectsStats(),
+            'open_tickets' => $this->getOpenTicketStats($from, $to),
+            'sla_breaches' => $this->getSlaBreachStats($from, $to),
+            'assets_at_risk' => $this->getAssetsAtRiskStats($from, $to),
+            'active_projects' => $this->getActiveProjectsStats($from, $to),
         ];
     }
 
-    private function getOpenTicketStats(): array
+    private function getOpenTicketStats(string $from, string $to): array
     {
         $now = now();
         $currentMonthStart = $now->copy()->startOfMonth();
@@ -49,6 +49,7 @@ class DashboardService
             $previousMonthEnd
         ])
             ->where('status', '!=', TicketStatus::CLOSED->value)
+                ->whereBetween('created_at', [Carbon::parse($from), Carbon::parse($to)->endOfDay()])
             ->first();
 
         $percentage = 0;
@@ -68,7 +69,7 @@ class DashboardService
         ];
     }
 
-    private function getSlaBreachStats(): array
+    private function getSlaBreachStats(string $from, string $to): array
     {
         $now = now();
 
@@ -79,6 +80,7 @@ class DashboardService
             ->where('status', '!=', TicketStatus::CLOSED->value)
             ->whereNotNull('sla_resolution_due_at')
             ->where('sla_resolution_due_at', '<', $now)
+            ->whereBetween('created_at', [Carbon::parse($from), Carbon::parse($to)->endOfDay()])
             ->first();
 
         $severity = match (true) {
@@ -100,16 +102,17 @@ class DashboardService
     }
 
 
-    private function getAssetsAtRiskStats(): array
+    private function getAssetsAtRiskStats(string $from, string $to): array
     {
+        $startDate = Carbon::parse($from)->startOfDay();
+        $endDate = Carbon::parse($to)->endOfDay();
         $now = now()->startOfDay();
         $next30Days = now()->addDays(30)->endOfDay();
-        $last30Days = now()->subDays(30)->startOfDay();
 
         $stats = Asset::selectRaw("
             COUNT(*) as at_risk,
-            SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as new_assets
-        ", [$last30Days])
+            SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as new_assets
+        ", [$startDate, $endDate])
             ->where('status', "!=", AssetStatus::DECOMMISSIONED->value)
             ->whereNotNull('warranty_expiration')
             ->whereBetween('warranty_expiration', [$now, $next30Days])
@@ -125,8 +128,10 @@ class DashboardService
     }
 
 
-    private function getActiveProjectsStats(): array
+    private function getActiveProjectsStats(string $from, string $to): array
     {
+        $startDate = Carbon::parse($from)->startOfDay();
+        $endDate = Carbon::parse($to)->endOfDay();
         $now = now();
         $currentMonthStart = $now->copy()->startOfMonth();
         $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
@@ -144,6 +149,7 @@ class DashboardService
             $previousMonthEnd
         ])
             ->where('status', '!=', DevelopmentRequestStatus::COMPLETED->value)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->first();
 
         $percentage = $stats->previous_month > 0
@@ -159,11 +165,13 @@ class DashboardService
     }
 
 
-    public function ticketsByPriority()
+    public function ticketsByPriority(string $from, string $to)
     {
+        $startDate = Carbon::parse($from)->startOfDay();
+        $endDate = Carbon::parse($to)->endOfDay();
 
         return Ticket::selectRaw('priority, COUNT(*) as count')
-            // ->where('status', '!=', TicketStatus::CLOSED->value)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('priority')
             ->get()
             ->mapWithKeys(function ($item) {
@@ -171,9 +179,13 @@ class DashboardService
             });
     }
 
-    public function recentTickets()
+    public function recentTickets(string $from, string $to)
     {
+        $startDate = Carbon::parse($from)->startOfDay();
+        $endDate = Carbon::parse($to)->endOfDay();
+
         return Ticket::with('requester:staff_id,firstname,lastname')
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->orderBy('created_at', 'desc')
             ->limit(5)->get();
     }

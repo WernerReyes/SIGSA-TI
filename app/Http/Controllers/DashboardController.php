@@ -19,15 +19,26 @@ class DashboardController extends Controller
             return redirect()->route('dashboard.rrhh');
         }
 
-        $start = $request->input('start_date', now()->startOfWeek()->toDateString());
-        $end = $request->input('end_date', now()->endOfWeek()->toDateString());
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $start = $validated['start_date'] ?? now()->startOfWeek()->toDateString();
+        $end = $validated['end_date'] ?? now()->endOfWeek()->toDateString();
+
+        $activeFilters = [
+            'start_date' => $start,
+            'end_date' => $end,
+        ];
 
         return Inertia::render('Dashboard', [
-            'stats' => Inertia::once(fn() => $dashboardService->stats()),
-            'tickets_by_priority' => Inertia::once(fn() => $dashboardService->ticketsByPriority()),
-            'recent_tickets' => Inertia::once(fn() => $dashboardService->recentTickets()),
-            'sla_compliance' => Inertia::once(fn() => $dashboardService->getSlaComplianceByDateRange($start, $end)),
-            'recent_contract_notifications' => Inertia::once(fn() => $dashboardService->recentContractNotifications())
+            'stats' => $dashboardService->stats($start, $end),
+            'tickets_by_priority' => $dashboardService->ticketsByPriority($start, $end),
+            'recent_tickets' => $dashboardService->recentTickets($start, $end),
+            'sla_compliance' => $dashboardService->getSlaComplianceByDateRange($start, $end),
+            'recent_contract_notifications' => $dashboardService->recentContractNotifications(),
+            'activeFilters' => $activeFilters,
         ]);
     }
 

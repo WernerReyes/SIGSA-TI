@@ -7,25 +7,7 @@
                     <CardDescription>Semana actual comparando cumplimiento e incumplimiento.</CardDescription>
                 </div>
 
-                <Popover>
-                    <PopoverTrigger as-child>
-                        <Button id="date" variant="outline" class="w-48 justify-between font-normal">
-                            {{ JSON.stringify(dateRange) !== '{}' && dateRange
-                                ?
-                                `${dateRange?.start?.toDate(getLocalTimeZone()).toLocaleDateString()}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
-                                    ? ' - ' :
-                                    ''}${dateRange?.end?.toDate(getLocalTimeZone()).toLocaleDateString()
-                                    || ''}`
-                                : 'Seleccionar rango' }}
-                            <ChevronDownIcon />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent class="w-auto overflow-hidden p-0" align="start">
-                        <RangeCalendar v-model="dateRange as any" locales="es" class="rounded-md border shadow-sm"
-                            disable-days-outside-current-view />
-                        <!-- :number-of-months="2" -->
-                    </PopoverContent>
-                </Popover>
+                
             </div>
         </CardHeader>
         <CardContent class="pt-0">
@@ -60,20 +42,14 @@
 
 
 <script setup lang="ts">
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartLegendContent } from '@/components/ui/chart';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { RangeCalendar } from '@/components/ui/range-calendar';
 import { type DashboardSLACompliance } from '@/interfaces/dashboard.interface';
-import { router } from '@inertiajs/vue3';
-import { getLocalTimeZone, today, parseDate } from '@internationalized/date';
+import { parseDateOnly } from '@/lib/utils';
 import { VisAxis, VisLine, VisScatter, VisScatterSelectors, VisTooltip, VisXYContainer } from '@unovis/vue';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { DateRange } from 'reka-ui';
-import { parseDateOnly } from '@/lib/utils'
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 
 const { slaCompliance } = defineProps<{
     slaCompliance: DashboardSLACompliance;
@@ -83,26 +59,9 @@ const { slaCompliance } = defineProps<{
 type SlaDatum = DashboardSLACompliance['daily'][number];
 
 
-const dateRange = ref<DateRange>({
-    start: parseDate(slaCompliance.range.from),
-    end: parseDate(slaCompliance.range.to),
-    // end: end
-});
 
 
-watch(dateRange, (newRange) => {
-    if (newRange.start && newRange.end) {
-        router.reload({
-            data: {
-                start_date: newRange.start.toDate(getLocalTimeZone()).toISOString(),
-                end_date: newRange.end.toDate(getLocalTimeZone()).toISOString(),
-            },
-            preserveUrl: true,
-            only: ['sla_compliance'],
-        });
 
-    }
-}, { deep: true });
 
 const dailySlaData = computed(() => {
     return slaCompliance.daily.map(d => ({

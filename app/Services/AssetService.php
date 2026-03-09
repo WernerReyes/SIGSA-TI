@@ -135,16 +135,22 @@ class AssetService
                             AssetTypeEnum::LAPTOP => AssetTypeEnum::LAPTOP_CHARGER,
                             default => null,
                         };
-                        $q->where('id', $chargerFor)
-                            ->when($asset?->brand_id, fn($qq) => $qq->where('brand_id', $asset->brand_id));
+                        ds($chargerFor, $asset);
+                        $q->where('id', $chargerFor);
+                            // ->when($asset?->brand_id, fn($qq) => $qq->where('brand_id', $asset->brand_id));
 
-                    })->when($asset?->brand_id, function ($q) use ($asset) {
-                        $q->where('brand_id', $asset->brand_id);
+                    })
+                    ->when($asset?->brand_id, function ($q) use ($asset) {
+                        ds($asset->brand_id);
+                        //  $q->where('brand_id', $asset->brand_id);
+                        // $q->where('name', 'like', '%' . $asset->brand->name . '%');
+                        $q->whereHas('brand', fn($qq) => $qq->where('name', $asset->brand->name));
                     });
 
                     // Otros accesorios → sin filtro por marca
                     $query->orWhereHas('type', function ($q) {
-                        $q->where('doc_category', AssetTypeCategory::ACCESSORY->value)
+                        $q
+                        // ->where('doc_category', AssetTypeCategory::ACCESSORY->value)
                             ->whereNotIn('id', [AssetTypeEnum::CELL_PHONE_CHARGER, AssetTypeEnum::LAPTOP_CHARGER]);
                     });
                 })
@@ -1198,9 +1204,10 @@ class AssetService
             $template->setValue('color', mb_strtoupper($asset->color));
             $template->setValue('serial_number', $asset->serial_number);
             $template->setValue('comments', $assignment->return_comment ?? '');
-            $template->setValue('has_charger', $assignment->childrenAssignments->filter(function ($child) {
-                return stripos($child->asset->name, 'cargador') !== null;
-            })->count() > 0 ? 'X' : '');
+            // $template->setValue('has_charger', $assignment->activeChildrenAssignments->filter(function ($child) {
+            //     return stripos($child->asset->name, 'cargador') !== null;
+            // })->count() > 0 ? 'X' : '');
+             $template->setValue('has_charger', $assignment->activeChildrenAssignments()->exists() ? 'X' : '');
             $template->setValue('responsible', mb_strtoupper($assignment->responsible->full_name ?? 'N/A'));
 
             $fileName = 'devolucion_equipo_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';

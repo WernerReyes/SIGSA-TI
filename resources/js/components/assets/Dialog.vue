@@ -76,8 +76,7 @@
                                                     :items="assetTypes" data-key="types" item-label="name"
                                                     item-value="id" :default-value="componentField.modelValue"
                                                     :selected-as-label="true" :show-refresh="false"
-                                                    :show-selected-focus="false"
-                                                    @select="(value) => {
+                                                    :show-selected-focus="false" @select="(value) => {
                                                         const selectedTypeId = Number(value)
                                                         const previousTypeId = values.type_id
 
@@ -87,8 +86,7 @@
                                                             setFieldValue('brand_id', undefined)
                                                             setFieldValue('model_id', undefined)
                                                         }
-                                                    }"
-                                                    filter-placeholder="Buscar tipo..."
+                                                    }" filter-placeholder="Buscar tipo..."
                                                     empty-text="No se encontraron tipos de activos">
                                                     <template #item="{ item }">
                                                         <component :is="assetTypeOp(item.name)?.icon"
@@ -123,16 +121,12 @@
                                                 <!-- <Input id="brand" placeholder="EJ: Dell, HP, Lenovo"
                                                     v-bind="componentField" /> -->
 
-                                                <SelectFilters :disabled="!values.type_id"
-                                                :params="{
+                                                <SelectFilters :disabled="!values.type_id" :params="{
                                                     'type_id': values.type_id
-                                                }"
-                                                always
-                                                    :label="brandSelectLabel"
-                                                    :items="brands" data-key="brands" item-label="name" item-value="id"
+                                                }" always :label="brandSelectLabel" :items="brands" data-key="brands"
+                                                    item-label="name" item-value="id"
                                                     :default-value="componentField.modelValue" :selected-as-label="true"
-                                                    :show-refresh="false" :show-selected-focus="false"
-                                                    @select="(value) => {
+                                                    :show-refresh="false" :show-selected-focus="false" @select="(value) => {
                                                         const selectedBrandId = value ? Number(value) : undefined
                                                         const previousBrandId = values.brand_id
 
@@ -141,8 +135,7 @@
                                                         if (previousBrandId !== selectedBrandId) {
                                                             setFieldValue('model_id', undefined)
                                                         }
-                                                    }"
-                                                    filter-placeholder="Buscar marca..."
+                                                    }" filter-placeholder="Buscar marca..."
                                                     empty-text="No se encontraron marcas" />
 
 
@@ -157,15 +150,11 @@
                                                 <FieldLabel for="model_id">Modelo</FieldLabel>
                                                 <!-- <Input id="model" placeholder="EJ: Inspiron 15 3000"
                                                     v-bind="componentField" /> -->
-                                                <SelectFilters :disabled="!values.brand_id"
-                                                :params="{
+                                                <SelectFilters :disabled="!values.brand_id" :params="{
                                                     'brand_id': values.brand_id,
                                                     'type_id': values.type_id
-                                                }"
-                                                                                                always
-
-                                                    :label="modelSelectLabel"
-                                                    :items="models" data-key="models" item-label="name" item-value="id"
+                                                }" always :label="modelSelectLabel" :items="models" data-key="models"
+                                                    item-label="name" item-value="id"
                                                     :default-value="componentField.modelValue" :selected-as-label="true"
                                                     :show-refresh="false" :show-selected-focus="false"
                                                     @select="(value) => setFieldValue('model_id', value)"
@@ -549,6 +538,7 @@ watch(() => openEditor.value, (editor) => {
     const newAsset = currentAsset.value;
     if (editor && newAsset) {
         open.value = true;
+       
         setValues(initialValues.value);
     } else {
         open.value = false;
@@ -617,10 +607,16 @@ const brandSelectLabel = computed(() => {
         asset.type_id === values.type_id
     )
 
+    if (shouldKeepAssetBrandLabel && !values.model_id) {
+        setFieldValue('model_id', asset?.model_id)
+    }
+
     return shouldKeepAssetBrandLabel
         ? getDefaultLabel(asset?.brand, 'Marca')
         : 'Marca'
 })
+
+
 
 const modelSelectLabel = computed(() => {
     const asset = currentAsset.value
@@ -637,26 +633,23 @@ const modelSelectLabel = computed(() => {
         : 'Modelo'
 })
 
-watch([() => values.type_id, () => brands.value], () => {
-    if (!values.brand_id) return
-
-    const brandStillValid = brands.value?.some((brand: any) => brand.id === values.brand_id)
-
-    if (!brandStillValid) {
-        setFieldValue('brand_id', undefined)
+watch(() => values.type_id, (type_id) => {
+    const asset = currentAsset.value;
+    if (type_id !== asset?.type_id) {
+    setFieldValue('brand_id', undefined)
         setFieldValue('model_id', undefined)
     }
+
+    if (type_id === asset?.type_id && !values.brand_id && !values.model_id) {
+        setFieldValue('brand_id', asset?.brand_id || undefined)
+        setFieldValue('model_id', asset?.model_id || undefined)
+    } 
+    // else {
+        // setFieldValue('brand_id', undefined)
+        // setFieldValue('model_id', undefined)
+    // }
 })
 
-watch([() => values.brand_id, () => models.value], () => {
-    if (!values.model_id) return
-
-    const modelStillValid = models.value?.some((model: any) => model.id === values.model_id)
-
-    if (!modelStillValid) {
-        setFieldValue('model_id', undefined)
-    }
-})
 
 const handleResetForm = () => {
     handleReset();

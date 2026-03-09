@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\Asset;
 
 use Maatwebsite\Excel\Facades\Excel;
-use function PHPUnit\Framework\isNull;
+
 
 class AssetSeeder extends Seeder
 {
@@ -33,7 +33,9 @@ class AssetSeeder extends Seeder
         // Schema::enableForeignKeyConstraints(); // Eliminar esta línea para ejecutar el seeder con los datos del Excel
         // return;
 
-        $filePath = 'C:\Users\Cechriza\Documents\Inventario de Activos.xlsx';
+         $rootPath = config('app.root_local_path');
+
+        $filePath = $rootPath . '\Documents\Inventario de Activos.xlsx';
         // storage_path('app/assets.xlsx');
 
         // Convertir el Excel a un Array

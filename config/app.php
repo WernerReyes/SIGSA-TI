@@ -64,9 +64,7 @@ return [
     | is set to "UTC" by default as it is suitable for most use cases.
     |
     */
-
     'timezone' => env('APP_TIMEZONE', 'UTC'),
-
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
@@ -83,6 +81,8 @@ return [
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+
+    'root_local_path' => env('ROOT_LOCAL_PATH', 'D:\Users\HP'),
 
     /*
     |--------------------------------------------------------------------------

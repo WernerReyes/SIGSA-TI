@@ -19,7 +19,9 @@ class BrandSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
         Brand::truncate();
 
-        $filePath = 'C:\Users\Cechriza\Documents\Inventario de Activos.xlsx';
+         $rootPath = config('app.root_local_path');
+
+        $filePath = $rootPath . '\Documents\Inventario de Activos.xlsx';
         // storage_path('app/assets.xlsx');
 
         // Convertir el Excel a un Array
