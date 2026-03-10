@@ -8,6 +8,18 @@ import { configureEcho } from '@laravel/echo-vue';
 
 const isHttps = import.meta.env.VITE_REVERB_SCHEME === 'https';
 
+console.log('Echo configuration:', {
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT,
+    wssPort: import.meta.env.VITE_REVERB_PORT,
+    forceTLS: isHttps,
+    enabledTransports: [isHttps ? 'wss' : 'ws'],
+    withCredentials: true,
+    authEndpoint: '/broadcasting/auth',
+});
+
 configureEcho({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,
