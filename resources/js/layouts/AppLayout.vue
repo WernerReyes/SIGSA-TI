@@ -19,6 +19,7 @@ onMounted(() => {
     echo.channel().notification((notification: {
         message: string,
     }) => {
+        console.log('Received notification:', notification);
         toast.success(notification.message);
     });
 });

@@ -140,6 +140,7 @@ onMounted(() => {
         short: string,
         contract: Contract
     }) => {
+        console.log('Received notification:', notification);
         // if (!props.contracts.some(n => n.id === notification.contract.id)) {
         notifications.value = [{
             id: new Date().getTime().toString(),
