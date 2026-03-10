@@ -68,8 +68,8 @@ import type { AssetModel } from '@/interfaces/assetModel.interface';
 import type { Brand } from '@/interfaces/brand.interface';
 import type { AssetType, AssetTypeDocCategory, TypeName } from '@/interfaces/assetType.interface';
 import type { ColumnDef, ExpandedState } from '@tanstack/vue-table';
-import { FlexRender, getCoreRowModel, getExpandedRowModel, getFilteredRowModel, useVueTable } from '@tanstack/vue-table';
-import { computed, h, ref } from 'vue';
+import { FlexRender, getCoreRowModel, getExpandedRowModel, useVueTable } from '@tanstack/vue-table';
+import { computed, h, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
@@ -167,6 +167,105 @@ const rows = computed<NestedTableRow[]>(() => {
   });
 
   return typeRows;
+});
+
+const normalizedSearch = computed(() => search.value.trim().toLowerCase());
+
+const filteredRows = computed<NestedTableRow[]>(() => {
+  if (!normalizedSearch.value) {
+    return rows.value;
+  }
+
+  const result: NestedTableRow[] = [];
+
+  rows.value.forEach((typeRow) => {
+    const typeMatches = typeRow.name.toLowerCase().includes(normalizedSearch.value);
+    const typeChildren = typeRow.children ?? [];
+
+    if (typeMatches) {
+      result.push({
+        ...typeRow,
+        children: typeChildren,
+        relatedCount: typeChildren.length,
+      });
+      return;
+    }
+
+    const filteredBrands: NestedTableRow[] = [];
+
+    typeChildren.forEach((brandRow) => {
+      const brandMatches = brandRow.name.toLowerCase().includes(normalizedSearch.value);
+      const brandChildren = brandRow.children ?? [];
+
+      if (brandMatches) {
+        filteredBrands.push({
+          ...brandRow,
+          children: brandChildren,
+          relatedCount: brandChildren.length,
+        });
+        return;
+      }
+
+      const matchingModels = brandChildren.filter((modelRow) =>
+        modelRow.name.toLowerCase().includes(normalizedSearch.value),
+      );
+
+      if (!matchingModels.length) {
+        return;
+      }
+
+      filteredBrands.push({
+        ...brandRow,
+        children: matchingModels,
+        relatedCount: matchingModels.length,
+      });
+    });
+
+    if (!filteredBrands.length) {
+      return;
+    }
+
+    result.push({
+      ...typeRow,
+      children: filteredBrands,
+      relatedCount: filteredBrands.length,
+    });
+  });
+
+  return result;
+});
+
+const autoExpanded = computed<ExpandedState>(() => {
+  if (!normalizedSearch.value) {
+    return {};
+  }
+
+  const expandedMap: Record<string, boolean> = {};
+
+  filteredRows.value.forEach((typeRow) => {
+    if (typeRow.children?.length) {
+      expandedMap[typeRow.id] = true;
+    }
+
+    typeRow.children?.forEach((brandRow) => {
+      if (brandRow.children?.length) {
+        expandedMap[brandRow.id] = true;
+      }
+    });
+  });
+
+  return expandedMap;
+});
+
+watch(normalizedSearch, (term, previousTerm) => {
+  if (term && term !== previousTerm) {
+    expanded.value = autoExpanded.value;
+    return;
+  }
+
+  if (!term && previousTerm) {
+    expanded.value = {};
+  }
 });
 
 const columns: ColumnDef<NestedTableRow>[] = [
@@ -299,20 +398,19 @@ const columns: ColumnDef<NestedTableRow>[] = [
 
 const table = useVueTable({
   get data() {
-    return rows.value;
+    return filteredRows.value;
   },
   columns,
   getSubRows: row => row.children,
   getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
   getExpandedRowModel: getExpandedRowModel(),
-  onGlobalFilterChange: updaterOrValue => valueUpdater(updaterOrValue, search),
+  // onGlobalFilterChange: updaterOrValue => valueUpdater(updaterOrValue, search),
   onExpandedChange: updaterOrValue => valueUpdater(updaterOrValue, expanded),
   filterFromLeafRows: true,
   state: {
-    get globalFilter() {
-      return search.value;
-    },
+    // get globalFilter() {
+    //   return search.value;
+    // },
     get expanded() {
       return expanded.value;
     },
