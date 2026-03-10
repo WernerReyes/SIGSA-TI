@@ -27,7 +27,7 @@ configureEcho({
     wsPort: import.meta.env.VITE_REVERB_PORT,
     wssPort: import.meta.env.VITE_REVERB_PORT,
     forceTLS: isHttps,
-    enabledTransports: [isHttps ? 'wss' : 'ws'],
+    enabledTransports: ['ws'],
 
      withCredentials: true, // 👈 ESTO
 
