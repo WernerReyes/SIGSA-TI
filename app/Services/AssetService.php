@@ -1207,7 +1207,7 @@ class AssetService
             // $template->setValue('has_charger', $assignment->activeChildrenAssignments->filter(function ($child) {
             //     return stripos($child->asset->name, 'cargador') !== null;
             // })->count() > 0 ? 'X' : '');
-             $template->setValue('has_charger', $assignment->activeChildrenAssignments()->exists() ? 'X' : '');
+             $template->setValue('has_charger', $assignment->childrenAssignments()->exists() ? 'X' : '');
             $template->setValue('responsible', mb_strtoupper($assignment->responsible->full_name ?? 'N/A'));
 
             $fileName = 'devolucion_equipo_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';
