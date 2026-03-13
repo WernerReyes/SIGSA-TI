@@ -660,7 +660,8 @@ class AssetService
                     throw new NotFoundHttpException('No se encontró el activo');
                 }
 
-                if ($asset->type_id === AssetTypeEnum::CELL_PHONE) {
+                
+                if ($asset->type_id === AssetTypeEnum::CELL_PHONE && !Asset::whereIn('id', $dto->accessories ?? [])->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER)->exists()) {
                     $chagers = AssetAssignment::whereHas('asset', fn($q) => $q->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER))
                         ->where('assigned_to_id', $dto->assigned_to_id)
                         ->whereNull('returned_at')
