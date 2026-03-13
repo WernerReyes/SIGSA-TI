@@ -1040,17 +1040,17 @@ class AssetService
             $template = new TemplateProcessor(storage_path('app/templates/cargo-laptop.docx'));
 
             $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
-            $template->setValue('type', strtoupper($asset->type->name));
+            $template->setValue('type', mb_strtoupper($asset->type->name));
             $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
-            $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+            $template->setValue('fullname', mb_strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO');
             $template->setValue('brand', $asset->brand->name ?? 'N/A');
             $template->setValue('model', $asset->model->name ?? 'N/A');
             $template->setValue('serial_number', $asset->serial_number ?? 'N/A');
-            $template->setValue('processor', strtoupper($asset->processor ?? 'N/A'));
-            $template->setValue('ram', strtoupper($asset->ram ?? 'N/A'));
-            $template->setValue('storage', strtoupper($asset->storage ?? 'N/A'));
+            $template->setValue('processor', mb_strtoupper($asset->processor ?? 'N/A'));
+            $template->setValue('ram', mb_strtoupper($asset->ram ?? 'N/A'));
+            $template->setValue('storage', mb_strtoupper($asset->storage ?? 'N/A'));
 
             $template->setValue('comment', $assignment->comment ?? '');
 
@@ -1101,9 +1101,9 @@ class AssetService
 
             $this->setCompanyInfoByEmployee($assignment->assignedTo, $template, ['width' => 80, 'height' => 60]);
             $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
-            $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+            $template->setValue('fullname', mb_strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
-            $template->setValue('department', strtoupper($assignment->assignedTo->charge->descripcion_cargo ?? 'N/A'));
+            $template->setValue('department', mb_strtoupper($assignment->assignedTo->charge->descripcion_cargo ?? 'N/A'));
             $template->setValue('is_new', $asset->is_new ? 'NUEVO' : 'USADO EN BUEN ESTADO');
             $template->setValue('brand', $asset->brand->name ?? 'N/A');
             $template->setValue('model', $asset->model->name ?? 'N/A');
@@ -1143,7 +1143,7 @@ class AssetService
 
             $this->setCompanyInfoByEmployee($assignment->assignedTo, $template);
             $template->setValue('assign_date', $assignment->assigned_at->translatedFormat('d \d\e F \d\e\l Y'));
-            $template->setValue('fullname', strtoupper($assignment->assignedTo->full_name));
+            $template->setValue('fullname', mb_strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
             $template->setValue('name', $asset->type->name);
             $template->setValue('brand', $asset->brand->name ?? 'N/A');
