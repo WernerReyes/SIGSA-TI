@@ -9,7 +9,7 @@ class DevolveAssetDto
         public readonly string $return_date,
         public readonly string $return_reason,
         public readonly ?int $ticket_id = null,
-        // public readonly ?array $accessories = null,
+        public readonly ?array $accessories = null,
         
     ) {
     }
@@ -20,7 +20,7 @@ class DevolveAssetDto
             return_comment: $data['return_comment'] ?? null,
             // responsible_id: $data['responsible_id'],
             return_date: $data['return_date'],
-            // accessories: $data['accessories'] ?? null,
+            accessories: $data['accessories'] ?? null,
             ticket_id: $data['ticket_id'] ?? null,
             return_reason: $data['return_reason'],
         );

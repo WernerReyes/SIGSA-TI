@@ -90,7 +90,6 @@ class DashboardService
             default => TicketPriority::LOW->value,
         };
 
-        ds($stats, $severity);
 
         return [
             'out_sla' => (int) $stats->out_sla,

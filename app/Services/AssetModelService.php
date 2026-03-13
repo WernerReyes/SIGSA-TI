@@ -3,10 +3,20 @@
 namespace App\Services;
 
 use App\Models\AssetModel;
+use DB;
 
 class AssetModelService
 {
-    public function getModels()
+    
+    public function getUniqueModels()
+    {
+        return DB::table('models')
+            ->select('name')
+            ->distinct()
+            ->get();
+    }
+
+public function getModels()
     {
         return AssetModel::select('id', 'name', 'brand_id', 'created_at', 'updated_at')
             ->with(['brand:id,name,type_id', 'brand.type:id,name'])

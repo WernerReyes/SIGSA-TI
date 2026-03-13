@@ -3,9 +3,20 @@
 namespace App\Services;
 
 use App\Models\Brand;
+use DB;
 
 class BrandService
 {
+
+    public function getUniqueBrands()
+    {
+        
+        return DB::table('brands')
+            ->select( 'name')
+            ->distinct()->get( );
+            
+    }
+
     public function getBrands()
     {
         return Brand::select('id', 'name', 'type_id', 'created_at', 'updated_at')
@@ -31,4 +42,6 @@ class BrandService
             ->orderBy('models.created_at', 'desc')
             ->get();
     }
+
+
 }

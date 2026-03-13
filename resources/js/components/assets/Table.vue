@@ -69,13 +69,13 @@
 
                     </SelectFilters>
 
-                    <SelectFilters label="Marca" :items="brands" data-key="brands" :icon="Tag" show-refresh
-                        show-selected-focus item-value="id" item-label="name" :multiple="true"
+                    <SelectFilters label="Marca" :items="uniqueBrands" data-key="uniqueBrands" :icon="Tag" show-refresh
+                        show-selected-focus item-value="name" item-label="name" :multiple="true"
                         :default-value="form.brands" @select="(selects) => form.brands = selects" />
 
 
-                    <SelectFilters label="Modelos" :items="models" data-key="models" :icon="Box" show-refresh
-                        show-selected-focus item-value="id" item-label="name" :multiple="true"
+                    <SelectFilters label="Modelos" :items="uniqueModels" data-key="uniqueModels" :icon="Box" show-refresh
+                        show-selected-focus item-value="name" item-label="name" :multiple="true"
                         :default-value="form.models" @select="(selects) => form.models = selects" />
 
 
@@ -281,6 +281,7 @@
             </div>
         </div>
     </div>
+    
 
     <DialogDetails v-if="openDetails" v-model:open="openDetails" v-model:asset="activeRow" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
@@ -377,6 +378,7 @@ const page = usePage();
 const { isLoading, users, departments, assetTypes, assetAccessories, brands, models } = useApp();
 
 
+
 const activeRow = ref<Asset | null>(null);
 
 const openDetails = ref(false);
@@ -396,6 +398,9 @@ const filters = computed(() => page.props.filters as Record<string, any>);
 
 const assetId = computed(() => activeRow.value?.id || null);
 
+const uniqueBrands = computed(() =>  (page?.props?.uniqueBrands || []) as { name: string }[]);
+const uniqueModels = computed(() =>  (page?.props?.uniqueModels || []) as { name: string }[]);
+
 watch(() => activeRow.value, (asset) => {
     if (asset) {
         lastSelected.value = asset.id;
@@ -406,8 +411,8 @@ const form = reactive<{
     search: string;
     status: AssetStatus[];
     types: number[];
-    brands: number[];
-    models: number[];
+    brands: string[];
+    models: string[];
     assigned_to: (number | null)[];
     department_id: number[];
     dateRange?: DateRange | null;
@@ -415,8 +420,8 @@ const form = reactive<{
     search: filters.value.search || '',
     status: filters.value.status || [],
     types: filters.value.types?.map((id: string) => +id) || [],
-    brands: filters.value.brands?.map((id: string) => +id) || [],
-    models: filters.value.models?.map((id: string) => +id) || [],
+    brands: filters.value.brands || [],
+    models: filters.value.models || [],
     assigned_to: filters.value.assigned_to?.map((id: string | null) => id ? +id : null) || [],
     department_id: filters.value.department_id || [],
     dateRange: filters.value?.startDate || filters.value?.endDate ? {

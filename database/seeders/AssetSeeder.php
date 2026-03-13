@@ -265,8 +265,6 @@ class AssetSeeder extends Seeder
         $data = function ($row) {
             $accesories = array_filter(explode(',', $row[9] ?? ''), fn($item) => !empty(trim($item)) && trim($item) !== '');
 
-            ds($accesories);
-
 
             if ($row[10] && trim($row[10]) === 'cambio de equipo') {
                 return ["name" => null]; // Saltar esta fila si el motivo es "cambio de equipo"

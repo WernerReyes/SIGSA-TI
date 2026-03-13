@@ -151,29 +151,34 @@
                     </FieldGroup>
 
 
-                    <!-- <FieldGroup v-if="accessoriesToReturn.length > 0">
+                    <FieldGroup v-if="accessoriesToReturn.length > 0">
                         <VeeField name="accessories" v-slot="{ componentField, errors }">
                             <Field :data-invalid="!!errors.length">
                                 <FieldLabel for="accessories">Accesorios a Devolver</FieldLabel>
-                                <Select v-bind="componentField" multiple>
-                                    <SelectTrigger id="accessories">
-                                        <SelectValue placeholder="Seleccionar accesorio" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectLabel>Accesorios</SelectLabel>
+                              <Select v-bind="componentField" multiple>
+  <SelectTrigger id="accessories">
+    <SelectValue placeholder="Seleccionar accesorio" />
+  </SelectTrigger>
 
-                                            <SelectItem v-for="accessory in accessoriesToReturn" :key="accessory.id"
-                                                :value="accessory.id">
-                                                {{ accessory.name }} ({{ accessory.brand }} - {{ accessory.model }})
-                                            </SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+  <SelectContent>
+    <SelectGroup>
+      <SelectLabel>Accesorios</SelectLabel>
+      <SelectItem
+        v-for="accessory in accessoriesToReturn"
+        :key="accessory.id"
+        :value="accessory.id"
+      >
+    
+        <component :is="assetTypeUI.type.icon(accessory?.type?.name)" />
+        {{ accessory.full_name }}
+      </SelectItem>
+    </SelectGroup>
+  </SelectContent>
+</Select>
                                 <FieldError v-if="errors.length" :errors="errors" />
                             </Field>
                         </VeeField>
-                    </FieldGroup> -->
+                    </FieldGroup>
 
 
                     <FieldGroup>
@@ -246,6 +251,9 @@ import { CalendarDateTime, DateValue, getLocalTimeZone, today } from '@internati
 import { toTypedSchema } from '@vee-validate/zod';
 import { isBefore, parseISO } from 'date-fns';
 import { Check, ChevronDownIcon, RefreshCcw } from 'lucide-vue-next';
+import { toZonedDate } from '@/lib/utils';
+import { Select, SelectTrigger, SelectValue, SelectLabel, SelectContent, SelectItem, SelectGroup } from '@/components/ui/select';
+import { assetTypeUI } from '../../interfaces/assetType.interface';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -260,7 +268,7 @@ const time = reactive({
     seconds: new Date().getSeconds(),
 });
 
-import { toZonedDate } from '@/lib/utils';
+
 
 const formatTime = computed(() => {
     return `${time.hours.toString().padStart(2, '0')}:${time.minutes.toString().padStart(2, '0')}:${time.seconds.toString().padStart(2, '0')}`;
@@ -275,7 +283,7 @@ const assign = computed<AssetAssignment | null>(() => {
 });
 const accessoriesToReturn = computed<Asset[]>(() => {
     if (!assign.value) return [];
-    return assign.value.children_assignments?.flatMap(child => child.asset!) || [];
+    return assign.value.active_children_assignments?.flatMap(child => child.asset!) || [];
 });
 
 const accesoriesOutOfStockAlertsExists = computed<boolean>(() => {
@@ -303,7 +311,7 @@ const formSchema = toTypedSchema(
             required_error: 'Seleccione un motivo de devolución',
             // errorMap: () => ({ message: 'Seleccione un motivo de devolución' }),
         }),
-        // accessories: z.array(z.number()).optional(),
+        accessories: z.array(z.number()).optional(),
         return_comment: z.string().optional(),
     })
 );
@@ -314,7 +322,7 @@ const { handleSubmit, errors, values } = useForm({
         returned_date: new CalendarDateTime(today(getLocalTimeZone()).year, today(getLocalTimeZone()).month, today(getLocalTimeZone()).day, time.hours, time.minutes, time.seconds),
         return_comment: '',
         return_reason: ReturnReason.EQUIPMENT_RENOVATION,
-        // accessories: accessoriesToReturn.value.map(acc => acc.id),
+        accessories: [],
     },
     validationSchema: formSchema,
     validateOnMount: false,
@@ -327,12 +335,13 @@ const onSubmit = async (values: Record<string, any>) => {
 
     const returnDate = values.returned_date.toDate(getLocalTimeZone());
 
+   
     router.post(`/assets/devolve/${assign.value?.id}`, {
         // responsible_id: values.responsible_id,
         return_date: toZonedDate(returnDate),
         return_comment: values.return_comment,
         return_reason: values.return_reason,
-        // accessories: values.accessories,
+        accessories: values.accessories,
     }, {
         only: ['assetsPaginated', 'stats', 'accessories'],
         preserveScroll: true,
@@ -341,12 +350,10 @@ const onSubmit = async (values: Record<string, any>) => {
 
         onFlash: (flash) => {
             if (flash.error) return;
-            
             if (flash.alert_triggered && !accesoriesOutOfStockAlertsExists.value) {
                 router.reload({
                     only: ['accessoriesOutOfStockAlert'],
                 });
-
             }
 
             open.value = false;

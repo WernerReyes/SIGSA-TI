@@ -135,13 +135,13 @@ class AssetService
                             AssetTypeEnum::LAPTOP => AssetTypeEnum::LAPTOP_CHARGER,
                             default => null,
                         };
-                        ds($chargerFor, $asset);
+                       
                         $q->where('id', $chargerFor);
                             // ->when($asset?->brand_id, fn($qq) => $qq->where('brand_id', $asset->brand_id));
 
                     })
                     ->when($asset?->brand_id, function ($q) use ($asset) {
-                        ds($asset->brand_id);
+                       
                         //  $q->where('brand_id', $asset->brand_id);
                         // $q->where('name', 'like', '%' . $asset->brand->name . '%');
                         $q->whereHas('brand', fn($qq) => $qq->where('name', $asset->brand->name));
@@ -933,8 +933,8 @@ class AssetService
                 //     $description .= " Accesorio del equipo principal ({$parentAsset->name} - {$parentAsset->brand} {$parentAsset->model}) devuelto por {$assignment->assignedTo->full_name} por" . ReturnReason::labels(ReturnReason::from($dto->return_reason));
                 // }
 
-                if (!$assignment->parent_assignment_id) {
-                    $childAssignments = $assignment->activeChildrenAssignments()->select('id', 'asset_id')->get();
+                if (!$assignment->parent_assignment_id && count($dto->accessories) > 0) {
+                    $childAssignments = $assignment->activeChildrenAssignments()->select('id', 'asset_id')->whereIn('asset_id', $dto->accessories)->get();
                     if (!$childAssignments->isEmpty()) {
                         $asset = $assignment->asset;
                         $description .= " junto con los accesorios: " . $childAssignments->map(function ($childAssignment) {

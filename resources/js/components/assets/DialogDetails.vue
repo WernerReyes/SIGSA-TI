@@ -749,11 +749,11 @@ const getAsset = (assignment: AssetAssignment) => {
     }
 }
 const getDeliveryUrl = (assignment: AssetAssignment): string => {
-
     return assignment.delivery_document?.file_url || assignment.parent_assignment?.delivery_document?.file_url || '';
 };
 
 const getReturnUrl = (assignment: AssetAssignment): string => {
+    if (!assignment.returned_at) return '';
     return assignment.return_document?.file_url || assignment.parent_assignment?.return_document?.file_url || '';
 };
 
@@ -762,7 +762,7 @@ const isInheritedDeliveryDocument = (assignment: AssetAssignment): boolean => {
 };
 
 const isInheritedReturnDocument = (assignment: AssetAssignment): boolean => {
-    console.log(assignment);
+    if (!assignment.returned_at) return false;
     return !assignment.return_document?.file_url && !!assignment.parent_assignment?.return_document?.file_url;
 };
 

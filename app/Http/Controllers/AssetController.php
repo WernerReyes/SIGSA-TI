@@ -58,7 +58,9 @@ class AssetController extends Controller
             'assetsPaginated' => Inertia::once(fn() => $assetService->getPaginated($filters)),
             'stats' => fn() => Inertia::once(fn() => $assetService->getStats($filters)),
             'accessoriesOutOfStockAlert' => fn() => $assetService->getAccessoriesOutOfStockAlert(),
+            'uniqueBrands' => Inertia::optional(fn() => $brandService->getUniqueBrands())->once(),
             'brands' => Inertia::optional(fn() => $assetTypeService->getBrandsForType($typeId))->once(),
+            'uniqueModels' => Inertia::optional(fn() => $assetModelService->getUniqueModels())->once(),
             'models' => Inertia::optional(fn() => $brandService->getBrandModels($brandId))->once(),
 
 

@@ -161,7 +161,7 @@ class Asset extends EloquentModel
                         ->orWhereHas(
                             'currentAssignment',
                             fn($q3) =>
-                            $q3->whereNull('parent_assignment_id')
+                            $q3->whereNull('parent_assignment_id')->orWhereHas('parentAssignment', fn($q4) => $q4->whereNotNull('returned_at'))
                         );
                 });
             })
@@ -253,11 +253,11 @@ class Asset extends EloquentModel
             */
             ->when($filtersDto->brands, function ($query, $brandIds) use ($stat) {
                 $query->where(function ($q) use ($brandIds, $stat) {
-                    $q->whereIn('brand_id', $brandIds)->when(!$stat, function ($q2) use ($brandIds) {
-                        $q2->orWhereHas(
-                            'currentAssignment.activeChildrenAssignments.asset',
-                            fn($q3) =>
-                            $q3->whereIn('brand_id', $brandIds)
+                    $q->whereHas('brand', fn($q2) => $q2->whereIn('name', $brandIds))->when(!$stat, function ($q3) use ($brandIds) {
+                        $q3->orWhereHas(
+                            'currentAssignment.activeChildrenAssignments.asset.brand',
+                            fn($q4) =>
+                            $q4->whereIn('name', $brandIds)
                         );
                     });
                 });
@@ -272,11 +272,11 @@ class Asset extends EloquentModel
             */
             ->when($filtersDto->models, function ($query, $modelIds) use ($stat) {
                 $query->where(function ($q) use ($modelIds, $stat) {
-                    $q->whereIn('model_id', $modelIds)->when(!$stat, function ($q2) use ($modelIds) {
-                        $q2->orWhereHas(
-                            'currentAssignment.activeChildrenAssignments.asset',
-                            fn($q3) =>
-                            $q3->whereIn('model_id', $modelIds)
+                    $q->whereHas('model', fn($q2) => $q2->whereIn('name', $modelIds))->when(!$stat, function ($q3) use ($modelIds) {
+                        $q3->orWhereHas(
+                            'currentAssignment.activeChildrenAssignments.asset.model',
+                            fn($q4) =>
+                            $q4->whereIn('name', $modelIds)
                         );
                     });
                 });
