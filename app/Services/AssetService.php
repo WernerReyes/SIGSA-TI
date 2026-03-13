@@ -660,18 +660,24 @@ class AssetService
                     throw new NotFoundHttpException('No se encontró el activo');
                 }
 
-                
+
                 if ($asset->type_id === AssetTypeEnum::CELL_PHONE && !Asset::whereIn('id', $dto->accessories ?? [])->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER)->exists()) {
-                    $chagers = AssetAssignment::whereHas('asset', fn($q) => $q->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER))
+                    $chagers = AssetAssignment::whereHas('asset', function ($q) {
+                        $q->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER);
+                    })
                         ->where('assigned_to_id', $dto->assigned_to_id)
                         ->whereNull('returned_at')
-                        ->where((function ($query) use ($asset) {
-                            $query->
-                            whereHas('parentAssignment', fn($qq) => $qq->whereHas(
-                                'asset',
-                                fn($qqq) => $qqq->whereNot('status', AssetStatus::AVAILABLE->value)->whereHas('brand', fn($qqqq) => $qqqq->where('name', $asset->brand->name))
-                            ))->orWhereNull('parent_assignment_id');
-                        }))
+                        ->where(function ($query) use ($asset) {
+                            $query->whereHas('parentAssignment', function ($qq) use ($asset) {
+                                $qq->whereHas('asset', function ($qqq) use ($asset) {
+                                    $qqq->where('status', '!=', AssetStatus::AVAILABLE->value)
+                                        ->whereHas('brand', function ($qqqq) use ($asset) {
+                                            $qqqq->where('name', $asset->brand->name);
+                                        });
+                                });
+                            })
+                                ->orWhereNull('parent_assignment_id');
+                        })
                         ->exists();
                     if (!$chagers) {
                         throw new BadRequestException('El usuario asignado no tiene un cargador de celular compatible asignado. Por favor, asigne un cargador compatible antes de asignar este celular.');
@@ -1022,6 +1028,7 @@ class AssetService
             throw new InternalErrorException('Error al devolver el activo ' . $e->getMessage());
         }
     }
+
 
 
     private function setCompanyInfoByEmployee(User $employee, TemplateProcessor $template, ?array $size = null)
