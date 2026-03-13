@@ -135,13 +135,13 @@ class AssetService
                             AssetTypeEnum::LAPTOP => AssetTypeEnum::LAPTOP_CHARGER,
                             default => null,
                         };
-                       
-                        $q->where('id', $chargerFor);
-                            // ->when($asset?->brand_id, fn($qq) => $qq->where('brand_id', $asset->brand_id));
 
+                        $q->where('id', $chargerFor);
+                        // ->when($asset?->brand_id, fn($qq) => $qq->where('brand_id', $asset->brand_id));
+    
                     })
-                    ->when($asset?->brand_id, function ($q) use ($asset) {
-                       
+                        ->when($asset?->brand_id, function ($q) use ($asset) {
+
                         //  $q->where('brand_id', $asset->brand_id);
                         // $q->where('name', 'like', '%' . $asset->brand->name . '%');
                         $q->whereHas('brand', fn($qq) => $qq->where('name', $asset->brand->name));
@@ -150,7 +150,7 @@ class AssetService
                     // Otros accesorios → sin filtro por marca
                     $query->orWhereHas('type', function ($q) {
                         $q
-                        // ->where('doc_category', AssetTypeCategory::ACCESSORY->value)
+                            // ->where('doc_category', AssetTypeCategory::ACCESSORY->value)
                             ->whereNotIn('id', [AssetTypeEnum::CELL_PHONE_CHARGER, AssetTypeEnum::LAPTOP_CHARGER]);
                     });
                 })
@@ -638,16 +638,18 @@ class AssetService
     public function assignAsset(AssignAssetDto $dto)
     {
 
-        if ($dto->ticket_id) {
-            $userAuthID = auth()->user()->staff_id;
-            $ticket = Ticket::select(
-                'id',
-                'responsible_id'
-            )->find($dto->ticket_id);
-            if ($ticket->responsible_id !== $userAuthID) {
-                throw new BadRequestException('Solo el responsable del ticket puede asignar activos al mismo.');
-            }
-        }
+        // if ($dto->ticket_id) {
+        //     $userAuthID = auth()->user()->staff_id;
+        //     $ticket = Ticket::select(
+        //         'id',
+        //         'responsible_id'
+        //     )->find($dto->ticket_id);
+        //     if ($ticket->responsible_id !== $userAuthID) {
+        //         throw new BadRequestException('Solo el responsable del ticket puede asignar activos al mismo.');
+        //     }
+        // }
+
+
 
         try {
             $assignment = DB::transaction(function () use ($dto) {
@@ -658,7 +660,28 @@ class AssetService
                     throw new NotFoundHttpException('No se encontró el activo');
                 }
 
-                if (in_array($asset->status, [AssetStatus::IN_REPAIR->value, AssetStatus::DECOMMISSIONED->value])) {
+                if ($asset->type_id === AssetTypeEnum::CELL_PHONE) {
+                    $chagers = AssetAssignment::whereHas('asset', fn($q) => $q->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER))
+                        ->where('assigned_to_id', $dto->assigned_to_id)
+                        ->whereNull('returned_at')
+                        ->where((function ($query) use ($asset) {
+                            $query->
+                            whereHas('parentAssignment', fn($qq) => $qq->whereHas(
+                                'asset',
+                                fn($qqq) => $qqq->whereNot('status', AssetStatus::AVAILABLE->value)->whereHas('brand', fn($qqqq) => $qqqq->where('name', $asset->brand->name))
+                            ))->orWhereNull('parent_assignment_id');
+                        }))
+                        ->exists();
+                    if (!$chagers) {
+                        throw new BadRequestException('El usuario asignado no tiene un cargador de celular compatible asignado. Por favor, asigne un cargador compatible antes de asignar este celular.');
+                    }
+                }
+
+
+
+
+
+                if (in_array($asset->status, [AssetStatus::IN_REPAIR->value, AssetStatus::DECOMMISSIONED->value, AssetStatus::ASSIGNED->value])) {
                     throw new BadRequestException('Solo se pueden asignar equipos disponibles.');
                 }
 
@@ -1207,7 +1230,7 @@ class AssetService
             // $template->setValue('has_charger', $assignment->activeChildrenAssignments->filter(function ($child) {
             //     return stripos($child->asset->name, 'cargador') !== null;
             // })->count() > 0 ? 'X' : '');
-             $template->setValue('has_charger', $assignment->childrenAssignments()->exists() ? 'X' : '');
+            $template->setValue('has_charger', $assignment->childrenAssignments()->exists() ? 'X' : '');
             $template->setValue('responsible', mb_strtoupper($assignment->responsible->full_name ?? 'N/A'));
 
             $fileName = 'devolucion_equipo_' . strtolower(str_replace(' ', '_', $assignment->assignedTo->full_name)) . '_' . Carbon::now()->format('Ymd_His') . '.docx';

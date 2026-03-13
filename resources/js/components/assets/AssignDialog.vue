@@ -351,18 +351,18 @@ watch(assign, (assignment) => {
 const onSubmit = async (values: Record<string, any>) => {
     isSubmitting.value = true;
 
-    const accessoriesIds = values.accessories || [];
+    // const accessoriesIds = values.accessories || [];
     const type = asset.value?.type;
 
-    const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
-    if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type?.name as TypeName)) {
-        const includeCharger = accessories.some(acc => [TypeName.CELL_PHONE_CHARGER, TypeName.LAPTOP_CHARGER].includes(acc.type.name));
-        if (!includeCharger) {
-            toast.error('Debe incluir el cargador en los accesorios del equipo.');
-            isSubmitting.value = false;
-            return;
-        }
-    }
+    // const accessories = assetAccessories.value.filter(acc => accessoriesIds.includes(acc.id)) as Asset[];
+    // if ([TypeName.LAPTOP, TypeName.CELL_PHONE].includes(type?.name as TypeName)) {
+    //     const includeCharger = accessories.some(acc => [TypeName.CELL_PHONE_CHARGER, TypeName.LAPTOP_CHARGER].includes(acc.type.name));
+    //     if (!includeCharger) {
+    //         toast.error('Debe incluir el cargador en los accesorios del equipo.');
+    //         isSubmitting.value = false;
+    //         return;
+    //     }
+    // }
 
     const only = ['assetsPaginated', 'stats'];
     // if (type?.is_accessory || accessories.find(acc => accessoriesIds.includes(acc.id))) {
