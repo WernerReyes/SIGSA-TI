@@ -670,7 +670,7 @@ class AssetService
                         ->where(function ($query) use ($asset) {
                             $query->whereHas('parentAssignment', function ($qq) use ($asset) {
                                 $qq->whereHas('asset', function ($qqq) use ($asset) {
-                                    $qqq->where('status', '!=', AssetStatus::AVAILABLE->value)
+                                    $qqq->where('status', '!=', AssetStatus::ASSIGNED->value)
                                         ->whereHas('brand', function ($qqqq) use ($asset) {
                                             $qqqq->where('name', $asset->brand->name);
                                         });
