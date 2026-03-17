@@ -45,6 +45,7 @@ class AssetController extends Controller
         $filters = AssetFiltersDto::fromArray($request->all());
         $assetId = $request->input('asset_id');
         $assignmentId = $request->input('assignment_id');
+        $selectedUserId = $request->input('selected_user_id');
         $typeId = $request->input('type_id');
         $brandId = $request->input('brand_id');
         // $brand = $request->input('brand');
@@ -67,6 +68,13 @@ class AssetController extends Controller
 
 
             'details' => Inertia::optional(fn() => $assetId ? $assetService->getDetails(Asset::find($assetId)) : null),
+            'userAssignments' => Inertia::optional(function () use ($assetService, $selectedUserId) {
+                if ($selectedUserId) {
+                    return $assetService->getAssignmentsByUser((int) $selectedUserId);
+                }
+
+                return [];
+            })->once(),
             // 'histories' => Inertia::optional(fn() => $assetId ? $assetService->getHistories(Asset::find($assetId)) : null),
             'historiesPaginated' => Inertia::optional(function () use ($assetService, $assetId, $request) {
                 if (!$assetId) {

@@ -19,6 +19,9 @@
                             <RefreshCcw class="size-4" :class="isLoading ? 'animate-spin' : ''" />
                         </Button>
                     </div>
+
+                   
+
                     <div v-if="hasFilters"
                         class="flex flex-wrap gap-2 text-xs text-muted-foreground items-center animate-in fade-in-50">
                         <Badge variant="outline" class="rounded-full">{{ filterCount }} {{
@@ -131,6 +134,16 @@
 
 
         <div class="rounded-xl border bg-card/70 shadow-sm backdrop-blur overflow-hidden">
+            <div class="flex items-center justify-between gap-3 px-4 py-3 border-b bg-muted/20">
+                <div class="min-w-0">
+                    <p class="text-xs uppercase tracking-wider text-muted-foreground">Panel de resultados</p>
+                    <p class="text-sm font-semibold truncate">Tabla de activos y asignaciones</p>
+                </div>
+                <Button variant="outline" class="gap-2 shrink-0" @click="openAssignmentsByUserSheet = true">
+                    <Users class="size-4" />
+                    Ver asignaciones por usuario
+                </Button>
+            </div>
 
             <div class="overflow-x-auto">
 
@@ -154,6 +167,7 @@
                                     <TableRow @contextmenu="() => {
                                         activeRow = row.original
                                     }" :key="row.id" v-for="row in table.getRowModel().rows"
+                                        :id="`asset-row-${row.original.id}`"
                                         :data-state="row.getIsSelected() ? 'selected' : undefined" :class="[
                                             'cursor-context-menu transition hover:bg-muted/60',
                                             row.depth > 0
@@ -281,9 +295,181 @@
             </div>
         </div>
     </div>
+
+    <Sheet v-model:open="openAssignmentsByUserSheet">
+        <SheetContent side="right" class="w-full sm:w-[560px] overflow-y-auto">
+            <SheetHeader class="space-y-3 pb-3 border-b">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="size-10 rounded-xl bg-linear-to-br from-cyan-200/60 to-blue-200/60 dark:from-cyan-900/40 dark:to-blue-900/40 flex items-center justify-center">
+                        <Users class="size-5 text-blue-700 dark:text-blue-300" />
+                    </div>
+                    <div class="flex-1">
+                        <SheetTitle class="text-lg">Asignaciones por usuario</SheetTitle>
+                        <p class="text-xs text-muted-foreground">Consulta global de asignaciones por usuario (actuales
+                            e históricas)</p>
+                    </div>
+                </div>
+            </SheetHeader>
+
+            <div class="space-y-4 py-4 px-2">
+                <div class="rounded-xl border bg-card/60 p-3">
+                    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Selecciona un usuario</p>
+                    <SelectFilters label="Usuario" :items="users" data-key="users" :icon="Users"
+                        show-refresh show-selected-focus :selected-as-label="true" item-value="staff_id" item-label="full_name"
+                        :multiple="false" :default-value="selectedAssignmentsUserId ?? undefined"
+                        @select="(selected) => selectedAssignmentsUserId = selected as number" />
+                </div>
+
+                <div v-if="!selectedAssignmentsUserId"
+                    class="rounded-xl border border-dashed bg-muted/30 p-4 text-center text-xs text-muted-foreground">
+                    Primero selecciona un usuario para cargar sus asignaciones globales.
+                </div>
+
+                <div v-else-if="isUserAssignmentsLoading" class="rounded-xl border bg-card/40 p-4 text-sm text-muted-foreground">
+                    Cargando asignaciones del usuario...
+                </div>
+
+                <template v-else>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Asignaciones actuales</p>
+                            <Badge class="text-[11px]">{{ currentUserAssignments.length }}</Badge>
+                        </div>
+
+                        <div v-if="!currentUserAssignments.length"
+                            class="rounded-xl border border-dashed bg-muted/20 p-3 text-center text-xs text-muted-foreground">
+                            No tiene asignaciones activas.
+                        </div>
+
+                        <Accordion v-else type="multiple" class="space-y-2">
+                            <AccordionItem v-for="assignment in currentUserAssignments" :key="assignment.id"
+                                :value="`current-${assignment.id}`" class="rounded-xl border bg-card/70 px-3">
+                                <AccordionTrigger class="py-3 hover:no-underline">
+                                    <div class="w-full text-left">
+                                        <p class="text-sm flex items-center gap-2 font-semibold wrap-break-word">
+                                            
+                                             <component :is="assetTypeOp(assignment.asset?.type?.name as TypeName)?.icon" class="size-4 " />
+                                            {{ assignment.asset?.full_name || `AST-${assignment.asset_id}` }}</p>
+                                        <div class="flex items-center flex-wrap gap-2 mt-1">
+                                            <p class="text-[11px] text-muted-foreground">Asignado: {{ formatDateLabel(assignment.assigned_at) }}</p>
+                                            <Badge v-if="isStandaloneActiveAccessory(assignment)" variant="outline"
+                                                class="text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
+                                                Accesorio activo sin principal activo
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent class="pb-3 space-y-2">
+                                    <button type="button"
+                                        class="w-full rounded-md border bg-card px-3 py-2 text-left hover:bg-muted transition"
+                                        @click="openAssetDetailsFromSheet(assignment.asset?.id)">
+                                        <p class="text-xs text-muted-foreground">{{ isStandaloneActiveAccessory(assignment)
+                                            ? 'Accesorio principal activo' : 'Equipo principal' }}</p>
+                                        <p class="text-sm font-semibold wrap-break-word">{{ assignment.asset?.full_name || `AST-${assignment.asset_id}` }}</p>
+                                    </button>
+                                    <div v-if="isStandaloneActiveAccessory(assignment)"
+                                        class="rounded-md border border-amber-300/70 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20 px-3 py-2">
+                                        <p class="text-[11px] text-amber-700 dark:text-amber-300">
+                                            Principal devuelto:
+                                            <span class="font-semibold">{{ assignment.parent_assignment?.asset?.full_name ||
+                                                `AST-${assignment.parent_assignment?.asset_id || '-'}` }}</span>
+                                        </p>
+                                    </div>
+                                    <div v-if="(assignment.children_assignments || []).length">
+                                        <p class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Accesorios</p>
+                                        <div class="grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
+                                            <button v-for="child in (assignment.children_assignments || [])" :key="child.id" type="button"
+                                                class="rounded-md border px-2 py-2 text-left transition"
+                                                :class="child.returned_at
+                                                    ? 'bg-muted/20 border-slate-300/60 dark:border-slate-800'
+                                                    : 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800'"
+                                                @click="openAssetDetailsFromSheet(child.asset?.id)">
+                                                <p class="text-xs flex items-center gap-2 font-semibold wrap-break-word">
+                                                        <component :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon" class="size-3   " />
+                                                    {{ child.asset?.full_name || `AST-${child.asset_id}` }}</p>
+                                                <div class="flex items-center justify-between gap-2 mt-1">
+                                                    <p class="text-[11px] text-muted-foreground truncate">{{ child.asset?.type?.name || 'Accesorio' }}</p>
+                                                    <Badge :variant="child.returned_at ? 'secondary' : 'default'" class="text-[10px]">
+                                                        {{ child.returned_at ? 'Devuelto' : 'Activo' }}
+                                                    </Badge>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <div class="flex items-center justify-between">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Asignaciones devueltas</p>
+                            <Badge variant="secondary" class="text-[11px]">{{ previousUserAssignments.length }}</Badge>
+                        </div>
+
+                        <div v-if="!previousUserAssignments.length"
+                            class="rounded-xl border border-dashed bg-muted/20 p-3 text-center text-xs text-muted-foreground">
+                            No tiene asignaciones históricas devueltas.
+                        </div>
+
+                        <Accordion v-else type="multiple" class="space-y-2">
+                            <AccordionItem v-for="assignment in previousUserAssignments" :key="assignment.id"
+                                :value="`prev-${assignment.id}`" class="rounded-xl border bg-card/60 px-3">
+                                <AccordionTrigger class="py-3 hover:no-underline">
+                                    <div class="w-full text-left">
+                                        <p class="text-sm flex items-center gap-2 font-semibold wrap-break-word">
+                                            <component :is="assetTypeOp(assignment.asset?.type?.name as TypeName)?.icon" class="size-4" />
+                                            {{ assignment.asset?.full_name || `AST-${assignment.asset_id}` }}</p>
+                                        <div class="flex items-center flex-wrap gap-2 mt-1">
+                                            <p class="text-[11px] text-muted-foreground">Devuelto: {{ formatDateLabel(assignment.returned_at) }}</p>
+                                            <Badge v-if="hasActiveChildren(assignment)" variant="outline"
+                                                class="text-[10px] border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">
+                                                Tiene accesorios aun activos
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent class="pb-3 space-y-2">
+                                    <button type="button"
+                                        class="w-full rounded-md border bg-card px-3 py-2 text-left hover:bg-muted transition"
+                                        @click="openAssetDetailsFromSheet(assignment.asset?.id)">
+                                        <p class="text-xs text-muted-foreground">Equipo principal</p>
+                                        <p class="text-sm font-semibold wrap-break-word">{{ assignment.asset?.full_name || `AST-${assignment.asset_id}` }}</p>
+                                    </button>
+                                    <div v-if="(assignment.children_assignments || []).length">
+                                        <p class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Accesorios</p>
+                                        <div class="grid gap-2 border-l-2 border-dashed border-slate-200 dark:border-slate-900/50 pl-3">
+                                            <button v-for="child in (assignment.children_assignments || [])" :key="child.id" type="button"
+                                                class="rounded-md border px-2 py-2 text-left transition"
+                                                :class="child.returned_at
+                                                    ? 'bg-muted/20 border-slate-300/60 dark:border-slate-800'
+                                                    : 'bg-amber-50/60 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'"
+                                                @click="openAssetDetailsFromSheet(child.asset?.id)">
+                                                <p class="text-xs flex items-center gap-2 font-semibold wrap-break-word">
+                                                     <component :is="assetTypeOp(child.asset?.type?.name as TypeName)?.icon" class="size-3 " />
+                                                    {{ child.asset?.full_name || `AST-${child.asset_id}` }}</p>
+                                                <div class="flex items-center justify-between gap-2 mt-1">
+                                                    <p class="text-[11px] text-muted-foreground truncate">{{ child.asset?.type?.name || 'Accesorio' }}</p>
+                                                    <Badge :variant="child.returned_at ? 'secondary' : 'default'" class="text-[10px]">
+                                                        {{ child.returned_at ? 'Devuelto' : 'Activo' }}
+                                                    </Badge>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </div>
+                </template>
+            </div>
+        </SheetContent>
+    </Sheet>
     
 
-    <DialogDetails v-if="openDetails" v-model:open="openDetails" v-model:asset="activeRow" />
+    <DialogDetails v-if="openDetails" v-model:open="openDetails" v-model:asset="activeRow"
+        @locate-in-table="handleLocateFromDetails" />
     <Dialog v-model:open-editor="openEdit" v-model:current-asset="activeRow" />
     <InvoiceDialog v-if="openInvoice" v-model:open="openInvoice" :asset="activeRow" />
     <StatusDialog v-if="changeStatus" v-model:open="changeStatus" :asset="activeRow" />
@@ -319,6 +505,7 @@ import {
     ContextMenuItem,
     ContextMenuTrigger
 } from '@/components/ui/context-menu';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -332,6 +519,7 @@ import {
     PaginationNext,
     PaginationPrevious
 } from '@/components/ui/pagination';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
     Table,
     TableBody,
@@ -350,9 +538,10 @@ import { assetTypeOp, TypeName } from '@/interfaces/assetType.interface';
 
 import { router, usePage } from '@inertiajs/vue3';
 import { useDebounceFn } from '@vueuse/core';
-import { format, isAfter, isSameDay, startOfDay } from 'date-fns';
+import { format, isAfter, isSameDay, parseISO, startOfDay } from 'date-fns';
 import { Building, CalendarSearch, ChartArea, Check, ChevronDown, ChevronLeftIcon, ChevronRight, ChevronRightIcon, Tag, Box, Columns4, Eye, History, MonitorSmartphone, Pencil, RefreshCcw, Search, UploadCloud, UserIcon, Users, X, XCircle } from 'lucide-vue-next';
-import { computed, h, reactive, ref, watch } from 'vue';
+import { computed, h, nextTick, reactive, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -370,6 +559,7 @@ import DialogDetails from './DialogDetails.vue';
 import HistoryDialog from './HistoryDialog.vue';
 import InvoiceDialog from './InvoiceDialog.vue';
 import StatusDialog from './StatusDialog.vue';
+import type { AssetAssignment } from '@/interfaces/assetAssignment.interface';
 
 
 const { assets } = defineProps<{ assets: Paginated<Asset> }>()
@@ -389,6 +579,11 @@ const openDevolution = ref(false);
 const openHistory = ref(false);
 const openInvoice = ref(false);
 const openDelete = ref(false);
+const openAssignmentsByUserSheet = ref(false);
+const locateAssetId = ref('');
+const pendingLocateId = ref<number | null>(null);
+const selectedAssignmentsUserId = ref<number | null>(null);
+const isUserAssignmentsLoading = ref(false);
 
 const sorting = ref<SortingState>([])
 
@@ -497,6 +692,50 @@ const filterstersRenders = computed(() => [{
 }]
 );
 
+const userAssignments = computed<AssetAssignment[]>(() => {
+    return (page.props.userAssignments || []) as AssetAssignment[];
+});
+
+const currentUserAssignments = computed<AssetAssignment[]>(() => {
+    return userAssignments.value.filter(assignment => !assignment.returned_at);
+});
+
+const previousUserAssignments = computed<AssetAssignment[]>(() => {
+    return userAssignments.value.filter(assignment => !!assignment.returned_at);
+});
+
+const isStandaloneActiveAccessory = (assignment: AssetAssignment): boolean => {
+    return !!assignment.parent_assignment_id && !assignment.returned_at;
+};
+
+const hasActiveChildren = (assignment: AssetAssignment): boolean => {
+    return (assignment.children_assignments || []).some(child => !child.returned_at);
+};
+
+const formatDateLabel = (value?: string | null): string => {
+    if (!value) return '-';
+
+    try {
+        return format(parseISO(value), 'dd/MM/yyyy HH:mm');
+    } catch {
+        return value;
+    }
+};
+
+const fetchAssignmentsByUser = (userId?: number | null) => {
+    if (!userId) return;
+
+    isUserAssignmentsLoading.value = true;
+    router.reload({
+        only: ['userAssignments'],
+        data: { selected_user_id: userId },
+        preserveUrl: true,
+        onFinish: () => {
+            isUserAssignmentsLoading.value = false;
+        },
+    });
+};
+
 watch(
     () => form.search,
     useDebounceFn(() => {
@@ -569,7 +808,6 @@ const handleOpenDetails = () => {
         data: { asset_id: assetId.value },
         preserveUrl: true,
         onSuccess: () => {
-            // if (flash.error) return;
             activeRow.value = {
                 ...activeRow.value!,
                 ...page.props.details as Asset,
@@ -580,6 +818,98 @@ const handleOpenDetails = () => {
     });
 
 }
+
+const resolveAssetById = (id: number): Asset | null => {
+    for (const currentAsset of assets.data) {
+        if (currentAsset.id === id) {
+            return currentAsset;
+        }
+
+        const children = currentAsset.current_assignment?.active_children_assignments || currentAsset.current_assignment?.children_assignments || [];
+        const childMatch = children.find(child => child.asset?.id === id);
+
+        if (childMatch?.asset) {
+            return childMatch.asset;
+        }
+    }
+
+    return null;
+};
+
+const focusRowByAssetId = async (id: number) => {
+    lastSelected.value = id;
+    await nextTick();
+
+    const rowElement = document.getElementById(`asset-row-${id}`);
+    if (!rowElement) return;
+
+    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+const locateAssetById = async () => {
+    const cleaned = locateAssetId.value.replace(/\D/g, '');
+    const parsedId = Number.parseInt(cleaned, 10);
+
+    if (!Number.isFinite(parsedId) || parsedId <= 0) {
+        toast.error('Ingresa un ID de activo válido.');
+        return;
+    }
+
+    const selectedAsset = resolveAssetById(parsedId);
+
+    if (!selectedAsset) {
+        pendingLocateId.value = parsedId;
+        form.search = parsedId.toString();
+        applyFilters();
+        toast.message('Buscando activo por ID en todo el inventario...');
+        return;
+    }
+
+    activeRow.value = selectedAsset;
+    await focusRowByAssetId(parsedId);
+    toast.success(`Activo AST-${parsedId} ubicado.`);
+};
+
+const openAssetDetailsFromSheet = (assetId?: number) => {
+    if (!assetId) return;
+
+    activeRow.value = { id: assetId } as Asset;
+
+
+    openAssignmentsByUserSheet.value = false;
+    handleOpenDetails();
+};
+
+const handleLocateFromDetails = (assetId: number) => {
+    openDetails.value = false;
+    locateAssetId.value = assetId.toString();
+    form.search = assetId.toString();
+    applyFilters();
+    toast.success(`Filtro aplicado por AST-${assetId}.`);
+};
+
+watch(
+    () => assets.data,
+    async () => {
+        if (!pendingLocateId.value) return;
+
+        const selectedAsset = resolveAssetById(pendingLocateId.value);
+        if (!selectedAsset) return;
+
+        activeRow.value = selectedAsset;
+        await focusRowByAssetId(pendingLocateId.value);
+        toast.success(`Activo AST-${pendingLocateId.value} ubicado.`);
+        pendingLocateId.value = null;
+    },
+    { deep: true }
+);
+
+watch(
+    () => selectedAssignmentsUserId.value,
+    (userId) => {
+        fetchAssignmentsByUser(userId);
+    }
+);
 
 const handleOpenHistories = () => {
     router.reload({
@@ -711,7 +1041,7 @@ const columns: ColumnDef<Asset>[] = [
         id: 'brand',
         header: 'Marca',
         size: 150,
-        cell: info => info.getValue()?.name || h(Badge, { variant: 'secondary' }, () => 'N/A'),
+        cell: info => (info.getValue() as { name?: string } | null)?.name || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },
     {
@@ -719,7 +1049,7 @@ const columns: ColumnDef<Asset>[] = [
         id: 'model',
         header: 'Modelo',
         size: 200,
-        cell: info => info.getValue()?.name || h(Badge, { variant: 'secondary' }, () => 'N/A'),
+        cell: info => (info.getValue() as { name?: string } | null)?.name || h(Badge, { variant: 'secondary' }, () => 'N/A'),
 
     },
     {

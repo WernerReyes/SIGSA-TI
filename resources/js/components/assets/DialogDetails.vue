@@ -30,6 +30,11 @@
                                 </template>
 
                             </Badge>
+                            <Button variant="outline" size="sm" class="h-6 px-2 text-[11px]"
+                                @click="emitLocateInTable">
+                                <LocateFixed class="size-3.5" />
+                                Ubicar en tabla
+                            </Button>
                         </div>
                         <h2 class="font-bold tracking-tight text-2xl">{{ asset?.name }}</h2>
                         <p class="text-sm text-muted-foreground mt-1">{{ asset?.brand?.name }} {{ asset?.model?.name }}
@@ -709,6 +714,7 @@ import {
     Mail,
     MemoryStick, Monitor, MonitorSmartphone, Palette, Phone, Receipt, Shield, Smartphone,
     Sparkles,
+    LocateFixed,
     Upload, User,
     Wrench
 } from 'lucide-vue-next';
@@ -722,6 +728,9 @@ import SendEmailDialog from './SendEmailDialog.vue';
 
 const asset = defineModel<Asset | null>('asset');
 const open = defineModel<boolean>('open');
+const emit = defineEmits<{
+    (e: 'locate-in-table', assetId: number): void;
+}>();
 const images = ref<string[]>([]);
 const currentIndex = ref(0);
 
@@ -763,6 +772,11 @@ const isWarrantyValid = (warrantyEndDate: string): boolean => {
 const viewDocument = (url?: string) => {
     window.open(url || '', '_blank');
 }
+
+const emitLocateInTable = () => {
+    if (!asset.value?.id) return;
+    emit('locate-in-table', asset.value.id);
+};
 
 const getAsset = (assignment: AssetAssignment) => {
     return {

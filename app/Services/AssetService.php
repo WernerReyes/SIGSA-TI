@@ -211,13 +211,26 @@ class AssetService
                     'asset.type:id,name,doc_category',
                     'asset.brand:id,name',
                     'asset.model:id,name',
-                    'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id',
+                    'childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id,returned_at',
                     'childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id',
-                    'childrenAssignments.asset.type:id,name,doc_category'
+                    'childrenAssignments.asset.type:id,name,doc_category',
+                    'parentAssignment:id,asset_id,assigned_to_id,assigned_at,returned_at,parent_assignment_id',
+                    'parentAssignment.asset:id,name,brand_id,model_id,serial_number,type_id',
+                    'parentAssignment.asset.type:id,name,doc_category'
                 )
                 ->where('assigned_to_id', $user_id)
-                // ->whereNull('returned_at')
-                ->where('parent_assignment_id', null)
+                ->where(function ($query) {
+                    // 1) Asignaciones raíz (equipo principal), activas e históricas
+                    $query->whereNull('parent_assignment_id')
+                        // 2) Accesorios que siguen activos aunque su padre ya fue devuelto
+                        ->orWhere(function ($q) {
+                            $q->whereNotNull('parent_assignment_id')
+                                ->whereNull('returned_at')
+                                ->whereHas('parentAssignment', function ($parentQ) {
+                                    $parentQ->whereNotNull('returned_at');
+                                });
+                        });
+                })
                 ->orderBy('assigned_at', 'desc')->get();
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al obtener las asignaciones del usuario');
