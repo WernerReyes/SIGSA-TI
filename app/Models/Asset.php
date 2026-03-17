@@ -20,6 +20,7 @@ class Asset extends EloquentModel
         'status',
         // 'brand',
         // 'model',
+        
         'brand_id',
         'model_id',
         'color',

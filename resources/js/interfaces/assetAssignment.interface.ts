@@ -17,6 +17,7 @@ export interface AssetAssignment {
 
     comment?: string;
     return_comment?: string | null;
+    returned_together?: boolean | null;
 
     return_reason?: ReturnReason | null;
     parent_assignment_id?: number | null;

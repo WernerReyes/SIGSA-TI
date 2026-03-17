@@ -20,6 +20,7 @@ class AssetAssignment extends Model
         'assigned_at',
         'returned_at',
         'comment',
+        'returned_together',
         'return_comment',
         'responsible_id',
         'return_reason',

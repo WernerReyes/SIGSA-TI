@@ -24,6 +24,7 @@ class DeliveryRecordUploadedMail extends Mailable
         public readonly string $mainAttachmentName,
         public readonly array $extraAttachments = [],
         public readonly ?string $customMessage = null,
+        public readonly array $messageSections = [],
         public readonly ?string $customSubject = null,
     ) {
     }
@@ -44,6 +45,9 @@ class DeliveryRecordUploadedMail extends Mailable
                 'assetName' => $this->assetName,
                 'assignedToName' => $this->assignedToName,
                 'customMessage' => $this->customMessage,
+                'messageSections' => $this->messageSections,
+                'mainAttachmentName' => $this->mainAttachmentName,
+                'extraAttachmentNames' => array_values(array_map(fn(array $item) => $item['name'] ?? '', $this->extraAttachments)),
             ],
         );
     }

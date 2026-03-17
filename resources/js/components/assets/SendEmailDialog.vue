@@ -95,7 +95,7 @@
                                 <Lock class="size-3" />
                                 Sección fija (no editable)
                             </p>
-                            <p class="text-sm leading-relaxed">{{ fixedEquipmentLine }}</p>
+                            <p class="text-sm leading-relaxed whitespace-pre-line">{{ fixedEquipmentLine }}</p>
                         </div>
 
                         <VeeField name="after_equipment" v-slot="{ componentField, errors }">
@@ -113,7 +113,8 @@
                         <div class="space-y-2 pt-2">
                             <label class="text-sm font-medium">Imágenes extra (opcional)</label>
                             <MultiUploader
-                                :max-files="10"
+                                :max-files="3"
+                                :max-size-mb="2"
                                 accept="image/*"
                                 preview-mode="gallery"
                                 @update:file="(files) => { extraImages = files; }"
@@ -148,8 +149,9 @@ import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { TypeName } from '@/interfaces/assetType.interface';
 import { router } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
-import { ArrowBigLeftDash, ArrowBigRightDash, CornerUpLeft, Lock, Mail } from 'lucide-vue-next';
+import { ArrowBigLeftDash, ArrowBigRightDash, Lock, Mail } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
+import { format, parseISO } from 'date-fns';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import z from 'zod';
@@ -200,13 +202,84 @@ const canSendAssignmentDoc = computed(() => availableDocs.value.includes(Deliver
 const canSendReturnDoc = computed(() => availableDocs.value.includes(DeliveryRecordType.DEVOLUTION));
 
 const getAssetName = (assignment: AssetAssignment): string => {
-    const relatedAsset = assignment.parent_assignment?.asset || assignment.asset;
-    console.log('Related Asset:', relatedAsset, assignment);
+    // const relatedAsset = assignment.parent_assignment?.asset || assignment.asset;
+    let relatedAsset = assignment.asset;
+    if (assignment.parent_assignment && !assignment.parent_assignment.returned_at) {
+        relatedAsset = assignment.parent_assignment.asset;
+    }
+
     return relatedAsset?.full_name || `AST-${relatedAsset?.id || assignment.asset_id}`;
+};
+
+const getSerial = (assignment: AssetAssignment): string => {
+    const relatedAsset = assignment.parent_assignment?.asset || assignment.asset;
+    return relatedAsset?.serial_number || 'N/A';
+};
+
+const getAssignedUserName = (assignment: AssetAssignment): string => {
+    return assignment.assigned_to?.full_name || 'colaborador asignado';
+};
+
+const getEventDate = (assignment: AssetAssignment, documentType: DeliveryRecordType): string => {
+    const rawDate = documentType === DeliveryRecordType.DEVOLUTION
+        ? assignment.returned_at
+        : assignment.assigned_at;
+
+    if (!rawDate) return 'fecha no registrada';
+
+    try {
+        return format(parseISO(rawDate), 'dd/MM/yyyy');
+    } catch {
+        return rawDate;
+    }
+};
+
+const getAccessoriesNames = (assignment: AssetAssignment): string[] => {
+    // const baseAssignment = assignment.parent_assignment || assignment;
+    let baseAssignment = assignment;
+    if (assignment.parent_assignment && !assignment.parent_assignment.returned_at) {
+        baseAssignment = assignment.parent_assignment;
+    }
+
+    if (baseAssignment.returned_at && values.document_type === DeliveryRecordType.DEVOLUTION) {
+        // En caso de devolución, mostrar solo los accesorios devueltos con el equipo
+        return (baseAssignment.children_assignments || [])
+            .filter(child => child.returned_at) // Filtrar solo los accesorios que han sido devueltos
+            .map(child => child.asset?.full_name || `AST-${child.asset_id}`)
+            .filter((name, index, arr) => !!name && arr.indexOf(name) === index);
+    }
+
+
+    return (baseAssignment.children_assignments || [])
+        .map((child) => child.asset?.full_name || `AST-${child.asset_id}`)
+        .filter((name, index, arr) => !!name && arr.indexOf(name) === index);
+};
+
+const indentBlock = (text: string, spaces = 4): string => {
+    const indent = ' '.repeat(spaces);
+    return text
+        .split('\n')
+        .map((line) => `${indent}${line}`)
+        .join('\n');
 };
 
 const getDefaultTextParts = (assignment: AssetAssignment, documentType: DeliveryRecordType) => {
     const assetName = getAssetName(assignment);
+    const accessories = getAccessoriesNames(assignment);
+    const dateLabel = getEventDate(assignment, documentType);
+    const assignedTo = getAssignedUserName(assignment);
+
+    const base = {
+        greeting: 'Estimada Sr. Cecilia,',
+        detailsIntro: documentType === DeliveryRecordType.ASSIGNMENT
+            ? 'A continuación, se detallan los datos correspondientes al activo entregado:'
+            : 'A continuación, se detallan los datos correspondientes al activo devuelto:',
+        assetTitle: documentType === DeliveryRecordType.ASSIGNMENT ? 'Activo entregado' : 'Activo devuelto',
+        accessoriesTitle: 'Accesorios incluidos',
+        accessories,
+        signatureLabel: 'Atentamente,',
+        signatureArea: 'Área de Sistemas\nDepartamento de Tecnología',
+    };
 
     if (documentType === DeliveryRecordType.DEVOLUTION) {
         const relatedAsset = assignment.parent_assignment?.asset || assignment.asset;
@@ -214,26 +287,26 @@ const getDefaultTextParts = (assignment: AssetAssignment, documentType: Delivery
 
         if (isCellphone) {
             return {
-                greeting: 'Estimada Sr. Cecilia,',
-                beforeEquipment: 'Se informa que',
-                fixedEquipment: `el equipo ${assetName} y accesorios ha sido devuelto`,
-                afterEquipment: 'y se procedera a entregar para su custodia.',
+                ...base,
+                introParagraph: `Por medio del presente correo se deja constancia de que el siguiente activo ha sido devuelto satisfactoriamente por el colaborador ${assignedTo} el día ${dateLabel}.`,
+                closingParagraph: 'Se deja constancia de que el equipo y los accesorios mencionados han sido devueltos en correctas condiciones y se procederá a entregar para su custodia.',
+                fixedEquipment: `el equipo ${assetName} ha sido devuelto`,
             };
         }
 
         return {
-            greeting: 'Estimada Sr. Cecilia,',
-            beforeEquipment: 'Se informa que',
+            ...base,
+            introParagraph: `Por medio del presente correo se deja constancia de que el siguiente activo ha sido devuelto satisfactoriamente por el colaborador ${assignedTo} el día ${dateLabel}.`,
+            closingParagraph: 'Se deja constancia de que el equipo y los accesorios mencionados han sido devueltos en correctas condiciones.',
             fixedEquipment: `el equipo ${assetName} ha sido devuelto`,
-            afterEquipment: 'de manera correcta.',
         };
     }
 
     return {
-        greeting: 'Estimada Sr. Cecilia,',
-        beforeEquipment: 'Se informa que',
+        ...base,
+        introParagraph: `Por medio del presente correo se deja constancia de que el siguiente activo ha sido entregado satisfactoriamente al colaborador ${assignedTo} el día ${dateLabel}.`,
+        closingParagraph: 'Se deja constancia de que el equipo y los accesorios mencionados han sido entregados en correctas condiciones.',
         fixedEquipment: `el equipo ${assetName} ha sido entregado`,
-        afterEquipment: 'de manera correcta.',
     };
 };
 
@@ -245,8 +318,8 @@ const formSchema = toTypedSchema(z.object({
         message: 'El correo destino es obligatorio.',
     }).email('Debes ingresar un correo válido.'),
     greeting: z.string({ message: 'El saludo es obligatorio.' }).min(1, 'El saludo es obligatorio.').max(500, 'Texto demasiado largo.'),
-    before_equipment: z.string({ message: 'El texto principal es obligatorio.' }).min(1, 'El texto principal es obligatorio.').max(1500, 'Texto demasiado largo.'),
-    after_equipment: z.string({ message: 'El cierre es obligatorio.' }).min(1, 'El cierre es obligatorio.').max(1500, 'Texto demasiado largo.'),
+    before_equipment: z.string({ message: 'El párrafo principal es obligatorio.' }).min(1, 'El párrafo principal es obligatorio.').max(3000, 'Texto demasiado largo.'),
+    after_equipment: z.string({ message: 'El cierre es obligatorio.' }).min(1, 'El cierre es obligatorio.').max(3000, 'Texto demasiado largo.'),
 }));
 
 const { errors, values, setFieldValue, setValues, resetForm, handleSubmit } = useForm({
@@ -276,9 +349,32 @@ const buildComposedMessage = (formValues: typeof values) => {
         formValues.greeting,
         '',
         formValues.before_equipment,
-        `    ${fixedEquipmentLine.value}`,
-        `    ${formValues.after_equipment}`,
+        indentBlock(fixedEquipmentLine.value, 4),
+        indentBlock(formValues.after_equipment || '', 4),
     ].join('\n');
+};
+
+const buildMessageSections = (formValues: typeof values) => {
+    if (!props.assignment) return null;
+
+    const currentDefaults = getDefaultTextParts(
+        props.assignment,
+        formValues.document_type as DeliveryRecordType,
+    );
+
+    return {
+        greeting: formValues.greeting,
+        intro_paragraph: formValues.before_equipment,
+        details_intro: currentDefaults.detailsIntro,
+        asset_title: currentDefaults.assetTitle,
+        asset_name: getAssetName(props.assignment),
+        serial: getSerial(props.assignment),
+        accessories_title: currentDefaults.accessoriesTitle,
+        accessories: currentDefaults.accessories,
+        closing_paragraph: formValues.after_equipment,
+        signature_label: currentDefaults.signatureLabel,
+        signature_area: currentDefaults.signatureArea,
+    };
 };
 
 const setDocumentType = (documentType: DeliveryRecordType) => {
@@ -287,8 +383,8 @@ const setDocumentType = (documentType: DeliveryRecordType) => {
 
     const defaults = getDefaultTextParts(props.assignment, documentType);
     setFieldValue('greeting', defaults.greeting);
-    setFieldValue('before_equipment', defaults.beforeEquipment);
-    setFieldValue('after_equipment', defaults.afterEquipment);
+    setFieldValue('before_equipment', defaults.introParagraph);
+    setFieldValue('after_equipment', defaults.closingParagraph);
 };
 
 watch([open, () => props.assignment], ([isOpen, assignment]) => {
@@ -316,8 +412,8 @@ watch([open, () => props.assignment], ([isOpen, assignment]) => {
         document_type: selectedType,
         email_to: '',
         greeting: defaults.greeting,
-        before_equipment: defaults.beforeEquipment,
-        after_equipment: defaults.afterEquipment,
+        before_equipment: defaults.introParagraph,
+        after_equipment: defaults.closingParagraph,
     });
 });
 
@@ -333,6 +429,7 @@ const handleSendEmail = handleSubmit((formValues) => {
         document_type: formValues.document_type,
         email_to: formValues.email_to,
         message: buildComposedMessage(formValues),
+        message_sections: buildMessageSections(formValues),
         extra_images: extraImages.value,
     }, {
         forceFormData: true,
@@ -358,7 +455,7 @@ watch(() => values.document_type, (newType) => {
 
     const defaults = getDefaultTextParts(props.assignment, newType as DeliveryRecordType);
     setFieldValue('greeting', defaults.greeting);
-    setFieldValue('before_equipment', defaults.beforeEquipment);
-    setFieldValue('after_equipment', defaults.afterEquipment);
+    setFieldValue('before_equipment', defaults.introParagraph);
+    setFieldValue('after_equipment', defaults.closingParagraph);
 });
 </script>

@@ -172,10 +172,12 @@ class AssetService
         return $asset->load(
             'type:id,name,doc_category',
 
-            'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at,parent_assignment_id',
+            'assignments:id,asset_id,assigned_to_id,assigned_at,returned_at,parent_assignment_id,returned_together',
             // 'assignments.asset:id,type_id',
             // 'assignments.asset.type:id,name,doc_category',
             'assignments.assignedTo:staff_id,firstname,lastname,dept_id',
+            'assignments.asset:id,name,brand_id,model_id,serial_number,type_id',
+            'assignments.asset.type:id,name',
             'assignments.deliveryDocument',
             'assignments.returnDocument',
 
@@ -224,12 +226,12 @@ class AssetService
                     $query->whereNull('parent_assignment_id')
                         // 2) Accesorios que siguen activos aunque su padre ya fue devuelto
                         ->orWhere(function ($q) {
-                            $q->whereNotNull('parent_assignment_id')
-                                ->whereNull('returned_at')
-                                ->whereHas('parentAssignment', function ($parentQ) {
-                                    $parentQ->whereNotNull('returned_at');
-                                });
-                        });
+                        $q->whereNotNull('parent_assignment_id')
+                            ->whereNull('returned_at')
+                            ->whereHas('parentAssignment', function ($parentQ) {
+                                $parentQ->whereNotNull('returned_at');
+                            });
+                    });
                 })
                 ->orderBy('assigned_at', 'desc')->get();
         } catch (\Exception $e) {
@@ -991,6 +993,7 @@ class AssetService
 
                         AssetAssignment::whereIn('id', $childAssignments->pluck('id'))->update([
                             // 'parent_assignment_id' => null,
+                            'returned_together' => true,
                             'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                             'return_comment' => "Devuelto junto al equipo principal {$asset->full_name} por " . ReturnReason::labels(ReturnReason::from($dto->return_reason)),
                             'responsible_id' => $responsible->staff_id,
@@ -1018,6 +1021,7 @@ class AssetService
 
                 $assignment->update([
                     // 'parent_assignment_id' => null,
+                    'returned_together' => count($dto->accessories) > 0,
                     'returned_at' => Carbon::parse($dto->return_date)->toDateTimeString(),
                     'return_comment' => $dto->return_comment,
                     'responsible_id' => $responsible->staff_id,
@@ -1278,8 +1282,12 @@ class AssetService
             $current = $assignment;
 
             if ($assignment->parent_assignment_id) {
-                if ($assignment->parentAssignment->asset->status !== AssetStatus::ASSIGNED->value && $dto->type === DeliveryRecordType::ASSIGNMENT->value) {
+                if ($dto->type === DeliveryRecordType::ASSIGNMENT->value) {
                     $current = $assignment->parentAssignment;
+                } else {
+                    if ($assignment->returned_together) {
+                        $current = $assignment->parentAssignment;
+                    }
                 }
             }
 
@@ -1411,9 +1419,13 @@ class AssetService
                 throw new BadRequestException('No existe el documento seleccionado para enviar por correo.');
             }
 
-            $mainAsset = $assignment->parentAssignment?->asset ?: $assignment->asset;
+            $mainAsset = $assignment->asset;
+            if ($assignment->parent_assignment_id && !$assignment->parentAssignment->returned_at) {
+                $mainAsset = $assignment->parentAssignment->asset;
+            }
             $recordTypeLabel = $dto->documentType === DeliveryRecordType::ASSIGNMENT->value ? 'entrega' : 'devolución';
             $subject = 'Constancia de ' . $recordTypeLabel . ' - ' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id));
+            $messageForLog = $dto->message ?: $this->flattenSectionsToText($dto->messageSections);
 
             $extraAttachments = [];
             $extraImageNames = [];
@@ -1433,22 +1445,23 @@ class AssetService
                 mainAttachmentPath: Storage::disk('public')->path($record->file_path),
                 mainAttachmentName: basename($record->file_path),
                 extraAttachments: $extraAttachments,
-                customMessage: $dto->message,
+                customMessage: $messageForLog,
+                messageSections: $dto->messageSections,
                 customSubject: $subject,
             ));
 
-            AssignmentEmailLog::create([
-                'assignment_id' => $assignment->id,
-                'delivery_record_id' => $record->id,
-                'sent_by' => auth()->user()->staff_id,
-                'document_type' => $dto->documentType,
-                'recipient_email' => $dto->emailTo,
-                'subject' => $subject,
-                'message' => $dto->message,
-                'document_path' => $record->file_path,
-                'extra_image_names' => $extraImageNames,
-                'sent_at' => now(),
-            ]);
+            // AssignmentEmailLog::create([
+            //     'assignment_id' => $assignment->id,
+            //     'delivery_record_id' => $record->id,
+            //     'sent_by' => auth()->user()->staff_id,
+            //     'document_type' => $dto->documentType,
+            //     'recipient_email' => $dto->emailTo,
+            //     'subject' => $subject,
+            //     'message' => $messageForLog,
+            //     'document_path' => $record->file_path,
+            //     'extra_image_names' => $extraImageNames,
+            //     'sent_at' => now(),
+            // ]);
         } catch (\Exception $e) {
             if ($e instanceof BadRequestException) {
                 throw $e;
@@ -1456,6 +1469,31 @@ class AssetService
 
             throw new InternalErrorException('Error al enviar el correo del documento: ' . $e->getMessage());
         }
+    }
+
+    private function flattenSectionsToText(array $sections): string
+    {
+        $accessories = $sections['accessories'] ?? [];
+        $accessoriesText = is_array($accessories) && count($accessories)
+            ? implode("\n", array_map(fn($item) => '- ' . $item, $accessories))
+            : '- Sin accesorios.';
+
+        return implode("\n", array_filter([
+            $sections['greeting'] ?? null,
+            null,
+            $sections['intro_paragraph'] ?? null,
+            null,
+            $sections['details_intro'] ?? null,
+            ($sections['asset_title'] ?? 'Activo') . ': ' . ($sections['asset_name'] ?? '-'),
+            'Serie: ' . ($sections['serial'] ?? 'N/A'),
+            ($sections['accessories_title'] ?? 'Accesorios') . ':',
+            $accessoriesText,
+            null,
+            $sections['closing_paragraph'] ?? null,
+            null,
+            $sections['signature_label'] ?? null,
+            $sections['signature_area'] ?? null,
+        ], fn($line) => $line !== null));
     }
 
 

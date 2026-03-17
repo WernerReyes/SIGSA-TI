@@ -789,8 +789,13 @@ const getDeliveryUrl = (assignment: AssetAssignment): string => {
 };
 
 const getReturnUrl = (assignment: AssetAssignment): string => {
-    if (!assignment.returned_at) return '';
-    return assignment.return_document?.file_url || assignment.parent_assignment?.return_document?.file_url || '';
+    
+    let url = assignment.return_document?.file_url || '';
+    if (assignment.parent_assignment_id && assignment.returned_together) {
+    
+        url = assignment.parent_assignment?.return_document?.file_url || '';
+    }
+    return url;
 };
 
 const isInheritedDeliveryDocument = (assignment: AssetAssignment): boolean => {
@@ -799,7 +804,12 @@ const isInheritedDeliveryDocument = (assignment: AssetAssignment): boolean => {
 
 const isInheritedReturnDocument = (assignment: AssetAssignment): boolean => {
     if (!assignment.returned_at) return false;
-    return !assignment.return_document?.file_url && !!assignment.parent_assignment?.return_document?.file_url;
+    let file = assignment.return_document?.file_url;
+    // if (assignment.parent_assignment_id && assignment.returned_together) {
+    //     file = assignment.parent_assignment?.return_document?.file_url;
+    // };
+    
+    return !file && !!assignment.parent_assignment?.return_document?.file_url;
 };
 
 const returnedChildrenCount = (assignment: AssetAssignment): number => {
@@ -929,6 +939,14 @@ const handleUploadSignedDocument = () => {
                                 id: assignment.return_document?.id || 0,
                                 ...assignment.return_document,
                                 file_url: fileUrl
+                            },
+                            parent_assignment: {
+                                ...assignment.parent_assignment,
+                                return_document: {
+                                    id: assignment.parent_assignment?.return_document?.id || 0,
+                                    ...assignment.parent_assignment?.return_document,
+                                    file_url: assignment.returned_together ? fileUrl : assignment.parent_assignment?.return_document?.file_url
+                                }
                             }
                         } as AssetAssignment;
                     }
