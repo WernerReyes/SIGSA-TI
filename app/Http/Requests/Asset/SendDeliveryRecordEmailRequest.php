@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\asset;
+namespace App\Http\Requests\Asset;
 
 use App\Enums\DeliveryRecord\DeliveryRecordType;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UploadDeliveryRecordRequest extends FormRequest
+class SendDeliveryRecordEmailRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,25 +23,23 @@ class UploadDeliveryRecordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
-            'type' => 'required|in:' . implode(',', DeliveryRecordType::values()),
-            'send_email' => 'nullable|boolean',
-            'email_to' => 'required_if:send_email,1|nullable|email|max:255',
+            'document_type' => 'required|in:' . implode(',', DeliveryRecordType::values()),
+            'email_to' => 'required|email|max:255',
+            'message' => 'required|string|max:5000',
             'extra_images' => 'nullable|array|max:10',
             'extra_images.*' => 'file|image|mimes:jpg,jpeg,png|max:5120',
-
         ];
     }
 
     public function messages(): array
     {
         return [
-            'file.required' => 'El archivo es obligatorio.',
-            'file.file' => 'El archivo debe ser un archivo válido.',
-            'file.mimes' => 'El archivo debe ser un archivo de tipo: pdf, jpg, jpeg, png.',
-            'file.max' => 'El tamaño máximo del archivo es de 5MB.',
-            'email_to.required_if' => 'El correo destino es obligatorio cuando deseas enviar correo.',
+            'document_type.required' => 'Debes seleccionar qué documento enviar.',
+            'document_type.in' => 'El tipo de documento seleccionado no es válido.',
+            'email_to.required' => 'El correo destino es obligatorio.',
             'email_to.email' => 'Debes ingresar un correo válido.',
+            'message.required' => 'El mensaje es obligatorio.',
+            'message.max' => 'El mensaje no puede exceder 5000 caracteres.',
             'extra_images.array' => 'Las imágenes adicionales deben enviarse como un arreglo.',
             'extra_images.max' => 'Solo puedes agregar hasta 10 imágenes adicionales.',
             'extra_images.*.image' => 'Los adjuntos extra deben ser imágenes.',

@@ -21,6 +21,7 @@ Route::middleware('department:' . Allowed::SYSTEM_TI->value . ',' . Allowed::RRH
         Route::get('/generate-accessory-assignment-doc/{assignment}', [AssetController::class, 'generateAccessoryAssignmentDocument'])->name('assets.generateAccessoryAssignmentDocument');
         Route::get('/generate-return-doc/{assignment}', [AssetController::class, 'generateReturnDocument'])->name('assets.generateReturnDocument');
         Route::post('/delivery-records/{assignment}', [AssetController::class, 'uploadDeliveryRecord'])->name('assets.uploadDeliveryRecord');
+        Route::post('/delivery-records/{assignment}/send-email', [AssetController::class, 'sendDeliveryRecordEmail'])->name('assets.sendDeliveryRecordEmail');
         Route::post('/invoice-documents/{asset}', [AssetController::class, 'uploadInvoiceDocument'])->name('assets.uploadInvoiceDocument');
     });
 });

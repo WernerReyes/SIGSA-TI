@@ -12,27 +12,27 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
 
-        $isDev = config('app.env') === 'local';
-        if ($isDev) {
-            $this->call([
-                AssetTypeSeeder::class,
-                InfrastructureEventSeeder::class,
-                BrandSeeder::class,
-                AssetModelSeeder::class,
-                AssetSeeder::class,
-                SlaPolicySeeder::class,
-            ]);
+        // $isDev = config('app.env') === 'local';
+        // if ($isDev) {
+        //     $this->call([
+        //         AssetTypeSeeder::class,
+        //         InfrastructureEventSeeder::class,
+        //         BrandSeeder::class,
+        //         AssetModelSeeder::class,
+        //         AssetSeeder::class,
+        //         SlaPolicySeeder::class,
+        //     ]);
 
-        } else {
-            $this->call([
-                AssetTypeSeeder::class,
-                BrandSeeder::class,
-                AssetModelSeeder::class,
-                AssetSeeder::class,
-                SlaPolicySeeder::class,
-            ]);
+        // } else {
+        //     $this->call([
+        //         AssetTypeSeeder::class,
+        //         BrandSeeder::class,
+        //         AssetModelSeeder::class,
+        //         AssetSeeder::class,
+        //         SlaPolicySeeder::class,
+        //     ]);
 
-        }
+        // }
     }
 
 

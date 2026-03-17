@@ -464,6 +464,12 @@
                                             Devolución
                                             <MonitorSmartphone class="size-4" />
                                         </Button>
+
+                                        <Button v-if="availableDocumentTypes(assignment).length > 0" variant="outline"
+                                            size="sm" class="gap-2" @click="openSendEmailModal(assignment)">
+                                            <Mail class="size-4" />
+                                            Enviar correo
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -625,14 +631,23 @@
             </DialogHeader>
 
             <FileUpload :current-url="url" v-model:reset="resetUpload" @error="(msg) => toast.error(msg)"
-                accept="application/pdf,image/*" :asset-id="asset?.id" @update:file="handleUploadSignedDocument($event)"
+                accept="application/pdf,image/*" :asset-id="asset?.id" @update:file="(file) => { uploadFile = file; }"
                 @close="openUploadDialog = false" />
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <Button @click="handleUploadSignedDocument" :disabled="!uploadFile || isUploading">
+                    Guardar documento
+                </Button>
+            </div>
 
             <!-- Upload form content goes here -->
 
         </DialogContent>
 
     </Dialog>
+
+    <SendEmailDialog v-model:open="openSendEmailDialog" :assignment="selectedAssignmentForEmail" 
+        @sent="selectedAssignmentForEmail = null" />
 
     <Carousel type="dialog" :items="images" v-model:current-index="currentIndex"
         @close="() => { images = []; currentIndex = 0; }">
@@ -668,7 +683,7 @@ import {
     TabsList,
     TabsTrigger
 } from '@/components/ui/tabs';
-import {
+import {            
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -676,7 +691,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useAsset } from '@/composables/useAsset';
 import { type Asset, statusOp } from '@/interfaces/asset.interface';
-import { AssetAssignment } from '@/interfaces/assetAssignment.interface';
+import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 
 import ScrollArea from '@/components/ui/scroll-area/ScrollArea.vue';
 import { TypeName, assetTypeOp } from '@/interfaces/assetType.interface';
@@ -691,16 +706,18 @@ import {
     FileText,
     HardDrive,
     History,
+    Mail,
     MemoryStick, Monitor, MonitorSmartphone, Palette, Phone, Receipt, Shield, Smartphone,
     Sparkles,
     Upload, User,
     Wrench
 } from 'lucide-vue-next';
 // import { router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import Carousel from '../Carousel.vue';
 import FileUpload from '../FileUpload.vue';
+import SendEmailDialog from './SendEmailDialog.vue';
 
 
 const asset = defineModel<Asset | null>('asset');
@@ -716,6 +733,11 @@ const type = ref<DeliveryRecordType>(DeliveryRecordType.ASSIGNMENT);
 const assignmentId = ref<number | null>(null);
 const resetUpload = ref(false);
 const url = ref<string>('');
+
+const openSendEmailDialog = ref(false);
+const selectedAssignmentForEmail = ref<AssetAssignment | null>(null);
+const uploadFile = ref<File | null>(null);
+const isUploading = ref(false);
 
 
 const assignments = computed({
@@ -812,11 +834,64 @@ const getDocumentName = (url?: string): string => {
     return decodeURIComponent(fileName);
 };
 
-const handleUploadSignedDocument = (file: File) => {
+watch(openUploadDialog, (isOpen) => {
+    if (!isOpen) {
+        uploadFile.value = null;
+        resetUpload.value = true;
+        isUploading.value = false;
+    }
+});
+
+watch(openSendEmailDialog, (isOpen) => {
+    if (!isOpen) {
+        selectedAssignmentForEmail.value = null;
+    }
+});
+
+const availableDocumentTypes = (assignment: AssetAssignment): DeliveryRecordType[] => {
+    const types: DeliveryRecordType[] = [];
+
+    if (getDeliveryUrl(assignment)) {
+        types.push(DeliveryRecordType.ASSIGNMENT);
+    }
+
+    if (getReturnUrl(assignment)) {
+        types.push(DeliveryRecordType.DEVOLUTION);
+    }
+
+    return types;
+};
+
+const openSendEmailModal = (assignment: AssetAssignment) => {
+    const types = availableDocumentTypes(assignment);
+
+    if (!types.length) {
+        toast.error('No hay documento de entrega o devolución cargado para enviar.');
+        return;
+    }
+
+    console.log('Available document types for email:', types, assignment);
+
+    selectedAssignmentForEmail.value = {
+        ...assignment,
+        // asset: 
+    };
+    openSendEmailDialog.value = true;
+};
+
+const handleUploadSignedDocument = () => {
+    if (!uploadFile.value || !assignmentId.value) {
+        toast.error('Debes seleccionar un documento para continuar.');
+        return;
+    }
+
+    isUploading.value = true;
+
     router.post(`/assets/delivery-records/${assignmentId.value}`, {
-        file: file,
+        file: uploadFile.value,
         type: type.value,
     }, {
+        forceFormData: true,
         only: [],
         onFlash(flash) {
             const fileUrl = flash.file_url as string;
@@ -846,15 +921,18 @@ const handleUploadSignedDocument = (file: File) => {
                 }
                 return assignment;
             });
+
+            toast.success('Documento guardado correctamente.');
+
+            openUploadDialog.value = false;
         },
 
         onFinish: () => {
             resetUpload.value = true;
+            isUploading.value = false;
         }
 
     });
 
 };
-
-
 </script>

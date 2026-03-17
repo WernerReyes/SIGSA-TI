@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
 
+use App\DTOs\Asset\SendDeliveryRecordEmailDto;
+use App\Mail\DeliveryRecordUploadedMail;
 use App\DTOs\Asset\AssetFiltersDto;
 use App\DTOs\Asset\AssetHistoryFiltersDto;
 use App\DTOs\Asset\AssignAssetDto;
@@ -26,6 +28,7 @@ use App\Models\AssetHistory;
 use App\Models\AssetModel;
 use App\Models\AssetReparation;
 use App\Models\AssetType;
+use App\Models\AssignmentEmailLog;
 
 use App\Models\Brand;
 use App\Utils\CompressImage;
@@ -35,6 +38,7 @@ use App\Models\Ticket;
 
 use DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\TemplateProcessor;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
@@ -1296,9 +1300,31 @@ class AssetService
                 ]);
             });
 
+            if ($dto->sendEmail && $dto->emailTo) {
+                $recordTypeLabel = $dto->type === DeliveryRecordType::ASSIGNMENT->value ? 'entrega' : 'devolución';
+                $extraAttachments = [];
 
+                foreach ($dto->extraImages as $image) {
+                    $extraAttachments[] = [
+                        'path' => $image->getRealPath(),
+                        'name' => $image->getClientOriginalName(),
+                    ];
+                }
 
-            return Storage::disk('public')->url($path);
+                Mail::to($dto->emailTo)->send(new DeliveryRecordUploadedMail(
+                    recordTypeLabel: $recordTypeLabel,
+                    assetName: $current->asset?->full_name ?? ('AST-' . $current->asset_id),
+                    assignedToName: $current->assignedTo?->full_name ?? 'N/A',
+                    mainAttachmentPath: Storage::disk('public')->path($path),
+                    mainAttachmentName: $dto->file->getClientOriginalName(),
+                    extraAttachments: $extraAttachments,
+                ));
+            }
+
+            return [
+                'file_url' => asset('storage/' . ltrim($path, '/')),
+                'mail_sent' => $dto->sendEmail,
+            ];
         } catch (\Exception $e) {
 
             if ($e instanceof NotFoundHttpException) {
@@ -1344,6 +1370,78 @@ class AssetService
 
         } catch (\Exception $e) {
             throw new InternalErrorException('Error al subir el documento de factura');
+        }
+    }
+
+    public function sendDeliveryRecordEmail(AssetAssignment $assignment, SendDeliveryRecordEmailDto $dto): void
+    {
+        try {
+            $assignment->loadMissing(
+                'asset.type',
+                'asset.brand',
+                'asset.model',
+                'assignedTo',
+                'deliveryDocument',
+                'returnDocument',
+                'parentAssignment.deliveryDocument',
+                'parentAssignment.returnDocument'
+            );
+
+            $record = null;
+            if ($dto->documentType === DeliveryRecordType::ASSIGNMENT->value) {
+                $record = $assignment->deliveryDocument ?: $assignment->parentAssignment?->deliveryDocument;
+            } else {
+                $record = $assignment->returnDocument ?: $assignment->parentAssignment?->returnDocument;
+            }
+
+            if (!$record) {
+                throw new BadRequestException('No existe el documento seleccionado para enviar por correo.');
+            }
+
+            $mainAsset = $assignment->parentAssignment?->asset ?: $assignment->asset;
+            $recordTypeLabel = $dto->documentType === DeliveryRecordType::ASSIGNMENT->value ? 'entrega' : 'devolución';
+            $subject = 'Constancia de ' . $recordTypeLabel . ' - ' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id));
+
+            $extraAttachments = [];
+            $extraImageNames = [];
+            foreach ($dto->extraImages as $image) {
+                $originalName = $image->getClientOriginalName();
+                $extraAttachments[] = [
+                    'path' => $image->getRealPath(),
+                    'name' => $originalName,
+                ];
+                $extraImageNames[] = $originalName;
+            }
+
+            Mail::to($dto->emailTo)->send(new DeliveryRecordUploadedMail(
+                recordTypeLabel: $recordTypeLabel,
+                assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
+                assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
+                mainAttachmentPath: Storage::disk('public')->path($record->file_path),
+                mainAttachmentName: basename($record->file_path),
+                extraAttachments: $extraAttachments,
+                customMessage: $dto->message,
+                customSubject: $subject,
+            ));
+
+            AssignmentEmailLog::create([
+                'assignment_id' => $assignment->id,
+                'delivery_record_id' => $record->id,
+                'sent_by' => auth()->user()->staff_id,
+                'document_type' => $dto->documentType,
+                'recipient_email' => $dto->emailTo,
+                'subject' => $subject,
+                'message' => $dto->message,
+                'document_path' => $record->file_path,
+                'extra_image_names' => $extraImageNames,
+                'sent_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof BadRequestException) {
+                throw $e;
+            }
+
+            throw new InternalErrorException('Error al enviar el correo del documento: ' . $e->getMessage());
         }
     }
 

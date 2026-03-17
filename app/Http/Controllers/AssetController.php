@@ -6,12 +6,14 @@ use App\DTOs\Asset\AssetFiltersDto;
 use App\DTOs\Asset\AssetHistoryFiltersDto;
 use App\DTOs\Asset\AssignAssetDto;
 use App\DTOs\Asset\DevolveAssetDto;
+use App\DTOs\Asset\SendDeliveryRecordEmailDto;
 use App\DTOs\Asset\StoreAssetDto;
 use App\DTOs\Asset\UpdateAssetDto;
 use App\DTOs\Asset\UpdateStatusDto;
 use App\DTOs\Asset\UploadDeliveryRecordDto;
 use App\Http\Requests\Asset\AssignAssetRequest;
 use App\Http\Requests\Asset\DevolveAssetRequest;
+use App\Http\Requests\Asset\SendDeliveryRecordEmailRequest;
 use App\Http\Requests\Asset\StoreAssetRequest;
 use App\Http\Requests\Asset\UpdateAssetRequest;
 use App\Http\Requests\Asset\UpdateStatusRequest;
@@ -312,10 +314,11 @@ class AssetController extends Controller
         $validated = $request->validated();
         $dto = UploadDeliveryRecordDto::fromArray($validated);
         try {
-            $file_url = $assetService->uploadDeliveryRecord($assignment,$dto);
+            $result = $assetService->uploadDeliveryRecord($assignment, $dto);
             Inertia::flash([
                 'success' => 'Registro de entrega subido correctamente.',
-                'file_url' => $file_url,
+                'file_url' => $result['file_url'],
+                'mail_sent' => $result['mail_sent'],
                 'timestamp' => now()->timestamp,
                 'error' => null,
             ]);
@@ -350,6 +353,32 @@ class AssetController extends Controller
                 'timestamp' => now()->timestamp,
             ]);
         }
+        return back();
+    }
+
+    public function sendDeliveryRecordEmail(SendDeliveryRecordEmailRequest $request, AssetAssignment $assignment, AssetService $assetService)
+    {
+        $validated = $request->validated();
+        $dto = SendDeliveryRecordEmailDto::fromArray($validated);
+
+        try {
+            $assetService->sendDeliveryRecordEmail($assignment, $dto);
+
+            Inertia::flash([
+                'success' => 'Correo enviado correctamente.',
+                'mail_sent' => true,
+                'timestamp' => now()->timestamp,
+                'error' => null,
+            ]);
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'mail_sent' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
         return back();
     }
 }

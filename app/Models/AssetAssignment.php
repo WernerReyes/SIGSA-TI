@@ -94,4 +94,9 @@ class AssetAssignment extends Model
     {
         return $this->belongsTo(Asset::class, 'asset_id');
     }
+
+    public function emailLogs()
+    {
+        return $this->hasMany(AssignmentEmailLog::class, 'assignment_id');
+    }
 }
