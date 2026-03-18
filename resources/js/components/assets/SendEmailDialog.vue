@@ -32,14 +32,108 @@
                 </div>
             </DialogHeader>
 
-            <form class="flex flex-col" @submit.prevent="handleSendEmail">
+            <form class="flex flex-col" @submit.prevent="submitForm">
                 <div class="px-4 py-2 border-b">
-                    <VeeField name="email_to" v-slot="{ componentField, errors }">
+                    <VeeField name="email_to" v-slot="{ errors }">
                         <div class="flex items-center gap-3">
                             <span class="text-sm text-muted-foreground w-12">Para</span>
-                            <Input v-bind="componentField" type="email" placeholder="correo@empresa.com"
-                                class="shadow-none focus-visible:ring-0" :disabled="isSendingEmail" />
+                            <div class="flex-1 relative">
+                                <div class="min-h-10 rounded-md border bg-background px-2 py-1 flex flex-wrap items-center gap-1">
+                                    <Badge v-for="(chip, index) in toChips" :key="`to-${chip.email}-${index}`"
+                                        variant="secondary" class="h-6 px-2 text-xs gap-1">
+                                        {{ chip.label }}
+                                        <button type="button" class="ml-1 text-muted-foreground hover:text-foreground"
+                                            @click="removeRecipient('to', index)">x</button>
+                                    </Badge>
+
+                                    <input
+                                        v-model="toQuery"
+                                        type="text"
+                                        class="flex-1 min-w-50 border-0 bg-transparent outline-none text-sm"
+                                        placeholder="correo1@empresa.com; correo2@empresa.com"
+                                        :disabled="isSendingEmail"
+                                        @focus="recipientFocus = 'to'; ensureUsersForSuggestions()"
+                                        @blur="handleRecipientBlur"
+                                        @keydown="onRecipientKeydown($event, 'to')"
+                                        @paste="onRecipientPaste($event, 'to')"
+                                    />
+                                </div>
+
+                                <div v-if="showSuggestions('to')" class="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-md p-1 max-h-52 overflow-y-auto">
+                                    <div v-if="isLoadingUserSuggestions" class="px-2 py-1.5 text-xs text-muted-foreground">
+                                        Cargando sugerencias...
+                                    </div>
+                                    <button
+                                        v-for="(user, idx) in filteredUsersTo"
+                                        :key="`to-suggest-${user.staff_id}`"
+                                        type="button"
+                                        class="w-full text-left rounded-sm px-2 py-1.5 text-sm"
+                                        :class="toSuggestionIndex === idx ? 'bg-muted' : 'hover:bg-muted'"
+                                        @mouseenter="toSuggestionIndex = idx"
+                                        @mousedown.prevent="selectSuggestedUser('to', user)"
+                                    >
+                                        <span class="font-medium">{{ user.fullName }}</span>
+                                        <span class="text-muted-foreground"> - {{ user.email }}</span>
+                                    </button>
+                                    <div v-if="!isLoadingUserSuggestions && !filteredUsersTo.length" class="px-2 py-1.5 text-xs text-muted-foreground">
+                                        Sin coincidencias
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        <FieldError v-if="errors.length">{{ errors[0] }}</FieldError>
+                    </VeeField>
+                </div>
+
+                <div class="px-4 py-2 border-b">
+                    <VeeField name="email_cc" v-slot="{ errors }">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-muted-foreground w-12">CC</span>
+                            <div class="flex-1 relative">
+                                <div class="min-h-10 rounded-md border bg-background px-2 py-1 flex flex-wrap items-center gap-1">
+                                    <Badge v-for="(chip, index) in ccChips" :key="`cc-${chip.email}-${index}`"
+                                        variant="secondary" class="h-6 px-2 text-xs gap-1">
+                                        {{ chip.label }}
+                                        <button type="button" class="ml-1 text-muted-foreground hover:text-foreground"
+                                            @click="removeRecipient('cc', index)">x</button>
+                                    </Badge>
+
+                                    <input
+                                        v-model="ccQuery"
+                                        type="text"
+                                        class="flex-1 min-w-50 border-0 bg-transparent outline-none text-sm"
+                                        placeholder="cc1@empresa.com; cc2@empresa.com"
+                                        :disabled="isSendingEmail"
+                                        @focus="recipientFocus = 'cc'; ensureUsersForSuggestions()"
+                                        @blur="handleRecipientBlur"
+                                        @keydown="onRecipientKeydown($event, 'cc')"
+                                        @paste="onRecipientPaste($event, 'cc')"
+                                    />
+                                </div>
+
+                                <div v-if="showSuggestions('cc')" class="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-md p-1 max-h-52 overflow-y-auto">
+                                    <div v-if="isLoadingUserSuggestions" class="px-2 py-1.5 text-xs text-muted-foreground">
+                                        Cargando sugerencias...
+                                    </div>
+                                    <button
+                                        v-for="(user, idx) in filteredUsersCc"
+                                        :key="`cc-suggest-${user.staff_id}`"
+                                        type="button"
+                                        class="w-full text-left rounded-sm px-2 py-1.5 text-sm"
+                                        :class="ccSuggestionIndex === idx ? 'bg-muted' : 'hover:bg-muted'"
+                                        @mouseenter="ccSuggestionIndex = idx"
+                                        @mousedown.prevent="selectSuggestedUser('cc', user)"
+                                    >
+                                        <span class="font-medium">{{ user.fullName }}</span>
+                                        <span class="text-muted-foreground"> - {{ user.email }}</span>
+                                    </button>
+                                    <div v-if="!isLoadingUserSuggestions && !filteredUsersCc.length" class="px-2 py-1.5 text-xs text-muted-foreground">
+                                        Sin coincidencias
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-muted-foreground mt-1">Separar correos con ; (punto y coma)</p>
                         <FieldError v-if="errors.length">{{ errors[0] }}</FieldError>
                     </VeeField>
                 </div>
@@ -109,14 +203,15 @@
 <script setup lang="ts">
 import { FieldError } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { DeliveryRecordType } from '@/interfaces/deliveryRecord.interface';
 import { type AssetAssignment } from '@/interfaces/assetAssignment.interface';
 import { TypeName } from '@/interfaces/assetType.interface';
-import { router } from '@inertiajs/vue3';
+import type { User } from '@/interfaces/user.interface';
+import { router, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { ArrowBigLeftDash, ArrowBigRightDash, Lock, Mail } from 'lucide-vue-next';
 import { useForm, Field as VeeField } from 'vee-validate';
@@ -136,8 +231,229 @@ const emit = defineEmits<{
     (e: 'sent'): void;
 }>();
 
+type RecipientType = 'to' | 'cc';
+type RecipientChip = { email: string; label: string };
+
+const page = usePage();
 const isSendingEmail = ref(false);
 const extraImages = ref<File[]>([]);
+const toChips = ref<RecipientChip[]>([]);
+const ccChips = ref<RecipientChip[]>([]);
+const toQuery = ref('');
+const ccQuery = ref('');
+const recipientFocus = ref<RecipientType | null>(null);
+const toSuggestionIndex = ref(0);
+const ccSuggestionIndex = ref(0);
+const isLoadingUserSuggestions = ref(false);
+
+const ensureUsersForSuggestions = () => {
+    if (usersWithEmail.value.length || isLoadingUserSuggestions.value) {
+        return;
+    }
+
+    isLoadingUserSuggestions.value = true;
+    router.reload({
+        only: ['users'],
+        onFinish: () => {
+            isLoadingUserSuggestions.value = false;
+        },
+    });
+};
+
+const usersWithEmail = computed(() => {
+    const users = (page.props.users as User[] | undefined) || [];
+
+    return users
+        .filter((user) => !!user.email)
+        .map((user) => {
+            const fullName = user.full_name || `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.email || '';
+            return {
+                staff_id: user.staff_id,
+                fullName,
+                email: String(user.email || '').toLowerCase(),
+            };
+        });
+});
+
+const usersEmailSet = computed(() => new Set(usersWithEmail.value.map((user) => user.email)));
+
+const isValidEmail = (email: string) => /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(email);
+
+const syncRecipientsToForm = () => {
+    setFieldValue('email_to', toChips.value.map((chip) => chip.email).join(';'));
+    setFieldValue('email_cc', ccChips.value.map((chip) => chip.email).join(';'));
+};
+
+const recipientQuery = (type: RecipientType) => type === 'to' ? toQuery.value : ccQuery.value;
+
+const filteredUsersByType = (type: RecipientType) => {
+    const query = recipientQuery(type).trim().toLowerCase();
+    if (!query) return [];
+
+    const selected = new Set([
+        ...toChips.value.map((chip) => chip.email),
+        ...ccChips.value.map((chip) => chip.email),
+    ]);
+
+    return usersWithEmail.value
+        .filter((user) => !selected.has(user.email))
+        .filter((user) => user.email.includes(query) || user.fullName.toLowerCase().includes(query))
+        .slice(0, 8);
+};
+
+const filteredUsersTo = computed(() => filteredUsersByType('to'));
+const filteredUsersCc = computed(() => filteredUsersByType('cc'));
+
+const currentSuggestions = (type: RecipientType) => type === 'to' ? filteredUsersTo.value : filteredUsersCc.value;
+
+const showSuggestions = (type: RecipientType) => {
+    if (recipientFocus.value !== type) return false;
+    if (!recipientQuery(type).trim()) return false;
+    return isLoadingUserSuggestions.value || (type === 'to' ? filteredUsersTo.value : filteredUsersCc.value).length > 0;
+};
+
+const addRecipient = (type: RecipientType, emailRaw: string, label?: string): boolean => {
+    const email = emailRaw.trim().toLowerCase();
+    if (!email) return false;
+
+    if (email.includes(',')) {
+        toast.error('Usa ; para separar correos. No uses comas.');
+        return false;
+    }
+
+    if (!isValidEmail(email)) {
+        toast.error(`Correo inválido: ${email}`);
+        return false;
+    }
+
+    if (usersWithEmail.value.length > 0 && !usersEmailSet.value.has(email)) {
+        toast.error(`El correo ${email} no pertenece a un usuario registrado.`);
+        return false;
+    }
+
+    const all = [...toChips.value, ...ccChips.value].map((chip) => chip.email);
+    if (all.includes(email)) {
+        return true;
+    }
+
+    const user = usersWithEmail.value.find((item) => item.email === email);
+    const chip: RecipientChip = { email, label: label || user?.fullName || email };
+
+    if (type === 'to') {
+        toChips.value.push(chip);
+    } else {
+        ccChips.value.push(chip);
+    }
+
+    syncRecipientsToForm();
+    return true;
+};
+
+const consumeRecipientQuery = (type: RecipientType) => {
+    const queryRef = type === 'to' ? toQuery : ccQuery;
+    const raw = queryRef.value.trim();
+    if (!raw) return;
+
+    const tokens = raw.split(';').map((token) => token.trim()).filter(Boolean);
+    for (const token of tokens) {
+        addRecipient(type, token);
+    }
+
+    queryRef.value = '';
+};
+
+const removeRecipient = (type: RecipientType, index: number) => {
+    if (type === 'to') {
+        toChips.value.splice(index, 1);
+    } else {
+        ccChips.value.splice(index, 1);
+    }
+
+    syncRecipientsToForm();
+};
+
+const selectSuggestedUser = (type: RecipientType, user: { fullName: string; email: string }) => {
+    addRecipient(type, user.email, user.fullName);
+    if (type === 'to') {
+        toQuery.value = '';
+        toSuggestionIndex.value = 0;
+    } else {
+        ccQuery.value = '';
+        ccSuggestionIndex.value = 0;
+    }
+};
+
+const onRecipientKeydown = (event: KeyboardEvent, type: RecipientType) => {
+    const suggestions = currentSuggestions(type);
+    const indexRef = type === 'to' ? toSuggestionIndex : ccSuggestionIndex;
+
+    if (event.key === 'ArrowDown' && suggestions.length) {
+        event.preventDefault();
+        indexRef.value = (indexRef.value + 1) % suggestions.length;
+        return;
+    }
+
+    if (event.key === 'ArrowUp' && suggestions.length) {
+        event.preventDefault();
+        indexRef.value = indexRef.value === 0 ? suggestions.length - 1 : indexRef.value - 1;
+        return;
+    }
+
+    if ((event.key === 'Enter' || event.key === 'Tab') && suggestions.length) {
+        event.preventDefault();
+        const selected = suggestions[indexRef.value] || suggestions[0];
+        if (selected) {
+            selectSuggestedUser(type, selected);
+        }
+        return;
+    }
+
+    if (event.key === ';' || event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault();
+        consumeRecipientQuery(type);
+        return;
+    }
+
+    const queryRef = type === 'to' ? toQuery : ccQuery;
+    const chipsRef = type === 'to' ? toChips : ccChips;
+    if (event.key === 'Backspace' && !queryRef.value && chipsRef.value.length) {
+        chipsRef.value.pop();
+        syncRecipientsToForm();
+    }
+};
+
+const onRecipientPaste = (event: ClipboardEvent, type: RecipientType) => {
+    const pasted = event.clipboardData?.getData('text') || '';
+    if (!pasted.includes(';') && !pasted.includes(',')) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (pasted.includes(',')) {
+        toast.error('Usa ; para separar correos. No uses comas.');
+        return;
+    }
+
+    const tokens = pasted.split(';').map((item) => item.trim()).filter(Boolean);
+    for (const token of tokens) {
+        addRecipient(type, token);
+    }
+};
+
+const handleRecipientBlur = () => {
+    setTimeout(() => {
+        recipientFocus.value = null;
+    }, 120);
+};
+
+watch(toQuery, () => {
+    toSuggestionIndex.value = 0;
+});
+
+watch(ccQuery, () => {
+    ccSuggestionIndex.value = 0;
+});
 
 const getDeliveryUrl = (assignment: AssetAssignment): string => {
     return assignment.delivery_document?.file_url || assignment.parent_assignment?.delivery_document?.file_url || '';
@@ -300,9 +616,12 @@ const formSchema = toTypedSchema(z.object({
     document_type: z.nativeEnum(DeliveryRecordType, {
         message: 'Debes seleccionar un documento para enviar.',
     }),
-    email_to: z.string({
-        message: 'El correo destino es obligatorio.',
-    }).email('Debes ingresar un correo válido.'),
+    email_to: z.string({ message: 'El correo destino es obligatorio.' })
+        .min(1, 'El correo destino es obligatorio.')
+        .regex(/^\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*(;\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*)*$/, 'Usa correos válidos separados únicamente por ; (punto y coma). No uses comas.'),
+    email_cc: z.string()
+        .max(2000, 'El campo CC es demasiado largo.')
+        .regex(/^\s*$|^\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*(;\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*)*$/, 'En CC usa correos válidos separados únicamente por ; (punto y coma). No uses comas.'),
     greeting: z.string({ message: 'El saludo es obligatorio.' }).min(1, 'El saludo es obligatorio.').max(500, 'Texto demasiado largo.'),
     before_equipment: z.string({ message: 'El párrafo principal es obligatorio.' }).min(1, 'El párrafo principal es obligatorio.').max(3000, 'Texto demasiado largo.'),
     after_equipment: z.string({ message: 'El cierre es obligatorio.' }).min(1, 'El cierre es obligatorio.').max(3000, 'Texto demasiado largo.'),
@@ -313,6 +632,7 @@ const { errors, values, setFieldValue, setValues, resetForm, handleSubmit } = us
     initialValues: {
         document_type: DeliveryRecordType.ASSIGNMENT,
         email_to: '',
+        email_cc: '',
         greeting: '',
         before_equipment: '',
         after_equipment: '',
@@ -377,6 +697,10 @@ watch([open, () => props.assignment], ([isOpen, assignment]) => {
     if (!isOpen || !assignment) {
         if (!isOpen) {
             resetForm();
+            toChips.value = [];
+            ccChips.value = [];
+            toQuery.value = '';
+            ccQuery.value = '';
             extraImages.value = [];
             isSendingEmail.value = false;
         }
@@ -391,17 +715,31 @@ watch([open, () => props.assignment], ([isOpen, assignment]) => {
         return;
     }
 
+    ensureUsersForSuggestions();
+
     const selectedType = types.length === 1 ? types[0] : DeliveryRecordType.ASSIGNMENT;
     const defaults = getDefaultTextParts(assignment, selectedType);
 
     setValues({
         document_type: selectedType,
         email_to: '',
+        email_cc: '',
         greeting: defaults.greeting,
         before_equipment: defaults.introParagraph,
         after_equipment: defaults.closingParagraph,
     });
+
+    toChips.value = [];
+    ccChips.value = [];
+    toQuery.value = '';
+    ccQuery.value = '';
 });
+
+const submitForm = () => {
+    consumeRecipientQuery('to');
+    consumeRecipientQuery('cc');
+    handleSendEmail();
+};
 
 const handleSendEmail = handleSubmit((formValues) => {
     if (!props.assignment) {
@@ -414,6 +752,7 @@ const handleSendEmail = handleSubmit((formValues) => {
     router.post(`/assets/delivery-records/${props.assignment.id}/send-email`, {
         document_type: formValues.document_type,
         email_to: formValues.email_to,
+        email_cc: formValues.email_cc,
         message: buildComposedMessage(formValues),
         message_sections: buildMessageSections(formValues),
         extra_images: extraImages.value,

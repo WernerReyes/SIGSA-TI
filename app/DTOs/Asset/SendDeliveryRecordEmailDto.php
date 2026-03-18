@@ -9,6 +9,7 @@ class SendDeliveryRecordEmailDto
     private function __construct(
         public readonly string $documentType,
         public readonly string $emailTo,
+        public readonly ?string $emailCc,
         public readonly ?string $message,
         public readonly array $messageSections,
         /** @var UploadedFile[] */
@@ -21,6 +22,7 @@ class SendDeliveryRecordEmailDto
         return new self(
             documentType: $data['document_type'],
             emailTo: $data['email_to'],
+            emailCc: $data['email_cc'] ?? null,
             message: $data['message'] ?? null,
             messageSections: $data['message_sections'] ?? [],
             extraImages: $data['extra_images'] ?? [],

@@ -421,9 +421,7 @@
 
 
                                     <div
-                                        class="flex max-md:justify-end max-md:w-full items-start gap-2 shrink-0 flex-wrap">
-
-
+                                        class="flex justify-end max-md:w-full items-start gap-2  flex-wrap">
                                         <Button variant="outline" size="sm" class="gap-2" @click="() => {
                                             openUploadDialog = true;
                                             type = DeliveryRecordType.ASSIGNMENT;

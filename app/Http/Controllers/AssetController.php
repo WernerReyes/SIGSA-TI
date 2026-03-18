@@ -373,7 +373,7 @@ class AssetController extends Controller
             $assetService->sendDeliveryRecordEmail($assignment, $dto);
 
             Inertia::flash([
-                'success' => 'Correo enviado correctamente.',
+                'success' => 'Correo en cola para envío. Recibirás confirmación en el historial.',
                 'mail_sent' => true,
                 'timestamp' => now()->timestamp,
                 'error' => null,

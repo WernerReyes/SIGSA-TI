@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Jobs\SendDeliveryRecordEmailJob;
 use App\DTOs\Asset\SendDeliveryRecordEmailDto;
 use App\Mail\DeliveryRecordUploadedMail;
 use App\DTOs\Asset\AssetFiltersDto;
@@ -28,13 +29,11 @@ use App\Models\AssetHistory;
 use App\Models\AssetModel;
 use App\Models\AssetReparation;
 use App\Models\AssetType;
-use App\Models\AssignmentEmailLog;
 
 use App\Models\Brand;
 use App\Utils\CompressImage;
 use App\Models\DeliveryRecord;
 use App\Models\User;
-use App\Models\Ticket;
 
 use DB;
 use Illuminate\Support\Carbon;
@@ -1417,12 +1416,11 @@ class AssetService
             if ($dto->documentType === DeliveryRecordType::ASSIGNMENT->value) {
                 $record = $assignment->parentAssignment?->deliveryDocument ?: $assignment->deliveryDocument;
             } else {
-                if ($assignment->returned_together) {
+                if ($assignment->parent_assignment_id && $assignment->returned_together) {
                     $record = $assignment->parentAssignment?->returnDocument ?: $assignment->returnDocument;
                 } else {
                     $record = $assignment->returnDocument;
                 }
-
             }
 
             if (!$record) {
@@ -1431,34 +1429,51 @@ class AssetService
 
             $mainAsset = $assignment->asset;
             if ($assignment->parent_assignment_id && $assignment->returned_together) {
-                $mainAsset = $assignment->parentAssignment->asset;
+                $mainAsset = $assignment->parentAssignment?->asset ?: $assignment->asset;
             }
+
             $recordTypeLabel = $dto->documentType === DeliveryRecordType::ASSIGNMENT->value ? 'entrega' : 'devolución';
             $subject = 'Constancia de ' . $recordTypeLabel . ' - ' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id));
             $messageForLog = $dto->message ?: $this->flattenSectionsToText($dto->messageSections);
+            $toEmails = $this->parseEmailList($dto->emailTo);
+            $ccEmails = $this->parseEmailList($dto->emailCc);
+
+            if (!count($toEmails)) {
+                throw new BadRequestException('Debes ingresar al menos un correo en el campo Para.');
+            }
 
             $extraAttachments = [];
             $extraImageNames = [];
             foreach ($dto->extraImages as $image) {
                 $originalName = $image->getClientOriginalName();
+                $storedPath = $image->store('mail_attachments/tmp', 'public');
                 $extraAttachments[] = [
-                    'path' => $image->getRealPath(),
+                    'path' => $storedPath,
                     'name' => $originalName,
                 ];
                 $extraImageNames[] = $originalName;
             }
 
-            Mail::to($dto->emailTo)->send(new DeliveryRecordUploadedMail(
+            SendDeliveryRecordEmailJob::dispatch(
+                assignmentId: $assignment->id,
+                deliveryRecordId: $record->id,
+                sentBy: auth()->user()->staff_id,
+                documentType: $dto->documentType,
+                toEmails: $toEmails,
+                ccEmails: $ccEmails,
                 recordTypeLabel: $recordTypeLabel,
                 assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
                 assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
                 mainAttachmentPath: Storage::disk('public')->path($record->file_path),
                 mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.' . pathinfo($record->file_path, PATHINFO_EXTENSION),
                 extraAttachments: $extraAttachments,
-                customMessage: $messageForLog,
+                subject: $subject,
+                messageForLog: $messageForLog,
                 messageSections: $dto->messageSections,
-                customSubject: $subject,
-            ));
+                documentPath: $record->file_path,
+                extraImageNames: $extraImageNames,
+            );
+
         } catch (\Exception $e) {
             if ($e instanceof BadRequestException) {
                 throw $e;
@@ -1491,6 +1506,15 @@ class AssetService
             $sections['signature_label'] ?? null,
             $sections['signature_area'] ?? null,
         ], fn($line) => $line !== null));
+    }
+
+    private function parseEmailList(?string $emails): array
+    {
+        if (!$emails) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(';', $emails))));
     }
 
 

@@ -24,7 +24,8 @@ class SendDeliveryRecordEmailRequest extends FormRequest
     {
         return [
             'document_type' => 'required|in:' . implode(',', DeliveryRecordType::values()),
-            'email_to' => 'required|email|max:255',
+            'email_to' => ['required', 'string', 'max:2000', 'regex:/^\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*(;\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*)*$/'],
+            'email_cc' => ['nullable', 'string', 'max:2000', 'regex:/^\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*(;\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+\s*)*$/'],
             'message' => 'nullable|string|max:12000',
             'message_sections' => 'required|array',
             'message_sections.greeting' => 'required|string|max:500',
@@ -50,7 +51,8 @@ class SendDeliveryRecordEmailRequest extends FormRequest
             'document_type.required' => 'Debes seleccionar qué documento enviar.',
             'document_type.in' => 'El tipo de documento seleccionado no es válido.',
             'email_to.required' => 'El correo destino es obligatorio.',
-            'email_to.email' => 'Debes ingresar un correo válido.',
+            'email_to.regex' => 'Usa correos válidos separados únicamente por punto y coma (;). No uses comas.',
+            'email_cc.regex' => 'En copia (CC) usa correos válidos separados únicamente por punto y coma (;). No uses comas.',
             'message.max' => 'El mensaje no puede exceder 5000 caracteres.',
             'message_sections.required' => 'El contenido del correo es obligatorio.',
             'message_sections.array' => 'El contenido del correo debe enviarse con formato válido.',
