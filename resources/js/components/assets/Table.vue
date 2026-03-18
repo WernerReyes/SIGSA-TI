@@ -297,7 +297,7 @@
     </div>
 
     <Sheet v-model:open="openAssignmentsByUserSheet">
-        <SheetContent side="right" class="w-full sm:w-[560px] overflow-y-auto">
+        <SheetContent side="right" class="w-full sm:w-200 overflow-y-auto">
             <SheetHeader class="space-y-3 pb-3 border-b">
                 <div class="flex items-start gap-3">
                     <div
@@ -315,7 +315,7 @@
             <div class="space-y-4 py-4 px-2">
                 <div class="rounded-xl border bg-card/60 p-3">
                     <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Selecciona un usuario</p>
-                    <SelectFilters label="Usuario" :items="users" data-key="users" :icon="Users"
+                    <SelectFilters :full-width="true" label="Usuario"  :items="users" data-key="users" :icon="Users"
                         show-refresh show-selected-focus :selected-as-label="true" item-value="staff_id" item-label="full_name"
                         :multiple="false" :default-value="selectedAssignmentsUserId ?? undefined"
                         @select="(selected) => selectedAssignmentsUserId = selected as number" />

@@ -231,12 +231,23 @@ const indentBlock = (text: string, spaces = 4): string => {
 
 const getDefaultTextParts = (assignment: AssetAssignment, documentType: DeliveryRecordType) => {
     const assetName = getAssetName(assignment);
+    const serial = getSerial(assignment);
     const accessories = getAccessoriesNames(assignment);
     const dateLabel = getEventDate(assignment, documentType);
     const assignedTo = getAssignedUserName(assignment);
 
+    const blockTitle = documentType === DeliveryRecordType.ASSIGNMENT
+        ? 'Activo entregado'
+        : 'Activo devuelto';
+
+    const accessoriesBlock = accessories.length > 0
+        ? `\n\nAccesorios incluidos\n${accessories.map((item) => `- ${item}`).join('\n')}`
+        : '';
+
+    const fixedEquipmentBlock = `${blockTitle}\n${assetName}${serial && serial !== 'N/A' ? ` - S/N: ${serial}` : ''}${accessoriesBlock}`;
+
     const base = {
-        greeting: 'Estimada Sr. Cecilia,',
+        greeting: 'Estimada Sra. Cecilia,',
         detailsIntro: documentType === DeliveryRecordType.ASSIGNMENT
             ? 'A continuación, se detallan los datos correspondientes al activo entregado:'
             : 'A continuación, se detallan los datos correspondientes al activo devuelto:',
@@ -247,32 +258,41 @@ const getDefaultTextParts = (assignment: AssetAssignment, documentType: Delivery
         signatureArea: 'Área de Sistemas\nDepartamento de Tecnología',
     };
 
+    const hasAccessories = accessories.length > 0;
+      
     if (documentType === DeliveryRecordType.DEVOLUTION) {
         const relatedAsset = assignment.parent_assignment?.asset || assignment.asset;
         const isCellphone = relatedAsset?.type?.name === TypeName.CELL_PHONE || relatedAsset?.type_id === 3;
+
 
         if (isCellphone) {
             return {
                 ...base,
                 introParagraph: `Por medio del presente correo se deja constancia de que el siguiente activo ha sido devuelto satisfactoriamente por el colaborador ${assignedTo} el día ${dateLabel}.`,
-                closingParagraph: 'Se deja constancia de que el equipo y los accesorios mencionados han sido devueltos en correctas condiciones y se procederá a entregar para su custodia.',
-                fixedEquipment: `el equipo ${assetName} ha sido devuelto`,
+                closingParagraph: hasAccessories
+                    ? 'Se deja constancia de que el equipo y los accesorios mencionados han sido devueltos en correctas condiciones.'
+                    : 'Se deja constancia de que el equipo mencionado ha sido devuelto en correctas condiciones.',
+                fixedEquipment: fixedEquipmentBlock,
             };
         }
 
         return {
             ...base,
             introParagraph: `Por medio del presente correo se deja constancia de que el siguiente activo ha sido devuelto satisfactoriamente por el colaborador ${assignedTo} el día ${dateLabel}.`,
-            closingParagraph: 'Se deja constancia de que el equipo y los accesorios mencionados han sido devueltos en correctas condiciones.',
-            fixedEquipment: `el equipo ${assetName} ha sido devuelto`,
+            closingParagraph: hasAccessories
+                ? 'Se deja constancia de que el equipo y los accesorios mencionados han sido devueltos en correctas condiciones.'
+                : 'Se deja constancia de que el equipo mencionado ha sido devuelto en correctas condiciones.',
+            fixedEquipment: fixedEquipmentBlock,
         };
     }
 
     return {
         ...base,
         introParagraph: `Por medio del presente correo se deja constancia de que el siguiente activo ha sido entregado satisfactoriamente al colaborador ${assignedTo} el día ${dateLabel}.`,
-        closingParagraph: 'Se deja constancia de que el equipo y los accesorios mencionados han sido entregados en correctas condiciones.',
-        fixedEquipment: `el equipo ${assetName} ha sido entregado`,
+        closingParagraph: hasAccessories
+            ? 'Se deja constancia de que el equipo y los accesorios mencionados han sido entregados en correctas condiciones.'
+            : 'Se deja constancia de que el equipo mencionado ha sido entregado en correctas condiciones.',
+        fixedEquipment: fixedEquipmentBlock,
     };
 };
 

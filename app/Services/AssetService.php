@@ -1453,7 +1453,7 @@ class AssetService
                 assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
                 assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
                 mainAttachmentPath: Storage::disk('public')->path($record->file_path),
-                mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.pdf',
+                mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.' . pathinfo($record->file_path, PATHINFO_EXTENSION),
                 extraAttachments: $extraAttachments,
                 customMessage: $messageForLog,
                 messageSections: $dto->messageSections,

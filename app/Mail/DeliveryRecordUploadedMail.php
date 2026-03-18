@@ -55,20 +55,30 @@ class DeliveryRecordUploadedMail extends Mailable
     /**
      * @return array<int, Attachment>
      */
-    public function attachments(): array
-    {
-        $attachments = [
-            Attachment::fromPath($this->mainAttachmentPath)->as($this->mainAttachmentName),
-        ];
+   public function attachments(): array
+{
+    $attachments = [];
 
-        foreach ($this->extraAttachments as $attachment) {
-            if (!isset($attachment['path']) || !isset($attachment['name'])) {
-                continue;
-            }
+    if (file_exists($this->mainAttachmentPath)) {
+        $attachments[] = Attachment::fromPath($this->mainAttachmentPath)
+            ->as($this->mainAttachmentName)
+            ->withMime(mime_content_type($this->mainAttachmentPath));
+    }
 
-            $attachments[] = Attachment::fromPath($attachment['path'])->as($attachment['name']);
+    foreach ($this->extraAttachments as $attachment) {
+        if (
+            !isset($attachment['path']) ||
+            !isset($attachment['name']) ||
+            !file_exists($attachment['path'])
+        ) {
+            continue;
         }
 
-        return $attachments;
+        $attachments[] = Attachment::fromPath($attachment['path'])
+            ->as($attachment['name'])
+            ->withMime(mime_content_type($attachment['path']));
     }
+
+    return $attachments;
+}
 }

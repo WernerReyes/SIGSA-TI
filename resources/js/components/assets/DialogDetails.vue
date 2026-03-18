@@ -892,8 +892,6 @@ const openSendEmailModal = (assignment: AssetAssignment) => {
         return;
     }
 
-    console.log('Available document types for email:', types, assignment);
-
     selectedAssignmentForEmail.value = {
         ...assignment,
         // asset: 
