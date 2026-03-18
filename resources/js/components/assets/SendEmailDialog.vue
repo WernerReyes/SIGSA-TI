@@ -255,7 +255,7 @@ const getDefaultTextParts = (assignment: AssetAssignment, documentType: Delivery
         accessoriesTitle: 'Accesorios incluidos',
         accessories,
         signatureLabel: 'Atentamente,',
-        signatureArea: 'Área de Sistemas\nDepartamento de Tecnología',
+        signatureArea: 'Área de Sistemas - TI',
     };
 
     const hasAccessories = accessories.length > 0;
