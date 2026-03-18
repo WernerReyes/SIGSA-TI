@@ -204,7 +204,7 @@ const canSendReturnDoc = computed(() => availableDocs.value.includes(DeliveryRec
 const getAssetName = (assignment: AssetAssignment): string => {
     // const relatedAsset = assignment.parent_assignment?.asset || assignment.asset;
     let relatedAsset = assignment.asset;
-    if (assignment.parent_assignment && !assignment.parent_assignment.returned_at) {
+    if (assignment.parent_assignment && assignment.returned_together) {
         relatedAsset = assignment.parent_assignment.asset;
     }
 
@@ -235,24 +235,21 @@ const getEventDate = (assignment: AssetAssignment, documentType: DeliveryRecordT
 };
 
 const getAccessoriesNames = (assignment: AssetAssignment): string[] => {
-    // const baseAssignment = assignment.parent_assignment || assignment;
     let baseAssignment = assignment;
-    if (assignment.parent_assignment && !assignment.parent_assignment.returned_at) {
+    if (assignment.parent_assignment) {
         baseAssignment = assignment.parent_assignment;
+    
     }
 
-    if (baseAssignment.returned_at && values.document_type === DeliveryRecordType.DEVOLUTION) {
-        // En caso de devolución, mostrar solo los accesorios devueltos con el equipo
+    if (values.document_type === DeliveryRecordType.DEVOLUTION) {
         return (baseAssignment.children_assignments || [])
-            .filter(child => child.returned_at) // Filtrar solo los accesorios que han sido devueltos
-            .map(child => child.asset?.full_name || `AST-${child.asset_id}`)
-            .filter((name, index, arr) => !!name && arr.indexOf(name) === index);
+            .filter(child => child.returned_together)
+            .map(child => child.asset?.full_name || `AST-${child.asset_id}`);
     }
 
 
     return (baseAssignment.children_assignments || [])
         .map((child) => child.asset?.full_name || `AST-${child.asset_id}`)
-        .filter((name, index, arr) => !!name && arr.indexOf(name) === index);
 };
 
 const indentBlock = (text: string, spaces = 4): string => {

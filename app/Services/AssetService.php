@@ -186,10 +186,15 @@ class AssetService
             'assignments.parentAssignment.asset.type:id,name,doc_category',
             'assignments.parentAssignment.asset.brand:id,name',
             'assignments.parentAssignment.asset.model:id,name',
+            'assignments.parentAssignment.childrenAssignments:id,asset_id,parent_assignment_id,returned_together',
+            'assignments.parentAssignment.childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id',
+            'assignments.parentAssignment.childrenAssignments.asset.type:id,name',
+            'assignments.parentAssignment.childrenAssignments.asset.brand:id,name',
+            'assignments.parentAssignment.childrenAssignments.asset.model:id,name',
             'assignments.parentAssignment.deliveryDocument',
             'assignments.parentAssignment.returnDocument',
 
-            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id,returned_at',
+            'assignments.childrenAssignments:id,asset_id,assigned_to_id,parent_assignment_id,returned_at,returned_together',
             'assignments.childrenAssignments.asset:id,name,brand_id,model_id,serial_number,type_id',
             'assignments.childrenAssignments.asset.type:id,name',
             'assignments.childrenAssignments.asset.brand:id,name',
@@ -1410,9 +1415,14 @@ class AssetService
 
             $record = null;
             if ($dto->documentType === DeliveryRecordType::ASSIGNMENT->value) {
-                $record = $assignment->deliveryDocument ?: $assignment->parentAssignment?->deliveryDocument;
+                $record = $assignment->parentAssignment?->deliveryDocument ?: $assignment->deliveryDocument;
             } else {
-                $record = $assignment->returnDocument ?: $assignment->parentAssignment?->returnDocument;
+                if ($assignment->returned_together) {
+                    $record = $assignment->parentAssignment?->returnDocument ?: $assignment->returnDocument;
+                } else {
+                    $record = $assignment->returnDocument;
+                }
+
             }
 
             if (!$record) {
@@ -1420,7 +1430,7 @@ class AssetService
             }
 
             $mainAsset = $assignment->asset;
-            if ($assignment->parent_assignment_id && !$assignment->parentAssignment->returned_at) {
+            if ($assignment->parent_assignment_id && $assignment->returned_together) {
                 $mainAsset = $assignment->parentAssignment->asset;
             }
             $recordTypeLabel = $dto->documentType === DeliveryRecordType::ASSIGNMENT->value ? 'entrega' : 'devolución';
@@ -1443,25 +1453,12 @@ class AssetService
                 assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
                 assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
                 mainAttachmentPath: Storage::disk('public')->path($record->file_path),
-                mainAttachmentName: basename($record->file_path),
+                mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.pdf',
                 extraAttachments: $extraAttachments,
                 customMessage: $messageForLog,
                 messageSections: $dto->messageSections,
                 customSubject: $subject,
             ));
-
-            // AssignmentEmailLog::create([
-            //     'assignment_id' => $assignment->id,
-            //     'delivery_record_id' => $record->id,
-            //     'sent_by' => auth()->user()->staff_id,
-            //     'document_type' => $dto->documentType,
-            //     'recipient_email' => $dto->emailTo,
-            //     'subject' => $subject,
-            //     'message' => $messageForLog,
-            //     'document_path' => $record->file_path,
-            //     'extra_image_names' => $extraImageNames,
-            //     'sent_at' => now(),
-            // ]);
         } catch (\Exception $e) {
             if ($e instanceof BadRequestException) {
                 throw $e;
