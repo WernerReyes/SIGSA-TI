@@ -52,8 +52,8 @@
                                         class="flex-1 min-w-50 border-0 bg-transparent outline-none text-sm"
                                         placeholder="correo1@empresa.com; correo2@empresa.com"
                                         :disabled="isSendingEmail"
-                                        @focus="recipientFocus = 'to'; ensureUsersForSuggestions()"
-                                        @blur="handleRecipientBlur"
+                                        @focus="handleRecipientFocus('to')"
+                                        @blur="handleRecipientBlur('to')"
                                         @keydown="onRecipientKeydown($event, 'to')"
                                         @paste="onRecipientPaste($event, 'to')"
                                     />
@@ -104,8 +104,8 @@
                                         class="flex-1 min-w-50 border-0 bg-transparent outline-none text-sm"
                                         placeholder="cc1@empresa.com; cc2@empresa.com"
                                         :disabled="isSendingEmail"
-                                        @focus="recipientFocus = 'cc'; ensureUsersForSuggestions()"
-                                        @blur="handleRecipientBlur"
+                                        @focus="handleRecipientFocus('cc')"
+                                        @blur="handleRecipientBlur('cc')"
                                         @keydown="onRecipientKeydown($event, 'cc')"
                                         @paste="onRecipientPaste($event, 'cc')"
                                     />
@@ -245,6 +245,7 @@ const recipientFocus = ref<RecipientType | null>(null);
 const toSuggestionIndex = ref(0);
 const ccSuggestionIndex = ref(0);
 const isLoadingUserSuggestions = ref(false);
+const recipientBlurTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
 
 const ensureUsersForSuggestions = () => {
     if (usersWithEmail.value.length || isLoadingUserSuggestions.value) {
@@ -441,9 +442,21 @@ const onRecipientPaste = (event: ClipboardEvent, type: RecipientType) => {
     }
 };
 
-const handleRecipientBlur = () => {
-    setTimeout(() => {
-        recipientFocus.value = null;
+const handleRecipientFocus = (type: RecipientType) => {
+    if (recipientBlurTimeout.value) {
+        clearTimeout(recipientBlurTimeout.value);
+        recipientBlurTimeout.value = null;
+    }
+
+    recipientFocus.value = type;
+    ensureUsersForSuggestions();
+};
+
+const handleRecipientBlur = (type: RecipientType) => {
+    recipientBlurTimeout.value = setTimeout(() => {
+        if (recipientFocus.value === type) {
+            recipientFocus.value = null;
+        }
     }, 120);
 };
 
