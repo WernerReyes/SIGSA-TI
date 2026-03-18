@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Mail\DeliveryRecordUploadedMail;
-use App\Models\AssignmentEmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
