@@ -11,26 +11,18 @@
                     <VeeField name="document_type" v-slot="{ errors, value }">
                         <div class="flex items-center w-4/12 gap-4">
                             <div class="flex items-center gap-1">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
+                                <Button type="button" size="sm" variant="ghost"
                                     :class="value === DeliveryRecordType.ASSIGNMENT ? 'bg-primary/10 text-primary' : ''"
                                     :disabled="!canSendAssignmentDoc || availableDocs.length === 1 || isSendingEmail"
-                                    @click="setDocumentType(DeliveryRecordType.ASSIGNMENT)"
-                                >
-                               <ArrowBigRightDash />
+                                    @click="setDocumentType(DeliveryRecordType.ASSIGNMENT)">
+                                    <ArrowBigRightDash />
                                     Entrega
                                 </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
+                                <Button type="button" size="sm" variant="ghost"
                                     :class="value === DeliveryRecordType.DEVOLUTION ? 'bg-primary/10 text-primary' : ''"
                                     :disabled="!canSendReturnDoc || availableDocs.length === 1 || isSendingEmail"
-                                    @click="setDocumentType(DeliveryRecordType.DEVOLUTION)"
-                                >
-                                <ArrowBigLeftDash />
+                                    @click="setDocumentType(DeliveryRecordType.DEVOLUTION)">
+                                    <ArrowBigLeftDash />
                                     Devolución
                                 </Button>
                             </div>
@@ -45,13 +37,8 @@
                     <VeeField name="email_to" v-slot="{ componentField, errors }">
                         <div class="flex items-center gap-3">
                             <span class="text-sm text-muted-foreground w-12">Para</span>
-                            <Input
-                                v-bind="componentField"
-                                type="email"
-                                placeholder="correo@empresa.com"
-                                class="shadow-none focus-visible:ring-0"
-                                :disabled="isSendingEmail"
-                            />
+                            <Input v-bind="componentField" type="email" placeholder="correo@empresa.com"
+                                class="shadow-none focus-visible:ring-0" :disabled="isSendingEmail" />
                         </div>
                         <FieldError v-if="errors.length">{{ errors[0] }}</FieldError>
                     </VeeField>
@@ -68,24 +55,16 @@
                     <div class="space-y-4">
                         <VeeField name="greeting" v-slot="{ componentField, errors }">
                             <div class="space-y-1">
-                                <Textarea
-                                    v-bind="componentField"
-                                    rows="2"
-                                    :disabled="isSendingEmail"
-                                    class="border-0 shadow-none resize-none focus-visible:ring-0 px-0"
-                                />
+                                <Textarea v-bind="componentField" rows="2" :disabled="isSendingEmail"
+                                    class="border-0 shadow-none resize-none focus-visible:ring-0 px-0" />
                                 <FieldError v-if="errors.length">{{ errors[0] }}</FieldError>
                             </div>
                         </VeeField>
 
                         <VeeField name="before_equipment" v-slot="{ componentField, errors }">
                             <div class="space-y-1">
-                                <Textarea
-                                    v-bind="componentField"
-                                    rows="2"
-                                    :disabled="isSendingEmail"
-                                    class="border-0 shadow-none resize-none focus-visible:ring-0 px-0"
-                                />
+                                <Textarea v-bind="componentField" rows="2" :disabled="isSendingEmail"
+                                    class="border-0 shadow-none resize-none focus-visible:ring-0 px-0" />
                                 <FieldError v-if="errors.length">{{ errors[0] }}</FieldError>
                             </div>
                         </VeeField>
@@ -100,26 +79,16 @@
 
                         <VeeField name="after_equipment" v-slot="{ componentField, errors }">
                             <div class="space-y-1">
-                                <Textarea
-                                    v-bind="componentField"
-                                    rows="3"
-                                    :disabled="isSendingEmail"
-                                    class="border-0 shadow-none resize-none focus-visible:ring-0 px-0"
-                                />
+                                <Textarea v-bind="componentField" rows="3" :disabled="isSendingEmail"
+                                    class="border-0 shadow-none resize-none focus-visible:ring-0 px-0" />
                                 <FieldError v-if="errors.length">{{ errors[0] }}</FieldError>
                             </div>
                         </VeeField>
 
                         <div class="space-y-2 pt-2">
                             <label class="text-sm font-medium">Imágenes extra (opcional)</label>
-                            <MultiUploader
-                                :max-files="3"
-                                :max-size-mb="2"
-                                accept="image/*"
-                                preview-mode="gallery"
-                                @update:file="(files) => { extraImages = files; }"
-                                @error="(msg) => toast.error(msg)"
-                            />
+                            <MultiUploader :max-files="3" :max-size-mb="2" accept="image/*" preview-mode="gallery"
+                                @update:file="(files) => { extraImages = files; }" @error="(msg) => toast.error(msg)" />
                         </div>
                     </div>
                 </ScrollArea>
@@ -238,7 +207,7 @@ const getAccessoriesNames = (assignment: AssetAssignment): string[] => {
     let baseAssignment = assignment;
     if (assignment.parent_assignment) {
         baseAssignment = assignment.parent_assignment;
-    
+
     }
 
     if (values.document_type === DeliveryRecordType.DEVOLUTION) {
@@ -432,12 +401,8 @@ const handleSendEmail = handleSubmit((formValues) => {
         forceFormData: true,
         only: [],
         onFlash(flash) {
-            if (flash.error) {
-                toast.error(String(flash.error));
-                return;
-            }
+            if (flash.error) return;
 
-            toast.success('Correo enviado correctamente.');
             emit('sent');
             open.value = false;
         },
