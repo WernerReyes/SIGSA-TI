@@ -1455,39 +1455,39 @@ class AssetService
             }
 
 
-            Mail::to($toEmails)
-                ->cc($ccEmails)
-                ->send(new DeliveryRecordUploadedMail(
-                recordTypeLabel: $recordTypeLabel,
-                assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
-                assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
-                mainAttachmentPath: Storage::disk('public')->path($record->file_path),
-                mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.' . pathinfo($record->file_path, PATHINFO_EXTENSION),
-                extraAttachments: $extraAttachments,
-                customMessage: $messageForLog,
-                messageSections: $dto->messageSections,
-                customSubject: $subject,
-            ));
-
-            // SendDeliveryRecordEmailJob::dispatch(
-            //     assignmentId: $assignment->id,
-            //     deliveryRecordId: $record->id,
-            //     sentBy: auth()->user()->staff_id,
-            //     documentType: $dto->documentType,
-            //     toEmails: $toEmails,
-            //     ccEmails: $ccEmails,
+            // Mail::to($toEmails)
+            //     ->cc($ccEmails)
+            //     ->send(new DeliveryRecordUploadedMail(
             //     recordTypeLabel: $recordTypeLabel,
             //     assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
             //     assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
             //     mainAttachmentPath: Storage::disk('public')->path($record->file_path),
             //     mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.' . pathinfo($record->file_path, PATHINFO_EXTENSION),
             //     extraAttachments: $extraAttachments,
-            //     subject: $subject,
-            //     messageForLog: $messageForLog,
+            //     customMessage: $messageForLog,
             //     messageSections: $dto->messageSections,
-            //     documentPath: $record->file_path,
-            //     extraImageNames: $extraImageNames,
-            // );
+            //     customSubject: $subject,
+            // ));
+
+            SendDeliveryRecordEmailJob::dispatch(
+                assignmentId: $assignment->id,
+                deliveryRecordId: $record->id,
+                sentBy: auth()->user()->staff_id,
+                documentType: $dto->documentType,
+                toEmails: $toEmails,
+                ccEmails: $ccEmails,
+                recordTypeLabel: $recordTypeLabel,
+                assetName: $mainAsset?->full_name ?? ('AST-' . $assignment->asset_id),
+                assignedToName: $assignment->assignedTo?->full_name ?? 'N/A',
+                mainAttachmentPath: Storage::disk('public')->path($record->file_path),
+                mainAttachmentName: 'Constancia_' . $recordTypeLabel . '_' . ($mainAsset?->full_name ?? ('AST-' . $assignment->asset_id)) . '.' . pathinfo($record->file_path, PATHINFO_EXTENSION),
+                extraAttachments: $extraAttachments,
+                subject: $subject,
+                messageForLog: $messageForLog,
+                messageSections: $dto->messageSections,
+                documentPath: $record->file_path,
+                extraImageNames: $extraImageNames,
+            );
 
             return array_merge($toEmails, $ccEmails) > 1;
         } catch (\Exception $e) {
