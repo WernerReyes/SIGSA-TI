@@ -1398,7 +1398,7 @@ class AssetService
         }
     }
 
-    public function sendDeliveryRecordEmail(AssetAssignment $assignment, SendDeliveryRecordEmailDto $dto): void
+    public function sendDeliveryRecordEmail(AssetAssignment $assignment, SendDeliveryRecordEmailDto $dto): bool
     {
         try {
             $assignment->loadMissing(
@@ -1474,6 +1474,7 @@ class AssetService
                 extraImageNames: $extraImageNames,
             );
 
+            return array_merge($toEmails, $ccEmails) > 1;
         } catch (\Exception $e) {
             if ($e instanceof BadRequestException) {
                 throw $e;

@@ -81,19 +81,6 @@ class SendDeliveryRecordEmailJob implements ShouldQueue
                 customSubject: $this->subject,
             ));
 
-        AssignmentEmailLog::create([
-            'assignment_id' => $this->assignmentId,
-            'delivery_record_id' => $this->deliveryRecordId,
-            'sent_by' => $this->sentBy,
-            'document_type' => $this->documentType,
-            'recipient_email' => implode(';', array_merge($this->toEmails, $this->ccEmails)),
-            'subject' => $this->subject,
-            'message' => $this->messageForLog,
-            'document_path' => $this->documentPath,
-            'extra_image_names' => $this->extraImageNames,
-            'sent_at' => now(),
-        ]);
-
         // Limpia archivos temporales de adjuntos extra luego del envío.
         foreach ($this->extraAttachments as $attachment) {
             $relativePath = $attachment['path'] ?? null;

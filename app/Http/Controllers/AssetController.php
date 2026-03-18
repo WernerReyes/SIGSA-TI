@@ -370,10 +370,14 @@ class AssetController extends Controller
         $dto = SendDeliveryRecordEmailDto::fromArray($validated);
 
         try {
-            $assetService->sendDeliveryRecordEmail($assignment, $dto);
+           $moreThanOne =  $assetService->sendDeliveryRecordEmail($assignment, $dto);
+
+                $message = $moreThanOne
+                    ? 'Correos enviados correctamente.'
+                    : 'Correo enviado correctamente.';
 
             Inertia::flash([
-                'success' => 'Correo en cola para envío. Recibirás confirmación en el historial.',
+                'success' => $message,
                 'mail_sent' => true,
                 'timestamp' => now()->timestamp,
                 'error' => null,
