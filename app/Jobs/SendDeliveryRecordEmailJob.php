@@ -67,19 +67,36 @@ class SendDeliveryRecordEmailJob implements ShouldQueue
         }
 
 
-        Mail::to($this->toEmails)
-            ->cc($this->ccEmails)
-            ->send(new DeliveryRecordUploadedMail(
-                recordTypeLabel: $this->recordTypeLabel,
-                assetName: $this->assetName,
-                assignedToName: $this->assignedToName,
-                mainAttachmentPath: $this->mainAttachmentPath,
-                mainAttachmentName: $this->mainAttachmentName,
-                extraAttachments: $extraAttachmentsForMail,
-                customMessage: $this->messageForLog,
-                messageSections: $this->messageSections,
-                customSubject: $this->subject,
-            ));
+        ds($this->toEmails, config('queue.default'));
+
+        //  Mail::to($this->toEmails)
+        //     ->cc($this->ccEmails)
+        //     ->send(new DeliveryRecordUploadedMail(
+        //         recordTypeLabel: $this->recordTypeLabel,
+        //         assetName: $this->assetName,
+        //         assignedToName: $this->assignedToName,
+        //         mainAttachmentPath: $this->mainAttachmentPath,
+        //         mainAttachmentName: $this->mainAttachmentName,
+        //         extraAttachments: $extraAttachmentsForMail,
+        //         customMessage: $this->messageForLog,
+        //         messageSections: $this->messageSections,
+        //         customSubject: $this->subject,
+        //     ));
+
+
+        // Mail::to(['werner.reyes@cechriza.com'])
+        //     ->cc($this->ccEmails)
+        //     ->send(new DeliveryRecordUploadedMail(
+        //         recordTypeLabel: $this->recordTypeLabel,
+        //         assetName: $this->assetName,
+        //         assignedToName: $this->assignedToName,
+        //         mainAttachmentPath: $this->mainAttachmentPath,
+        //         mainAttachmentName: $this->mainAttachmentName,
+        //         extraAttachments: $extraAttachmentsForMail,
+        //         customMessage: $this->messageForLog,
+        //         messageSections: $this->messageSections,
+        //         customSubject: $this->subject,
+        //     ));
 
 
 
