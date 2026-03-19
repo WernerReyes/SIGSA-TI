@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Storage;
 
 class DeliveryRecordUploadedMail extends Mailable
 {
@@ -55,30 +56,37 @@ class DeliveryRecordUploadedMail extends Mailable
     /**
      * @return array<int, Attachment>
      */
-   public function attachments(): array
-{
-    $attachments = [];
+    public function attachments(): array
+    {
+        $attachments = [];
 
-    if (file_exists($this->mainAttachmentPath)) {
-        $attachments[] = Attachment::fromPath($this->mainAttachmentPath)
-            ->as($this->mainAttachmentName)
-            ->withMime(mime_content_type($this->mainAttachmentPath));
-    }
-
-    foreach ($this->extraAttachments as $attachment) {
-        if (
-            !isset($attachment['path']) ||
-            !isset($attachment['name']) ||
-            !file_exists($attachment['path'])
-        ) {
-            continue;
+        if (file_exists($this->mainAttachmentPath)) {
+            $attachments[] = Attachment::fromPath($this->mainAttachmentPath)
+                ->as($this->mainAttachmentName)
+                ->withMime(mime_content_type($this->mainAttachmentPath));
         }
 
-        $attachments[] = Attachment::fromPath($attachment['path'])
-            ->as($attachment['name'])
-            ->withMime(mime_content_type($attachment['path']));
-    }
+        foreach ($this->extraAttachments as $attachment) {
 
-    return $attachments;
-}
+            if (
+                !isset($attachment['path']) ||
+                !isset($attachment['name'])
+
+            ) {
+                continue;
+            }
+
+            $absolutePath = Storage::disk('public')->path($attachment['path']);
+
+            if (!file_exists($absolutePath)) {
+                continue;
+            }
+
+            $attachments[] = Attachment::fromPath($absolutePath)
+                ->as($attachment['name'])
+                ->withMime(mime_content_type($absolutePath));
+        }
+
+        return $attachments;
+    }
 }
