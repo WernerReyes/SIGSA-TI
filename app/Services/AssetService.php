@@ -1156,6 +1156,7 @@ class AssetService
             })->implode('</w:t><w:br/><w:t>');
 
             $this->setCompanyInfoByEmployee($assignment->assignedTo, $template, ['width' => 80, 'height' => 60]);
+            $template->setValue('now', Carbon::now()->format('d-m-Y'));
             $template->setValue('assign_date', $assignment->assigned_at->format('d/m/Y'));
             $template->setValue('fullname', mb_strtoupper($assignment->assignedTo->full_name));
             $template->setValue('dni', $assignment->assignedTo->dni ?? 'N/A');
