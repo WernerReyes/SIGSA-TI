@@ -12,6 +12,7 @@
                 <component :is="icon" v-if="icon" class="size-4" />
 
                 {{ itemsLabel }}
+                
                 <ChevronsUpDown class="h-4 w-4 opacity-50" />
             </Button>
         </PopoverTrigger>
@@ -237,8 +238,8 @@ const toggle = (item: T) => {
 
 
     if (!props.multiple) {
-        selecteds.value = [value]
-        emit('select', value as SelectValue)
+        selecteds.value = selecteds.value.includes(value) ? [] : [value]
+        emit('select', selecteds.value[0] as SelectValue)
         open.value = false
         return
     }

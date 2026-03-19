@@ -77,7 +77,7 @@
                                                     item-value="id" :default-value="componentField.modelValue"
                                                     :selected-as-label="true" :show-refresh="false"
                                                     :show-selected-focus="false" @select="(value) => {
-                                                        const selectedTypeId = Number(value)
+                                                        const selectedTypeId = value ? Number(value) : undefined
                                                         const previousTypeId = values.type_id
 
                                                         setFieldValue('type_id', selectedTypeId)
@@ -616,7 +616,26 @@ const brandSelectLabel = computed(() => {
         : 'Marca'
 })
 
+const modelSelectLabel2 = ref('Modelo')
 
+// const modelSelectLabel = computed(() => {
+//     const asset = currentAsset.value
+
+//     const shouldKeepAssetModelLabel = Boolean(
+//         asset?.model &&
+//         asset.model_id === values.model_id &&
+//         asset.brand_id === values.brand_id &&
+//         asset.type_id === values.type_id
+//     )
+
+//     console.log('Model Select Label Computed:', {
+//         shouldKeepAssetModelLabel: shouldKeepAssetModelLabel,
+//     })
+
+//     return shouldKeepAssetModelLabel
+//         ? getDefaultLabel(asset?.model, 'Modelo')
+//         : 'Modelo'
+// })
 
 const modelSelectLabel = computed(() => {
     const asset = currentAsset.value
@@ -635,7 +654,8 @@ const modelSelectLabel = computed(() => {
 
 watch(() => values.type_id, (type_id) => {
     const asset = currentAsset.value;
-    if (type_id !== asset?.type_id) {
+    if (!type_id  ||     type_id !== asset?.type_id) {
+       
     setFieldValue('brand_id', undefined)
         setFieldValue('model_id', undefined)
     }
