@@ -66,6 +66,7 @@ class SendDeliveryRecordEmailJob implements ShouldQueue
             ];
         }
 
+
         Mail::to($this->toEmails)
             ->cc($this->ccEmails)
             ->send(new DeliveryRecordUploadedMail(
@@ -79,6 +80,9 @@ class SendDeliveryRecordEmailJob implements ShouldQueue
                 messageSections: $this->messageSections,
                 customSubject: $this->subject,
             ));
+
+
+
 
         // Limpia archivos temporales de adjuntos extra luego del envío.
         foreach ($this->extraAttachments as $attachment) {
