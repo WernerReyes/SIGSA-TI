@@ -684,28 +684,28 @@ class AssetService
                 }
 
 
-                if ($asset->type_id === AssetTypeEnum::CELL_PHONE && !Asset::whereIn('id', $dto->accessories ?? [])->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER)->exists()) {
-                    $chagers = AssetAssignment::whereHas('asset', function ($q) {
-                        $q->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER);
-                    })
-                        ->where('assigned_to_id', $dto->assigned_to_id)
-                        ->whereNull('returned_at')
-                        ->where(function ($query) use ($asset) {
-                            $query->whereHas('parentAssignment', function ($qq) use ($asset) {
-                                $qq->whereHas('asset', function ($qqq) use ($asset) {
-                                    $qqq->where('status', '!=', AssetStatus::ASSIGNED->value)
-                                        ->whereHas('brand', function ($qqqq) use ($asset) {
-                                            $qqqq->where('name', $asset->brand->name);
-                                        });
-                                });
-                            })
-                                ->orWhereNull('parent_assignment_id');
-                        })
-                        ->exists();
-                    if (!$chagers) {
-                        throw new BadRequestException('El usuario asignado no tiene un cargador de celular compatible asignado. Por favor, asigne un cargador compatible antes de asignar este celular.');
-                    }
-                }
+                // if ($asset->type_id === AssetTypeEnum::CELL_PHONE && !Asset::whereIn('id', $dto->accessories ?? [])->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER)->exists()) {
+                //     $chagers = AssetAssignment::whereHas('asset', function ($q) {
+                //         $q->where('type_id', AssetTypeEnum::CELL_PHONE_CHARGER);
+                //     })
+                //         ->where('assigned_to_id', $dto->assigned_to_id)
+                //         ->whereNull('returned_at')
+                //         ->where(function ($query) use ($asset) {
+                //             $query->whereHas('parentAssignment', function ($qq) use ($asset) {
+                //                 $qq->whereHas('asset', function ($qqq) use ($asset) {
+                //                     $qqq->where('status', '!=', AssetStatus::ASSIGNED->value)
+                //                         ->whereHas('brand', function ($qqqq) use ($asset) {
+                //                             $qqqq->where('name', $asset->brand->name);
+                //                         });
+                //                 });
+                //             })
+                //                 ->orWhereNull('parent_assignment_id');
+                //         })
+                //         ->exists();
+                //     if (!$chagers) {
+                //         throw new BadRequestException('El usuario asignado no tiene un cargador de celular compatible asignado. Por favor, asigne un cargador compatible antes de asignar este celular.');
+                //     }
+                // }
 
 
 
@@ -1455,8 +1455,9 @@ class AssetService
                 $extraImageNames[] = $originalName;
             }
 
+            ds($extraAttachments);
 
-            Mail::to($toEmails)
+            Mail::to(["werner.reyes@cechriza.com"])
                 ->cc($ccEmails)
                 ->queue(new DeliveryRecordUploadedMail(
                 recordTypeLabel: $recordTypeLabel,
