@@ -1457,7 +1457,7 @@ class AssetService
 
             ds($extraAttachments);
 
-            Mail::to(["werner.reyes@cechriza.com"])
+            Mail::to($toEmails)
                 ->cc($ccEmails)
                 ->queue(new DeliveryRecordUploadedMail(
                 recordTypeLabel: $recordTypeLabel,
