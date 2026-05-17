@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Imports\AssetsImport;
 use Carbon\Carbon;
 use DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,7 +20,7 @@ class OsticketProductsSeeder extends Seeder
     public function run(): void
     {
 
-        $notFound = [];
+        $notFound = $this->updateRequiredPhotoAndDocument();
         $notFoundSSGG = $this->updateStockSSGG();
         $notFoundLOGISTICA = $this->updateStockLOGISTICA();
 
@@ -50,7 +49,7 @@ class OsticketProductsSeeder extends Seeder
             return;
         }
 
-        $export = new class($rows) implements FromArray, WithHeadings {
+        $export = new class ($rows) implements FromArray, WithHeadings {
             private array $rows;
 
             public function __construct(array $rows)
@@ -96,7 +95,7 @@ class OsticketProductsSeeder extends Seeder
         $basePath = rtrim($basePath, "\\/");
         return $basePath . DIRECTORY_SEPARATOR . 'Downloads';
     }
-    
+
 
     private function getRows($path, $slice = 1)
     {
@@ -153,7 +152,9 @@ class OsticketProductsSeeder extends Seeder
                         ->update([
                             'p.requiere_foto_producto_anterior' => $product['requiere_foto'],
                             'p.requiere_documento' => $product['requiere_documento'],
-                            'i.stock_actual' => $product['stock_actual'] ?? DB::raw('i.stock_actual'), // Mantener el stock actual si no se proporciona
+                            'i.stock_actual' => $product['stock_actual'] ?? DB::raw('i.stock_actual'), // Mantener el stock actual si no se 
+                            'i.stock_reservado' => $product['stock_actual'] ?? 0,
+                            // proporciona
 
                         ]);
 
@@ -220,6 +221,7 @@ class OsticketProductsSeeder extends Seeder
                         ->leftJoin('inventario as i', 'p.id_producto', '=', 'i.id_producto')
                         ->update([
                             'i.stock_actual' => $product['stock_actual'],
+                            'i.stock_reservado' => $product['stock_actual'] ?? 0,
                         ]);
 
 
@@ -287,6 +289,7 @@ class OsticketProductsSeeder extends Seeder
                         ->leftJoin('inventario as i', 'p.id_producto', '=', 'i.id_producto')
                         ->update([
                             'i.stock_actual' => $product['stock_actual'],
+                            'i.stock_reservado' => $product['stock_actual'] ?? 0,
                         ]);
 
                     $updates[] = [
