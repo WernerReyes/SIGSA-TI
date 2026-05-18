@@ -20,11 +20,13 @@ class OsticketProductsSeeder extends Seeder
     public function run(): void
     {
 
-        $notFound = $this->updateRequiredPhotoAndDocument();
-        $notFoundSSGG = $this->updateStockSSGG();
+        // $this->newSSGGProducts();
+
+        // $notFound = $this->updateRequiredPhotoAndDocument();
+        // $notFoundSSGG = $this->updateStockSSGG();
         $notFoundLOGISTICA = $this->updateStockLOGISTICA();
 
-        $this->exportNotFoundReport($notFound, $notFoundSSGG, $notFoundLOGISTICA);
+        // $this->exportNotFoundReport($notFound, $notFoundSSGG, $notFoundLOGISTICA);
 
     }
 
@@ -110,6 +112,101 @@ class OsticketProductsSeeder extends Seeder
 
         return $dataRows;
 
+    }
+
+    
+
+    private function newSSGGProducts()
+    {
+        $ssggProducts = $this->getRows('\Downloads\Inventario_2026-05-15.xlsx', 2);
+
+
+
+        $parsedProducts =
+            array_filter(
+                array_map(function ($product) {
+                    return [
+                        'codigo_producto' => trim($product[0]),
+                        'descripcion' => $product[1],
+                        'marca' => $product[2],
+                        'modelo' => $product[3],
+                        'categoria' => $product[4],
+                        'tipo' => $product[5],
+                        'stock_actual' => $product[6],
+                        'area' => $product[7],
+                        'segmentacion' => $product[8],
+                    ];
+                }, $ssggProducts),
+                function ($product) {
+                    return !empty($product['codigo_producto']);
+                }
+            );
+
+        $codigos = ['MAG200A1','LAC17A1','MIB11A1'];
+
+        $DBProducts = DB::table('productos')->whereIn('codigo_producto', $codigos)->pluck('codigo_producto')->toArray();
+
+        $newProducts = array_filter($parsedProducts, function ($product) use ($DBProducts) {
+            return !in_array($product['codigo_producto'], $DBProducts);
+        });
+
+        if (empty($newProducts)) {
+            ds('No hay nuevos productos SSGG para insertar.');
+            return [];
+        }
+
+
+
+        // ds('Nuevos productos SSGG:');
+        $parsedToInsert = array_map(function ($product) {
+            return [
+                'codigo_producto' => $product['codigo_producto'],
+                'descripcion' => $product['descripcion'],
+                'id_marca' => DB::table('marca')->where('descripcion', $product['marca'])->value('id_marca') ?? null,
+                'id_modelo' => DB::table('modelo')->where('descripcion', $product['modelo'])->value('id_modelo') ?? null,
+                'id_categoria' => DB::table('categorias_inventario')->where('nombre_categoria', $product['categoria'])->value('id_categoria') ?? null,
+                'id_tipo_stock' => DB::table('tipos_stock')->where('descripcion', $product['tipo'])->value('id_tipo_stock') ?? null,
+                'tipo_responsable' => 'SSGG',
+                'tipo' => 2,
+            ];
+        }, $newProducts);
+
+
+
+        // try {
+
+        // DB::beginTransaction();
+
+
+        //    $data =  DB::table('productos')->insert($parsedToInsert);
+        //     ds('Productos insertados correctamente.');
+
+
+        //     // Insertar registros en inventario con stock inicial de 0
+        //     $insertedProductIds = DB::table('productos')
+        //         ->whereIn('codigo_producto', array_column($parsedToInsert, 'codigo_producto'))
+        //         ->pluck('id_producto')
+        //         ->toArray();
+
+        //     $inventarioInserts = array_map(function ($id) {
+        //         return [
+        //             'id_producto' => $id,
+        //             'stock_actual' => 0,
+        //             'stock_reservado' => 0,
+        //         ];
+        //     }, $insertedProductIds);
+
+        //     DB::table('inventario')->insert($inventarioInserts);
+
+
+        //     DB::commit();
+        // } catch (\Exception $e) {
+        //     ds('Error al insertar productos: ' . $e->getMessage());
+        // }
+
+
+
+        return $parsedToInsert;
     }
 
 
@@ -221,7 +318,6 @@ class OsticketProductsSeeder extends Seeder
                         ->leftJoin('inventario as i', 'p.id_producto', '=', 'i.id_producto')
                         ->update([
                             'i.stock_actual' => $product['stock_actual'],
-                            'i.stock_reservado' => $product['stock_actual'] ?? 0,
                         ]);
 
 
@@ -267,6 +363,7 @@ class OsticketProductsSeeder extends Seeder
                         // 'codigo_producto' => $product[0],
                         'descripcion' => $product[1],
                         'stock_actual' => $product[5],
+                        'activo' => $product[6],
                     ];
                 }, $logisticaProducts),
                 function ($product) {
@@ -289,7 +386,7 @@ class OsticketProductsSeeder extends Seeder
                         ->leftJoin('inventario as i', 'p.id_producto', '=', 'i.id_producto')
                         ->update([
                             'i.stock_actual' => $product['stock_actual'],
-                            'i.stock_reservado' => $product['stock_actual'] ?? 0,
+                            'p.es_frecuente' => $product['activo'] === 'SI' ? 1 : 0,
                         ]);
 
                     $updates[] = [
