@@ -91,6 +91,17 @@ URGENT
 
 `priority` no se envia desde el cliente. El sistema la calcula automaticamente.
 
+`history action`:
+
+```text
+CREATED
+UPDATED
+STATUS_CHANGED
+RESPONSIBLE_CHANGED
+ASSET_ASSIGNED
+ASSET_RETURNED
+```
+
 ## Listar tickets
 
 ```http
@@ -191,6 +202,85 @@ Respuesta `200`:
 ```
 
 Si no existe:
+
+```json
+{
+  "error": "Ticket no encontrado."
+}
+```
+
+## Ver historial de acciones
+
+```http
+GET /api/tickets/{id}/histories
+```
+
+Este endpoint devuelve el historial paginado de acciones de un ticket. Usa el mismo flujo que la
+vista web: construye `TicketHistoryFiltersDto` con los parametros de consulta y llama a
+`TicketService::getHistoriesPaginated()`.
+
+Parametros opcionales:
+
+| Parametro | Tipo | Descripcion |
+| --- | --- | --- |
+| `actions[]` | array<string> | Filtra por acciones del historial. |
+| `start_date` | date `YYYY-MM-DD` | Fecha minima de `performed_at`. |
+| `end_date` | date `YYYY-MM-DD` | Fecha maxima de `performed_at`. |
+
+Ejemplo:
+
+```http
+GET /api/tickets/15/histories?actions[]=CREATED&actions[]=STATUS_CHANGED&start_date=2026-07-01&end_date=2026-07-31
+```
+
+Respuesta `200`:
+
+```json
+{
+  "data": [
+    {
+      "id": 31,
+      "action": "STATUS_CHANGED",
+      "description": "Cerrado el ticket",
+      "ticket_id": 15,
+      "performed_by": 8,
+      "performed_at": "2026-07-01 10:30:00",
+      "performer": {
+        "staff_id": 8,
+        "firstname": "Ana",
+        "lastname": "Torres"
+      }
+    },
+    {
+      "id": 30,
+      "action": "CREATED",
+      "description": "Ticket creado",
+      "ticket_id": 15,
+      "performed_by": 12,
+      "performed_at": "2026-07-01 09:00:00",
+      "performer": {
+        "staff_id": 12,
+        "firstname": "Juan",
+        "lastname": "Perez"
+      }
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 1,
+    "per_page": 10,
+    "total": 2
+  },
+  "links": {
+    "first": "https://sistemas-ti.cechriza.com/api/tickets/15/histories?page=1",
+    "last": "https://sistemas-ti.cechriza.com/api/tickets/15/histories?page=1",
+    "prev": null,
+    "next": null
+  }
+}
+```
+
+Si el ticket no existe:
 
 ```json
 {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\DTOs\Ticket\StoreTicketDto;
 use App\DTOs\Ticket\TicketFiltersDto;
+use App\DTOs\Ticket\TicketHistoryFiltersDto;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Ticket\StoreTicketRequest;
 use App\Models\Ticket;
@@ -44,6 +45,35 @@ class TicketApiController extends Controller
         try {
             return response()->json([
                 'data' => $ticketService->getTicketById($id),
+            ]);
+        } catch (ModelNotFoundException) {
+            return response()->json(['error' => 'Ticket no encontrado.'], 404);
+        } catch (Throwable $e) {
+            return $this->errorResponse($e);
+        }
+    }
+
+    public function histories(Request $request, int $id, TicketService $ticketService)
+    {
+        try {
+            $ticket = Ticket::findOrFail($id);
+            $filters = TicketHistoryFiltersDto::fromArray($request->all());
+            $histories = $ticketService->getHistoriesPaginated($ticket, $filters);
+
+            return response()->json([
+                'data' => $histories->items(),
+                'meta' => [
+                    'current_page' => $histories->currentPage(),
+                    'last_page' => $histories->lastPage(),
+                    'per_page' => $histories->perPage(),
+                    'total' => $histories->total(),
+                ],
+                'links' => [
+                    'first' => $histories->url(1),
+                    'last' => $histories->url($histories->lastPage()),
+                    'prev' => $histories->previousPageUrl(),
+                    'next' => $histories->nextPageUrl(),
+                ],
             ]);
         } catch (ModelNotFoundException) {
             return response()->json(['error' => 'Ticket no encontrado.'], 404);
