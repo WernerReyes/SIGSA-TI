@@ -14,7 +14,7 @@ class StoreDevelopmentRequestDto
         public readonly ?string $estimated_end_date,
         public readonly int $area_id,
         public readonly int $requested_by_id,
-        public readonly ?string $requirement_file = null,
+        public readonly mixed $requirement_file = null,
     ) {
 
 
@@ -30,7 +30,7 @@ class StoreDevelopmentRequestDto
             estimated_hours: $data['estimated_hours'] ?? null,
             estimated_end_date: $data['estimated_end_date'] ?? null,
             area_id: $data['area_id'],
-            requested_by_id: Auth::id(),
+            requested_by_id: (int) ($data['requested_by_id'] ?? Auth::id()),
             requirement_file: $data['requirement_file'] ?? null,
         );
     }

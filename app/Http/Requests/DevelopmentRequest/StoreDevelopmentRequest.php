@@ -3,8 +3,8 @@
 namespace App\Http\Requests\DevelopmentRequest;
 
 use App\Enums\DevelopmentRequest\DevelopmentRequestPriority;
-use App\Enums\DevelopmentRequest\DevelopmentRequestStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDevelopmentRequest extends FormRequest
 {
@@ -34,8 +34,11 @@ class StoreDevelopmentRequest extends FormRequest
             'estimated_end_date' => 'nullable|date|after_or_equal:today',
             'area_id' => 'required|exists:area,id_area',
             'requirement_file' => 'nullable|file|max:4096|mimes:pdf',
-            
-            // 'requested_by_id' => 'required|exists:ost_staff,staff_id',
+            'requested_by_id' => [
+                Rule::requiredIf($this->is('api/*')),
+                'nullable',
+                'exists:ost_staff,staff_id',
+            ],
         ];
     }
 
@@ -60,8 +63,8 @@ class StoreDevelopmentRequest extends FormRequest
             'requirement_file.file' => 'El archivo debe ser un archivo válido.',
             'requirement_file.max' => 'El archivo no debe exceder los 4 MB.',
             'requirement_file.mimes' => 'El archivo debe ser un archivo PDF.',
-            // 'requested_by_id.required' => 'El solicitante es obligatorio.',
-            // 'requested_by_id.exists' => 'El solicitante no existe.',
+            'requested_by_id.required' => 'El solicitante es obligatorio para solicitudes API.',
+            'requested_by_id.exists' => 'El solicitante no existe.',
         ];
     }
 }
