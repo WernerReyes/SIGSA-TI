@@ -34,7 +34,7 @@ class StoreTicketDto
         return new self(
             title: $data['title'],
             description: $data['description'],
-            requesterId: $data['requester_id'] ?? Auth::id(),
+            requesterId: (int) ($data['requester_id'] ?? Auth::id()),
             images: $data['images'] ?? null,
             type: $data['type'],
             impact: $data['impact'],

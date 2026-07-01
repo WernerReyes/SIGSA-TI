@@ -57,7 +57,7 @@ class TicketService
                 'images',
                 'sla_response_due_at',
                 'sla_resolution_due_at',
-        
+
 
                 'sla_paused_at',
                 'sla_paused_duration',
@@ -114,7 +114,7 @@ class TicketService
             ->paginate(10)
             ->withQueryString();
 
-            return $list;
+        return $list;
     }
 
     public function getHistoriesPaginated(Ticket $ticket, TicketHistoryFiltersDto $filters)
@@ -170,9 +170,10 @@ class TicketService
     {
 
         $images = [];
+        $ticket = null;
 
         try {
-            DB::transaction(function () use ($dto, &$images) {
+            DB::transaction(function () use ($dto, &$images, &$ticket) {
                 $sla = SlaPolicy::where('priority', $dto->priority)
                     ->first();
 
@@ -205,7 +206,7 @@ class TicketService
 
             });
         } catch (\Exception $e) {
-         
+
             if (count($images) > 0) {
                 foreach ($images as $path) {
                     Storage::disk('public')->delete($path);
@@ -214,6 +215,11 @@ class TicketService
             throw new InternalErrorException("Error al crear el ticket: " . $e->getMessage());
         }
 
+        return $ticket?->load([
+            'requester:staff_id,firstname,lastname,dept_id',
+            'requester.department:id,name',
+            'responsible:staff_id,firstname,lastname',
+        ]);
 
     }
 
@@ -222,7 +228,7 @@ class TicketService
     public function updateTicket(Ticket $ticket, StoreTicketDto $dto)
     {
 
-       
+
         if ($dto->requesterId !== $ticket->requester_id) {
             throw new BadRequestException("No tienes permiso para actualizar este ticket.");
         }
@@ -257,7 +263,7 @@ class TicketService
                 $original = $ticket->getOriginal();
 
                 $ticket->title = $dto->title;
-               
+
                 // $ticket->requester_id = $dto->requesterId;
                 $ticket->description = $dto->description;
                 $ticket->type = $dto->type;
@@ -265,7 +271,7 @@ class TicketService
                 $ticket->urgency = $dto->urgency;
                 $ticket->priority = $dto->priority;
                 $ticket->category = $dto->category;
-                
+
                 $ticket->save();
 
 
@@ -355,7 +361,7 @@ class TicketService
 
 
         } catch (\Exception $e) {
-           
+
 
             throw new InternalErrorException("Error al actualizar el ticket: " . $e->getMessage());
         }
@@ -371,9 +377,9 @@ class TicketService
             'type' => 'Tipo',
             'priority' => 'Prioridad',
             'category' => 'Categoría',
-                'impact' => 'Impacto',
-                'urgency' => 'Urgencia',
-                'images' => 'Imágenes',
+            'impact' => 'Impacto',
+            'urgency' => 'Urgencia',
+            'images' => 'Imágenes',
             default => $field,
         };
     }
@@ -433,12 +439,29 @@ class TicketService
         }
     }
 
+    public function deleteTicketFromApi(Ticket $ticket)
+    {
+        if ($ticket->status !== TicketStatus::OPEN->value) {
+            throw new BadRequestException("Solo se pueden eliminar los tickets en estado 'Abierto'.");
+        }
+
+        if ($ticket->responsible_id !== null) {
+            throw new BadRequestException("No se puede eliminar un ticket que ya ha sido asignado.");
+        }
+
+        try {
+            $ticket->delete();
+        } catch (\Exception $e) {
+            throw new InternalErrorException("Error al eliminar el ticket: " . $e->getMessage());
+        }
+    }
+
     public function assignTicket(Ticket $ticket, int $responsible_id)
     {
 
-        if ($ticket->status !== TicketStatus::IN_PROGRESS->value) {
-            throw new BadRequestException("No se puede asignar un ticket que no esté en estado 'En progreso'.");
-        }
+        // if ($ticket->status !== TicketStatus::IN_PROGRESS->value) {
+        //     throw new BadRequestException("No se puede asignar un ticket que no esté en estado 'En progreso'.");
+        // }
 
         try {
 
@@ -487,6 +510,19 @@ class TicketService
 
     public function changeTicketStatus(Ticket $ticket, string $newStatus)
     {
+
+        if (!$ticket->responsible_id) {
+            throw new BadRequestException("No se puede cambiar el estado de un ticket que no tiene un responsable asignado.");
+        }
+
+
+        if ($newStatus === TicketStatus::CLOSED->value) {
+            //* User must be the responsible to close the ticket
+            if (auth()->user()->staff_id !== $ticket->responsible_id) {
+                throw new BadRequestException("Solo el responsable del ticket puede cerrarlo.");
+            }
+        }
+
         $oldStatus = $ticket->status;
 
         if ($oldStatus === $newStatus) {
@@ -534,8 +570,8 @@ class TicketService
                         $totalBusinessMinutes - $ticket->sla_paused_duration;
 
 
-                        $sla_resolution_minutes = SlaPolicy::where('priority', $ticket->priority)->value('resolution_time_minutes');
-                    
+                    $sla_resolution_minutes = SlaPolicy::where('priority', $ticket->priority)->value('resolution_time_minutes');
+
 
                     if ($realConsumedMinutes > $sla_resolution_minutes) {
                         $ticket->sla_breached = true;
@@ -550,6 +586,42 @@ class TicketService
                     : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
 
                 $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description);
+
+                return [
+                    'description' => $description,
+                    'ticket' => $ticket,
+                ];
+            });
+        } catch (\Exception $e) {
+            throw new InternalErrorException("Error al cambiar el estado del ticket: " . $e->getMessage());
+        }
+    }
+
+    public function closeTicketFromApi(Ticket $ticket)
+    {
+        if (!$ticket->responsible_id) {
+            throw new BadRequestException("No se puede cambiar el estado de un ticket que no tiene un responsable asignado.");
+        }
+
+        $newStatus = TicketStatus::CLOSED->value;
+        $oldStatus = $ticket->status;
+
+        if ($oldStatus === $newStatus) {
+            throw new BadRequestException("El ticket ya tiene el estado seleccionado.");
+        }
+
+        if (!$this->canTransition($oldStatus, $newStatus)) {
+            throw new BadRequestException("TransiciÃ³n de estado no permitida de '" . TicketStatus::label($oldStatus) . "' a '" . TicketStatus::label($newStatus) . "'.");
+        }
+
+        try {
+            return DB::transaction(function () use ($ticket, $newStatus) {
+                $ticket->status = $newStatus;
+                $ticket->save();
+
+                $description = "Cerrado el ticket";
+
+                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description, $ticket->responsible_id);
 
                 return [
                     'description' => $description,

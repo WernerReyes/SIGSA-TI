@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckCharge;
 use App\Http\Middleware\CheckDepartment;
+use App\Http\Middleware\EnsureAccessApiKey;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'department' => CheckDepartment::class,
             'charge' => CheckCharge::class,
+            'access.api' => EnsureAccessApiKey::class,
         ]);
 
         $middleware->web(append: [
@@ -72,4 +74,3 @@ return Application::configure(basePath: dirname(__DIR__))
 
 
     })->create();
-

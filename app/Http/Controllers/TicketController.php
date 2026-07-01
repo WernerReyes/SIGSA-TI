@@ -59,38 +59,6 @@ class TicketController extends Controller
     }
 
 
-    function storeAPI(StoreTicketRequest $request, TicketService $ticketService)
-    {
-        $validated = $request->validated();
-        $dto = StoreTicketDto::fromArray($validated);
-        try {
-            $ticketService->storeTicket($dto);
-            return response()->json(['message' => 'El ticket ha sido creado exitosamente.'], 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    function updateAPI($id, StoreTicketRequest $request, TicketService $ticketService)
-    {
-        $ticket = Ticket::find($id);
-
-        if (!$ticket) {
-            return response()->json(['error' => 'Ticket no encontrado.'], 404);
-        }
-
-  
-        $validated = $request->validated();
-        $dto = StoreTicketDto::fromArray($validated);
-        try {
-            $ticketService->updateTicket($ticket, $dto);
-            return response()->json(['message' => 'El ticket ha sido actualizado exitosamente.'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-
     function store(StoreTicketRequest $request, TicketService $ticketService)
     {
 
