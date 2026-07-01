@@ -1,6 +1,6 @@
 # API de Tickets
 
-Base URL: `/api`
+Base URL: `https://sistemas-ti.cechriza.com/api`
 
 Usar el header `Accept: application/json` en todas las solicitudes. Para enviar imagenes, usar
 `multipart/form-data`; si no se envian imagenes, tambien se puede usar `application/json`.
@@ -10,20 +10,16 @@ Usar el header `Accept: application/json` en todas las solicitudes. Para enviar 
 Todas las rutas de tickets requieren una API key configurada en el servidor:
 
 ```env
-ACCESS_API=valor-secreto
+ACCESS_API=elGR1asaKISMNSHKt6RkBBLzTQRnycRM
 ```
 
 El cliente debe enviar la misma key en uno de estos formatos:
 
 ```http
-X-API-Key: valor-secreto
+X-API-Key: elGR1asaKISMNSHKt6RkBBLzTQRnycRM
 ```
 
-o:
 
-```http
-Authorization: Bearer valor-secreto
-```
 
 Si la key no se envia o no coincide, la API responde `401`:
 
