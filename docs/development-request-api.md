@@ -2,10 +2,10 @@
 
 Base URL: `https://sistemas-ti.cechriza.com/api`
 
-Este endpoint esta pensado para que otras areas registren solicitudes de desarrollo sin iniciar
-sesion en el sistema web. La operacion disponible por API es solo el registro de la solicitud.
-El analisis, aprobaciones, asignacion, progreso y cambios de estado se mantienen en el flujo
-interno del modulo de Desarrollo.
+Estos endpoints estan pensados para que otras areas registren solicitudes de desarrollo sin
+iniciar sesion en el sistema web, consulten el tablero agrupado por estado y revisen el historial
+de progreso de una solicitud. El analisis, aprobaciones, asignacion, registro de progreso y
+cambios de estado se mantienen en el flujo interno del modulo de Desarrollo.
 
 ## Autenticacion por API key
 
@@ -39,13 +39,159 @@ Si `ACCESS_API` no esta configurado en el servidor, la API responde `500`:
 
 ## Flujo general
 
-1. El cliente externo envia `POST /api/development-requests`.
+1. El cliente externo envia una solicitud a `/api/development-requests`.
 2. El middleware `access.api` valida la API key contra `ACCESS_API`.
-3. `StoreDevelopmentRequest` valida el cuerpo. En rutas API, `requested_by_id` es obligatorio.
+3. Para registrar, `StoreDevelopmentRequest` valida el cuerpo. En rutas API, `requested_by_id` es obligatorio.
 4. `StoreDevelopmentRequestDto` normaliza los datos y toma `requested_by_id` desde el cuerpo.
 5. `DevelopmentRequestService::store()` crea la solicitud con estado `REGISTERED`.
-6. El sistema calcula la posicion dentro de la columna `REGISTERED` y guarda el PDF si fue enviado.
-7. La API responde en JSON con `message` y `data`.
+6. Para consultas, el controlador reutiliza `getSectionsByStatus()` y `getProgressHistory()`.
+7. La API responde en JSON con `message`, `data` o `error`.
+
+## Rutas disponibles
+
+| Metodo | Ruta | Descripcion |
+| --- | --- | --- |
+| `GET` | `/api/development-requests` | Lista todas las solicitudes agrupadas por estado. |
+| `POST` | `/api/development-requests` | Registra una nueva solicitud. |
+| `GET` | `/api/development-requests/{id}/progress-history` | Lista el historial de progreso de una solicitud. |
+
+## Listar solicitudes por estado
+
+```http
+GET /api/development-requests
+```
+
+Devuelve todas las solicitudes agrupadas por `status`. Internamente usa
+`DevelopmentRequestService::getSectionsByStatus()`.
+
+Relaciones incluidas:
+
+| Relacion | Descripcion |
+| --- | --- |
+| `area` | Area solicitante. |
+| `requested_by` | Usuario solicitante. |
+| `technical_approval.approved_by` | Aprobacion tecnica y aprobador. |
+| `strategic_approval.approved_by` | Aprobacion estrategica y aprobador. |
+| `latest_progress` | Ultimo avance registrado. |
+| `developers` | Desarrolladores asignados. |
+
+Respuesta `200`:
+
+```json
+{
+  "data": {
+    "REGISTERED": [
+      {
+        "id": 25,
+        "title": "Automatizar reporte de ventas",
+        "priority": "HIGH",
+        "status": "REGISTERED",
+        "position": 1,
+        "description": "Necesitamos generar automaticamente el reporte semanal de ventas por sede.",
+        "impact": "Reduce trabajo manual y errores de consolidacion.",
+        "estimated_hours": null,
+        "estimated_end_date": null,
+        "project_url": null,
+        "completed_at": null,
+        "actual_hours": null,
+        "area_id": 4,
+        "requested_by_id": 12,
+        "requirement_url": null,
+        "area": {
+          "id_area": 4,
+          "descripcion_area": "Comercial"
+        },
+        "requested_by": {
+          "staff_id": 12,
+          "firstname": "Juan",
+          "lastname": "Perez"
+        },
+        "technical_approval": null,
+        "strategic_approval": null,
+        "latest_progress": null,
+        "developers": []
+      }
+    ],
+    "IN_DEVELOPMENT": [
+      {
+        "id": 18,
+        "title": "Portal de indicadores",
+        "priority": "MEDIUM",
+        "status": "IN_DEVELOPMENT",
+        "position": 1,
+        "latest_progress": {
+          "id": 9,
+          "percentage": 45,
+          "notes": "Modulo de autenticacion completado.",
+          "development_request_id": 18,
+          "performed_by": 8,
+          "created_at": "2026-07-02T09:30:00.000000Z",
+          "updated_at": "2026-07-02T09:30:00.000000Z"
+        },
+        "developers": [
+          {
+            "staff_id": 8,
+            "firstname": "Ana",
+            "lastname": "Torres"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Ver historial de progreso
+
+```http
+GET /api/development-requests/{id}/progress-history
+```
+
+Devuelve el historial completo de avances de una solicitud, ordenado desde el primer registro
+hasta el mas reciente. Internamente usa `DevelopmentRequestService::getProgressHistory()`.
+
+Respuesta `200`:
+
+```json
+{
+  "data": [
+    {
+      "id": 7,
+      "notes": "Inicio de desarrollo",
+      "percentage": 0,
+      "development_request_id": 18,
+      "created_at": "2026-07-01T08:00:00.000000Z",
+      "updated_at": "2026-07-01T08:00:00.000000Z",
+      "performed_by": {
+        "staff_id": 8,
+        "firstname": "Ana",
+        "lastname": "Torres"
+      }
+    },
+    {
+      "id": 9,
+      "notes": "Modulo de autenticacion completado.",
+      "percentage": 45,
+      "development_request_id": 18,
+      "created_at": "2026-07-02T09:30:00.000000Z",
+      "updated_at": "2026-07-02T09:30:00.000000Z",
+      "performed_by": {
+        "staff_id": 8,
+        "firstname": "Ana",
+        "lastname": "Torres"
+      }
+    }
+  ]
+}
+```
+
+Si la solicitud no existe:
+
+```json
+{
+  "error": "Solicitud de desarrollo no encontrada."
+}
+```
 
 ## Registrar solicitud
 
@@ -123,6 +269,18 @@ Estado inicial asignado por el sistema:
 
 ```text
 REGISTERED
+```
+
+Estados posibles del flujo:
+
+```text
+REGISTERED
+IN_ANALYSIS
+APPROVED
+IN_DEVELOPMENT
+IN_TESTING
+COMPLETED
+REJECTED
 ```
 
 El cliente no envia `status`, `position`, `project_url`, `completed_at`, `actual_hours`,

@@ -198,7 +198,8 @@ class TicketService
                     'status' => TicketStatus::OPEN->value,
                     'description' => $dto->description,
                     'images' => $images,
-
+                    'impact' => $dto->impact,
+                    'urgency' => $dto->urgency,
                     'requester_id' => $dto->requesterId,
                     'type' => $dto->type,
                     'priority' => $dto->priority,
@@ -240,7 +241,7 @@ class TicketService
 
     private function notifySystemsAreaTicketCreated(Ticket $ticket): void
     {
-        $emails = User::query()
+        $emails = User::active()
             ->where('dept_id', UserDept::TI->value)
             ->whereNotNull('email')
             ->where('email', '<>', '')
@@ -254,13 +255,12 @@ class TicketService
             return;
         }
 
+        ds('Enviando correo de nuevo ticket a los usuarios de TI:', $emails);
+
         try {
             Mail::to($emails)->send(new TicketCreatedMail($ticket));
         } catch (\Throwable $e) {
-            Log::warning('No se pudo enviar el correo de nuevo ticket al area de Sistemas.', [
-                'ticket_id' => $ticket->id,
-                'error' => $e->getMessage(),
-            ]);
+            ds('erroror', $e->getMessage());
         }
     }
 

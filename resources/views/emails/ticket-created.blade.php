@@ -68,14 +68,14 @@
                                     <td style="padding:8px 0; color:#6b7280;">Categoria</td>
                                     <td style="padding:8px 0; color:#111827;">{{ $categoryLabel }}</td>
                                 </tr>
-                                <tr>
+                                <!-- <tr>
                                     <td style="padding:8px 0; color:#6b7280;">Impacto</td>
                                     <td style="padding:8px 0; color:#111827;">{{ $impactLabel }}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding:8px 0; color:#6b7280;">Urgencia</td>
                                     <td style="padding:8px 0; color:#111827;">{{ $urgencyLabel }}</td>
-                                </tr>
+                                </tr> -->
                                 <tr>
                                     <td style="padding:8px 0; color:#6b7280;">Prioridad</td>
                                     <td style="padding:8px 0; color:#111827; font-weight:700;">{{ $priorityLabel }}</td>

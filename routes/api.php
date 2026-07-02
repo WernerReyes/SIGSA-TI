@@ -14,5 +14,7 @@ Route::middleware('access.api')->prefix('tickets')->group(function () {
 });
 
 Route::middleware('access.api')->prefix('development-requests')->group(function () {
+    Route::get('/', [DevelopmentRequestApiController::class, 'index']);
     Route::post('/', [DevelopmentRequestApiController::class, 'store']);
+    Route::get('/{id}/progress-history', [DevelopmentRequestApiController::class, 'progressHistory']);
 });

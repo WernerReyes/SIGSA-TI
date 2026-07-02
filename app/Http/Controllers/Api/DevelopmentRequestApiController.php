@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\DTOs\DevelopmentRequest\StoreDevelopmentRequestDto;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DevelopmentRequest\StoreDevelopmentRequest;
+use App\Models\DevelopmentRequest;
 use App\Services\DevelopmentRequestService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\UnauthorizedException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -13,6 +15,17 @@ use Throwable;
 
 class DevelopmentRequestApiController extends Controller
 {
+    public function index(DevelopmentRequestService $service)
+    {
+        try {
+            return response()->json([
+                'data' => $service->getSectionsByStatus(),
+            ]);
+        } catch (Throwable $e) {
+            return $this->errorResponse($e);
+        }
+    }
+
     public function store(StoreDevelopmentRequest $request, DevelopmentRequestService $service)
     {
         $validated = $request->validated();
@@ -30,6 +43,23 @@ class DevelopmentRequestApiController extends Controller
         }
     }
 
+    public function progressHistory(int $id, DevelopmentRequestService $service)
+    {
+        try {
+            DevelopmentRequest::findOrFail($id);
+
+            return response()->json([
+                'data' => $service->getProgressHistory($id),
+            ]);
+        } catch (ModelNotFoundException) {
+            return response()->json([
+                'error' => 'Solicitud de desarrollo no encontrada.',
+            ], 404);
+        } catch (Throwable $e) {
+            return $this->errorResponse($e);
+        }
+    }
+
     private function errorResponse(Throwable $e)
     {
         return response()->json([
@@ -39,6 +69,10 @@ class DevelopmentRequestApiController extends Controller
 
     private function statusCodeFor(Throwable $e): int
     {
+        if ($e instanceof ModelNotFoundException) {
+            return 404;
+        }
+
         if ($e instanceof BadRequestException) {
             return 400;
         }

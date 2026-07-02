@@ -33,14 +33,19 @@ class TicketCreatedMail extends Mailable
 
     public function content(): Content
     {
+
+    // $this->ticket->select('id', 'title', 'description', 'type', 'category', 'impact', 'urgency', 'priority', 'status');
+
+    ds('Ticket', $this->ticket);
+
         return new Content(
             view: 'emails.ticket-created',
             with: [
                 'ticket' => $this->ticket,
                 'typeLabel' => TicketType::label($this->ticket->type),
                 'categoryLabel' => $this->ticket->category ? TicketCategory::label($this->ticket->category) : 'No aplica',
-                'impactLabel' => TicketImpact::label($this->ticket->impact),
-                'urgencyLabel' => TicketUrgency::label($this->ticket->urgency),
+                // 'impactLabel' => TicketImpact::label($this->ticket->impact),
+                // 'urgencyLabel' => TicketUrgency::label($this->ticket->urgency),
                 'priorityLabel' => TicketPriority::label($this->ticket->priority),
                 'statusLabel' => TicketStatus::label($this->ticket->status),
             ],
