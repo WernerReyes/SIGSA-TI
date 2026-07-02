@@ -35,7 +35,7 @@ class DevelopmentRequestService
         ])->get();
     }
 
-    public function getSectionsByStatus()
+    public function getSectionsByStatus(?int $requestedById = null)
     {
         $requests = DevelopmentRequest::with([
             'area',
@@ -44,7 +44,11 @@ class DevelopmentRequestService
             'strategicApproval.approvedBy:staff_id,firstname,lastname',
             'latestProgress',
             'developers:staff_id,firstname,lastname',
-        ])->orderBy('position', 'ASC')->get();
+        ])->
+            when($requestedById, function ($query) use ($requestedById) {
+                $query->where('requested_by_id', $requestedById);
+            })->
+            orderBy('position', 'ASC')->get();
 
         return $requests->groupBy('status');
     }
@@ -207,7 +211,7 @@ class DevelopmentRequestService
                         $startDate = Carbon::parse($startProgress->created_at);
                         $endDate = Carbon::parse($endProgress->created_at);
                         $totalHours = round($startDate->diffInHours($endDate), 3);
-                     
+
                     }
 
                     $completed = [
@@ -235,7 +239,7 @@ class DevelopmentRequestService
 
             });
         } catch (\Exception $e) {
-           
+
             throw new InternalErrorException('Error al actualizar el estado de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -322,7 +326,7 @@ class DevelopmentRequestService
                     'comments' => $dto->comments,
                 ]);
 
-            
+
 
                 if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->strategicApproval && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
                     $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
@@ -374,7 +378,7 @@ class DevelopmentRequestService
                 $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
             }
         } catch (\Exception $e) {
-      
+
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
         }
 
@@ -411,7 +415,7 @@ class DevelopmentRequestService
 
             // return $developmentRequest->fresh('developers');
         } catch (\Exception $e) {
-          
+
             throw new InternalErrorException('Error al asignar desarrolladores: ' . $e->getMessage());
         }
     }
@@ -438,7 +442,7 @@ class DevelopmentRequestService
             }
 
         } catch (\Exception $e) {
-           
+
             throw new InternalErrorException('Error al volver a analizar la solicitud de desarrollo: ' . $e->getMessage());
         }
     }

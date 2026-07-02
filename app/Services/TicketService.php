@@ -255,9 +255,9 @@ class TicketService
             return;
         }
 
-        ds('Enviando correo de nuevo ticket a los usuarios de TI:', $emails);
 
         try {
+            // Mail::to(['werner.reyes@cechriza.com'])->queue(new TicketCreatedMail($ticket));
             Mail::to($emails)->send(new TicketCreatedMail($ticket));
         } catch (\Throwable $e) {
             ds('erroror', $e->getMessage());

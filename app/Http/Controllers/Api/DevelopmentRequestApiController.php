@@ -8,6 +8,7 @@ use App\Http\Requests\DevelopmentRequest\StoreDevelopmentRequest;
 use App\Models\DevelopmentRequest;
 use App\Services\DevelopmentRequestService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Validation\UnauthorizedException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -15,11 +16,13 @@ use Throwable;
 
 class DevelopmentRequestApiController extends Controller
 {
-    public function index(DevelopmentRequestService $service)
+    public function index(Request $request, DevelopmentRequestService $service)
     {
+        $requestedById = $request->query('requested_by_id');
+
         try {
             return response()->json([
-                'data' => $service->getSectionsByStatus(),
+                'data' => $service->getSectionsByStatus($requestedById),
             ]);
         } catch (Throwable $e) {
             return $this->errorResponse($e);

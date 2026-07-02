@@ -11,9 +11,11 @@ use App\Enums\Ticket\TicketUrgency;
 use App\Models\Ticket;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class TicketCreatedMail extends Mailable
 {
@@ -33,11 +35,6 @@ class TicketCreatedMail extends Mailable
 
     public function content(): Content
     {
-
-    // $this->ticket->select('id', 'title', 'description', 'type', 'category', 'impact', 'urgency', 'priority', 'status');
-
-    ds('Ticket', $this->ticket);
-
         return new Content(
             view: 'emails.ticket-created',
             with: [
@@ -54,6 +51,25 @@ class TicketCreatedMail extends Mailable
 
     public function attachments(): array
     {
-        return [];
+        if (!is_array($this->ticket->images)) {
+            return [];
+        }
+
+        $attachments = [];
+
+        foreach ($this->ticket->images as $index => $imagePath) {
+            if (!$imagePath || !Storage::disk('public')->exists($imagePath)) {
+                continue;
+            }
+
+            $absolutePath = Storage::disk('public')->path($imagePath);
+            $extension = pathinfo($absolutePath, PATHINFO_EXTENSION) ?: 'jpg';
+
+            $attachments[] = Attachment::fromPath($absolutePath)
+                ->as('ticket-' . $this->ticket->id . '-imagen-' . ($index + 1) . '.' . $extension)
+                ->withMime(mime_content_type($absolutePath) ?: 'application/octet-stream');
+        }
+
+        return $attachments;
     }
 }

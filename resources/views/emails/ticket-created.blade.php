@@ -68,14 +68,7 @@
                                     <td style="padding:8px 0; color:#6b7280;">Categoria</td>
                                     <td style="padding:8px 0; color:#111827;">{{ $categoryLabel }}</td>
                                 </tr>
-                                <!-- <tr>
-                                    <td style="padding:8px 0; color:#6b7280;">Impacto</td>
-                                    <td style="padding:8px 0; color:#111827;">{{ $impactLabel }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:8px 0; color:#6b7280;">Urgencia</td>
-                                    <td style="padding:8px 0; color:#111827;">{{ $urgencyLabel }}</td>
-                                </tr> -->
+                               
                                 <tr>
                                     <td style="padding:8px 0; color:#6b7280;">Prioridad</td>
                                     <td style="padding:8px 0; color:#111827; font-weight:700;">{{ $priorityLabel }}</td>
@@ -96,7 +89,7 @@
                                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:20px 0; background-color:#f8fafc; border-left:4px solid #1f429b;">
                                     <tr>
                                         <td style="padding:16px; font-size:13px; color:#1f2937;">
-                                            Este ticket incluye {{ count($ticket->images_urls) }} imagen(es) adjunta(s) en el sistema.
+                                            Este ticket incluye {{ count($ticket->images_urls) }} imagen(es). Se adjuntan en este correo y tambien estan disponibles en el sistema.
                                         </td>
                                     </tr>
                                 </table>
