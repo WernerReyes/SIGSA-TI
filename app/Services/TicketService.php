@@ -13,6 +13,8 @@ use App\DTOs\Ticket\TicketFiltersDto;
 use App\Enums\Ticket\TicketType;
 use App\Enums\Ticket\TicketUrgency;
 use App\Enums\TicketAsset\TicketAssetAction;
+use App\Enums\User\UserDept;
+use App\Mail\TicketCreatedMail;
 use App\Models\AssetAssignment;
 use App\Models\SlaPolicy;
 use App\Models\Ticket;
@@ -23,6 +25,8 @@ use App\Utils\CompressImage;
 use Auth;
 use Carbon\Carbon;
 use DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Storage;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
@@ -74,6 +78,11 @@ class TicketService
                 'responsible:staff_id,firstname,lastname',
 
             ])->
+            when($filters->onlyRHHH, function ($query) {
+                $query->whereHas('responsible', function ($subQuery) {
+                    $subQuery->where('dept_id', UserDept::RRHH->value);
+                });
+            })->
             when($filters->searchTerm, function ($query) use ($filters) {
                 $query->where('title', 'LIKE', '%' . $filters->searchTerm . '%')
                     ->orWhere('description', 'LIKE', '%' . $filters->searchTerm . '%');
@@ -215,12 +224,44 @@ class TicketService
             throw new InternalErrorException("Error al crear el ticket: " . $e->getMessage());
         }
 
-        return $ticket?->load([
+        $ticket = $ticket?->load([
             'requester:staff_id,firstname,lastname,dept_id',
             'requester.department:id,name',
             'responsible:staff_id,firstname,lastname',
         ]);
 
+        if ($ticket) {
+            $this->notifySystemsAreaTicketCreated($ticket);
+        }
+
+        return $ticket;
+
+    }
+
+    private function notifySystemsAreaTicketCreated(Ticket $ticket): void
+    {
+        $emails = User::query()
+            ->where('dept_id', UserDept::TI->value)
+            ->whereNotNull('email')
+            ->where('email', '<>', '')
+            ->pluck('email')
+            ->filter(fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values()
+            ->all();
+
+        if (count($emails) === 0) {
+            return;
+        }
+
+        try {
+            Mail::to($emails)->send(new TicketCreatedMail($ticket));
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar el correo de nuevo ticket al area de Sistemas.', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
 

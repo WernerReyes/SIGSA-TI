@@ -13,6 +13,7 @@ class TicketFiltersDto
         public readonly ?array $categories = null,
         public readonly ?string $startDate = null,
         public readonly ?string $endDate = null,
+        public readonly bool $onlyRHHH = false,
     ) {
     }
 
@@ -28,6 +29,7 @@ class TicketFiltersDto
             categories: $data['categories'] ?? null,
             startDate: $data['startDate'] ?? null,
             endDate: $data['endDate'] ?? null,
+            onlyRHHH: $data['onlyRHHH'] ?? false,
         );
     }
 
