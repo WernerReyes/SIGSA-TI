@@ -78,6 +78,10 @@ class TicketService
                 'responsible:staff_id,firstname,lastname',
 
             ])->
+            when($filters->perfomerId, function ($query) use ($filters) {
+                $query->where('requester_id', $filters->perfomerId)
+                    ->orWhere('responsible_id', $filters->perfomerId);
+            })->
             when($filters->onlyRHHH, function ($query) {
                 $query->whereHas('responsible', function ($subQuery) {
                     $subQuery->where('dept_id', UserDept::RRHH->value);

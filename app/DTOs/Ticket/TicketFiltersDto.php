@@ -14,6 +14,7 @@ class TicketFiltersDto
         public readonly ?string $startDate = null,
         public readonly ?string $endDate = null,
         public readonly bool $onlyRHHH = false,
+        public readonly ?int $perfomerId = null,
     ) {
     }
 
@@ -30,6 +31,7 @@ class TicketFiltersDto
             startDate: $data['startDate'] ?? null,
             endDate: $data['endDate'] ?? null,
             onlyRHHH: $data['onlyRHHH'] ?? false,
+            perfomerId: $data['perfomerId'] ?? null
         );
     }
 
