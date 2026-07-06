@@ -35,7 +35,7 @@ class TicketController extends Controller
             'tickets' => Inertia::once(fn() => $ticketService->getAllOrderedByPriority($filters)),
             'availableAssets' => Inertia::optional(fn() => $assetService->getAvailableAssets())->once(),
             'accessories' => Inertia::optional(fn() => $assetService->getAccessories())->once(),
-            'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers())->once(),
+            'TIUsers' => Inertia::optional(fn() => $userService->getTIDepartmentUsers(true))->once(),
 
 
             'userAssignments' => Inertia::optional(function () use ($assetService, $request) {

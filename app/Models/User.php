@@ -37,9 +37,9 @@ class User extends Authenticatable
         'id_empresa',
     ];
 
-    public function scopeActive($query)
+    public function scopeActive($query, $active = true)
     {
-        return $query->where('activo', 1);
+        return $query->where('activo', $active ? 1 : 0);
     }
 
 
