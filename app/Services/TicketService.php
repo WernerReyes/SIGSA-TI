@@ -89,7 +89,8 @@ class TicketService
             })->
             when($filters->searchTerm, function ($query) use ($filters) {
                 $query->where('title', 'LIKE', '%' . $filters->searchTerm . '%')
-                    ->orWhere('description', 'LIKE', '%' . $filters->searchTerm . '%');
+                    ->orWhere('description', 'LIKE', '%' . $filters->searchTerm . '%')
+                    ->orWhere('id', 'LIKE', '%' . $filters->searchTerm . '%');
             })->when($filters->requesters, function ($query) use ($filters) {
                 $query->whereIn('requester_id', $filters->requesters);
             })->when($filters->responsibles, function ($query) use ($filters) {
