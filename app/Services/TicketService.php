@@ -627,11 +627,15 @@ class TicketService
 
                 $ticket->save();
 
-                $description = $newStatus === TicketStatus::CLOSED->value
+                $isClosing = $newStatus === TicketStatus::CLOSED->value;
+
+                $description = $isClosing
                     ? "Cerrado el ticket"
                     : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
 
-                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description);
+                $id = $isClosing ? $ticket->requester_id : $ticket->responsible_id;
+
+                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description, $id);
 
                 return [
                     'description' => $description,
