@@ -633,7 +633,7 @@ class TicketService
                     ? "Cerrado el ticket"
                     : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
 
-                $id = $isClosing ? $ticket->requester_id : $ticket->responsible_id;
+                $id = $isClosing ? $ticket->requester_id : null;
 
                 $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description, $id);
 
