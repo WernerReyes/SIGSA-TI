@@ -124,7 +124,7 @@ class TicketService
             })->when($filters->endDate, function ($query) use ($filters) {
                 $query->whereDate('created_at', '<=', $filters->endDate);
             })
-            ->orderedByPriority()
+            ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
 
@@ -314,7 +314,7 @@ class TicketService
                 $ticket->description = $dto->description;
                 $ticket->type = $dto->type;
                 $ticket->impact = $dto->impact;
-                $ticket->urgency = $dto->urgency;
+                $ticket->urgency = $dto->urgency;   
                 $ticket->priority = $dto->priority;
                 $ticket->category = $dto->category;
 

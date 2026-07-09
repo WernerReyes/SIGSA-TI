@@ -182,7 +182,7 @@ class Ticket extends Model
             WHEN '" . TicketPriority::LOW->value . "' THEN 3 
             ELSE 4 
         END
-    ");
+    ")->orderBy('created_at', 'desc');
     }
 
 
