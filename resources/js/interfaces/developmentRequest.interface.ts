@@ -6,8 +6,10 @@ import {
     Code2,
     FilePlus,
     Flame,
+    FolderPlus,
     FlaskConical,
     Minus,
+    PackagePlus,
     Search,
     XCircle,
 } from 'lucide-vue-next';
@@ -20,6 +22,7 @@ import { type DevelopmentProgress } from './developmentProgress.interface';
 export interface DevelopmentRequest {
     id: number;
     title: string;
+    type: DevelopmentRequestType;
     priority: DevelopmentRequestPriority;
     status: DevelopmentRequestStatus;
     description: string;
@@ -55,6 +58,11 @@ export enum DevelopmentRequestPriority {
     URGENT = 'URGENT',
 }
 
+export enum DevelopmentRequestType {
+    NEW_PROJECT = 'NEW_PROJECT',
+    NEW_MODULE = 'NEW_MODULE',
+}
+
 export enum DevelopmentRequestStatus {
     REGISTERED = 'REGISTERED',
     IN_ANALYSIS = 'IN_ANALYSIS',
@@ -64,6 +72,35 @@ export enum DevelopmentRequestStatus {
     COMPLETED = 'COMPLETED',
     REJECTED = 'REJECTED',
 }
+
+export type DevelopmentRequestTypeOptions = {
+    label: string;
+    value: DevelopmentRequestType;
+    bg: string;
+    icon: Component;
+};
+
+export const developmentRequestTypeOptions: Record<
+    DevelopmentRequestType,
+    DevelopmentRequestTypeOptions
+> = {
+    [DevelopmentRequestType.NEW_PROJECT]: {
+        label: 'Nuevo proyecto',
+        value: DevelopmentRequestType.NEW_PROJECT,
+        bg: 'bg-blue-500',
+        icon: FolderPlus,
+    },
+    [DevelopmentRequestType.NEW_MODULE]: {
+        label: 'Nuevo modulo',
+        value: DevelopmentRequestType.NEW_MODULE,
+        bg: 'bg-cyan-500',
+        icon: PackagePlus,
+    },
+};
+
+export const getTypeOp = (type: DevelopmentRequestType) => {
+    return developmentRequestTypeOptions[type];
+};
 
 export type DevelopmentRequestPriorityOptions = {
     label: string;

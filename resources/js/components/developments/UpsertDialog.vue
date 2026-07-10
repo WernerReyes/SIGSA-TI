@@ -53,6 +53,29 @@
                                     </div>
                                 </VeeField>
 
+                                <VeeField name="type" v-slot="{ componentField, errors }">
+                                    <div class="space-y-2">
+                                        <Label :for="componentField.name" class="flex items-center gap-2">
+                                            <Boxes class="h-3.5 w-3.5 text-muted-foreground" /> Tipo *
+                                        </Label>
+
+                                        <SelectFilters label="Tipos" :default-value="componentField.modelValue"
+                                            :items="Object.values(developmentRequestTypeOptions)" item-value="value"
+                                            item-label="label" :show-refresh="false" :show-selected-focus="false"
+                                            empty-text="No se encontraron tipos" :selected-as-label="true"
+                                            :full-width="true" @select="(select) => setFieldValue('type', select)">
+                                            <template #item="{ item }">
+                                                <Badge :class="item.bg">
+                                                    <component :is="item.icon" />
+                                                    {{ item.label }}
+                                                </Badge>
+                                            </template>
+                                        </SelectFilters>
+                                        <FieldError v-if="errors.length" :errors="errors" />
+
+                                    </div>
+                                </VeeField>
+
                                 <VeeField name="priority" v-slot="{ componentField, errors }">
                                     <div class="space-y-2">
                                         <Label :for="componentField.name" class="flex items-center gap-2">
@@ -195,9 +218,9 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { DevelopmentRequest, DevelopmentRequestPriority, developmentRequestPriorityOptions, DevelopmentRequestSection } from '@/interfaces/developmentRequest.interface';
+import { DevelopmentRequest, DevelopmentRequestPriority, DevelopmentRequestSection, DevelopmentRequestType, developmentRequestPriorityOptions, developmentRequestTypeOptions } from '@/interfaces/developmentRequest.interface';
 import { toTypedSchema } from '@vee-validate/zod';
-import { AlignLeft, CodeXml, FileText, Flag, MapPin, Rocket, Sparkles, TrendingUp, Type } from 'lucide-vue-next';
+import { AlignLeft, Boxes, CodeXml, FileText, Flag, MapPin, Rocket, Sparkles, TrendingUp, Type } from 'lucide-vue-next';
 import { Field as VeeField } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import FileUpload from '../FileUpload.vue';
@@ -248,6 +271,9 @@ const formSchema = toTypedSchema(
         priority: z.nativeEnum(DevelopmentRequestPriority, {
             errorMap: () => ({ message: 'La prioridad es obligatoria' }),
         }),
+        type: z.nativeEnum(DevelopmentRequestType, {
+            errorMap: () => ({ message: 'El tipo es obligatorio' }),
+        }),
         description: z.string().optional(),
         impact: z.string().optional(),
         area_id: z.number({
@@ -266,6 +292,7 @@ const formSchema = toTypedSchema(
 
 const initialValues = computed(() => ({
     title: currentDevelopment.value?.title || '',
+    type: currentDevelopment.value?.type || DevelopmentRequestType.NEW_PROJECT,
     priority: currentDevelopment.value?.priority,
     description: currentDevelopment.value?.description || '',
     impact: currentDevelopment.value?.impact || '',

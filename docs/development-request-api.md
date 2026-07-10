@@ -43,7 +43,7 @@ Si `ACCESS_API` no esta configurado en el servidor, la API responde `500`:
 2. El middleware `access.api` valida la API key contra `ACCESS_API`.
 3. Para registrar, `StoreDevelopmentRequest` valida el cuerpo. En rutas API, `requested_by_id` es obligatorio.
 4. `StoreDevelopmentRequestDto` normaliza los datos y toma `requested_by_id` desde el cuerpo.
-5. `DevelopmentRequestService::store()` crea la solicitud con estado `REGISTERED`.
+5. `DevelopmentRequestService::store()` crea la solicitud con tipo `type` y estado `REGISTERED`.
 6. Para consultas, el controlador reutiliza `getSectionsByStatus()` y `getProgressHistory()`.
 7. La API responde en JSON con `message`, `data` o `error`.
 
@@ -84,6 +84,7 @@ Respuesta `200`:
       {
         "id": 25,
         "title": "Automatizar reporte de ventas",
+        "type": "NEW_PROJECT",
         "priority": "HIGH",
         "status": "REGISTERED",
         "position": 1,
@@ -116,6 +117,7 @@ Respuesta `200`:
       {
         "id": 18,
         "title": "Portal de indicadores",
+        "type": "NEW_MODULE",
         "priority": "MEDIUM",
         "status": "IN_DEVELOPMENT",
         "position": 1,
@@ -220,6 +222,7 @@ Content-Type: multipart/form-data
 ```json
 {
   "title": "Automatizar reporte de ventas",
+  "type": "NEW_PROJECT",
   "priority": "HIGH",
   "description": "Necesitamos generar automaticamente el reporte semanal de ventas por sede.",
   "impact": "Reduce trabajo manual y errores de consolidacion.",
@@ -232,6 +235,7 @@ Content-Type: multipart/form-data
 
 ```text
 title=Automatizar reporte de ventas
+type=NEW_PROJECT
 priority=HIGH
 description=Necesitamos generar automaticamente el reporte semanal de ventas por sede.
 impact=Reduce trabajo manual y errores de consolidacion.
@@ -245,6 +249,7 @@ requirement_file=requerimiento.pdf
 | Campo | Requerido | Tipo | Regla |
 | --- | --- | --- | --- |
 | `title` | Si | string | Maximo 255 caracteres. |
+| `type` | No | string | `NEW_PROJECT` o `NEW_MODULE`. Si no se envia, se usa `NEW_PROJECT`. |
 | `priority` | Si | string | `LOW`, `MEDIUM`, `HIGH` o `URGENT`. |
 | `description` | Si | string | Detalle funcional de la necesidad. |
 | `impact` | No | string | Impacto esperado en el area o proceso. |
@@ -255,6 +260,13 @@ requirement_file=requerimiento.pdf
 | `requirement_file` | No | file | PDF de maximo 4 MB. Solo con `multipart/form-data`. |
 
 ## Valores permitidos
+
+`type`:
+
+```text
+NEW_PROJECT
+NEW_MODULE
+```
 
 `priority`:
 
@@ -296,6 +308,7 @@ Respuesta `201`:
   "data": {
     "id": 25,
     "title": "Automatizar reporte de ventas",
+    "type": "NEW_PROJECT",
     "priority": "HIGH",
     "status": "REGISTERED",
     "position": 3,
@@ -361,6 +374,19 @@ Prioridad invalida `422`:
 }
 ```
 
+Tipo invalido `422`:
+
+```json
+{
+  "message": "El tipo de solicitud seleccionado no es valido.",
+  "errors": {
+    "type": [
+      "El tipo de solicitud seleccionado no es valido."
+    ]
+  }
+}
+```
+
 Error de negocio o servidor:
 
 ```json
@@ -380,6 +406,7 @@ curl -X POST "https://tu-dominio.com/api/development-requests" \
   -H "X-API-Key: valor-secreto" \
   -d '{
     "title": "Automatizar reporte de ventas",
+    "type": "NEW_PROJECT",
     "priority": "HIGH",
     "description": "Necesitamos generar automaticamente el reporte semanal de ventas por sede.",
     "impact": "Reduce trabajo manual y errores de consolidacion.",
@@ -395,6 +422,7 @@ curl -X POST "https://tu-dominio.com/api/development-requests" \
   -H "Accept: application/json" \
   -H "X-API-Key: valor-secreto" \
   -F "title=Automatizar reporte de ventas" \
+  -F "type=NEW_PROJECT" \
   -F "priority=HIGH" \
   -F "description=Necesitamos generar automaticamente el reporte semanal de ventas por sede." \
   -F "impact=Reduce trabajo manual y errores de consolidacion." \

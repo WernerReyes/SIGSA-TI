@@ -3,6 +3,7 @@
 namespace App\Http\Requests\DevelopmentRequest;
 
 use App\Enums\DevelopmentRequest\DevelopmentRequestPriority;
+use App\Enums\DevelopmentRequest\DevelopmentRequestType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,13 +28,14 @@ class StoreDevelopmentRequest extends FormRequest
 
         return [
             'title' => 'required|string|max:255',
+            'type' => 'nullable|in:' . DevelopmentRequestType::implode(),
             'priority' => 'required|in:' . DevelopmentRequestPriority::implode(),
             'description' => 'required|string',
             'impact' => 'nullable|string',
             'estimated_hours' => 'nullable|integer|min:0|digits_between:1,6',
             'estimated_end_date' => 'nullable|date|after_or_equal:today',
             'area_id' => 'required|exists:area,id_area',
-            'requirement_file' => 'nullable|file|max:4096|mimes:pdf',
+            'requirement_file' => 'required|file|max:4096|mimes:pdf',
             'requested_by_id' => [
                 Rule::requiredIf($this->is('api/*')),
                 'nullable',
@@ -48,6 +50,7 @@ class StoreDevelopmentRequest extends FormRequest
             'title.required' => 'El título es obligatorio.',
             'title.string' => 'El título debe ser una cadena de texto.',
             'title.max' => 'El título no debe exceder los 255 caracteres.',
+            'type.in' => 'El tipo de solicitud seleccionado no es válido.',
             'priority.required' => 'La prioridad es obligatoria.',
             'priority.in' => 'La prioridad seleccionada no es válida.',
             'description.required' => 'La descripción es obligatoria.',
@@ -58,6 +61,7 @@ class StoreDevelopmentRequest extends FormRequest
             'estimated_hours.digits_between' => 'Las horas estimadas no pueden tener más de 6 dígitos.',
             'estimated_end_date.date' => 'La fecha de finalización estimada no es una fecha válida.',
             'estimated_end_date.after_or_equal' => 'La fecha de finalización estimada debe ser hoy o en el futuro.',
+            'requirement_file.required' => 'El archivo de requerimiento es obligatorio.',
             'area_id.required' => 'El área solicitada es obligatoria.',
             'area_id.exists' => 'El área solicitada no existe.',
             'requirement_file.file' => 'El archivo debe ser un archivo válido.',

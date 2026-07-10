@@ -1,12 +1,14 @@
 <?php
 namespace App\DTOs\DevelopmentRequest;
 
+use App\Enums\DevelopmentRequest\DevelopmentRequestType;
 use Auth;
 
 class StoreDevelopmentRequestDto
 {
     private function __construct(
         public readonly string $title,
+        public readonly string $type,
         public readonly string $priority,
         public readonly string $description,
         public readonly ?string $impact,
@@ -14,7 +16,7 @@ class StoreDevelopmentRequestDto
         public readonly ?string $estimated_end_date,
         public readonly int $area_id,
         public readonly int $requested_by_id,
-        public readonly mixed $requirement_file = null,
+        public readonly mixed $requirement_file,
     ) {
 
 
@@ -24,6 +26,7 @@ class StoreDevelopmentRequestDto
     {
         return new self(
             title: $data['title'],
+            type: $data['type'] ?? DevelopmentRequestType::NEW_PROJECT->value,
             priority: $data['priority'],
             description: $data['description'],
             impact: $data['impact'] ?? null,
@@ -31,7 +34,7 @@ class StoreDevelopmentRequestDto
             estimated_end_date: $data['estimated_end_date'] ?? null,
             area_id: $data['area_id'],
             requested_by_id: (int) ($data['requested_by_id'] ?? Auth::id()),
-            requirement_file: $data['requirement_file'] ?? null,
+            requirement_file: $data['requirement_file'],
         );
     }
 }

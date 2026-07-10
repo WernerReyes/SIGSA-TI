@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DevelopmentRequest\DevelopmentRequestType;
 use App\Enums\User\UserCharge;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +14,7 @@ class DevelopmentRequest extends Model
 
     protected $fillable = [
         'title',
+        'type',
         'priority',
         'status',
         'position',
@@ -29,9 +31,9 @@ class DevelopmentRequest extends Model
         'requirement_path',
     ];
 
-    // protected $casts = [
-    //     'estimated_end_date' => 'date',
-    // ];
+    protected $casts = [
+        'type' => DevelopmentRequestType::class,
+    ];
 
     protected $appends = [
         'requirement_url',

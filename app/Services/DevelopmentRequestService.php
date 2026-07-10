@@ -78,6 +78,7 @@ class DevelopmentRequestService
 
             $dev = DevelopmentRequest::create([
                 'title' => $dto->title,
+                'type' => $dto->type,
                 'priority' => $dto->priority,
                 'status' => DevelopmentRequestStatus::REGISTERED->value,
                 'position' => $maxPosition + 1,
@@ -117,6 +118,7 @@ class DevelopmentRequestService
 
             $developmentRequest->update([
                 'title' => $dto->title,
+                'type' => $dto->type,
                 'priority' => $dto->priority,
                 'description' => $dto->description,
                 'impact' => $dto->impact,
