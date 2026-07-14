@@ -249,7 +249,7 @@ requirement_file=requerimiento.pdf
 | Campo | Requerido | Tipo | Regla |
 | --- | --- | --- | --- |
 | `title` | Si | string | Maximo 255 caracteres. |
-| `type` | No | string | `NEW_PROJECT` o `NEW_MODULE`. Si no se envia, se usa `NEW_PROJECT`. |
+| `type` | No | string | `NEW_PROJECT` o `NEW_MODULE` or `NEW_FEATURE`. Si no se envia, se usa `NEW_PROJECT`. |
 | `priority` | Si | string | `LOW`, `MEDIUM`, `HIGH` o `URGENT`. |
 | `description` | Si | string | Detalle funcional de la necesidad. |
 | `impact` | No | string | Impacto esperado en el area o proceso. |
@@ -266,6 +266,7 @@ requirement_file=requerimiento.pdf
 ```text
 NEW_PROJECT
 NEW_MODULE
+NEW_FEATURE
 ```
 
 `priority`:
