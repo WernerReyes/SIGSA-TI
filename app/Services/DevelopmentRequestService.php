@@ -10,13 +10,18 @@ use App\Enums\DevelopmentRequest\DevelopmentApprovalStatus;
 use App\Enums\DevelopmentRequest\DevelopmentRequestStatus;
 
 use App\Enums\User\UserCharge;
+use App\Enums\User\UserDept;
+use App\Mail\DevelopmentRequestCreatedMail;
 use App\Models\DevelopmentApproval;
 use App\Models\DevelopmentProgress;
 use App\Models\DevelopmentRequest;
+use App\Models\User;
 // use Illuminate\Container\Attributes\Storage;
 use App\Utils\CompressImage;
 use DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\UnauthorizedException;
 use Symfony\Component\CssSelector\Exception\InternalErrorException;
@@ -66,6 +71,7 @@ class DevelopmentRequestService
     public function store(StoreDevelopmentRequestDto $dto)
     {
         $path = null;
+        $dev = null;
 
         try {
             if ($dto->requirement_file) {
@@ -90,12 +96,49 @@ class DevelopmentRequestService
                 'requested_by_id' => $dto->requested_by_id,
                 'requirement_path' => $path,
             ]);
-            return $dev->load(['area', 'requestedBy:staff_id,firstname,lastname']);
+
+            $dev->load([
+                'area',
+                'requestedBy:staff_id,firstname,lastname,email,dept_id',
+                'requestedBy.department:id,name',
+            ]);
         } catch (\Exception $e) {
             if ($path) {
                 Storage::disk('public')->delete($path);
             }
             throw new InternalErrorException('Error al crear la solicitud de desarrollo: ' . $e->getMessage());
+        }
+
+        if ($dev) {
+            $this->notifySystemsAreaDevelopmentRequestCreated($dev);
+        }
+
+        return $dev;
+    }
+
+    private function notifySystemsAreaDevelopmentRequestCreated(DevelopmentRequest $developmentRequest): void
+    {
+        $emails = User::active()
+            ->where('dept_id', UserDept::TI->value)
+            ->whereNotNull('email')
+            ->where('email', '<>', '')
+            ->pluck('email')
+            ->filter(fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values()
+            ->all();
+
+        if (count($emails) === 0) {
+            return;
+        }
+
+        try {
+            Mail::to($emails)->send(new DevelopmentRequestCreatedMail($developmentRequest));
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar el correo de solicitud de desarrollo creada.', [
+                'development_request_id' => $developmentRequest->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

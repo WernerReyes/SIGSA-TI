@@ -18,4 +18,17 @@ enum DevelopmentRequestPriority: string
     {
         return implode($separator, self::values());
     }
+
+    public static function label(self|string|null $priority): string
+    {
+        $value = $priority instanceof self ? $priority->value : $priority;
+
+        return match ($value) {
+            self::LOW->value => 'Baja',
+            self::MEDIUM->value => 'Media',
+            self::HIGH->value => 'Alta',
+            self::URGENT->value => 'Urgente',
+            default => $value ?? 'N/A',
+        };
+    }
 }

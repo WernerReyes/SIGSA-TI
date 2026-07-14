@@ -18,4 +18,15 @@ enum DevelopmentRequestType: string
     {
         return implode($separator, self::values());
     }
+
+    public static function label(self|string|null $type): string
+    {
+        $value = $type instanceof self ? $type->value : $type;
+
+        return match ($value) {
+            self::NEW_PROJECT->value => 'Nuevo proyecto',
+            self::NEW_MODULE->value => 'Nuevo modulo',
+            default => $value ?? 'N/A',
+        };
+    }
 }
