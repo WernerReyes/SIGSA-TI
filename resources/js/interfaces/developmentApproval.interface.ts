@@ -16,7 +16,7 @@ export interface DevelopmentApproval {
 
 export enum DevelopmentApprovalLevel {
     TECHNICAL = 'TECHNICAL',
-    MANAGEMENT = 'MANAGEMENT',
+    STRATEGIC = 'STRATEGIC',
 }
 
 export enum DevelopmentApprovalStatus {

@@ -61,10 +61,6 @@
 
                     <section class="space-y-3">
                         <div class="flex flex-wrap gap-2">
-                            <Badge :class="techStatusOp.bg">
-                                <component :is="techStatusOp.icon" />
-                                Aprobación Técnica
-                            </Badge>
                             <Badge :class="strategicStatusOp.bg" class="flex items-center gap-2">
                                 <component :is="strategicStatusOp.icon" />
                                 Aprobación Estratégica
@@ -130,16 +126,12 @@ const currDev = defineModel<DevelopmentRequest | null>('current-development');
 const { role } = defineProps<{
     title: string;
     description: string;
-    role: 'Gerente TI' | 'Sub-Gerente de TI';
+    role: string;
 }>();
 
 const { isLoading, userAuth } = useApp();
 
 const comment = ref<string>('');
-
-const techStatusOp = computed(() => {
-    return getStatusOp(currDev?.value?.technical_approval?.status);
-});
 
 const strategicStatusOp = computed(() => {
     return getStatusOp(currDev?.value?.strategic_approval?.status);
@@ -148,9 +140,7 @@ const strategicStatusOp = computed(() => {
 const handleApprove = (status: DevelopmentApprovalStatus) => {
     if (!currDev.value) return;
 
-    const url = role === 'Gerente TI' ?
-        `/developments/${currDev.value.id}/approve-technical` :
-        `/developments/${currDev.value.id}/approve-strategic`;
+    const url = `/developments/${currDev.value.id}/approve-strategic`;
 
 
     router.post(url, {

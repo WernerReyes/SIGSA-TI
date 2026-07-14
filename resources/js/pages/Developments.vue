@@ -57,11 +57,11 @@
                     }" @open-view="(item) => {
                         showDetailModal = true;
                         selectedRequirement = item;
-                    }" @open-technical-approval="(item) => {
-                        showTechnicalApprovalModal = true;
-                        selectedRequirement = item;
                     }" @open-strategic-approval="(item) => {
                         showStrategicApprovalModal = true;
+                        selectedRequirement = item;
+                    }" @open-assign-developers="(item) => {
+                        showAssignDevelopersModal = true;
                         selectedRequirement = item;
                     }" :status="DevelopmentRequestStatus.IN_ANALYSIS" @moved="(id, status) => {
                         updateStatus = { requestId: id, newStatus: status };
@@ -78,6 +78,10 @@
                         alertDialogInfo = { ...changeStatusInfo };
                         showAlertDialog = true;
                     }" :status="DevelopmentRequestStatus.APPROVED"
+                    @open-assign-developers="(item) => {
+                        showAssignDevelopersModal = true;
+                        selectedRequirement = item;
+                    }"
                     v-model:developments-by-status="originalDevelopmentsByStatus" />
 
                 <KanbanColumn @open-view="(item) => {
@@ -158,9 +162,6 @@
 
             <EstimationDialog v-model:open="showEstimateModal" v-model:current-development="selectedRequirement" />
 
-            <ApprovalDialog v-if="showTechnicalApprovalModal" role="Gerente TI" title="Aprobación Técnica"
-                description="Revisar y aprobar el desarrollo desde una perspectiva técnica."
-                v-model:open="showTechnicalApprovalModal" v-model:current-development="selectedRequirement" />
             <ApprovalDialog v-if="showStrategicApprovalModal" role="Sub-Gerente de TI" title="Aprobación Estratégica"
                 description="Revisar y aprobar el desarrollo desde una perspectiva estratégica."
                 v-model:open="showStrategicApprovalModal" v-model:current-development="selectedRequirement" />
@@ -256,7 +257,6 @@ const updateStatus = ref<{
 const showDetailModal = ref(false);
 const showNewRequirementModal = ref(false);
 const showEstimateModal = ref(false);
-const showTechnicalApprovalModal = ref(false);
 const showStrategicApprovalModal = ref(false);
 const showProgressModal = ref(false);
 const showAssignDevelopersModal = ref(false);

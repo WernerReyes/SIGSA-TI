@@ -76,19 +76,11 @@
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
-                                :disabled="!!devRequest.strategic_approval || !!devRequest.technical_approval"
+                                :disabled="!!devRequest.strategic_approval"
                                 class="cursor-pointer" v-if="devRequest.status == DRStatus.IN_ANALYSIS"
                                 @click="emit('open-estimation', devRequest)">
                                 <Pencil />
                                 Estimar
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem class="cursor-pointer"
-                                :disabled="!!devRequest.technical_approval || !hasEstimation(devRequest)"
-                                v-if="devRequest.status == DRStatus.IN_ANALYSIS && isTIManager"
-                                @click="emit('open-technical-approval', devRequest)">
-                                <MonitorCheck />
-                                Aprobar
                             </DropdownMenuItem>
 
                             <DropdownMenuItem class="cursor-pointer"
@@ -107,7 +99,7 @@
                             </DropdownMenuItem>
 
                             <DropdownMenuItem class="cursor-pointer"
-                                v-if="devRequest.status === DRStatus.IN_DEVELOPMENT"
+                                v-if="[DRStatus.IN_ANALYSIS, DRStatus.APPROVED,  DRStatus.IN_DEVELOPMENT].includes(devRequest.status)"
                                 @click="emit('open-assign-developers', devRequest)">
                                 <Users />
                                 Desarrolladores
@@ -142,8 +134,6 @@
                         <span class="truncate">{{ devRequest?.requested_by?.full_name }}</span>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
-                        <component :is="getStatusOp(devRequest.technical_approval?.status).icon"
-                            :class="['w-2.5 h-2.5', getStatusOp(devRequest.technical_approval?.status).color]" />
                         <component :is="getStatusOp(devRequest.strategic_approval?.status).icon"
                             :class="['w-2.5 h-2.5', getStatusOp(devRequest.strategic_approval?.status).color]" />
                     </div>
@@ -255,7 +245,7 @@ import { Progress } from '@/components/ui/progress';
 import { useApp } from '@/composables/useApp';
 import { DevelopmentRequestSection, DevelopmentRequestStatus as DRStatus, getPriorityOp, type DevelopmentRequest } from '@/interfaces/developmentRequest.interface';
 import { router } from '@inertiajs/core';
-import { CalendarIcon, Check, ChevronDown, ChevronUp, ClipboardCheck, Eye, Globe, ExternalLink, Inbox, MonitorCheck, MoreVertical, Pencil, Save, Trash2, User, TrendingUp, Clock, Users } from 'lucide-vue-next';
+import { CalendarIcon, Check, ChevronDown, ChevronUp, ClipboardCheck, Eye, Globe, ExternalLink, Inbox, MoreVertical, Pencil, Save, Trash2, User, TrendingUp, Clock, Users } from 'lucide-vue-next';
 import { computed, onUnmounted, ref } from 'vue';
 import { getStatusOp } from '@/interfaces/developmentApproval.interface';
 import { parseDateOnly } from '@/lib/utils';
@@ -284,7 +274,6 @@ const emit = defineEmits<{
     (e: 'open-view', item: DevelopmentRequest): void;
     (e: 'open-update', item: DevelopmentRequest): void;
     (e: 'open-estimation', item: DevelopmentRequest): void;
-    (e: 'open-technical-approval', item: DevelopmentRequest): void;
     (e: 'open-strategic-approval', item: DevelopmentRequest): void;
     (e: 'open-progress', item: DevelopmentRequest): void;
     (e: 'open-assign-developers', item: DevelopmentRequest): void;
@@ -294,7 +283,7 @@ const emit = defineEmits<{
 
 }>();
 
-const { isFromTI, isTIManager, isLoading, isTIAssistantManager, isSameUser } = useApp();
+const { isFromTI, isLoading, isTIAssistantManager, isSameUser } = useApp();
 
 const hasMovedInAnotherColumn = ref<boolean>(false);
 const expandedCards = ref<Set<number>>(new Set());

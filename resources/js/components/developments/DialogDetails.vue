@@ -49,65 +49,14 @@
                         <div class="flex items-center gap-2">
                             <CheckCircle class="h-4 w-4 text-emerald-600" />
                             <div>
-                                <p class="text-sm font-medium">Estado de Aprobaciones</p>
-                                <p class="text-xs text-muted-foreground">Requerimientos de autorización</p>
+                                <p class="text-sm font-medium">Estado de Aprobación</p>
+                                <p class="text-xs text-muted-foreground">Requerimiento de autorización estratégica</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-                            <!-- Technical Approval -->
-                            <div :class="`p-3 rounded-lg border-2 flex flex-col space-y-3 transition-all ${currentDevelopment?.technical_approval
-                                ? currentDevelopment.technical_approval.status === DevelopmentApprovalStatus.APPROVED
-                                    ? 'bg-emerald-50/60 border-emerald-200/60 dark:bg-emerald-950/30 dark:border-emerald-900/50'
-                                    : 'bg-red-50/60 border-red-200/60 dark:bg-red-950/30 dark:border-red-900/50'
-                                : 'bg-background border-border/50'
-                                }`">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex items-center gap-2">
-
-                                        <component :is="techAppStatusOp.icon" :class="`size-4 ${techAppStatusOp.color
-                                            }`" />
-                                        <span class="text-sm font-medium">Aprobación Técnica</span>
-                                    </div>
-                                    <Badge class="text-xs" :class="techAppStatusOp.bg">
-                                        {{ techAppStatusOp.label }}
-                                    </Badge>
-                                </div>
-
-                                <p class="text-xs text-muted-foreground ml-6">
-                                    <template v-if="currentDevelopment?.technical_approval?.approved_by">
-
-                                        {{ currentDevelopment?.technical_approval?.approved_by?.full_name
-                                        }}
-                                        (Gerente de TI)
-                                    </template>
-                                    <template v-else>
-                                        Gerente de TI
-                                    </template>
-
-
-                                </p>
-                                <div v-if="currentDevelopment?.technical_approval?.comments"
-                                    class="mt-2 p-2 bg-background/50 rounded text-xs border border-border/30">
-                                    <p class="font-medium text-foreground/70 mb-1">Comentarios:</p>
-                                    <p class="text-muted-foreground">{{ currentDevelopment.technical_approval.comments
-                                    }}</p>
-                                </div>
-
-                                <template v-if="currentDevelopment?.technical_approval?.updated_at">
-
-                                    <small class="text-xs text-muted-foreground ml-auto">
-                                        {{ format(
-                                            currentDevelopment.technical_approval.updated_at || '',
-                                            'dd MMM yyyy HH:mm',
-                                            { locale: es }
-                                        ) }}
-                                    </small>
-                                </template>
-
-                            </div>
+                        <div class="grid grid-cols-1 gap-3 items-start">
                             <!-- Strategic Approval -->
                             <div :class="`p-3 rounded-lg border-2 flex flex-col space-y-3 transition-all ${currentDevelopment?.strategic_approval
-                                ? currentDevelopment.strategic_approval.status === 'APPROVED'
+                                ? currentDevelopment.strategic_approval.status === DevelopmentApprovalStatus.APPROVED
                                     ? 'bg-emerald-50/60 border-emerald-200/60 dark:bg-emerald-950/30 dark:border-emerald-900/50'
                                     : 'bg-red-50/60 border-red-200/60 dark:bg-red-950/30 dark:border-red-900/50'
                                 : 'bg-background border-border/50'
@@ -196,7 +145,7 @@
                     </section>
 
                     <!-- Developers Section -->
-                    <section v-if="[DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(currentDevelopment?.status)"
+                    <section v-if="[DRStatus.IN_ANALYSIS, DRStatus.APPROVED, DRStatus.IN_DEVELOPMENT, DRStatus.IN_TESTING, DRStatus.COMPLETED].includes(currentDevelopment?.status)"
                         class="space-y-4 rounded-lg border border-border/80 bg-muted/20 p-3 sm:p-4">
                         <div class="flex items-center gap-2">
                             <Users class="h-4 w-4 text-blue-500" />
@@ -454,10 +403,6 @@ import { computed } from 'vue';
 
 const open = defineModel<boolean>('open');
 const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelopment');
-
-const techAppStatusOp = computed(() => {
-    return getAppStatusOp(currentDevelopment?.value?.technical_approval?.status);
-});
 
 const stratAppStatusOp = computed(() => {
     return getAppStatusOp(currentDevelopment?.value?.strategic_approval?.status);

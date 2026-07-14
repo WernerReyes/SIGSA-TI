@@ -221,10 +221,9 @@ class DevelopmentRequestService
 
 
         if ($fromStatus === DevelopmentRequestStatus::IN_ANALYSIS->value) {
-            $approvals = $developmentRequest->approvals;
-            $allApproved = $approvals->every(fn($approval) => $approval->status === DevelopmentApprovalStatus::APPROVED->value);
-            if (!$allApproved) {
-                throw new BadRequestException('No se puede avanzar al siguiente estado porque no todas las aprobaciones están aprobadas.');
+            $strategicApproval = $developmentRequest->strategicApproval;
+            if (!$strategicApproval || $strategicApproval->status !== DevelopmentApprovalStatus::APPROVED->value) {
+                throw new BadRequestException('No se puede avanzar al siguiente estado porque la aprobación estratégica no está aprobada.');
             }
         }
 
@@ -331,8 +330,8 @@ class DevelopmentRequestService
             throw new BadRequestException('Solo se pueden estimar solicitudes en estado "En Análisis".');
         }
 
-        if ($developmentRequest->technicalApproval || $developmentRequest->strategicApproval) {
-            throw new BadRequestException('No se puede estimar una solicitud que ya tiene aprobaciones.');
+        if ($developmentRequest->strategicApproval) {
+            throw new BadRequestException('No se puede estimar una solicitud que ya tiene aprobación estratégica.');
         }
 
         try {
@@ -348,47 +347,7 @@ class DevelopmentRequestService
 
     public function approveTechnicalDevelopment(DevelopmentRequest $developmentRequest, ApproveDevelopmentDto $dto)
     {
-
-        if (UserCharge::TI_MANAGER->value !== $dto->approvedBy->id_cargo) {
-            throw new UnauthorizedException('No tienes permiso para aprobar esta solicitud.');
-        }
-
-        if ($developmentRequest->estimated_hours === null || $developmentRequest->estimated_end_date === null) {
-            throw new BadRequestException('La solicitud de desarrollo debe tener una estimación antes de ser aprobada técnicamente.');
-        }
-
-        if ($developmentRequest->technicalApproval) {
-            throw new BadRequestException('Ya existe una aprobación técnica para esta solicitud de desarrollo.');
-        }
-
-        try {
-            DB::transaction(function () use ($developmentRequest, $dto) {
-                DevelopmentApproval::create([
-                    'development_request_id' => $developmentRequest->id,
-                    'approved_by_id' => $dto->approvedBy->staff_id,
-                    'level' => DevelopmentApprovalLevel::TECHNICAL->value,
-                    'status' => $dto->status,
-                    'comments' => $dto->comments,
-                ]);
-
-
-
-                if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->strategicApproval && $developmentRequest->strategicApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
-                    $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
-                }
-
-                if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
-
-                    $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
-                }
-            });
-
-
-        } catch (\Exception $e) {
-
-            throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
-        }
-
+        throw new BadRequestException('La aprobación técnica ya no es requerida para las solicitudes de desarrollo.');
     }
 
 
@@ -399,7 +358,7 @@ class DevelopmentRequestService
         }
 
         if ($developmentRequest->estimated_hours === null || $developmentRequest->estimated_end_date === null) {
-            throw new BadRequestException('La solicitud de desarrollo debe tener una estimación antes de ser aprobada técnicamente.');
+            throw new BadRequestException('La solicitud de desarrollo debe tener una estimación antes de ser aprobada estratégicamente.');
         }
 
         if ($developmentRequest->strategicApproval) {
@@ -407,21 +366,23 @@ class DevelopmentRequestService
         }
 
         try {
-            DevelopmentApproval::create([
-                'development_request_id' => $developmentRequest->id,
-                'approved_by_id' => $dto->approvedBy->staff_id,
-                'level' => DevelopmentApprovalLevel::STRATEGIC->value,
-                'status' => $dto->status,
-                'comments' => $dto->comments,
-            ]);
+            DB::transaction(function () use ($developmentRequest, $dto) {
+                DevelopmentApproval::create([
+                    'development_request_id' => $developmentRequest->id,
+                    'approved_by_id' => $dto->approvedBy->staff_id,
+                    'level' => DevelopmentApprovalLevel::STRATEGIC->value,
+                    'status' => $dto->status,
+                    'comments' => $dto->comments,
+                ]);
 
-            if ($dto->status === DevelopmentApprovalStatus::APPROVED->value && $developmentRequest->technicalApproval && $developmentRequest->technicalApproval->status === DevelopmentApprovalStatus::APPROVED->value) {
-                $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
-            }
+                if ($dto->status === DevelopmentApprovalStatus::APPROVED->value) {
+                    $developmentRequest->update(['status' => DevelopmentRequestStatus::APPROVED->value]);
+                }
 
-            if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
-                $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
-            }
+                if ($dto->status === DevelopmentApprovalStatus::REJECTED->value) {
+                    $developmentRequest->update(['status' => DevelopmentRequestStatus::REJECTED->value]);
+                }
+            });
         } catch (\Exception $e) {
 
             throw new InternalErrorException('Error al crear la aprobación de la solicitud de desarrollo: ' . $e->getMessage());
@@ -451,8 +412,12 @@ class DevelopmentRequestService
 
     public function assignDevelopers(DevelopmentRequest $developmentRequest, array $developerIds)
     {
-        if ($developmentRequest->status !== DevelopmentRequestStatus::IN_DEVELOPMENT->value) {
-            throw new BadRequestException('Solo se pueden asignar desarrolladores en solicitudes que estén en desarrollo.');
+        if (!in_array($developmentRequest->status, [
+            DevelopmentRequestStatus::IN_ANALYSIS->value,
+            DevelopmentRequestStatus::APPROVED->value,
+            DevelopmentRequestStatus::IN_DEVELOPMENT->value,
+        ])) {
+            throw new BadRequestException('Solo se pueden asignar desarrolladores en solicitudes que estén en análisis, aprobadas o desarrollo.');
         }
 
         try {
