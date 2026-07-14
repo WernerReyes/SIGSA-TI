@@ -26,7 +26,8 @@ enum DevelopmentRequestType: string
         return match ($value) {
             self::NEW_PROJECT->value => 'Nuevo proyecto',
             self::NEW_MODULE->value => 'Nuevo modulo',
-            default => $value ?? 'N/A',
+            self::NEW_FEATURE->value => 'Nueva funcionalidad',
+            default => 'Desconocido',
         };
     }
 }
