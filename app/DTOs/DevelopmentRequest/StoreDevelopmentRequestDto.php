@@ -16,7 +16,7 @@ class StoreDevelopmentRequestDto
         public readonly ?string $estimated_end_date,
         public readonly int $area_id,
         public readonly int $requested_by_id,
-        public readonly mixed $requirement_file,
+        public readonly mixed $requirement_file = null,
     ) {
 
 
@@ -34,7 +34,7 @@ class StoreDevelopmentRequestDto
             estimated_end_date: $data['estimated_end_date'] ?? null,
             area_id: $data['area_id'],
             requested_by_id: (int) ($data['requested_by_id'] ?? Auth::id()),
-            requirement_file: $data['requirement_file'],
+            requirement_file: $data['requirement_file'] ?? null,
         );
     }
 }

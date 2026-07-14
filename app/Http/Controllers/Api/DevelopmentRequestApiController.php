@@ -31,10 +31,9 @@ class DevelopmentRequestApiController extends Controller
 
     public function store(StoreDevelopmentRequest $request, DevelopmentRequestService $service)
     {
-        $validated = $request->validated();
-        $dto = StoreDevelopmentRequestDto::fromArray($validated);
-
         try {
+            $validated = $request->validated();
+            $dto = StoreDevelopmentRequestDto::fromArray($validated);
             $developmentRequest = $service->store($dto);
 
             return response()->json([
