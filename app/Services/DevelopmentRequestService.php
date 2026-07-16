@@ -292,8 +292,8 @@ class DevelopmentRequestService
 
     public function delete(DevelopmentRequest $developmentRequest)
     {
-        $userId = auth()->user()->staff_id;
-        if ($developmentRequest->requested_by_id !== $userId && UserCharge::TI_ASSISTANT_MANAGER->value !== auth()->user()->id_cargo) {
+        $user = auth()->user();
+        if ($developmentRequest->requested_by_id !== $user->staff_id && UserCharge::TI_ASSISTANT_MANAGER->value !== $user->id_cargo) {
             throw new UnauthorizedException('No tienes permiso para eliminar esta solicitud de desarrollo.');
         }
 
