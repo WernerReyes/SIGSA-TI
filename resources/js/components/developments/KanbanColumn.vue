@@ -108,7 +108,7 @@
                             <template v-if='[DRStatus.REGISTERED, DRStatus.REJECTED].includes(devRequest.status)'>
                                 <DropdownMenuSeparator />
 
-                                <DropdownMenuItem :disabled="!isSameUser(devRequest.requested_by_id)"
+                                <DropdownMenuItem 
                                     @click="emit('deleted', devRequest.id)"
                                     class="cursor-pointer text-destructive focus:text-destructive">
                                     <Trash2 />
