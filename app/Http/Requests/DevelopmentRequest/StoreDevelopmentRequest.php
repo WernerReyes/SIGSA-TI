@@ -35,7 +35,7 @@ class StoreDevelopmentRequest extends FormRequest
             'estimated_hours' => 'nullable|integer|min:0|digits_between:1,6',
             'estimated_end_date' => 'nullable|date|after_or_equal:today',
             'area_id' => 'required|exists:area,id_area',
-            'requirement_file' => 'nullable|file|max:4096|mimes:pdf',
+            'requirement_file' => 'nullable|file|max:4096|mimes:pdf,xls,xlsx',
             'requested_by_id' => [
                 Rule::requiredIf($this->is('api/*')),
                 'nullable',
@@ -66,7 +66,7 @@ class StoreDevelopmentRequest extends FormRequest
             'area_id.exists' => 'El área solicitada no existe.',
             'requirement_file.file' => 'El archivo debe ser un archivo válido.',
             'requirement_file.max' => 'El archivo no debe exceder los 4 MB.',
-            'requirement_file.mimes' => 'El archivo debe ser un archivo PDF.',
+            'requirement_file.mimes' => 'El archivo debe ser un archivo PDF o Excel.',
             'requested_by_id.required' => 'El solicitante es obligatorio para solicitudes API.',
             'requested_by_id.exists' => 'El solicitante no existe.',
         ];

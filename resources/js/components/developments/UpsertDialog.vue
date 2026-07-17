@@ -151,7 +151,7 @@
                                 <FileUpload :currentUrl="currentDevelopment?.requirement_url"
                                     @error="(msg) => toast.error(msg)"
                                     @update:file="(file) => setFieldValue('requirement_file', file)"
-                                    accept="application/pdf" label="Adjuntar archivo relacionado (opcional)" />
+                                    accept="application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" label="Adjuntar archivo relacionado (opcional)" />
                             </div>
 
                         </section>
