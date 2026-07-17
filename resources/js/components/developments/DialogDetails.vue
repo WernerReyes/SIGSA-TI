@@ -356,12 +356,12 @@
                             </div>
                             <div v-if="currentDevelopment?.requirement_url"
                                 class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                <a :href="currentDevelopment.requirement_url" target="_blank" rel="noopener noreferrer"
+                                <a :href="currentDevelopment.requirement_url" download
                                     class="inline-flex items-center justify-center gap-2 rounded-md bg-background px-3 py-2 text-sm font-medium text-foreground border border-border/60 shadow-xs hover:bg-muted/60 transition-colors">
                                     <FileArchive class="h-4 w-4 text-purple-600" />
-                                    Ver archivo
+                                    Descargar archivo
                                 </a>
-                                <span class="text-xs text-muted-foreground">Se abrirá en una nueva pestaña</span>
+                                <span class="text-xs text-muted-foreground">El archivo se descargará automáticamente</span>
                             </div>
                             <div v-else
                                 class="rounded-md border border-dashed border-border/60 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
