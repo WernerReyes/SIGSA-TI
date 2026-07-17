@@ -14,6 +14,7 @@ use App\Enums\Ticket\TicketType;
 use App\Enums\Ticket\TicketUrgency;
 use App\Enums\TicketAsset\TicketAssetAction;
 use App\Enums\User\UserDept;
+use App\Mail\TicketAssignedMail;
 use App\Mail\TicketCreatedMail;
 use App\Models\AssetAssignment;
 use App\Models\SlaPolicy;
@@ -514,13 +515,14 @@ class TicketService
             $responsible = User::select(
                 'staff_id',
                 'firstname',
-                'lastname'
+                'lastname',
+                'email'
             )->find($responsible_id);
             if (!$responsible) {
                 throw new NotFoundHttpException("Técnico no encontrado.");
             }
 
-            return DB::transaction(function () use ($ticket, $responsible_id, $responsible) {
+            $result = DB::transaction(function () use ($ticket, $responsible_id, $responsible) {
                 // $ticket = Ticket::findOrFail($ticketId);
                 $oldResponsible = $ticket->responsible;
 
@@ -541,13 +543,76 @@ class TicketService
 
                 $this->logHistory($ticket->id, TicketHistoryAction::RESPONSIBLE_CHANGED, $description);
 
-                return ['description' => $description, 'responsible' => $responsible];
+                return [
+                    'description' => $description,
+                    'responsible' => $responsible,
+                    'previous_responsible' => $oldResponsible,
+                ];
             });
+
+            $this->notifyTicketResponsibleAssigned(
+                $ticket,
+                $responsible,
+                auth()->user(),
+                $result['previous_responsible'],
+            );
+
+            return [
+                'description' => $result['description'],
+                'responsible' => $result['responsible'],
+            ];
         } catch (\Exception $e) {
             if ($e instanceof NotFoundHttpException || $e instanceof BadRequestException) {
                 throw $e;
             }
             throw new InternalErrorException("Error al asignar el responsable: " . $e->getMessage());
+        }
+    }
+
+    private function notifyTicketResponsibleAssigned(
+        Ticket $ticket,
+        User $responsible,
+        ?User $assignedBy,
+        ?User $previousResponsible,
+    ): void {
+        if (!$assignedBy) {
+            Log::warning('No se pudo enviar el correo de asignación del ticket porque no hay un usuario autenticado.', [
+                'ticket_id' => $ticket->id,
+                'responsible_id' => $responsible->staff_id,
+            ]);
+
+            return;
+        }
+
+        if (!$responsible->email || !filter_var($responsible->email, FILTER_VALIDATE_EMAIL)) {
+            Log::warning('No se pudo enviar el correo de asignación porque el responsable no tiene un correo válido.', [
+                'ticket_id' => $ticket->id,
+                'responsible_id' => $responsible->staff_id,
+            ]);
+
+            return;
+        }
+
+        try {
+            $ticket->loadMissing([
+                'requester:staff_id,firstname,lastname,dept_id',
+                'requester.department:id,name',
+            ]);
+
+            Mail::to($responsible->email)->send(new TicketAssignedMail(
+                $ticket,
+                $responsible,
+                $assignedBy,
+                $previousResponsible,
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar el correo de asignación del ticket.', [
+                'ticket_id' => $ticket->id,
+                'responsible_id' => $responsible->staff_id,
+                'assigned_by_id' => $assignedBy->staff_id,
+                'is_reassignment' => $previousResponsible !== null,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
