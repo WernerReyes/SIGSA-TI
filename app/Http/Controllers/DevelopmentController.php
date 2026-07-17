@@ -18,10 +18,20 @@ use App\Services\AreaService;
 use App\Services\DevelopmentRequestService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class DevelopmentController extends Controller
 {
+    public function downloadRequirement(DevelopmentRequest $developmentRequest)
+    {
+        $path = $developmentRequest->requirement_path;
+
+        abort_if(!$path || !Storage::disk('public')->exists($path), 404, 'El archivo adjunto no existe.');
+
+        return Storage::disk('public')->download($path);
+    }
+
     public function renderView(Request $request, DevelopmentRequestService $service, AreaService $areaService, UserService $userService)
     {
         $depReqId = $request->input('development_request_id', null);

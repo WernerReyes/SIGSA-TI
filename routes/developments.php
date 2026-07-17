@@ -8,6 +8,7 @@ Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () 
     Route::prefix('developments')->group(function () {
 
         Route::get('/', [DevelopmentController::class, 'renderView'])->name('developments');
+        Route::get('/{developmentRequest}/requirement/download', [DevelopmentController::class, 'downloadRequirement'])->name('developments.downloadRequirement');
 
         Route::post('/', [DevelopmentController::class, 'store'])->name('developments.store');
         Route::patch('/position', [DevelopmentController::class, 'swapPositions'])->name('developments.updatePosition');

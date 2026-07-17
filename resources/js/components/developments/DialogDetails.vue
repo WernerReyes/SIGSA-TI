@@ -356,7 +356,7 @@
                             </div>
                             <div v-if="currentDevelopment?.requirement_url"
                                 class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                <a :href="currentDevelopment.requirement_url" download
+                                <a :href="requirementDownloadUrl" download
                                     class="inline-flex items-center justify-center gap-2 rounded-md bg-background px-3 py-2 text-sm font-medium text-foreground border border-border/60 shadow-xs hover:bg-muted/60 transition-colors">
                                     <FileArchive class="h-4 w-4 text-purple-600" />
                                     Descargar archivo
@@ -406,6 +406,12 @@ const currentDevelopment = defineModel<DevelopmentRequest | null>('currentDevelo
 
 const stratAppStatusOp = computed(() => {
     return getAppStatusOp(currentDevelopment?.value?.strategic_approval?.status);
+});
+
+const requirementDownloadUrl = computed(() => {
+    if (!currentDevelopment.value) return '#';
+
+    return `/developments/${currentDevelopment.value.id}/requirement/download`;
 });
 
 // Calculate days variance (actual vs estimated)
