@@ -132,6 +132,11 @@ class DevelopmentRequestService
             return;
         }
 
+        $emails = array_merge(
+            $emails,
+            ['luis.zavala@cechriza.com']
+        );
+
         try {
             Mail::to($emails)->send(new DevelopmentRequestCreatedMail($developmentRequest));
         } catch (\Throwable $e) {
@@ -413,11 +418,13 @@ class DevelopmentRequestService
 
     public function assignDevelopers(DevelopmentRequest $developmentRequest, array $developerIds)
     {
-        if (!in_array($developmentRequest->status, [
-            DevelopmentRequestStatus::IN_ANALYSIS->value,
-            DevelopmentRequestStatus::APPROVED->value,
-            DevelopmentRequestStatus::IN_DEVELOPMENT->value,
-        ])) {
+        if (
+            !in_array($developmentRequest->status, [
+                DevelopmentRequestStatus::IN_ANALYSIS->value,
+                DevelopmentRequestStatus::APPROVED->value,
+                DevelopmentRequestStatus::IN_DEVELOPMENT->value,
+            ])
+        ) {
             throw new BadRequestException('Solo se pueden asignar desarrolladores en solicitudes que estén en análisis, aprobadas o desarrollo.');
         }
 
