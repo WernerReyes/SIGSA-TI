@@ -58,6 +58,9 @@ class TicketDashboardService
                 ->orderBy('firstname')
                 ->orderBy('lastname')
                 ->get(),
+            'statuses' => collect(TicketStatus::labels())
+                ->map(fn (string $label, string $value) => compact('value', 'label'))
+                ->values(),
             'types' => collect(TicketType::labels())
                 ->map(fn (string $label, string $value) => compact('value', 'label'))
                 ->values(),
@@ -96,6 +99,10 @@ class TicketDashboardService
             ->when(
                 $filters->requesterId,
                 fn (Builder $query, int $requesterId) => $query->where('requester_id', $requesterId),
+            )
+            ->when(
+                $filters->status,
+                fn (Builder $query, string $status) => $query->where('status', $status),
             )
             ->when(
                 $filters->type,

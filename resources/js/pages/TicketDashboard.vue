@@ -32,6 +32,7 @@ const filters = ref({
     start_date: props.dashboard.filters.start_date ?? '',
     end_date: props.dashboard.filters.end_date ?? '',
     responsible_id: props.dashboard.filters.responsible_id?.toString() ?? '',
+    status: props.dashboard.filters.status ?? '',
     type: props.dashboard.filters.type ?? '',
     category: props.dashboard.filters.category ?? '',
 });
@@ -48,6 +49,7 @@ const applyFilters = () => {
             start_date: filters.value.start_date,
             end_date: filters.value.end_date,
             responsible_id: filters.value.responsible_id || undefined,
+            status: filters.value.status || undefined,
             type: filters.value.type || undefined,
             category: filters.value.category || undefined,
         },
@@ -62,6 +64,7 @@ const applyFilters = () => {
 
 const clearDimensionFilters = () => {
     filters.value.responsible_id = '';
+    filters.value.status = '';
     filters.value.type = '';
     filters.value.category = '';
     applyFilters();
@@ -101,7 +104,7 @@ const clearDimensionFilters = () => {
             </div>
 
             <form
-                class="border-border/80 bg-card grid gap-4 rounded-xl border p-4 shadow-sm md:grid-cols-2 xl:grid-cols-6"
+                class="border-border/80 bg-card grid gap-4 rounded-xl border p-4 shadow-sm md:grid-cols-2 xl:grid-cols-7"
                 @submit.prevent="applyFilters"
             >
                 <div class="space-y-2">
@@ -136,6 +139,23 @@ const clearDimensionFilters = () => {
                             :value="responsible.staff_id.toString()"
                         >
                             {{ responsible.full_name }}
+                        </NativeSelectOption>
+                    </NativeSelect>
+                </div>
+                <div class="space-y-2">
+                    <Label for="ticket-dashboard-status">Estado</Label>
+                    <NativeSelect
+                        id="ticket-dashboard-status"
+                        v-model="filters.status"
+                        class="w-full"
+                    >
+                        <NativeSelectOption value="">Todos</NativeSelectOption>
+                        <NativeSelectOption
+                            v-for="status in filterOptions.statuses"
+                            :key="status.value"
+                            :value="status.value"
+                        >
+                            {{ status.label }}
                         </NativeSelectOption>
                     </NativeSelect>
                 </div>

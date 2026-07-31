@@ -175,6 +175,46 @@ it('aplica el filtro por responsable a todos los indicadores', function () {
         ->and($dashboard['recent_tickets'])->toHaveCount(2);
 });
 
+it('aplica el filtro por estado a todos los indicadores', function () {
+    $filters = TicketDashboardFiltersDto::fromArray([
+        'status' => TicketStatus::CLOSED->value,
+    ]);
+
+    $dashboard = app(TicketDashboardService::class)->getDashboard($filters);
+
+    expect($dashboard['filters']['status'])->toBe(TicketStatus::CLOSED->value)
+        ->and($dashboard['summary'])
+        ->toMatchArray([
+            'total' => 1,
+            'active' => 0,
+            'resolved' => 1,
+            'closed' => 1,
+            'unassigned' => 0,
+            'sla_breached' => 1,
+        ])
+        ->and(collect($dashboard['by_status'])->firstWhere('value', TicketStatus::CLOSED->value)['count'])->toBe(1)
+        ->and(collect($dashboard['by_status'])->firstWhere('value', TicketStatus::OPEN->value)['count'])->toBe(0)
+        ->and($dashboard['recent_tickets'])->toHaveCount(1);
+});
+
+it('expone el filtro por estado mediante la API', function () {
+    config(['services.access_api.key' => 'dashboard-test-key']);
+
+    $response = $this
+        ->withHeaders([
+            'Accept' => 'application/json',
+            'X-API-Key' => 'dashboard-test-key',
+        ])
+        ->get('/api/tickets/dashboard?status=CLOSED');
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.filters.status', TicketStatus::CLOSED->value)
+        ->assertJsonPath('data.summary.total', 1)
+        ->assertJsonPath('data.summary.closed', 1)
+        ->assertJsonCount(1, 'data.recent_tickets');
+});
+
 it('expone el dashboard mediante la API protegida por key', function () {
     config(['services.access_api.key' => 'dashboard-test-key']);
 
@@ -208,6 +248,7 @@ it('no aplica filtro de fechas cuando la API no recibe parámetros', function ()
         ->assertOk()
         ->assertJsonPath('data.filters.start_date', null)
         ->assertJsonPath('data.filters.end_date', null)
+        ->assertJsonPath('data.filters.status', null)
         ->assertJsonPath('data.summary.total', 4)
         ->assertJsonCount(14, 'data.daily_trend');
 });

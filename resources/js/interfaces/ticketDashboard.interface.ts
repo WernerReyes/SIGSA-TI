@@ -19,6 +19,7 @@ export interface TicketDashboardData {
         end_date: string | null;
         responsible_id: number | null;
         requester_id: number | null;
+        status: TicketStatus | null;
         type: TicketType | null;
         category: TicketCategory | null;
     };
@@ -72,6 +73,7 @@ export interface TicketDashboardData {
 
 export interface TicketDashboardFilterOptions {
     responsibles: BasicUserInfo[];
+    statuses: Array<{ value: TicketStatus; label: string }>;
     types: Array<{ value: TicketType; label: string }>;
     categories: Array<{ value: TicketCategory; label: string }>;
 }

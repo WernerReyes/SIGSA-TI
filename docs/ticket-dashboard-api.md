@@ -43,6 +43,7 @@ No se envía cuerpo. Los filtros se envían como parámetros de consulta.
 | `end_date` | fecha `YYYY-MM-DD` | No | Fin inclusivo. Si se omite, no se aplica límite superior. Debe ser igual o posterior a `start_date` cuando ambas fechas están presentes. |
 | `responsible_id` | entero | No | `staff_id` del responsable. Debe existir en `ost_staff`. |
 | `requester_id` | entero | No | `staff_id` del solicitante. Debe existir en `ost_staff`. |
+| `status` | texto | No | `OPEN`, `IN_PROGRESS`, `ON_HOLD`, `RESOLVED` o `CLOSED`. |
 | `type` | texto | No | `INCIDENT` o `SERVICE_REQUEST`. |
 | `category` | texto | No | `ACCESS`, `SOFTWARE` o `EQUIPMENT`. |
 
@@ -59,7 +60,7 @@ como ayuda visual; este valor predeterminado no se aplica a la API.
 Ejemplo con todos los tipos de filtro:
 
 ```http
-GET /api/tickets/dashboard?start_date=2026-07-01&end_date=2026-07-31&responsible_id=8&type=INCIDENT&category=SOFTWARE
+GET /api/tickets/dashboard?start_date=2026-07-01&end_date=2026-07-31&responsible_id=8&status=IN_PROGRESS&type=INCIDENT&category=SOFTWARE
 ```
 
 Ejemplo con cURL:
@@ -83,6 +84,7 @@ Respuesta `200 OK`:
       "end_date": "2026-07-31",
       "responsible_id": null,
       "requester_id": null,
+      "status": null,
       "type": null,
       "category": null
     },
@@ -242,5 +244,6 @@ Filtros inválidos, respuesta `422`:
 Otros ejemplos de validación que generan `422`:
 
 - `responsible_id` o `requester_id` no existen.
+- `status` no es `OPEN`, `IN_PROGRESS`, `ON_HOLD`, `RESOLVED` ni `CLOSED`.
 - `type` no es `INCIDENT` ni `SERVICE_REQUEST`.
 - `category` no es `ACCESS`, `SOFTWARE` ni `EQUIPMENT`.

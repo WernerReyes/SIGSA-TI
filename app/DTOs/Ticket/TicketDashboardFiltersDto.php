@@ -11,6 +11,7 @@ class TicketDashboardFiltersDto
         public readonly ?string $endDate,
         public readonly ?int $responsibleId,
         public readonly ?int $requesterId,
+        public readonly ?string $status,
         public readonly ?string $type,
         public readonly ?string $category,
     ) {}
@@ -26,6 +27,7 @@ class TicketDashboardFiltersDto
                 : null,
             responsibleId: isset($data['responsible_id']) ? (int) $data['responsible_id'] : null,
             requesterId: isset($data['requester_id']) ? (int) $data['requester_id'] : null,
+            status: $data['status'] ?? null,
             type: $data['type'] ?? null,
             category: $data['category'] ?? null,
         );
@@ -38,6 +40,7 @@ class TicketDashboardFiltersDto
             'end_date' => $this->endDate,
             'responsible_id' => $this->responsibleId,
             'requester_id' => $this->requesterId,
+            'status' => $this->status,
             'type' => $this->type,
             'category' => $this->category,
         ];
