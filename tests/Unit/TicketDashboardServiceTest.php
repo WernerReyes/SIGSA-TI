@@ -152,7 +152,8 @@ it('calcula el resumen y las series del dashboard de tickets', function () {
             'resolved' => 2,
             'resolution_rate' => 100.0,
         ])
-        ->and($dashboard['recent_tickets'])->toHaveCount(3);
+        ->and($dashboard['recent_tickets'])->toHaveCount(3)
+        ->and($dashboard['recent_tickets'][0]['category'])->toBe(TicketCategory::SOFTWARE->value);
 });
 
 it('aplica el filtro por responsable a todos los indicadores', function () {

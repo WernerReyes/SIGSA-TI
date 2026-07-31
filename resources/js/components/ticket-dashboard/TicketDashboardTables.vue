@@ -85,6 +85,7 @@ defineProps<{
                             <TableHead>Ticket</TableHead>
                             <TableHead>Prioridad</TableHead>
                             <TableHead>Estado</TableHead>
+                            <TableHead>Categoría</TableHead>
                             <TableHead>Responsable</TableHead>
                             <TableHead>Creado</TableHead>
                         </TableRow>
@@ -117,6 +118,21 @@ defineProps<{
                                     }}
                                 </Badge>
                             </TableCell>
+                            <TableCell>
+                                <Badge
+                                    v-if="ticket.category"
+                                    variant="secondary"
+                                    class="border"
+                                >
+                                    {{
+                                        getTicketOp('category', ticket.category)
+                                            .label
+                                    }}
+                                </Badge>
+                                <span v-else class="text-muted-foreground">
+                                    Sin categoría
+                                </span>
+                            </TableCell>
                             <TableCell class="text-muted-foreground">
                                 {{
                                     ticket.responsible?.full_name ??
@@ -136,7 +152,7 @@ defineProps<{
                         </TableRow>
                         <TableRow v-if="!tickets.length">
                             <TableCell
-                                colspan="5"
+                                colspan="6"
                                 class="text-muted-foreground py-12 text-center"
                             >
                                 No hay tickets para los filtros seleccionados.

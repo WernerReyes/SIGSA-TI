@@ -63,6 +63,7 @@ export interface TicketDashboardData {
         status: TicketStatus;
         priority: TicketPriority;
         type: TicketType;
+        category: TicketCategory | null;
         requester_id: number;
         responsible_id: number | null;
         requester: BasicUserInfo;

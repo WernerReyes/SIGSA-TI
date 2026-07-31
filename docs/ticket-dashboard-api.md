@@ -167,6 +167,7 @@ Respuesta `200 OK`:
         "status": "IN_PROGRESS",
         "priority": "HIGH",
         "type": "INCIDENT",
+        "category": "SOFTWARE",
         "requester_id": 12,
         "responsible_id": 8,
         "requester": {
