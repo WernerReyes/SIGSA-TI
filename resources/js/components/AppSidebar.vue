@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useApp } from '@/composables/useApp';
 import { type NavItem } from '@/types';
-import { CodeXml, FileText, Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
+import { ChartNoAxesCombined, CodeXml, FileText, Laptop, LayoutGrid, MonitorCog, Tag } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -37,6 +37,11 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: 'Tickets',
             href: "/tickets",
             icon: Tag,
+
+        }, {
+            title: 'Dashboard tickets',
+            href: "/tickets/dashboard",
+            icon: ChartNoAxesCombined,
         });
 
     }

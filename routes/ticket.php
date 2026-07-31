@@ -2,6 +2,7 @@
 
 use App\Enums\Department\Allowed;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketDashboardController;
 
 Route::prefix('tickets')->group(function () {
     Route::get('/', [TicketController::class, 'renderView'])->name('tickets');
@@ -10,6 +11,7 @@ Route::prefix('tickets')->group(function () {
     Route::delete('/{ticket}', [TicketController::class, 'delete'])->name('tickets.delete');
 
     Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () {
+        Route::get('/dashboard', [TicketDashboardController::class, 'renderView'])->name('tickets.dashboard');
         Route::post('/{ticket}/assign', [TicketController::class, 'assign'])->name('tickets.assign');
         Route::post('/{ticket}/change-status', [TicketController::class, 'changeStatus'])->name('tickets.changeStatus');
     });

@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\DTOs\Ticket\TicketDashboardFiltersDto;
+use App\Http\Requests\Ticket\TicketDashboardRequest;
+use App\Services\TicketDashboardService;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class TicketDashboardController extends Controller
+{
+    public function renderView(
+        TicketDashboardRequest $request,
+        TicketDashboardService $ticketDashboardService,
+    ): Response {
+        $filters = TicketDashboardFiltersDto::fromArray($request->validated());
+
+        return Inertia::render('TicketDashboard', [
+            'dashboard' => $ticketDashboardService->getDashboard($filters),
+            'filterOptions' => $ticketDashboardService->getFilterOptions(),
+        ]);
+    }
+}

@@ -1,5 +1,7 @@
 # API de Tickets
 
+La documentación del endpoint analítico está en [API del dashboard de tickets](ticket-dashboard-api.md).
+
 Base URL: `https://sistemas-ti.cechriza.com/api`
 
 Usar el header `Accept: application/json` en todas las solicitudes. Para enviar imagenes, usar

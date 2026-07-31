@@ -64,6 +64,13 @@ class Ticket extends Model
 
     protected $casts = [
         'images' => 'array',
+        'sla_response_due_at' => 'datetime',
+        'sla_resolution_due_at' => 'datetime',
+        'first_response_at' => 'datetime',
+        'resolved_at' => 'datetime',
+        'sla_paused_at' => 'datetime',
+        'sla_paused_duration' => 'float',
+        'sla_breached' => 'boolean',
         // 'opened_at' => 'datetime',
         // 'closed_at' => 'datetime',
         // 'status' => TicketStatus::class,
@@ -187,4 +194,3 @@ class Ticket extends Model
 
 
 }
-

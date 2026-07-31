@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Api\DevelopmentRequestApiController;
 use App\Http\Controllers\Api\TicketApiController;
+use App\Http\Controllers\Api\TicketDashboardApiController;
 
 Route::middleware('access.api')->prefix('tickets')->group(function () {
+    Route::get('/dashboard', [TicketDashboardApiController::class, 'show']);
     Route::get('/', [TicketApiController::class, 'index']);
     Route::post('/', [TicketApiController::class, 'store']);
     Route::post('/{id}/close', [TicketApiController::class, 'close']);

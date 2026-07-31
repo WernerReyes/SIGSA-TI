@@ -17,6 +17,13 @@
             <div class="ml-auto flex items-center gap-2">
                 <SLAHelperInfo />
 
+                <Button v-if="isFromTI" variant="outline" as-child>
+                    <Link href="/tickets/dashboard">
+                        <ChartNoAxesCombined class="size-4" />
+                        Dashboard
+                    </Link>
+                </Button>
+
                 <Button class="w-fit shadow-md hover:shadow-lg transition-all gap-2" @click="open = true">
                     <Tag class="size-4" />
                     Nuevo Ticket
@@ -51,12 +58,13 @@ import { SlaPolicy } from '@/interfaces/slaPolicy.interface';
 import { Ticket } from '@/interfaces/ticket.interface';
 import { type User } from '@/interfaces/user.interface';
 import { Paginated, type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import { Tag } from 'lucide-vue-next';
+import { Head, Link } from '@inertiajs/vue3';
+import { ChartNoAxesCombined, Tag } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 
 import SLAHelperInfo from '@/components/tickets/SLAHelperInfo.vue';
+import { useApp } from '@/composables/useApp';
 
 defineProps<{
     slaPolicies: SlaPolicy[];
@@ -68,6 +76,7 @@ defineProps<{
 
 const open = ref(false);
 const selectedTicket = ref<Ticket | null>(null);
+const { isFromTI } = useApp();
 
 
 
