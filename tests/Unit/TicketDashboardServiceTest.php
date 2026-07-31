@@ -194,7 +194,7 @@ it('expone el dashboard mediante la API protegida por key', function () {
         ->assertJsonCount(10, 'data.daily_trend');
 });
 
-it('usa los últimos treinta días cuando la API no recibe fechas', function () {
+it('no aplica filtro de fechas cuando la API no recibe parámetros', function () {
     config(['services.access_api.key' => 'dashboard-test-key']);
 
     $response = $this
@@ -206,10 +206,10 @@ it('usa los últimos treinta días cuando la API no recibe fechas', function () 
 
     $response
         ->assertOk()
-        ->assertJsonPath('data.filters.start_date', '2026-06-11')
-        ->assertJsonPath('data.filters.end_date', '2026-07-10')
+        ->assertJsonPath('data.filters.start_date', null)
+        ->assertJsonPath('data.filters.end_date', null)
         ->assertJsonPath('data.summary.total', 4)
-        ->assertJsonCount(30, 'data.daily_trend');
+        ->assertJsonCount(14, 'data.daily_trend');
 });
 
 it('rechaza un rango de fechas inválido en la API', function () {

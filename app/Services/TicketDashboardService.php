@@ -67,13 +67,28 @@ class TicketDashboardService
         ];
     }
 
-    private function queryFor(TicketDashboardFiltersDto $filters, string $dateColumn = 'created_at'): Builder
-    {
+    private function queryFor(
+        TicketDashboardFiltersDto $filters,
+        string $dateColumn = 'created_at',
+        bool $applyDateRange = true,
+    ): Builder {
         return Ticket::query()
-            ->whereBetween($dateColumn, [
-                Carbon::parse($filters->startDate)->startOfDay(),
-                Carbon::parse($filters->endDate)->endOfDay(),
-            ])
+            ->when(
+                $applyDateRange && $filters->startDate,
+                fn (Builder $query) => $query->where(
+                    $dateColumn,
+                    '>=',
+                    Carbon::parse($filters->startDate)->startOfDay(),
+                ),
+            )
+            ->when(
+                $applyDateRange && $filters->endDate,
+                fn (Builder $query) => $query->where(
+                    $dateColumn,
+                    '<=',
+                    Carbon::parse($filters->endDate)->endOfDay(),
+                ),
+            )
             ->when(
                 $filters->responsibleId,
                 fn (Builder $query, int $responsibleId) => $query->where('responsible_id', $responsibleId),
@@ -197,13 +212,19 @@ class TicketDashboardService
 
     private function dailyTrend(TicketDashboardFiltersDto $filters): array
     {
+        $range = $this->resolveTrendRange($filters);
+
+        if ($range === null) {
+            return [];
+        }
+
         $created = $this->dailyCounts($this->queryFor($filters), 'created_at');
         $resolved = $this->dailyCounts(
             $this->queryFor($filters, 'resolved_at')->whereNotNull('resolved_at'),
             'resolved_at',
         );
 
-        return collect(CarbonPeriod::create($filters->startDate, $filters->endDate))
+        return collect(CarbonPeriod::create($range['start'], $range['end']))
             ->map(function (Carbon $date) use ($created, $resolved) {
                 $day = $date->toDateString();
 
@@ -215,6 +236,35 @@ class TicketDashboardService
             })
             ->values()
             ->all();
+    }
+
+    private function resolveTrendRange(TicketDashboardFiltersDto $filters): ?array
+    {
+        $query = $this->queryFor($filters, applyDateRange: false);
+
+        $earliestCreatedAt = (clone $query)->min('created_at');
+        $latestCreatedAt = (clone $query)->max('created_at');
+        $latestResolvedAt = (clone $query)->max('resolved_at');
+
+        $start = $filters->startDate
+            ? Carbon::parse($filters->startDate)->startOfDay()
+            : ($earliestCreatedAt ? Carbon::parse($earliestCreatedAt)->startOfDay() : null);
+
+        $latestEventAt = collect([$latestCreatedAt, $latestResolvedAt])
+            ->filter()
+            ->map(fn ($date) => Carbon::parse($date))
+            ->sortDesc()
+            ->first();
+
+        $end = $filters->endDate
+            ? Carbon::parse($filters->endDate)->endOfDay()
+            : $latestEventAt?->endOfDay();
+
+        if (! $start || ! $end || $start->gt($end)) {
+            return null;
+        }
+
+        return compact('start', 'end');
     }
 
     private function dailyCounts(Builder $query, string $column)

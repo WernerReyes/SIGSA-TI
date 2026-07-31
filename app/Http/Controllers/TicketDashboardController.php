@@ -14,7 +14,14 @@ class TicketDashboardController extends Controller
         TicketDashboardRequest $request,
         TicketDashboardService $ticketDashboardService,
     ): Response {
-        $filters = TicketDashboardFiltersDto::fromArray($request->validated());
+        $validated = $request->validated();
+
+        if (! $request->has('start_date') && ! $request->has('end_date')) {
+            $validated['start_date'] = now()->subDays(29)->toDateString();
+            $validated['end_date'] = now()->toDateString();
+        }
+
+        $filters = TicketDashboardFiltersDto::fromArray($validated);
 
         return Inertia::render('TicketDashboard', [
             'dashboard' => $ticketDashboardService->getDashboard($filters),

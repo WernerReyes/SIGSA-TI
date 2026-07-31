@@ -29,8 +29,8 @@ const props = defineProps<{
 const { isLoading } = useApp();
 
 const filters = ref({
-    start_date: props.dashboard.filters.start_date,
-    end_date: props.dashboard.filters.end_date,
+    start_date: props.dashboard.filters.start_date ?? '',
+    end_date: props.dashboard.filters.end_date ?? '',
     responsible_id: props.dashboard.filters.responsible_id?.toString() ?? '',
     type: props.dashboard.filters.type ?? '',
     category: props.dashboard.filters.category ?? '',

@@ -39,12 +39,22 @@ No se envía cuerpo. Los filtros se envían como parámetros de consulta.
 
 | Parámetro | Tipo | Requerido | Descripción |
 | --- | --- | --- | --- |
-| `start_date` | fecha `YYYY-MM-DD` | No | Inicio inclusivo. Por defecto: 29 días antes de hoy. |
-| `end_date` | fecha `YYYY-MM-DD` | No | Fin inclusivo. Por defecto: hoy. Debe ser igual o posterior a `start_date`. |
+| `start_date` | fecha `YYYY-MM-DD` | No | Inicio inclusivo. Si se omite, no se aplica límite inferior. |
+| `end_date` | fecha `YYYY-MM-DD` | No | Fin inclusivo. Si se omite, no se aplica límite superior. Debe ser igual o posterior a `start_date` cuando ambas fechas están presentes. |
 | `responsible_id` | entero | No | `staff_id` del responsable. Debe existir en `ost_staff`. |
 | `requester_id` | entero | No | `staff_id` del solicitante. Debe existir en `ost_staff`. |
 | `type` | texto | No | `INCIDENT` o `SERVICE_REQUEST`. |
 | `category` | texto | No | `ACCESS`, `SOFTWARE` o `EQUIPMENT`. |
+
+Para consultar todo el histórico no se envían parámetros:
+
+```http
+GET /api/tickets/dashboard
+```
+
+En ese caso, `filters.start_date` y `filters.end_date` serán `null` y todos los tickets
+participarán en los indicadores. La vista web conserva un rango inicial de 30 días únicamente
+como ayuda visual; este valor predeterminado no se aplica a la API.
 
 Ejemplo con todos los tipos de filtro:
 

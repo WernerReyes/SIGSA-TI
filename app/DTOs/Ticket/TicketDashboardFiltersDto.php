@@ -7,8 +7,8 @@ use Carbon\CarbonImmutable;
 class TicketDashboardFiltersDto
 {
     private function __construct(
-        public readonly string $startDate,
-        public readonly string $endDate,
+        public readonly ?string $startDate,
+        public readonly ?string $endDate,
         public readonly ?int $responsibleId,
         public readonly ?int $requesterId,
         public readonly ?string $type,
@@ -20,10 +20,10 @@ class TicketDashboardFiltersDto
         return new self(
             startDate: isset($data['start_date'])
                 ? CarbonImmutable::parse($data['start_date'])->toDateString()
-                : now()->subDays(29)->toDateString(),
+                : null,
             endDate: isset($data['end_date'])
                 ? CarbonImmutable::parse($data['end_date'])->toDateString()
-                : now()->toDateString(),
+                : null,
             responsibleId: isset($data['responsible_id']) ? (int) $data['responsible_id'] : null,
             requesterId: isset($data['requester_id']) ? (int) $data['requester_id'] : null,
             type: $data['type'] ?? null,

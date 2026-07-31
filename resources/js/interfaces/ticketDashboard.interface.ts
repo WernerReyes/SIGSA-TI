@@ -15,8 +15,8 @@ export interface TicketDashboardDistributionItem {
 
 export interface TicketDashboardData {
     filters: {
-        start_date: string;
-        end_date: string;
+        start_date: string | null;
+        end_date: string | null;
         responsible_id: number | null;
         requester_id: number | null;
         type: TicketType | null;

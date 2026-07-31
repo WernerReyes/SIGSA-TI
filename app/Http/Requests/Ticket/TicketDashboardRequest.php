@@ -9,14 +9,6 @@ use Illuminate\Validation\Rule;
 
 class TicketDashboardRequest extends FormRequest
 {
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'start_date' => $this->input('start_date', now()->subDays(29)->toDateString()),
-            'end_date' => $this->input('end_date', now()->toDateString()),
-        ]);
-    }
-
     public function authorize(): bool
     {
         return true;
