@@ -160,6 +160,31 @@ Respuesta `200 OK`:
         "resolution_rate": 75.0
       }
     ],
+    "tickets": [
+      {
+        "id": 125,
+        "title": "No puedo ingresar al ERP",
+        "status": "IN_PROGRESS",
+        "priority": "HIGH",
+        "type": "INCIDENT",
+        "category": "SOFTWARE",
+        "requester_id": 12,
+        "responsible_id": 8,
+        "requester": {
+          "staff_id": 12,
+          "firstname": "Juan",
+          "lastname": "Pérez",
+          "full_name": "Juan Pérez"
+        },
+        "responsible": {
+          "staff_id": 8,
+          "firstname": "Ana",
+          "lastname": "Torres",
+          "full_name": "Ana Torres"
+        },
+        "created_at": "2026-07-31T14:30:00.000000Z"
+      }
+    ],
     "recent_tickets": [
       {
         "id": 125,
@@ -190,8 +215,9 @@ Respuesta `200 OK`:
 ```
 
 Las colecciones `by_status`, `by_priority`, `by_type` y `by_category` siempre incluyen todos los
-valores permitidos, aunque su conteo sea cero. `recent_tickets` y `technicians` devuelven como
-máximo ocho registros.
+valores permitidos, aunque su conteo sea cero. `tickets` contiene todos los tickets que coinciden
+con los filtros, ordenados del más reciente al más antiguo. `recent_tickets` y `technicians`
+devuelven como máximo ocho registros.
 
 ## Definición de indicadores
 
@@ -207,7 +233,8 @@ máximo ocho registros.
 | `average_resolution_minutes` | Promedio transcurrido entre creación y resolución, descontando pausas registradas. |
 | `resolution_rate` | Porcentaje resuelto por cada responsable sobre sus tickets del periodo. |
 
-El resumen, distribuciones, desempeño y tickets recientes forman una cohorte por `created_at`.
+El resumen, distribuciones, desempeño y las colecciones de tickets forman una cohorte por
+`created_at`.
 La serie `daily_trend.created` usa `created_at`; `daily_trend.resolved` usa `resolved_at` para mostrar
 cuántos tickets se resolvieron realmente cada día dentro del rango.
 

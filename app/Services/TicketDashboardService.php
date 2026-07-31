@@ -18,6 +18,7 @@ class TicketDashboardService
     public function getDashboard(TicketDashboardFiltersDto $filters): array
     {
         $query = $this->queryFor($filters);
+        $tickets = $this->allTickets(clone $query);
 
         return [
             'filters' => $filters->toArray(),
@@ -40,7 +41,9 @@ class TicketDashboardService
             'by_category' => $this->categoryDistribution(clone $query),
             'daily_trend' => $this->dailyTrend($filters),
             'technicians' => $this->technicianPerformance(clone $query),
-            'recent_tickets' => $this->recentTickets(clone $query),
+            'tickets' => $tickets,
+            'recent_tickets' => array_slice($tickets, 0, 8),
+
         ];
     }
 
@@ -323,26 +326,26 @@ class TicketDashboardService
         })->values()->all();
     }
 
-    private function recentTickets(Builder $query): array
+    private function allTickets(Builder $query): array
     {
-        return $query
+        $query
             ->with([
                 'requester:staff_id,firstname,lastname',
                 'responsible:staff_id,firstname,lastname',
             ])
-            ->latest('created_at')
-            ->limit(8)
-            ->get([
-                'id',
-                'title',
-                'status',
-                'priority',
-                'type',
-                'category',
-                'requester_id',
-                'responsible_id',
-                'created_at',
-            ])
+            ->latest('created_at');
+
+        return $query->get([
+            'id',
+            'title',
+            'status',
+            'priority',
+            'type',
+            'category',
+            'requester_id',
+            'responsible_id',
+            'created_at',
+        ])
             ->map(fn (Ticket $ticket) => [
                 'id' => $ticket->id,
                 'title' => $ticket->title,

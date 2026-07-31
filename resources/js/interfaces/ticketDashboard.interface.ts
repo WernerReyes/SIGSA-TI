@@ -13,6 +13,20 @@ export interface TicketDashboardDistributionItem {
     percentage: number;
 }
 
+export interface TicketDashboardTicket {
+    id: number;
+    title: string;
+    status: TicketStatus;
+    priority: TicketPriority;
+    type: TicketType;
+    category: TicketCategory | null;
+    requester_id: number;
+    responsible_id: number | null;
+    requester: BasicUserInfo;
+    responsible: BasicUserInfo | null;
+    created_at: string;
+}
+
 export interface TicketDashboardData {
     filters: {
         start_date: string | null;
@@ -57,19 +71,8 @@ export interface TicketDashboardData {
         sla_breached: number;
         resolution_rate: number;
     }>;
-    recent_tickets: Array<{
-        id: number;
-        title: string;
-        status: TicketStatus;
-        priority: TicketPriority;
-        type: TicketType;
-        category: TicketCategory | null;
-        requester_id: number;
-        responsible_id: number | null;
-        requester: BasicUserInfo;
-        responsible: BasicUserInfo | null;
-        created_at: string;
-    }>;
+    tickets: TicketDashboardTicket[];
+    recent_tickets: TicketDashboardTicket[];
 }
 
 export interface TicketDashboardFilterOptions {

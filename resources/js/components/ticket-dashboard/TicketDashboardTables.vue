@@ -23,7 +23,7 @@ import { es } from 'date-fns/locale';
 
 defineProps<{
     technicians: TicketDashboardData['technicians'];
-    tickets: TicketDashboardData['recent_tickets'];
+    tickets: TicketDashboardData['tickets'];
 }>();
 </script>
 
@@ -72,10 +72,10 @@ defineProps<{
 
         <Card class="border-border/80 xl:col-span-3">
             <CardHeader>
-                <CardTitle>Tickets recientes</CardTitle>
+                <CardTitle>Todos los tickets</CardTitle>
                 <CardDescription
-                    >Últimos tickets creados dentro de los
-                    filtros.</CardDescription
+                    >Tickets que coinciden con los filtros
+                    seleccionados.</CardDescription
                 >
             </CardHeader>
             <CardContent class="overflow-x-auto">

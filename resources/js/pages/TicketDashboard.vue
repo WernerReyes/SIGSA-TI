@@ -245,7 +245,7 @@ const clearDimensionFilters = () => {
 
             <TicketDashboardTables
                 :technicians="dashboard.technicians"
-                :tickets="dashboard.recent_tickets"
+                :tickets="dashboard.tickets"
             />
         </div>
     </AppLayout>

@@ -152,6 +152,7 @@ it('calcula el resumen y las series del dashboard de tickets', function () {
             'resolved' => 2,
             'resolution_rate' => 100.0,
         ])
+        ->and($dashboard['tickets'])->toHaveCount(3)
         ->and($dashboard['recent_tickets'])->toHaveCount(3)
         ->and($dashboard['recent_tickets'][0]['category'])->toBe(TicketCategory::SOFTWARE->value);
 });
@@ -251,6 +252,7 @@ it('no aplica filtro de fechas cuando la API no recibe parámetros', function ()
         ->assertJsonPath('data.filters.end_date', null)
         ->assertJsonPath('data.filters.status', null)
         ->assertJsonPath('data.summary.total', 4)
+        ->assertJsonCount(4, 'data.tickets')
         ->assertJsonCount(14, 'data.daily_trend');
 });
 
