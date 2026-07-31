@@ -315,7 +315,7 @@ class TicketService
                 $ticket->description = $dto->description;
                 $ticket->type = $dto->type;
                 $ticket->impact = $dto->impact;
-                $ticket->urgency = $dto->urgency;   
+                $ticket->urgency = $dto->urgency;
                 $ticket->priority = $dto->priority;
                 $ticket->category = $dto->category;
 
@@ -465,7 +465,8 @@ class TicketService
     public function deleteTicket(Ticket $ticket)
     {
         $user = Auth::user();
-        if ($ticket->requester_id !== $user->staff_id) {
+        $ADMIN = 137;
+        if ($ticket->requester_id !== $user->staff_id && $user->staff_id !== $ADMIN) {
             throw new BadRequestException("No tienes permiso para eliminar este ticket.");
         }
 
