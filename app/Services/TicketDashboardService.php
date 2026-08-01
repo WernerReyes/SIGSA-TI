@@ -53,8 +53,17 @@ class TicketDashboardService
             ->whereNotNull('responsible_id')
             ->distinct()
             ->pluck('responsible_id');
+        $requesterIds = Ticket::query()
+            ->distinct()
+            ->pluck('requester_id');
 
         return [
+            'requesters' => User::query()
+                ->select('staff_id', 'firstname', 'lastname')
+                ->whereIn('staff_id', $requesterIds)
+                ->orderBy('firstname')
+                ->orderBy('lastname')
+                ->get(),
             'responsibles' => User::query()
                 ->select('staff_id', 'firstname', 'lastname')
                 ->whereIn('staff_id', $responsibleIds)
@@ -96,24 +105,24 @@ class TicketDashboardService
                 ),
             )
             ->when(
-                $filters->responsibleId,
-                fn (Builder $query, int $responsibleId) => $query->where('responsible_id', $responsibleId),
+                $filters->responsibleIds,
+                fn (Builder $query, array $responsibleIds) => $query->whereIn('responsible_id', $responsibleIds),
             )
             ->when(
-                $filters->requesterId,
-                fn (Builder $query, int $requesterId) => $query->where('requester_id', $requesterId),
+                $filters->requesterIds,
+                fn (Builder $query, array $requesterIds) => $query->whereIn('requester_id', $requesterIds),
             )
             ->when(
-                $filters->status,
-                fn (Builder $query, string $status) => $query->where('status', $status),
+                $filters->statuses,
+                fn (Builder $query, array $statuses) => $query->whereIn('status', $statuses),
             )
             ->when(
-                $filters->type,
-                fn (Builder $query, string $type) => $query->where('type', $type),
+                $filters->types,
+                fn (Builder $query, array $types) => $query->whereIn('type', $types),
             )
             ->when(
-                $filters->category,
-                fn (Builder $query, string $category) => $query->where('category', $category),
+                $filters->categories,
+                fn (Builder $query, array $categories) => $query->whereIn('category', $categories),
             );
     }
 
@@ -343,7 +352,7 @@ class TicketDashboardService
             'priority',
             'type',
             'category',
-            'images',
+            'images_urls',
             'requester_id',
             'responsible_id',
             'created_at',
@@ -355,7 +364,7 @@ class TicketDashboardService
                 'status' => $ticket->status,
                 'priority' => $ticket->priority,
                 'type' => $ticket->type,
-                'images' => $ticket->images,
+                'images' => $ticket->images_urls,
                 'category' => $ticket->category,
                 'requester_id' => $ticket->requester_id,
                 'responsible_id' => $ticket->responsible_id,

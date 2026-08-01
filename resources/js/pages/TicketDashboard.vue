@@ -3,13 +3,10 @@ import TicketDashboardSummary from '@/components/ticket-dashboard/TicketDashboar
 import TicketDashboardTables from '@/components/ticket-dashboard/TicketDashboardTables.vue';
 import TicketDistributionCard from '@/components/ticket-dashboard/TicketDistributionCard.vue';
 import TicketTrendChart from '@/components/ticket-dashboard/TicketTrendChart.vue';
+import SelectFilters from '@/components/SelectFilters.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    NativeSelect,
-    NativeSelectOption,
-} from '@/components/ui/native-select';
 import { useApp } from '@/composables/useApp';
 import type {
     TicketDashboardData,
@@ -18,7 +15,15 @@ import type {
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ListFilter, RefreshCw, TableProperties } from 'lucide-vue-next';
+import {
+    ListChecks,
+    ListFilter,
+    RefreshCw,
+    TableProperties,
+    Tags,
+    TicketPlus,
+    Users,
+} from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps<{
@@ -31,10 +36,11 @@ const { isLoading } = useApp();
 const filters = ref({
     start_date: props.dashboard.filters.start_date ?? '',
     end_date: props.dashboard.filters.end_date ?? '',
-    responsible_id: props.dashboard.filters.responsible_id?.toString() ?? '',
-    status: props.dashboard.filters.status ?? '',
-    type: props.dashboard.filters.type ?? '',
-    category: props.dashboard.filters.category ?? '',
+    responsible_ids: props.dashboard.filters.responsible_ids ?? [],
+    requester_ids: props.dashboard.filters.requester_ids ?? [],
+    statuses: props.dashboard.filters.statuses ?? [],
+    types: props.dashboard.filters.types ?? [],
+    categories: props.dashboard.filters.categories ?? [],
 });
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -48,10 +54,19 @@ const applyFilters = () => {
         {
             start_date: filters.value.start_date,
             end_date: filters.value.end_date,
-            responsible_id: filters.value.responsible_id || undefined,
-            status: filters.value.status || undefined,
-            type: filters.value.type || undefined,
-            category: filters.value.category || undefined,
+            responsible_ids: filters.value.responsible_ids.length
+                ? filters.value.responsible_ids
+                : undefined,
+            requester_ids: filters.value.requester_ids.length
+                ? filters.value.requester_ids
+                : undefined,
+            statuses: filters.value.statuses.length
+                ? filters.value.statuses
+                : undefined,
+            types: filters.value.types.length ? filters.value.types : undefined,
+            categories: filters.value.categories.length
+                ? filters.value.categories
+                : undefined,
         },
         {
             only: ['dashboard'],
@@ -63,10 +78,11 @@ const applyFilters = () => {
 };
 
 const clearDimensionFilters = () => {
-    filters.value.responsible_id = '';
-    filters.value.status = '';
-    filters.value.type = '';
-    filters.value.category = '';
+    filters.value.responsible_ids = [];
+    filters.value.requester_ids = [];
+    filters.value.statuses = [];
+    filters.value.types = [];
+    filters.value.categories = [];
     applyFilters();
 };
 </script>
@@ -104,7 +120,7 @@ const clearDimensionFilters = () => {
             </div>
 
             <form
-                class="border-border/80 bg-card grid gap-4 rounded-xl border p-4 shadow-sm md:grid-cols-2 xl:grid-cols-7"
+                class="border-border/80 bg-card grid gap-4 rounded-xl border p-4 shadow-sm md:grid-cols-2 xl:grid-cols-4"
                 @submit.prevent="applyFilters"
             >
                 <div class="space-y-2">
@@ -124,74 +140,79 @@ const clearDimensionFilters = () => {
                     />
                 </div>
                 <div class="space-y-2">
-                    <Label for="ticket-dashboard-responsible"
-                        >Responsable</Label
-                    >
-                    <NativeSelect
-                        id="ticket-dashboard-responsible"
-                        v-model="filters.responsible_id"
-                        class="w-full"
-                    >
-                        <NativeSelectOption value="">Todos</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="responsible in filterOptions.responsibles"
-                            :key="responsible.staff_id"
-                            :value="responsible.staff_id.toString()"
-                        >
-                            {{ responsible.full_name }}
-                        </NativeSelectOption>
-                    </NativeSelect>
+                    <Label>Solicitantes</Label>
+                    <SelectFilters
+                        label="Solicitantes"
+                        :items="filterOptions.requesters"
+                        item-value="staff_id"
+                        item-label="full_name"
+                        :icon="Users"
+                        :multiple="true"
+                        selected-as-label
+                        full-width
+                        :default-value="filters.requester_ids"
+                        @select="(values) => (filters.requester_ids = values)"
+                    />
                 </div>
                 <div class="space-y-2">
-                    <Label for="ticket-dashboard-status">Estado</Label>
-                    <NativeSelect
-                        id="ticket-dashboard-status"
-                        v-model="filters.status"
-                        class="w-full"
-                    >
-                        <NativeSelectOption value="">Todos</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="status in filterOptions.statuses"
-                            :key="status.value"
-                            :value="status.value"
-                        >
-                            {{ status.label }}
-                        </NativeSelectOption>
-                    </NativeSelect>
+                    <Label>Responsables</Label>
+                    <SelectFilters
+                        label="Responsables"
+                        :items="filterOptions.responsibles"
+                        item-value="staff_id"
+                        item-label="full_name"
+                        :icon="Users"
+                        :multiple="true"
+                        selected-as-label
+                        full-width
+                        :default-value="filters.responsible_ids"
+                        @select="(values) => (filters.responsible_ids = values)"
+                    />
                 </div>
                 <div class="space-y-2">
-                    <Label for="ticket-dashboard-type">Tipo</Label>
-                    <NativeSelect
-                        id="ticket-dashboard-type"
-                        v-model="filters.type"
-                        class="w-full"
-                    >
-                        <NativeSelectOption value="">Todos</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="type in filterOptions.types"
-                            :key="type.value"
-                            :value="type.value"
-                        >
-                            {{ type.label }}
-                        </NativeSelectOption>
-                    </NativeSelect>
+                    <Label>Estados</Label>
+                    <SelectFilters
+                        label="Estados"
+                        :items="filterOptions.statuses"
+                        item-value="value"
+                        item-label="label"
+                        :icon="ListChecks"
+                        :multiple="true"
+                        selected-as-label
+                        full-width
+                        :default-value="filters.statuses"
+                        @select="(values) => (filters.statuses = values)"
+                    />
                 </div>
                 <div class="space-y-2">
-                    <Label for="ticket-dashboard-category">Categoría</Label>
-                    <NativeSelect
-                        id="ticket-dashboard-category"
-                        v-model="filters.category"
-                        class="w-full"
-                    >
-                        <NativeSelectOption value="">Todas</NativeSelectOption>
-                        <NativeSelectOption
-                            v-for="category in filterOptions.categories"
-                            :key="category.value"
-                            :value="category.value"
-                        >
-                            {{ category.label }}
-                        </NativeSelectOption>
-                    </NativeSelect>
+                    <Label>Tipos</Label>
+                    <SelectFilters
+                        label="Tipos"
+                        :items="filterOptions.types"
+                        item-value="value"
+                        item-label="label"
+                        :icon="TicketPlus"
+                        :multiple="true"
+                        selected-as-label
+                        full-width
+                        :default-value="filters.types"
+                        @select="(values) => (filters.types = values)"
+                    />
+                </div>
+                <div class="space-y-2">
+                    <Label>Categorías</Label>
+                    <SelectFilters
+                        label="Categorías"
+                        :items="filterOptions.categories"
+                        item-value="value"
+                        item-label="label"
+                        :icon="Tags"
+                        :multiple="true"
+                        selected-as-label
+                        full-width
+                        :default-value="filters.categories"
+                        @select="(values) => (filters.categories = values)"
+                    />
                 </div>
                 <div class="flex items-end gap-2">
                     <Button type="submit" class="flex-1" :disabled="isLoading">
@@ -202,7 +223,7 @@ const clearDimensionFilters = () => {
                         type="button"
                         size="icon"
                         variant="outline"
-                        title="Limpiar responsable, tipo y categoría"
+                        title="Limpiar filtros de selección"
                         :disabled="isLoading"
                         @click="clearDimensionFilters"
                     >

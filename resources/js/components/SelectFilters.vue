@@ -1,7 +1,8 @@
 <template>
     <Popover v-model:open="open">
         <PopoverTrigger as-child>
-            <Button 
+            <Button
+             type="button"
              :disabled="disabled"
             variant="outline" role="combobox" :aria-expanded="open" class="justify-between gap-2" :class="fullWidth ? 'w-full' : 'w-fit'">
                 <span v-if="selecteds.length && showSelectedFocus" class="relative flex size-2">
