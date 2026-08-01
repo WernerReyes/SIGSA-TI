@@ -352,7 +352,7 @@ class TicketDashboardService
             'priority',
             'type',
             'category',
-            'images_urls',
+            'images',
             'requester_id',
             'responsible_id',
             'created_at',
