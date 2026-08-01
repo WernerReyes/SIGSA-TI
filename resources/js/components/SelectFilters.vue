@@ -4,21 +4,21 @@
             <Button
              type="button"
              :disabled="disabled"
-            variant="outline" role="combobox" :aria-expanded="open" class="justify-between gap-2" :class="fullWidth ? 'w-full' : 'w-fit'">
-                <span v-if="selecteds.length && showSelectedFocus" class="relative flex size-2">
+            variant="outline" role="combobox" :aria-expanded="open" class="min-w-0 max-w-full justify-between gap-2 overflow-hidden" :class="fullWidth ? 'w-full' : 'w-fit'">
+                <span v-if="selecteds.length && showSelectedFocus" class="relative flex size-2 shrink-0">
                     <span
                         class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
                     <span class="relative inline-flex size-2 rounded-full bg-sky-500"></span>
                 </span>
-                <component :is="icon" v-if="icon" class="size-4" />
+                <component :is="icon" v-if="icon" class="size-4 shrink-0" />
 
-                {{ itemsLabel }}
+                <span class="min-w-0 flex-1 truncate text-left">{{ itemsLabel }}</span>
                 
-                <ChevronsUpDown class="h-4 w-4 opacity-50" />
+                <ChevronsUpDown class="h-4 w-4 shrink-0 opacity-50" />
             </Button>
         </PopoverTrigger>
 
-        <PopoverContent class="w-full p-0">
+        <PopoverContent class="w-[var(--reka-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0">
             <Command :disabled="disabled">
                 <CommandInput :placeholder="searchPlaceholder" />
 

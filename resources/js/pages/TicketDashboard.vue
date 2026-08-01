@@ -139,7 +139,7 @@ const clearDimensionFilters = () => {
                         type="date"
                     />
                 </div>
-                <div class="space-y-2">
+                <div class="min-w-0 space-y-2">
                     <Label>Solicitantes</Label>
                     <SelectFilters
                         label="Solicitantes"
@@ -149,12 +149,13 @@ const clearDimensionFilters = () => {
                         :icon="Users"
                         :multiple="true"
                         selected-as-label
+                        :max-label-length="1"
                         full-width
                         :default-value="filters.requester_ids"
                         @select="(values) => (filters.requester_ids = values)"
                     />
                 </div>
-                <div class="space-y-2">
+                <div class="min-w-0 space-y-2">
                     <Label>Responsables</Label>
                     <SelectFilters
                         label="Responsables"
@@ -164,12 +165,13 @@ const clearDimensionFilters = () => {
                         :icon="Users"
                         :multiple="true"
                         selected-as-label
+                        :max-label-length="1"
                         full-width
                         :default-value="filters.responsible_ids"
                         @select="(values) => (filters.responsible_ids = values)"
                     />
                 </div>
-                <div class="space-y-2">
+                <div class="min-w-0 space-y-2">
                     <Label>Estados</Label>
                     <SelectFilters
                         label="Estados"
@@ -179,12 +181,13 @@ const clearDimensionFilters = () => {
                         :icon="ListChecks"
                         :multiple="true"
                         selected-as-label
+                        :max-label-length="2"
                         full-width
                         :default-value="filters.statuses"
                         @select="(values) => (filters.statuses = values)"
                     />
                 </div>
-                <div class="space-y-2">
+                <div class="min-w-0 space-y-2">
                     <Label>Tipos</Label>
                     <SelectFilters
                         label="Tipos"
@@ -194,12 +197,13 @@ const clearDimensionFilters = () => {
                         :icon="TicketPlus"
                         :multiple="true"
                         selected-as-label
+                        :max-label-length="2"
                         full-width
                         :default-value="filters.types"
                         @select="(values) => (filters.types = values)"
                     />
                 </div>
-                <div class="space-y-2">
+                <div class="min-w-0 space-y-2">
                     <Label>Categorías</Label>
                     <SelectFilters
                         label="Categorías"
@@ -209,6 +213,7 @@ const clearDimensionFilters = () => {
                         :icon="Tags"
                         :multiple="true"
                         selected-as-label
+                        :max-label-length="2"
                         full-width
                         :default-value="filters.categories"
                         @select="(values) => (filters.categories = values)"

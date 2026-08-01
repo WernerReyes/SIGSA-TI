@@ -41,11 +41,18 @@ No se envía cuerpo. Los filtros se envían como parámetros de consulta.
 | --- | --- | --- | --- |
 | `start_date` | fecha `YYYY-MM-DD` | No | Inicio inclusivo. Si se omite, no se aplica límite inferior. |
 | `end_date` | fecha `YYYY-MM-DD` | No | Fin inclusivo. Si se omite, no se aplica límite superior. Debe ser igual o posterior a `start_date` cuando ambas fechas están presentes. |
-| `responsible_id` | entero | No | `staff_id` del responsable. Debe existir en `ost_staff`. |
-| `requester_id` | entero | No | `staff_id` del solicitante. Debe existir en `ost_staff`. |
-| `status` | texto | No | `OPEN`, `IN_PROGRESS`, `ON_HOLD`, `RESOLVED` o `CLOSED`. |
-| `type` | texto | No | `INCIDENT` o `SERVICE_REQUEST`. |
-| `category` | texto | No | `ACCESS`, `SOFTWARE` o `EQUIPMENT`. |
+| `responsible_ids[]` | array de enteros | No | Uno o más `staff_id` de responsables. Cada ID debe existir en `ost_staff`. |
+| `requester_ids[]` | array de enteros | No | Uno o más `staff_id` de solicitantes. Cada ID debe existir en `ost_staff`. |
+| `statuses[]` | array de textos | No | Uno o más: `OPEN`, `IN_PROGRESS`, `ON_HOLD`, `RESOLVED`, `CLOSED`. |
+| `types[]` | array de textos | No | Uno o más: `INCIDENT`, `SERVICE_REQUEST`. |
+| `categories[]` | array de textos | No | Uno o más: `ACCESS`, `SOFTWARE`, `EQUIPMENT`. |
+
+Los valores de una misma lista se combinan con lógica **OR** (`whereIn`), mientras que filtros
+de grupos diferentes se combinan con lógica **AND**. Por ejemplo, dos estados y dos tipos
+seleccionan tickets que pertenezcan a cualquiera de esos estados y a cualquiera de esos tipos.
+
+Por compatibilidad, la API todavía acepta los nombres singulares anteriores (`responsible_id`,
+`requester_id`, `status`, `type`, `category`) y los convierte internamente en listas de un elemento.
 
 Para consultar todo el histórico no se envían parámetros:
 
@@ -60,14 +67,14 @@ como ayuda visual; este valor predeterminado no se aplica a la API.
 Ejemplo con todos los tipos de filtro:
 
 ```http
-GET /api/tickets/dashboard?start_date=2026-07-01&end_date=2026-07-31&responsible_id=8&status=IN_PROGRESS&type=INCIDENT&category=SOFTWARE
+GET /api/tickets/dashboard?start_date=2026-07-01&end_date=2026-07-31&responsible_ids[]=8&responsible_ids[]=9&requester_ids[]=12&statuses[]=OPEN&statuses[]=IN_PROGRESS&types[]=INCIDENT&types[]=SERVICE_REQUEST&categories[]=SOFTWARE&categories[]=ACCESS
 ```
 
 Ejemplo con cURL:
 
 ```bash
-curl --request GET \
-  --url "https://sistemas-ti.cechriza.com/api/tickets/dashboard?start_date=2026-07-01&end_date=2026-07-31" \
+curl --globoff --request GET \
+  --url "https://sistemas-ti.cechriza.com/api/tickets/dashboard?statuses[]=OPEN&statuses[]=IN_PROGRESS&types[]=INCIDENT" \
   --header "Accept: application/json" \
   --header "X-API-Key: <API_KEY>"
 ```
@@ -82,11 +89,11 @@ Respuesta `200 OK`:
     "filters": {
       "start_date": "2026-07-01",
       "end_date": "2026-07-31",
-      "responsible_id": null,
-      "requester_id": null,
-      "status": null,
-      "type": null,
-      "category": null
+      "responsible_ids": [8, 9],
+      "requester_ids": [12],
+      "statuses": ["OPEN", "IN_PROGRESS"],
+      "types": ["INCIDENT", "SERVICE_REQUEST"],
+      "categories": ["SOFTWARE", "ACCESS"]
     },
     "summary": {
       "total": 42,
@@ -271,7 +278,7 @@ Filtros inválidos, respuesta `422`:
 
 Otros ejemplos de validación que generan `422`:
 
-- `responsible_id` o `requester_id` no existen.
-- `status` no es `OPEN`, `IN_PROGRESS`, `ON_HOLD`, `RESOLVED` ni `CLOSED`.
-- `type` no es `INCIDENT` ni `SERVICE_REQUEST`.
-- `category` no es `ACCESS`, `SOFTWARE` ni `EQUIPMENT`.
+- `responsible_ids` o `requester_ids` no son arrays, contienen duplicados o incluyen IDs inexistentes.
+- Algún elemento de `statuses` no es `OPEN`, `IN_PROGRESS`, `ON_HOLD`, `RESOLVED` ni `CLOSED`.
+- Algún elemento de `types` no es `INCIDENT` ni `SERVICE_REQUEST`.
+- Algún elemento de `categories` no es `ACCESS`, `SOFTWARE` ni `EQUIPMENT`.

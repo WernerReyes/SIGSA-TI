@@ -157,49 +157,55 @@ it('calcula el resumen y las series del dashboard de tickets', function () {
         ->and($dashboard['recent_tickets'][0]['category'])->toBe(TicketCategory::SOFTWARE->value);
 });
 
-it('aplica el filtro por responsable a todos los indicadores', function () {
+it('aplica múltiples responsables a todos los indicadores', function () {
     $filters = TicketDashboardFiltersDto::fromArray([
-        'start_date' => '2026-07-01',
-        'end_date' => '2026-07-10',
-        'responsible_id' => 2,
+        'responsible_ids' => [2, 3],
     ]);
 
     $dashboard = app(TicketDashboardService::class)->getDashboard($filters);
 
     expect($dashboard['summary'])
         ->toMatchArray([
-            'total' => 2,
-            'active' => 0,
+            'total' => 3,
+            'active' => 1,
             'resolved' => 2,
             'unassigned' => 0,
-            'sla_breached' => 1,
+            'sla_breached' => 2,
         ])
-        ->and($dashboard['recent_tickets'])->toHaveCount(2);
+        ->and($dashboard['filters']['responsible_ids'])->toBe([2, 3])
+        ->and($dashboard['recent_tickets'])->toHaveCount(3);
 });
 
-it('aplica el filtro por estado a todos los indicadores', function () {
+it('aplica múltiples estados a todos los indicadores', function () {
     $filters = TicketDashboardFiltersDto::fromArray([
-        'status' => TicketStatus::CLOSED->value,
+        'statuses' => [
+            TicketStatus::CLOSED->value,
+            TicketStatus::RESOLVED->value,
+        ],
     ]);
 
     $dashboard = app(TicketDashboardService::class)->getDashboard($filters);
 
-    expect($dashboard['filters']['status'])->toBe(TicketStatus::CLOSED->value)
+    expect($dashboard['filters']['statuses'])->toBe([
+        TicketStatus::CLOSED->value,
+        TicketStatus::RESOLVED->value,
+    ])
         ->and($dashboard['summary'])
         ->toMatchArray([
-            'total' => 1,
+            'total' => 2,
             'active' => 0,
-            'resolved' => 1,
+            'resolved' => 2,
             'closed' => 1,
             'unassigned' => 0,
             'sla_breached' => 1,
         ])
         ->and(collect($dashboard['by_status'])->firstWhere('value', TicketStatus::CLOSED->value)['count'])->toBe(1)
+        ->and(collect($dashboard['by_status'])->firstWhere('value', TicketStatus::RESOLVED->value)['count'])->toBe(1)
         ->and(collect($dashboard['by_status'])->firstWhere('value', TicketStatus::OPEN->value)['count'])->toBe(0)
-        ->and($dashboard['recent_tickets'])->toHaveCount(1);
+        ->and($dashboard['recent_tickets'])->toHaveCount(2);
 });
 
-it('expone el filtro por estado mediante la API', function () {
+it('expone filtros multiselect mediante la API', function () {
     config(['services.access_api.key' => 'dashboard-test-key']);
 
     $response = $this
@@ -207,14 +213,21 @@ it('expone el filtro por estado mediante la API', function () {
             'Accept' => 'application/json',
             'X-API-Key' => 'dashboard-test-key',
         ])
-        ->get('/api/tickets/dashboard?status=CLOSED');
+        ->get('/api/tickets/dashboard?statuses[]=CLOSED&statuses[]=RESOLVED&responsible_ids[]=2&requester_ids[]=1&types[]=INCIDENT&types[]=SERVICE_REQUEST&categories[]=SOFTWARE&categories[]=ACCESS');
 
     $response
         ->assertOk()
-        ->assertJsonPath('data.filters.status', TicketStatus::CLOSED->value)
-        ->assertJsonPath('data.summary.total', 1)
+        ->assertJsonPath('data.filters.statuses.0', TicketStatus::CLOSED->value)
+        ->assertJsonPath('data.filters.statuses.1', TicketStatus::RESOLVED->value)
+        ->assertJsonPath('data.filters.responsible_ids.0', 2)
+        ->assertJsonPath('data.filters.requester_ids.0', 1)
+        ->assertJsonPath('data.filters.types.0', TicketType::INCIDENT->value)
+        ->assertJsonPath('data.filters.types.1', TicketType::SERVICE_REQUEST->value)
+        ->assertJsonPath('data.filters.categories.0', TicketCategory::SOFTWARE->value)
+        ->assertJsonPath('data.filters.categories.1', TicketCategory::ACCESS->value)
+        ->assertJsonPath('data.summary.total', 2)
         ->assertJsonPath('data.summary.closed', 1)
-        ->assertJsonCount(1, 'data.recent_tickets');
+        ->assertJsonCount(2, 'data.recent_tickets');
 });
 
 it('expone el dashboard mediante la API protegida por key', function () {
@@ -250,7 +263,7 @@ it('no aplica filtro de fechas cuando la API no recibe parámetros', function ()
         ->assertOk()
         ->assertJsonPath('data.filters.start_date', null)
         ->assertJsonPath('data.filters.end_date', null)
-        ->assertJsonPath('data.filters.status', null)
+        ->assertJsonPath('data.filters.statuses', null)
         ->assertJsonPath('data.summary.total', 4)
         ->assertJsonCount(4, 'data.tickets')
         ->assertJsonCount(14, 'data.daily_trend');
