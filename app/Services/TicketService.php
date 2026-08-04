@@ -727,9 +727,9 @@ class TicketService
             throw new BadRequestException("El ticket ya tiene el estado seleccionado.");
         }
 
-        if (!$this->canTransition($oldStatus, $newStatus)) {
-            throw new BadRequestException("TransiciÃ³n de estado no permitida de '" . TicketStatus::label($oldStatus) . "' a '" . TicketStatus::label($newStatus) . "'.");
-        }
+        // if (!$this->canTransition($oldStatus, $newStatus)) {
+        //     throw new BadRequestException("TransiciÃ³n de estado no permitida de '" . TicketStatus::label($oldStatus) . "' a '" . TicketStatus::label($newStatus) . "'.");
+        // }
 
         try {
             return DB::transaction(function () use ($ticket, $newStatus, $responsibleId) {
