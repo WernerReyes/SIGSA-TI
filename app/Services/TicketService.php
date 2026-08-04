@@ -629,10 +629,13 @@ class TicketService
 
 
         if ($newStatus === TicketStatus::CLOSED->value) {
-            //* User must be the responsible to close the ticket
-            if (auth()->user()->staff_id !== $ticket->responsible_id) {
-                throw new BadRequestException("Solo el responsable del ticket puede cerrarlo.");
+            $responsibleId = auth()->user()?->staff_id;
+
+            if (!$responsibleId) {
+                throw new BadRequestException("No se pudo identificar al responsable que cierra el ticket.");
             }
+
+            return $this->closeTicket($ticket, (int) $responsibleId);
         }
 
         $oldStatus = $ticket->status;
@@ -693,15 +696,9 @@ class TicketService
 
                 $ticket->save();
 
-                $isClosing = $newStatus === TicketStatus::CLOSED->value;
+                $description = "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
 
-                $description = $isClosing
-                    ? "Cerrado el ticket"
-                    : "Cambiado de estado de '" . TicketStatus::label($oldStatus) . "' a " . "'" . TicketStatus::label($newStatus) . "'";
-
-                $id = $isClosing ? $ticket->requester_id : null;
-
-                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description, $id);
+                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description);
 
                 return [
                     'description' => $description,
@@ -713,10 +710,14 @@ class TicketService
         }
     }
 
-    public function closeTicketFromApi(Ticket $ticket)
+    public function closeTicket(Ticket $ticket, int $responsibleId)
     {
         if (!$ticket->responsible_id) {
             throw new BadRequestException("No se puede cambiar el estado de un ticket que no tiene un responsable asignado.");
+        }
+
+        if ((int) $ticket->responsible_id !== $responsibleId) {
+            throw new BadRequestException("Solo el responsable del ticket puede cerrarlo.");
         }
 
         $newStatus = TicketStatus::CLOSED->value;
@@ -731,13 +732,13 @@ class TicketService
         }
 
         try {
-            return DB::transaction(function () use ($ticket, $newStatus) {
+            return DB::transaction(function () use ($ticket, $newStatus, $responsibleId) {
                 $ticket->status = $newStatus;
                 $ticket->save();
 
                 $description = "Cerrado el ticket";
 
-                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description, $ticket->responsible_id);
+                $this->logHistory($ticket->id, TicketHistoryAction::STATUS_CHANGED, $description, $responsibleId);
 
                 return [
                     'description' => $description,

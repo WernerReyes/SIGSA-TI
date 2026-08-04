@@ -204,4 +204,33 @@ class TicketController extends Controller
         return back();
     }
 
+    public function close(Ticket $ticket, TicketService $ticketService)
+    {
+        try {
+            $responsibleId = auth()->user()?->staff_id;
+
+            if (!$responsibleId) {
+                throw new \RuntimeException('No se pudo identificar al responsable que cierra el ticket.');
+            }
+
+            $data = $ticketService->closeTicket($ticket, (int) $responsibleId);
+
+            Inertia::flash([
+                'success' => $data['description'],
+                'ticket' => $data['ticket'],
+                'error' => null,
+                'timestamp' => now()->timestamp,
+            ]);
+        } catch (\Exception $e) {
+            Inertia::flash([
+                'success' => null,
+                'ticket' => null,
+                'error' => $e->getMessage(),
+                'timestamp' => now()->timestamp,
+            ]);
+        }
+
+        return back();
+    }
+
 }

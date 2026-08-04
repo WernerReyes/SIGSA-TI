@@ -412,19 +412,38 @@ Respuesta `200`:
 POST /api/tickets/{id}/close
 ```
 
-No requiere cuerpo. La API siempre envia internamente el estado `CLOSED` al servicio.
+Cuerpo JSON:
+
+```json
+{
+  "responsible_id": 8
+}
+```
+
+`responsible_id` identifica a la persona que realiza el cierre. El servicio comprueba que sea el
+mismo responsable que tiene asignado el ticket y registra ese ID en `performed_by` dentro del
+historial. La API envia internamente el estado `CLOSED` al servicio.
+
+Reglas de validacion:
+
+| Campo | Requerido | Regla |
+| --- | --- | --- |
+| `responsible_id` | Si | Entero que debe existir en `ost_staff.staff_id`. |
 
 Reglas de negocio:
 
 | Regla | Resultado si falla |
 | --- | --- |
 | El ticket debe existir. | `404` |
+| `responsible_id` debe enviarse y ser valido. | `422` |
 | El ticket debe tener responsable asignado. | `400` |
+| `responsible_id` debe coincidir con el responsable asignado al ticket. | `400` |
 | El ticket debe poder pasar de su estado actual a `CLOSED`. | `400` |
 
 Por las reglas actuales del servicio, el cierre valido es desde `RESOLVED` hacia `CLOSED`.
-Como el consumo externo no usa sesion, no se valida `auth()->user()->staff_id`; la seguridad
-de esta operacion depende de la API key `ACCESS_API`.
+Como el consumo externo no usa sesion, la API key autentica al cliente y `responsible_id`
+identifica al ejecutor. El servicio rechaza el cierre si ese ID no corresponde al responsable
+asignado.
 
 Respuesta `200`:
 
@@ -438,6 +457,14 @@ Respuesta `200`:
     "requester_id": 12,
     "responsible_id": 8
   }
+}
+```
+
+Si intenta cerrar una persona distinta del responsable asignado, la API responde `400`:
+
+```json
+{
+  "error": "Solo el responsable del ticket puede cerrarlo."
 }
 ```
 

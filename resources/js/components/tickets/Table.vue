@@ -171,6 +171,10 @@
                 <Pencil />
                 Cambiar estado
               </ContextMenuItem>
+              <ContextMenuItem @click="openClose = true" v-if="canCloseActiveTicket">
+                <Archive />
+                Cerrar ticket
+              </ContextMenuItem>
              
               <ContextMenuItem 
                v-if="isSameUser(activeRow?.requester_id)"
@@ -267,6 +271,9 @@
  
   <HistoryDialog v-if="openHistory" v-model:open="openHistory" :ticket="activeRow" />
  
+  <AlertDialog v-model:open="openClose" title="Cerrar ticket"
+    :description="`¿Confirmas que deseas cerrar el ticket TK-${activeRow?.id?.toString().padStart(3, '0')}? Esta acción solo está disponible para la persona responsable.`"
+    actionText="Cerrar ticket" @confirm="handleCloseTicket" />
 
   <AlertDialog v-model:open="openDelete" title="Eliminar ticket"
     description="¿Estás seguro de que deseas eliminar este ticket? Esta acción no se puede deshacer."
@@ -343,7 +350,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { getLocalTimeZone, parseDate } from '@internationalized/date';
 import { useDebounceFn } from '@vueuse/core';
 import { format } from 'date-fns';
-import { AlertCircle, ArrowUpDown, CalendarSearch, CheckCircle2, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Clock, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, UserPen, UserPlus, Users, X, XCircle } from 'lucide-vue-next';
+import { AlertCircle, Archive, ArrowUpDown, CalendarSearch, CheckCircle2, ChevronDown, ChevronLeftIcon, ChevronRightIcon, Clock, Columns4, Eye, History, Pencil, Search, TicketPlus, TicketX, Trash, User, UserPen, UserPlus, Users, X, XCircle } from 'lucide-vue-next';
 import { type DateRange } from 'reka-ui';
 import { computed, h, reactive, ref, watch } from 'vue';
 import AssignResponsibleDialog from './AssignResponsibleDialog.vue';
@@ -370,6 +377,7 @@ const activeRow = ref<Ticket | null>(null)
 const openDetails = ref(false);
 const openReassign = ref(false);
 const changeStatus = ref(false);
+const openClose = ref(false);
 
 const openAssignEquipment = ref(false);
 const openDevolution = ref(false);
@@ -456,6 +464,13 @@ const disabledEdit = computed(() => {
   const ticket = activeRow.value;
   return isLoading.value || ticket?.status !== TicketStatus.OPEN || ticket?.responsible_id !== null;
 })
+
+const canCloseActiveTicket = computed(() => {
+  const ticket = activeRow.value;
+
+  return ticket?.status === TicketStatus.RESOLVED
+    && ticket.responsible_id === userAuth.value?.staff_id;
+});
 
 const form = reactive<Filters>({
   searchTerm: filters.value?.searchTerm || '',
@@ -582,6 +597,38 @@ const handleDeleteTicket = () => {
       openDelete.value = false;
       activeRow.value = null;
     }
+  });
+}
+
+const handleCloseTicket = () => {
+  const ticketToClose = activeRow.value;
+  if (!ticketToClose || !canCloseActiveTicket.value) return;
+
+  router.post(`/tickets/${ticketToClose.id}/close`, {}, {
+    only: ['filters'],
+    preserveScroll: true,
+    preserveState: true,
+    preserveUrl: true,
+    onFlash: (flash) => {
+      if (flash.error) return;
+
+      const closedTicket = flash.ticket as Ticket | null;
+      if (!closedTicket) return;
+
+      const updatedTicket: Ticket = {
+        ...ticketToClose,
+        ...closedTicket,
+        responsible: ticketToClose.responsible,
+        requester: ticketToClose.requester,
+      };
+
+      router.replaceProp('tickets.data', (tickets: Ticket[]) => {
+        return tickets.map((ticket) => ticket.id === updatedTicket.id ? updatedTicket : ticket);
+      });
+
+      activeRow.value = updatedTicket;
+      openClose.value = false;
+    },
   });
 }
 

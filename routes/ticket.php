@@ -9,6 +9,7 @@ Route::prefix('tickets')->group(function () {
     Route::post('/', [TicketController::class, 'store'])->name('tickets.store');
     Route::put('/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
     Route::delete('/{ticket}', [TicketController::class, 'delete'])->name('tickets.delete');
+    Route::post('/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
 
     Route::middleware('department:' . Allowed::SYSTEM_TI->value)->group(function () {
         Route::get('/dashboard', [TicketDashboardController::class, 'renderView'])->name('tickets.dashboard');
