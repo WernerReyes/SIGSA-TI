@@ -132,10 +132,6 @@ class TicketApiController extends Controller
 
         $validated = $request->validate([
             'responsible_id' => ['required', 'integer', 'exists:ost_staff,staff_id'],
-        ], [
-            'responsible_id.required' => 'El ID del responsable es obligatorio.',
-            'responsible_id.integer' => 'El ID del responsable debe ser un número entero válido.',
-            'responsible_id.exists' => 'El responsable indicado no existe.',
         ]);
 
         try {
