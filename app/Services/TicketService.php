@@ -710,13 +710,13 @@ class TicketService
         }
     }
 
-    public function closeTicket(Ticket $ticket, int $responsibleId)
+    public function closeTicket(Ticket $ticket, int | null $responsibleId, )
     {
         if (!$ticket->responsible_id) {
             throw new BadRequestException("No se puede cambiar el estado de un ticket que no tiene un responsable asignado.");
         }
 
-        if ((int) $ticket->responsible_id !== $responsibleId) {
+        if ($responsibleId &&  $ticket->responsible_id !== $responsibleId) {
             throw new BadRequestException("Solo el responsable del ticket puede cerrarlo.");
         }
 
