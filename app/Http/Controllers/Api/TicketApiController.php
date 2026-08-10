@@ -122,7 +122,7 @@ class TicketApiController extends Controller
         }
     }
 
-    public function close(int $id, TicketService $ticketService)
+    public function close(int $id, Request $request, TicketService $ticketService)
     {
         $ticket = Ticket::find($id);
 
@@ -130,8 +130,16 @@ class TicketApiController extends Controller
             return response()->json(['error' => 'Ticket no encontrado.'], 404);
         }
 
+        $validated = $request->validate([
+            'responsible_id' => ['required', 'integer', 'exists:ost_staff,staff_id'],
+        ], [
+            'responsible_id.required' => 'El ID del responsable es obligatorio.',
+            'responsible_id.integer' => 'El ID del responsable debe ser un número entero válido.',
+            'responsible_id.exists' => 'El responsable indicado no existe.',
+        ]);
+
         try {
-            $data = $ticketService->closeTicket($ticket, null);
+            $data = $ticketService->closeTicket($ticket, (int) $validated['responsible_id']);
 
             return response()->json([
                 'message' => $data['description'],
