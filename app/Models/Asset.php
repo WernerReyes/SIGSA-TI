@@ -182,31 +182,55 @@ class Asset extends EloquentModel
             |--------------------------------------------------------------------------
             */
             ->when($filtersDto->search, function ($query, $search) {
+
+            $query->where(function ($q) use ($search) {
+    // 1. Busquedas de texto que aplican SIEMPRE (incluso si son puros números)
+    $q->where('name', 'like', "%{$search}%")
+      ->orWhere('serial_number', 'like', "%{$search}%")
+      ->orWhereHas('brand', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+      ->orWhereHas('model', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+      ->orWhereHas('currentAssignment.activeChildrenAssignments.asset', fn($q2) => $q2
+          ->where('name', 'like', "%{$search}%")
+          ->orWhere('serial_number', 'like', "%{$search}%")
+          ->orWhereHas('brand', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
+          ->orWhereHas('model', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
+      );
+
+    // 2. Búsquedas por ID estricto (SOLO si el término es numérico)
+    if (is_numeric($search)) {
+        $id = (int) $search;
+        $q->orWhere('id', $id)
+          ->orWhereHas('currentAssignment.activeChildrenAssignments.asset', fn($q2) => 
+              $q2->where('id', $id)
+          );
+    }
+});
+
                
     
-                $query->where(function ($q) use ($search) {
-                    if (is_numeric($search)) {
-                        $q->where('id', (int) $search)
-                            ->orWhereHas(
-                                'currentAssignment.activeChildrenAssignments.asset',
-                                fn($q2) =>
-                                $q2->where('id', (int) $search)
-                            );
-                    } else {
-                        $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('serial_number', 'like', "%{$search}%")
-                            ->orWhereHas('brand', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-                            ->orWhereHas('model', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-                            ->orWhereHas(
-                                'currentAssignment.activeChildrenAssignments.asset',
-                                fn($q2) =>
-                                $q2->where('name', 'like', "%{$search}%")
-                                    ->orWhere('serial_number', 'like', "%{$search}%")
-                                    ->orWhereHas('brand', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
-                                    ->orWhereHas('model', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
-                            );
-                    }
-                });
+                // $query->where(function ($q) use ($search) {
+                //     if (is_numeric($search)) {
+                //         $q->where('id', (int) $search)
+                //             ->orWhereHas(
+                //                 'currentAssignment.activeChildrenAssignments.asset',
+                //                 fn($q2) =>
+                //                 $q2->where('id', (int) $search)
+                //             );
+                //     } else {
+                //         $q->where('name', 'like', "%{$search}%")
+                //             ->orWhere('serial_number', 'like', "%{$search}%")
+                //             ->orWhereHas('brand', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                //             ->orWhereHas('model', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+                //             ->orWhereHas(
+                //                 'currentAssignment.activeChildrenAssignments.asset',
+                //                 fn($q2) =>
+                //                 $q2->where('name', 'like', "%{$search}%")
+                //                     ->orWhere('serial_number', 'like', "%{$search}%")
+                //                     ->orWhereHas('brand', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
+                //                     ->orWhereHas('model', fn($q3) => $q3->where('name', 'like', "%{$search}%"))
+                //             );
+                //     }
+                // });
 
             })
 
